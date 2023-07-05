@@ -1,0 +1,28 @@
+
+ARG COMPSS_VERSION=3.2
+
+
+FROM openjdk:8-jdk-alpine as builder
+ARG MAVEN_VERSION=3.9.3
+
+RUN apk add --no-cache bash=4.4.19-r1 curl=7.64.0-r5 tar=1.32-r0
+RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
+  && curl -fsSL -o /tmp/apache-maven.tar.gz https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+  && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
+  && rm -f /tmp/apache-maven.tar.gz \
+  && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
+
+
+ENV MAVEN_HOME /usr/share/maven
+ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
+
+COPY . /app
+WORKDIR /app
+RUN mvn clean package
+
+FROM compss/java_agents:${COMPSS_VERSION}
+COPY --from=builder /app/target/*.jar /app/sensors.jar
+ENV CLASSPATH="${CLASSPATH}:/app/sensors.jar"
+COPY scripts /scripts
+CMD [ "/scripts/start_sensor_agent" ]
+

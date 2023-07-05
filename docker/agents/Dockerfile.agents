@@ -1,0 +1,69 @@
+FROM compss/compss:3.2 as framework
+
+
+##################
+# MANAGER 
+##################
+FROM alpine:3.18.0 as agents_manager
+
+RUN apk add --no-cache bash=5.2.15-r5 curl=8.1.2-r0 jq=1.6-r3
+
+# Agents scripts
+COPY --from=framework /opt/COMPSs/Runtime/scripts/user/compss_agent_call_operation /opt/COMPSs/Runtime/scripts/user/call_operation
+COPY --from=framework /opt/COMPSs/Runtime/scripts/user/compss_agent_add_resources /opt/COMPSs/Runtime/scripts/user/remove_resources
+COPY --from=framework /opt/COMPSs/Runtime/scripts/user/compss_agent_add_resources /opt/COMPSs/Runtime/scripts/user/add_resources
+COPY --from=framework /opt/COMPSs/Runtime/scripts/system /opt/COMPSs/Runtime/scripts/system 
+
+COPY commands/get_resources /opt/COMPSs/Runtime/scripts/user/get_resources
+COPY commands/test_agent /opt/COMPSs/Runtime/scripts/user/test_agent
+
+
+ENV PATH="${PATH}:/opt/COMPSs/Runtime/scripts/user/"
+
+WORKDIR /opt/COMPSs/Runtime/scripts/user
+
+
+##################
+# JAVA + Setup
+##################
+FROM openjdk:8-jdk-alpine as java_agent
+
+RUN apk add --no-cache bash=4.4.19-r1 curl=7.64.0-r5 jq=1.6-r0
+
+COPY --from=framework /opt/COMPSs/Runtime/compss-agent-impl.jar /opt/COMPSs/Runtime/compss-agent-impl.jar
+COPY --from=framework /opt/COMPSs/Runtime/compss-engine.jar /opt/COMPSs/Runtime/compss-engine.jar
+COPY --from=framework /opt/COMPSs/Runtime/scheduler /opt/COMPSs/Runtime/scheduler
+COPY --from=framework /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-base.jar /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-base.jar 
+COPY --from=framework /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-no-checkpoint.jar /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-no-checkpoint.jar 
+RUN mkdir -p /opt/COMPSs/Runtime/connectors /opt/COMPSs/Runtime/
+
+COPY --from=framework /opt/COMPSs/Runtime/adaptors/CommAgent /opt/COMPSs/Runtime/adaptors/CommAgent
+COPY --from=framework /opt/COMPSs/Runtime/adaptors/RESTagent /opt/COMPSs/Runtime/adaptors/RESTagent
+COPY --from=framework /opt/COMPSs/Runtime/adaptors/local /opt/COMPSs/Runtime/adaptors/local
+
+# Agents scripts
+COPY --from=framework /opt/COMPSs/Runtime/scripts/user/compss_agent_start /opt/COMPSs/Runtime/scripts/user/compss_agent_start
+COPY --from=framework /opt/COMPSs/Runtime/scripts/system /opt/COMPSs/Runtime/scripts/system 
+
+# Configuration file
+COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/projects/examples/local/project.xml /opt/COMPSs/Runtime/configuration/xml/projects/examples/local/project.xml 
+COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/resources/examples/local/resources.xml /opt/COMPSs/Runtime/configuration/xml/resources/examples/local/resources.xml
+COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/projects/project_schema.xsd /opt/COMPSs/Runtime/configuration/xml/projects/project_schema.xsd
+COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd /opt/COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd
+COPY --from=framework /opt/COMPSs//Runtime/configuration/agents/all.json /opt/COMPSs//Runtime/configuration/agents/all.json
+
+ENV PATH="${PATH}:/opt/COMPSs/Runtime/scripts/user/" AGENT_NAME=localhost REST_AGENT_PORT=46101 COMM_AGENT_PORT=46102 DEBUG=debug
+
+CMD ["sh", "-c", "/opt/COMPSs/Runtime/scripts/user/compss_agent_start --hostname=${AGENT_NAME} --rest_port=${REST_AGENT_PORT} --comm_port=${COMM_AGENT_PORT}"]
+
+##################
+# PYTHON
+##################
+FROM java_agent as python_agent
+
+RUN # Install python/pip
+ENV PYTHONUNBUFFERED=1
+RUN apk add --update --no-cache python3==3.6.9-r3 && \
+    ln -sf python3 /usr/bin/python && \
+    python3 -m ensurepip && \
+    pip3 install --no-cache-dir --upgrade pip setuptools
