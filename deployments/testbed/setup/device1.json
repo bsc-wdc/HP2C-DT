@@ -68,6 +68,38 @@
                 "parameters": [10] 
             }
         }
+    ],
+
+    "funcs":[
+        {
+            "label": "VoltLimitation",
+            "lang": "Java",
+            "method_name": "es.bsc.hp2c.devices.HP2CSensors.voltLimitation",
+            "parameters": {
+                "sensors": ["Voltmeter Gen1"],
+                "actuators": ["Switch Gen1"]
+            },
+            "trigger": {
+                "type": "on_read", 
+                "method_name": "es.bsc.hp2c.devices.HP2CSensors.onRead",
+                "sensor": "Voltmeter Gen1"
+            }
+
+        },
+        {
+            "label": "CalcPower",
+            "lang": "Python",
+            "method_name": "es.bsc.hp2c.devices.HP2CSensors.calcPower",
+            "parameters": {
+                "sensors": ["Voltmeter Gen1", "Ammeter Gen1"],
+                "actuators": []
+            },
+            "trigger": {
+                "type": "onFrequency",
+                "method_name": "es.bsc.hp2c.devices.HP2CSensors.onFrequency",
+                "frequency": 10 
+            }
+        }
     ]
 
 }
