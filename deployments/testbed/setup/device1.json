@@ -82,7 +82,7 @@
             "trigger": {
                 "type": "on_read", 
                 "method_name": "es.bsc.hp2c.devices.HP2CSensors.onRead",
-                "sensor": "Voltmeter Gen1"
+                "parameters": ["Voltmeter Gen1"]
             }
 
         },
@@ -97,7 +97,7 @@
             "trigger": {
                 "type": "onFrequency",
                 "method_name": "es.bsc.hp2c.devices.HP2CSensors.onFrequency",
-                "frequency": 10 
+                "parameters": [10] 
             }
         }
     ]
