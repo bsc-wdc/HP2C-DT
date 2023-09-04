@@ -77,7 +77,8 @@
             "method_name": "es.bsc.hp2c.devices.HP2CSensors.voltLimitation",
             "parameters": {
                 "sensors": ["Voltmeter Gen1"],
-                "actuators": ["Switch Gen1"]
+                "actuators": ["Switch Gen1"],
+                "other": [10]
             },
             "trigger": {
                 "type": "on_read", 
