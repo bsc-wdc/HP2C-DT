@@ -15,8 +15,10 @@
  */
 package es.bsc.hp2c;
 
+import es.bsc.hp2c.devices.types.Actuator;
 import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Device.DeviceInstantiationException;
+import es.bsc.hp2c.devices.types.Sensor;
 import es.bsc.hp2c.devices.funcs.Func;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

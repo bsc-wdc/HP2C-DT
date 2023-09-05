@@ -78,7 +78,7 @@
             "parameters": {
                 "sensors": ["Voltmeter Gen1"],
                 "actuators": ["Switch Gen1"],
-                "other": [10]
+                "other": [0.8]
             },
             "trigger": {
                 "type": "onRead", 

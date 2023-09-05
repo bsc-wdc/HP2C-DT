@@ -15,6 +15,8 @@
  */
 package es.bsc.hp2c.devices.types;
 
+import es.bsc.hp2c.devices.funcs.OnReadFunc;
+
 /**
  * Class collecting information from the electrical network.
  *

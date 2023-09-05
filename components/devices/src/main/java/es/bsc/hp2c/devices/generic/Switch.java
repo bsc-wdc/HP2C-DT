@@ -17,6 +17,8 @@ package es.bsc.hp2c.devices.generic;
 
 import java.util.ArrayList;
 
+import java.util.ArrayList;
+
 import es.bsc.hp2c.devices.types.Actuator;
 import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Sensor;
@@ -30,7 +32,7 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
         ON,
         OFF
     }
-    private boolean readFlag;
+    private ArrayList<Runnable> onReadFunctions;
 
     private ArrayList<Runnable> onReadFunctions;
 
