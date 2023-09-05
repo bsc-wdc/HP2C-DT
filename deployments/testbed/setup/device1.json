@@ -74,14 +74,14 @@
         {
             "label": "VoltLimitation",
             "lang": "Java",
-            "method_name": "es.bsc.hp2c.devices.HP2CSensors.voltLimitation",
+            "method_name": "es.bsc.hp2c.devices.funcs.VoltLimitation",
             "parameters": {
                 "sensors": ["Voltmeter Gen1"],
                 "actuators": ["Switch Gen1"],
                 "other": [10]
             },
             "trigger": {
-                "type": "on_read", 
+                "type": "onRead", 
                 "method_name": "es.bsc.hp2c.devices.HP2CSensors.onRead",
                 "parameters": ["Voltmeter Gen1"]
             }
@@ -90,10 +90,11 @@
         {
             "label": "CalcPower",
             "lang": "Python",
-            "method_name": "es.bsc.hp2c.devices.HP2CSensors.calcPower",
+            "method_name": "es.bsc.hp2c.devices.funcs.CalcPower",
             "parameters": {
                 "sensors": ["Voltmeter Gen1", "Ammeter Gen1"],
-                "actuators": []
+                "actuators": [],
+                "other": []
             },
             "trigger": {
                 "type": "onFrequency",
