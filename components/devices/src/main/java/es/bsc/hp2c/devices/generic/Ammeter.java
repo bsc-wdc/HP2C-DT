@@ -28,7 +28,6 @@ public abstract class Ammeter<T> extends Device implements Sensor<T, Float> {
 
     private float value = 0.0f;
     private ArrayList<Runnable> onReadFunctions;
-
     @Override
     public abstract void sensed(T values);
 

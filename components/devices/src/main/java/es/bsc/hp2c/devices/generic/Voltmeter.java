@@ -45,7 +45,6 @@ public abstract class Voltmeter<T> extends Device implements Sensor<T, Float> {
 
     @Override
     public abstract void sensed(T value);
-
     /**
      * Converts a the sensed input to a known value;
      *

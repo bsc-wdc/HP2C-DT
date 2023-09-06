@@ -23,7 +23,6 @@ import es.bsc.hp2c.devices.types.Sensor;
  * Represents a smoke sensor belonging to the network.
  */
 public abstract class SmokeSensor<T> extends Device implements Sensor<T, SmokeSensor.Smoke> {
-
     public static enum Smoke {
         NO_SMOKE,
         SMOKE
