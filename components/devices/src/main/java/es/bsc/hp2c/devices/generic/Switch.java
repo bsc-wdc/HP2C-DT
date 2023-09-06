@@ -32,6 +32,7 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
         ON,
         OFF
     }
+
     private ArrayList<Runnable> onReadFunctions;
 
     private ArrayList<Runnable> onReadFunctions;
