@@ -1,5 +1,6 @@
 package es.bsc.hp2c.devices.funcs;
 
+import es.bsc.hp2c.devices.generic.Ammeter;
 import es.bsc.hp2c.devices.generic.Switch;
 import es.bsc.hp2c.devices.generic.Voltmeter;
 import es.bsc.hp2c.devices.types.Actuator;
