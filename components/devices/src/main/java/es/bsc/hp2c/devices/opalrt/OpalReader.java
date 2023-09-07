@@ -52,6 +52,8 @@ public class OpalReader {
                     } catch (InterruptedException ex) {
                         // Ignore
                     }
+
+                    System.out.println();  // Add empty line at the end of each measurement
                 }
             }
         };
