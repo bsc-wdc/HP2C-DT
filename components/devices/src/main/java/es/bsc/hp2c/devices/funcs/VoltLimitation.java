@@ -1,12 +1,13 @@
 package es.bsc.hp2c.devices.funcs;
 
-import es.bsc.hp2c.devices.generic.Ammeter;
+import es.bsc.hp2c.devices.funcs.Func.FunctionInstantiationException;
 import es.bsc.hp2c.devices.generic.Switch;
 import es.bsc.hp2c.devices.generic.Voltmeter;
 import es.bsc.hp2c.devices.types.Actuator;
 import es.bsc.hp2c.devices.types.Sensor;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONArray;
 
