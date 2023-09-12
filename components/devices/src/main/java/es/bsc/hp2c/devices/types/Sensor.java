@@ -15,7 +15,6 @@
  */
 package es.bsc.hp2c.devices.types;
 
-
 /**
  * Class collecting information from the electrical network.
  *
