@@ -17,7 +17,6 @@ package es.bsc.hp2c.devices.funcs;
 
 import es.bsc.hp2c.devices.types.Actuator;
 import es.bsc.hp2c.devices.types.Device;
-import es.bsc.hp2c.devices.types.Device.DeviceInstantiationException;
 import es.bsc.hp2c.devices.types.Sensor;
 
 import java.lang.reflect.Constructor;
@@ -27,7 +26,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
