@@ -20,13 +20,10 @@ public class OpalReader {
     private static float[] values = new float[25];
     private static int UDP_PORT = 8081;
     private static DatagramSocket udpSocket;
-    private static DatagramPacket packet;
 
     static {
         try {
             udpSocket = new DatagramSocket(UDP_PORT);
-            byte[] buffer = new byte[values.length * Float.BYTES]; // Considering each float is 4 bytes
-            packet = new DatagramPacket(buffer, buffer.length);
         } catch (Exception e) {
             System.err.println("Error initializing UDP socket.");
         }
@@ -40,6 +37,8 @@ public class OpalReader {
                     System.out.println("Current time: " + formattedTime);
                     
                     try {
+                        byte[] buffer = new byte[values.length * Float.BYTES]; // Considering each float is 4 bytes
+                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                         udpSocket.receive(packet);
                         ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
                         float rawValue = byteBuffer.getFloat();
