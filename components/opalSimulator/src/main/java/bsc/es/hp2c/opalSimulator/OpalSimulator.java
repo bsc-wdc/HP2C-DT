@@ -14,7 +14,7 @@ public class OpalSimulator {
 
     public static void main(String[] args) {
         try {
-            startTCPClient();
+            // startTCPClient();
             startUDPClient();
         } catch (Exception e) {
             e.printStackTrace();

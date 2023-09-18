@@ -18,7 +18,7 @@ public class OpalReader {
 
     private static final List<OpalSensor<?>> sensors = new ArrayList<>();
     private static float[] values = new float[25];
-    private static int  UDP_PORT;
+    private static int UDP_PORT = 8081;
     private static DatagramSocket udpSocket;
     private static DatagramPacket packet;
 
@@ -42,8 +42,9 @@ public class OpalReader {
                     try {
                         udpSocket.receive(packet);
                         ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
-                        for (int i = 0; i < values.length && byteBuffer.remaining() > 0 ; i++) {
-                            values[i] = byteBuffer.getFloat();
+                        float rawValue = byteBuffer.getFloat();
+                        for (int i = 0; i < values.length; i++) {
+                            values[i] = rawValue;
                         }
 
                         synchronized (OpalReader.sensors) {
