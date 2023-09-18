@@ -104,4 +104,15 @@
         }
     ]
 
+    "global-properties":[
+        "comms": [
+            {
+                "udp": {
+                    8081: ["Ammeter Gen1", "Voltmeter Gen1"]
+                },
+                "tcp": {
+                    8080: ["Switch Gen1"]
+                }
+            }
+        ]
 }
