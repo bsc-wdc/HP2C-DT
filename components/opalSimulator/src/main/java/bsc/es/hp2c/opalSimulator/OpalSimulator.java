@@ -20,23 +20,7 @@ public class OpalSimulator {
             e.printStackTrace();
         }
     }
-
-    private static void startTCPClient() {
-        new Thread(() -> {
-            try (Socket socket = new Socket(SERVER_ADDRESS, TCP_PORT);
-                 DataInputStream in = new DataInputStream(socket.getInputStream())) {
-
-                System.out.println("Connected to TCP Server at " + SERVER_ADDRESS);
-                while (true) {
-                    float receivedValue = in.readFloat();
-                    System.out.println("Received TCP value: " + receivedValue);
-                }
-            } catch (Exception e) {
-                System.err.println("Error with TCP connection.");
-            }
-        }).start();
-    }
-
+    
     private static void startUDPClient() {
         new Thread(() -> {
             try (DatagramSocket udpSocket = new DatagramSocket()) {
@@ -54,4 +38,21 @@ public class OpalSimulator {
             }
         }).start();
     }
+
+    private static void startTCPClient() {
+        new Thread(() -> {
+            try (Socket socket = new Socket(SERVER_ADDRESS, TCP_PORT);
+                 DataInputStream in = new DataInputStream(socket.getInputStream())) {
+
+                System.out.println("Connected to TCP Server at " + SERVER_ADDRESS);
+                while (true) {
+                    float receivedValue = in.readFloat();
+                    System.out.println("Received TCP value: " + receivedValue);
+                }
+            } catch (Exception e) {
+                System.err.println("Error with TCP connection.");
+            }
+        }).start();
+    }
+
 }
