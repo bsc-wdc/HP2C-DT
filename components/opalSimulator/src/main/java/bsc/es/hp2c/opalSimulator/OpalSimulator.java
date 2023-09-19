@@ -5,10 +5,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 
 public class OpalSimulator {
 
-    private static final String SERVER_ADDRESS = "localhost"; 
+    private static final String SERVER_ADDRESS = "hp2c_device_0"; 
     private static final int TCP_PORT = 8080;
     private static final int UDP_PORT = 8081;
 
@@ -26,11 +27,16 @@ public class OpalSimulator {
             try (DatagramSocket udpSocket = new DatagramSocket()) {
                 InetAddress address = InetAddress.getByName(SERVER_ADDRESS);
                 while (true) {
-                    float value = (float) Math.random();
-                    byte[] buffer = Float.toString(value).getBytes();
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(25 * Float.BYTES);
+                    for (int i = 0; i < 25; i++) {
+                        float value = (float) Math.random();
+                        byteBuffer.putFloat(value);
+                        System.out.println("Prepared UDP value: " + value);
+                    }
+                    byte[] buffer = byteBuffer.array();
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, UDP_PORT);
                     udpSocket.send(packet);
-                    System.out.println("Sent UDP value: " + value);
+                    System.out.println("Sent UDP packet.");
                     Thread.sleep(1000);
                 }
             } catch (Exception e) {

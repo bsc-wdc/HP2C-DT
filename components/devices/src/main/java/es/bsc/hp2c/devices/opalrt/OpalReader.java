@@ -37,13 +37,13 @@ public class OpalReader {
                     System.out.println("Current time: " + formattedTime);
                     
                     try {
-                        byte[] buffer = new byte[values.length * Float.BYTES]; // Considering each float is 4 bytes
+                        byte[] buffer = new byte[values.length * Float.BYTES]; 
                         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                         udpSocket.receive(packet);
                         ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
-                        float rawValue = byteBuffer.getFloat();
                         for (int i = 0; i < values.length; i++) {
-                            values[i] = rawValue;
+                            float receivedValue = byteBuffer.getFloat();
+                            values[i] = receivedValue;
                         }
 
                         synchronized (OpalReader.sensors) {
@@ -54,7 +54,7 @@ public class OpalReader {
                                     // Sense voltage between 210 and 260 volts
                                     sensedValue = 210 + 50 * values[idx];
                                 } else {
-                                    sensedValue = values[idx];
+                                    sensedValue = values[idx]; 
                                 }
                                 sensor.sensed(sensedValue);
                                 sensor.onRead();
