@@ -1,0 +1,9 @@
+#!/bin/bash
+# Verify I am in the right folder and move one level down otherwise
+if [ ! -d "src" ]; then
+    cd ..
+fi
+pwd
+mvn compile
+mvn clean package
+mvn exec:java -Dexec.mainClass="bsc.es.hp2c.opalSimulator.OpalSimulator"
