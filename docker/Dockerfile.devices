@@ -25,5 +25,7 @@ FROM compss/java_agents:${COMPSS_VERSION}
 COPY --from=builder /app/target/*.jar /app/sensors.jar
 ENV CLASSPATH="${CLASSPATH}:/app/sensors.jar"
 COPY scripts /scripts
-CMD [ "/scripts/start_sensor_agent" ]
+
+ENTRYPOINT [ "/scripts/start_sensor_agent" ]
+CMD ["1"]
 

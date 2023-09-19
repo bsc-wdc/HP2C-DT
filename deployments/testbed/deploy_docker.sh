@@ -63,7 +63,8 @@ for f in ${setup_folder}/device*.json; do
         --network host \
         -p ${mapped_port}:${UDP_PORT} \
         -v ${f}:/data/setup.json \
-        ${DEVICES_DOCKER_IMAGE}
+        ${DEVICES_DOCKER_IMAGE} \
+        ${device_idx + 1}
     device_idx=$(( device_idx + 1 ))
 done
 
