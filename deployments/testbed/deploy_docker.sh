@@ -60,7 +60,7 @@ for f in ${setup_folder}/device*.json; do
         run \
         -d --rm \
         --name ${DEPLOYMENT_PREFIX}_device_${device_idx} \
-        --net ${NETWORK_NAME} \
+        --network host \
         -p ${mapped_port}:${UDP_PORT} \
         -v ${f}:/data/setup.json \
         ${DEVICES_DOCKER_IMAGE}
