@@ -19,7 +19,6 @@ docker run \
     -d \
     --network=${NETWORK_NAME} \
     --name ${CONTAINER_NAME} \
-    -p 8081:8081 \
     ${OPAL_DOCKER_IMAGE} \
     mvn exec:java -Dexec.mainClass='bsc.es.hp2c.opalSimulator.OpalSimulator'
 

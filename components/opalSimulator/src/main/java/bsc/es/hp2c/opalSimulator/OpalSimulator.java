@@ -9,9 +9,9 @@ import java.nio.ByteBuffer;
 
 public class OpalSimulator {
 
-    private static final String SERVER_ADDRESS = "hp2c_device_0"; 
+    private static final String SERVER_ADDRESS = "localhost"; 
     private static final int TCP_PORT = 8080;
-    private static final int UDP_PORT = 8081;
+    private static final int UDP_PORT = 8080;
 
     public static void main(String[] args) {
         try {

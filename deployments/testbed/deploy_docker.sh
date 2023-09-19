@@ -8,6 +8,9 @@ MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 
 DEPLOYMENT_PREFIX="hp2c"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
+BASE_PORT=8080
+UDP_PORT=8080
+
 
 # Setting up trap to clear environment
 on_exit(){
@@ -50,12 +53,15 @@ docker network create hp2c-net > /dev/null 2>/dev/null || { echo "Cannot create 
 # Start device containers
 device_idx=0
 for f in ${setup_folder}/device*.json; do
+    mapped_port=$(( BASE_PORT + device_idx ))
+    echo "puerto device${device_idx}: ${mapped_port}"
     echo "deploying container for $f"
     docker \
         run \
         -d --rm \
         --name ${DEPLOYMENT_PREFIX}_device_${device_idx} \
         --net ${NETWORK_NAME} \
+        -p ${mapped_port}:${UDP_PORT} \
         -v ${f}:/data/setup.json \
         ${DEVICES_DOCKER_IMAGE}
     device_idx=$(( device_idx + 1 ))
