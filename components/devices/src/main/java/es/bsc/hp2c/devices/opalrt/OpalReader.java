@@ -113,4 +113,9 @@ public class OpalReader {
 
         public int getIndex();
     }
+
+    protected static interface ThreePhaseOpalSensor<V> extends Sensor<Float[], V> {
+
+        public int getIndex();
+    }
 }
