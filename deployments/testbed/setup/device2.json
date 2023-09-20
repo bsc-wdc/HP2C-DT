@@ -1,8 +1,8 @@
 {
     "devices": [
         {
-            "label": "Ammeter Gen1",
-            "driver": "es.bsc.hp2c.devices.opalrt.OpalAmmeter",
+            "label": "Three-Phase Voltmeter Gen1",
+            "driver": "es.bsc.hp2c.devices.opalrt.OpalVoltmeterThreePhase",
             "position": {
                 "x":20,
                 "y":40
@@ -12,60 +12,17 @@
                 "index": 0
             }
         },
+
         {
-            "label": "Voltmeter Gen1",
-            "driver": "es.bsc.hp2c.devices.opalrt.OpalVoltmeter",
+            "label": "Three-Phase Ammeter Gen1",
+            "driver": "es.bsc.hp2c.devices.opalrt.OpalAmmeterThreePhase",
             "position": {
                 "x":20,
                 "y":40
             },
+
             "properties": {
                 "index": 1
-            }
-        },
-        {
-            "label": "Switch Gen1",
-            "driver": "es.bsc.hp2c.devices.opalrt.OpalSwitch",
-            "position": {
-                "x":0,
-                "y":0
-            },
-            "properties": {
-                "index": 2
-        }
-        }
-    ],
-
-    "funcs":[
-        {
-            "label": "VoltLimitation",
-            "lang": "Java",
-            "method_name": "es.bsc.hp2c.devices.funcs.VoltLimitation",
-            "parameters": {
-                "sensors": ["Voltmeter Gen1"],
-                "actuators": ["Switch Gen1"],
-                "other": [250]
-            },
-            "trigger": {
-                "type": "onRead", 
-                "method_name": "es.bsc.hp2c.devices.HP2CSensors.onRead",
-                "parameters": ["Voltmeter Gen1"]
-            }
-
-        },
-        {
-            "label": "CalcPower",
-            "lang": "Python",
-            "method_name": "es.bsc.hp2c.devices.funcs.CalcPower",
-            "parameters": {
-                "sensors": ["Voltmeter Gen1", "Ammeter Gen1"],
-                "actuators": [],
-                "other": []
-            },
-            "trigger": {
-                "type": "onFrequency",
-                "method_name": "es.bsc.hp2c.devices.HP2CSensors.onFrequency",
-                "parameters": [10] 
             }
         }
     ],
@@ -73,11 +30,9 @@
     "global-properties":{
         "comms":{
             "udp": {
-                "8081": ["Ammeter Gen1", "Voltmeter Gen1"]
+                "8081": ["Three-Phase Voltmeter Gen1", "Three-Phase Ammeter Gen1"]
             },
-            "tcp": {
-                "9081": ["Switch Gen1"]
-            }
+            "tcp": {}
         }
     }
 }
