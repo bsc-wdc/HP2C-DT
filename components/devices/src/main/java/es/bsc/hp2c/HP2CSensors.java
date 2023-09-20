@@ -18,13 +18,17 @@ package es.bsc.hp2c;
 import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Device.DeviceInstantiationException;
 import es.bsc.hp2c.devices.funcs.Func;
+import es.bsc.hp2c.devices.opalrt.OpalReader;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -48,6 +52,7 @@ public class HP2CSensors {
         String setupFile = args[0];
         // String
         // setupFile="/home/flordan/projects/HP2C-DT/development/testbed/setup/device1.json";
+        OpalReader.setUDPPort(getJComms(setupFile));
         Map<String, Device> devices = loadDevices(setupFile);
         loadFunctions(setupFile, devices); // loadFunctions(set, dev)
     }
@@ -61,7 +66,7 @@ public class HP2CSensors {
     private static Map<String, Device> loadDevices(String setupFile) throws FileNotFoundException {
         InputStream is = new FileInputStream(setupFile);
         JSONTokener tokener = new JSONTokener(is);
-        JSONObject object = new JSONObject(tokener);
+        JSONObject object = new JSONObject(tokener);        
         JSONArray jDevices = object.getJSONArray("devices");
         TreeMap<String, Device> devices = new TreeMap<>();
         for (Object jo : jDevices) {
@@ -74,6 +79,28 @@ public class HP2CSensors {
             }
         }
         return devices;
+    }
+
+    private static int getJComms(String setupFile) {
+        InputStream is = null;
+        try {
+            is = new FileInputStream(setupFile);
+        } catch (FileNotFoundException e) {
+            System.err.println("Setup file not found.");
+        }
+        JSONTokener tokener = new JSONTokener(is);
+        JSONObject object = new JSONObject(tokener);
+        JSONObject jGlobProp = object.getJSONObject("global-properties");
+        JSONObject jComms = jGlobProp.getJSONObject("comms");
+        JSONObject jUDPPort = jComms.getJSONObject("udp");
+
+        List<String> keysList = new ArrayList<>();
+        Iterator<String> keys = jUDPPort.keys();
+        while(keys.hasNext()) {
+            keysList.add(keys.next());
+        }
+        int udpPort = Integer.parseInt(keysList.get(0));
+        return udpPort;
     }
 
     /**
