@@ -1,15 +1,73 @@
 {
     "devices": [
         {
-            "label": "Alert Screen",
-            "driver": "es.bsc.hp2c.devices.local.MsgBox",
+            "label": "Ammeter Gen1",
+            "driver": "es.bsc.hp2c.devices.opalrt.OpalAmmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+
+            "properties": {
+                "index": 0
+            }
+        },
+        {
+            "label": "Voltmeter Gen1",
+            "driver": "es.bsc.hp2c.devices.opalrt.OpalVoltmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+            "properties": {
+                "index": 1
+            }
+        },
+        {
+            "label": "Switch Gen1",
+            "driver": "es.bsc.hp2c.devices.opalrt.OpalSwitch",
             "position": {
                 "x":0,
                 "y":0
             },
             "properties": {
-                "title": "Alert"
+                "index": 2
+        }
+        }
+    ],
+
+    "funcs":[
+        {
+            "label": "VoltLimitation",
+            "lang": "Java",
+            "method_name": "es.bsc.hp2c.devices.funcs.VoltLimitation",
+            "parameters": {
+                "sensors": ["Voltmeter Gen1"],
+                "actuators": ["Switch Gen1"],
+                "other": [250]
+            },
+            "trigger": {
+                "type": "onRead", 
+                "method_name": "es.bsc.hp2c.devices.HP2CSensors.onRead",
+                "parameters": ["Voltmeter Gen1"]
+            }
+
+        },
+        {
+            "label": "CalcPower",
+            "lang": "Python",
+            "method_name": "es.bsc.hp2c.devices.funcs.CalcPower",
+            "parameters": {
+                "sensors": ["Voltmeter Gen1", "Ammeter Gen1"],
+                "actuators": [],
+                "other": []
+            },
+            "trigger": {
+                "type": "onFrequency",
+                "method_name": "es.bsc.hp2c.devices.HP2CSensors.onFrequency",
+                "parameters": [10] 
             }
         }
     ]
+
 }

@@ -18,7 +18,7 @@ public class OpalReader {
 
     private static final List<OpalSensor<?>> sensors = new ArrayList<>();
     private static float[] values = new float[25];
-    private static int UDP_PORT = 8080;
+    private static int UDP_PORT;
     private static DatagramSocket udpSocket;
 
     static {
@@ -29,6 +29,8 @@ public class OpalReader {
         }
         Thread t = new Thread() {
             public void run() {
+                UDP_PORT = 8080 + (int) (Math.random() * 10);
+                System.out.println("Port: " + UDP_PORT);
                 while (true) {
                     // Print time each iteration
                     LocalTime currentTime = LocalTime.now();

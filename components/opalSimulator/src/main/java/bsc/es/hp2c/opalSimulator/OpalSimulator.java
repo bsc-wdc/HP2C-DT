@@ -11,18 +11,18 @@ public class OpalSimulator {
 
     private static final String SERVER_ADDRESS = "localhost"; 
     private static final int TCP_PORT = 8080;
-    private static final int UDP_PORT = 8080;
 
     public static void main(String[] args) {
         try {
             // startTCPClient();
-            startUDPClient();
+            startUDPClient(8088);
+            startUDPClient(8084);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
     
-    private static void startUDPClient() {
+    private static void startUDPClient(int udpPort) {
         new Thread(() -> {
             try (DatagramSocket udpSocket = new DatagramSocket()) {
                 InetAddress address = InetAddress.getByName(SERVER_ADDRESS);
@@ -34,7 +34,7 @@ public class OpalSimulator {
                         System.out.println("Prepared UDP value: " + value);
                     }
                     byte[] buffer = byteBuffer.array();
-                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, UDP_PORT);
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, udpPort);
                     udpSocket.send(packet);
                     System.out.println("Sent UDP packet.");
                     Thread.sleep(1000);

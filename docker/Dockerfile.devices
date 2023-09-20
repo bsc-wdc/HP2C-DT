@@ -26,6 +26,5 @@ COPY --from=builder /app/target/*.jar /app/sensors.jar
 ENV CLASSPATH="${CLASSPATH}:/app/sensors.jar"
 COPY scripts /scripts
 
-ENTRYPOINT [ "/scripts/start_sensor_agent" ]
-CMD ["1"]
+CMD [ "/scripts/start_sensor_agent" ]
 

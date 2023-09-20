@@ -54,17 +54,23 @@ docker network create hp2c-net > /dev/null 2>/dev/null || { echo "Cannot create 
 device_idx=0
 for f in ${setup_folder}/device*.json; do
     mapped_port=$(( BASE_PORT + device_idx ))
-    echo "puerto device${device_idx}: ${mapped_port}"
+    REST_AGENT_PORT=$((4610 + device_idx))1
+    COMM_AGENT_PORT=$((4610 + device_idx))2
+    echo "device${device_idx} UDP port: ${mapped_port}"
+    echo "device${device_idx} REST port: ${REST_AGENT_PORT}"
+    echo "device${device_idx} COMM port: ${COMM_AGENT_PORT}"
+
     echo "deploying container for $f"
     docker \
         run \
         -d --rm \
         --name ${DEPLOYMENT_PREFIX}_device_${device_idx} \
         --network host \
-        -p ${mapped_port}:${UDP_PORT} \
+        -p ${UDP_PORT}:${mapped_port} \
         -v ${f}:/data/setup.json \
-        ${DEVICES_DOCKER_IMAGE} \
-        ${device_idx + 1}
+        -e REST_AGENT_PORT=$REST_AGENT_PORT \
+        -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
+        ${DEVICES_DOCKER_IMAGE} 
     device_idx=$(( device_idx + 1 ))
 done
 
