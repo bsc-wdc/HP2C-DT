@@ -40,7 +40,7 @@ public class OpalAmmeter extends Ammeter<Float> implements OpalSensor<Float> {
     @Override
     public void sensed(Float value) {
         super.setValue(sensedValue(value));
-        System.out.println("Sensed " + super.getCurrentValue() + " A");
+        System.out.println("Sensor " + getLabel() + " sensed " + super.getCurrentValue() + " A");
     }
 
     @Override

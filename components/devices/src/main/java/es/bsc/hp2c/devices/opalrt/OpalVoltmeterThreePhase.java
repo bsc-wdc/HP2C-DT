@@ -14,12 +14,10 @@ public class OpalVoltmeterThreePhase extends ThreePhaseSensor<Float[], OpalVoltm
     public OpalVoltmeterThreePhase(String label, float[] position, JSONObject properties) {
         super(label, position);
         this.index = properties.optInt("index",0);
-        System.out.println("Registering device " + label);
         OpalReader.registerThreePhaseDevice(this);
         subSensors = new OpalVoltmeter[super.getNPhases()];
         for (int i = 0; i < super.getNPhases(); i++){
             String subLabel = label + "." + i;
-            System.out.println("Storing in " + label + " subsensor" + subLabel);
             subSensors[i] = new OpalVoltmeter(subLabel, position, properties);
         }
     }

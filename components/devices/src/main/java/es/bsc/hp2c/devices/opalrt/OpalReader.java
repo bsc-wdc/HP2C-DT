@@ -106,7 +106,6 @@ public class OpalReader {
     }
 
     protected static interface OpalSensor<V> extends Sensor<Float, V> {
-
         public int getIndex();
     }
 
