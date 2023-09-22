@@ -1,9 +1,19 @@
 #!/bin/bash
+
 # Verify I am in the right folder and move one level down otherwise
 if [ ! -d "src" ]; then
     cd ..
 fi
-pwd
-mvn compile
+
+# Parse arguments and give a default if any
+if [ $# -eq 0 ]; then
+    echo "No arguments supplied, using default value 2"
+    echo "Usage: start_opal_sim <number of desired ports>"
+    n_ports=2
+else
+    n_ports=$1
+fi
+
+# Compile and run
 mvn clean package
-mvn exec:java -Dexec.mainClass="bsc.es.hp2c.opalSimulator.OpalSimulator"
+mvn exec:java -Dexec.mainClass="bsc.es.hp2c.opalSimulator.OpalSimulator" -Dexec.args=$n_ports

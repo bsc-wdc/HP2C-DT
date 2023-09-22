@@ -11,14 +11,22 @@ public class OpalSimulator {
 
     private static final String SERVER_ADDRESS = "localhost"; 
     private static final int TCP_PORT = 8080;
+    private static final int BASE_UDP_PORT = 8080;
 
     public static void main(String[] args) {
-        try {
-            // startTCPClient();
-            startUDPClient(8088);
-            startUDPClient(8084);
-        } catch (Exception e) {
-            e.printStackTrace();
+        // Get number of ports to open
+        int nPorts;
+        if (args.length == 1) {
+            nPorts = Integer.valueOf(args[0]);
+        } else{
+            // Default to 2 ports
+            nPorts = 2;
+        }
+        // Launch communication threads
+        for (int i = 0; i < nPorts; i++) {
+            int udpPort = BASE_UDP_PORT + i;
+            System.out.println("Starting UDP communication in port " + udpPort);
+            startUDPClient(udpPort);
         }
     }
     
