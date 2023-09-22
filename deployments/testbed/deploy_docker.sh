@@ -66,7 +66,6 @@ for f in ${setup_folder}/device*.json; do
         -d --rm \
         --name ${DEPLOYMENT_PREFIX}_device_${device_idx} \
         --network host \
-        -p ${UDP_PORT}:${mapped_port} \
         -v ${f}:/data/setup.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
