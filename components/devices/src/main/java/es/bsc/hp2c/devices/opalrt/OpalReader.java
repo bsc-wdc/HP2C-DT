@@ -5,6 +5,7 @@ import es.bsc.hp2c.devices.types.Sensor;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -22,26 +23,32 @@ public class OpalReader {
     private static DatagramSocket udpSocket;
 
     static {
-        try {
-            udpSocket = new DatagramSocket(UDP_PORT);
-        } catch (Exception e) {
-            System.err.println("Error initializing UDP socket.");
-        }
         Thread t = new Thread() {
             public void run() {
-                System.out.println("\nPort: " + UDP_PORT+ "\n");
+                // Initialize UDP server socket to read measurements
+                try {
+                    if (UDP_PORT == 0) {
+                        throw new SocketException();
+                    }
+                    udpSocket = new DatagramSocket(UDP_PORT);
+                } catch (SocketException e) {
+                    System.err.println("Error initializing UDP socket at port " + UDP_PORT);
+                    throw new RuntimeException(e);
+                }
+                System.out.println("\nConnected to port: " + UDP_PORT+ "\n");
+
                 while (true) {
                     // Print time each iteration
                     LocalTime currentTime = LocalTime.now();
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
                     String formattedTime = currentTime.format(formatter);
                     System.out.println("Current time: " + formattedTime);
-                    
+
                     try {
-                        byte[] buffer = new byte[values.length * Float.BYTES]; 
+                        byte[] buffer = new byte[values.length * Float.BYTES];
                         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                         udpSocket.receive(packet);
-                        
+
                         ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
                         for (int i = 0; i < values.length; i++) {
                             float receivedValue = byteBuffer.getFloat();
@@ -56,7 +63,7 @@ public class OpalReader {
                                     // Sense voltage between 210 and 260 volts
                                     sensedValue = 210 + 50 * values[idx];
                                 } else {
-                                    sensedValue = values[idx]; 
+                                    sensedValue = values[idx];
                                 }
                                 sensor.sensed(sensedValue);
                                 sensor.onRead();
@@ -77,7 +84,7 @@ public class OpalReader {
 
     /**
      * Register device into the list of sensors.
-     * 
+     *
      * @param sensor Sensor to register
      */
     public static void registerDevice(OpalSensor<?> sensor) {
