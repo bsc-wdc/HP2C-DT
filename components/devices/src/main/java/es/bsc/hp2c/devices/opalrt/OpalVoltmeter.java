@@ -22,7 +22,7 @@ import org.json.JSONObject;
 /**
  * Voltmeter simulated on an Opal-RT.
  */
-public class OpalVoltmeter extends Voltmeter implements OpalSensor<Float> {
+public class OpalVoltmeter extends Voltmeter<Float> implements OpalSensor<Float> {
 
     private final int index;
 
@@ -37,10 +37,15 @@ public class OpalVoltmeter extends Voltmeter implements OpalSensor<Float> {
         return this.index;
     }
 
-
     @Override
     protected float sensedValue(float input) {
         return input;
+    }
+
+    @Override
+    public void sensed(Float value) {
+        super.setValue(sensedValue(value));
+        System.out.println("Sensed " + super.getCurrentValue() + " V");
     }
 
 }

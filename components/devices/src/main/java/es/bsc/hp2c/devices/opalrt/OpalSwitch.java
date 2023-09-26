@@ -23,7 +23,7 @@ import org.json.JSONObject;
 /**
  * Represent a switch implemented accessible within a local OpalRT.
  */
-public class OpalSwitch extends Switch implements OpalSensor<Switch.State>{
+public class OpalSwitch extends Switch<Float> implements OpalSensor<Switch.State> {
 
     private final int index;
 
@@ -33,7 +33,12 @@ public class OpalSwitch extends Switch implements OpalSensor<Switch.State>{
         OpalReader.registerDevice(this);
     }
 
-    
+    @Override
+    public void sensed(Float value) {
+        // setValue(sensedValue(value));
+        System.out.println("Switch state is " + this.state);
+    }
+
     @Override
     public int getIndex() {
         return this.index;
@@ -45,7 +50,7 @@ public class OpalSwitch extends Switch implements OpalSensor<Switch.State>{
     }
 
     @Override
-    public void setValue(State value) throws Exception {
+    public void setValue(State value) {
         switch (value) {
             case ON:
                 turnON();
@@ -57,11 +62,13 @@ public class OpalSwitch extends Switch implements OpalSensor<Switch.State>{
     }
 
     private void turnON() {
-        System.out.println("Li diem al switch que ha de deixar passar electricitat");
+        this.state = State.ON;
+        System.out.println("Turning switch ON");
     }
 
     private void turnOFF() {
-        System.out.println("Li diem al switch que NO ha de deixar passar electricitat");
+        this.state = State.OFF;
+        System.out.println("Turning switch OFF");
     }
 
 }

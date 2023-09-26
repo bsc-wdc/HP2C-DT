@@ -22,7 +22,7 @@ import org.json.JSONObject;
 /**
  * Ammeter simulated on an Opal-RT.
  */
-public class OpalAmmeter extends Ammeter implements OpalSensor<Float> {
+public class OpalAmmeter extends Ammeter<Float> implements OpalSensor<Float> {
 
     private final int index;
 
@@ -35,6 +35,12 @@ public class OpalAmmeter extends Ammeter implements OpalSensor<Float> {
     @Override
     public int getIndex() {
         return this.index;
+    }
+
+    @Override
+    public void sensed(Float value) {
+        super.setValue(sensedValue(value));
+        System.out.println("Sensed " + super.getCurrentValue() + " A");
     }
 
     @Override
