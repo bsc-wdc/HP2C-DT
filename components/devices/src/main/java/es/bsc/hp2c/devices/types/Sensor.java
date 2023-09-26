@@ -13,35 +13,40 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package es.bsc.hp2c.devices.types;
 
 /**
  * Class collecting information from the electrical network.
  *
- * @param <V> Type of value to return
+ * @param <T> Type of value to receive.
+ * @param <V> Type of value to return.
  */
-public interface Sensor<V> {
+public interface Sensor<T, V> {
 
-    /** 
-     * Class containing the function to notify when a new value is sensed.
-     */
-    public static interface SensorProcessing {
-        /**
-         * 
-         * @param values 
-         */
-        public void sensed(float... values);
-    }
-    
-    
     /**
-     * Return a set of Processing Functions to execute upon sensing.
-     * 
-     * @return a set of Processing Functions to execute upon sensing
+     * Receive a function and add it to the list of onRead functions.
+     *
+     * @param action Runnable that implements the function to handle.
      */
-    public SensorProcessing[] getProcessors();
-    
-        
+    public void addOnReadFunction(Runnable action);
+
+    /**
+     * Call the functions triggered by a read value in the sensor.
+     */
+    public void onRead();
+
+    /**
+     * Receive the raw sensed value and sets value attribute according to what
+     * sensedValue(value) returns.
+     *
+     * @param value Type of value to return.
+     */
+    public void sensed(T value);
+
+    /**
+     * Get the value stored.
+     *
+     * @return Value stored.
+     */
     public V getCurrentValue();
 }

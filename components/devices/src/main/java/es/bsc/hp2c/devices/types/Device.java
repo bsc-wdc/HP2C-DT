@@ -25,22 +25,25 @@ import org.json.JSONObject;
 public abstract class Device {
 
     /**
-     *
-     * @param jDevice json description of the device
-     * @return Device object corresponding to the description
-     * @throws JSONException Malformed JSON
-     * @throws ClassNotFoundException the indicated driver not found in the classpath
-     * @throws DeviceInstantiationException Error raised during the instantiation of the device
+     * Parse function from JSON and return device.
+     * 
+     * @param jDevice json description of the device.
+     * @return Device object corresponding to the description.
+     * @throws JSONException                Malformed JSON.
+     * @throws ClassNotFoundException       the indicated driver not found in the
+     *                                      classpath.
+     * @throws DeviceInstantiationException Error raised during the instantiation of
+     *                                      the device.
      */
     public static Device parseJSON(JSONObject jDevice)
-            throws JSONException, ClassNotFoundException,  DeviceInstantiationException {
+            throws JSONException, ClassNotFoundException, DeviceInstantiationException {
         String driver = jDevice.optString("driver", null);
         if (driver == null) {
             throw new JSONException("Malformed JSON. No driver indicated");
         }
         System.out.println("looking for class " + driver);
-        Class c = Class.forName(driver);
-        Constructor ct;
+        Class<?> c = Class.forName(driver);
+        Constructor<?> ct;
         try {
             ct = c.getConstructor(String.class, float[].class, JSONObject.class);
         } catch (NoSuchMethodException | SecurityException e) {
@@ -54,14 +57,14 @@ public abstract class Device {
         if (jpos != null) {
             position = new float[jpos.length()];
         } else {
-            position = new float[]{0, 0, 0};
+            position = new float[] { 0, 0, 0 };
         }
 
         JSONObject properties = jDevice.optJSONObject("properties");
         try {
             return (Device) ct.newInstance(label, position, properties);
         } catch (Exception e) {
-            throw new DeviceInstantiationException( label, e);
+            throw new DeviceInstantiationException(label, e);
         }
     }
 
@@ -76,13 +79,30 @@ public abstract class Device {
     /**
      * Returns whether the component admits running actions on it or not.
      *
-     * @return {@literal true} if it admits running actions; otherwise {@literal false}.
+     * @return {@literal true} if it admits running actions; otherwise
+     *         {@literal false}.
      */
     public abstract boolean isActionable();
 
-    
     /**
-     * Exception raised during the instantiation of the device
+     * Returns whether the component is a sensor or not.
+     *
+     * @return {@literal true} if it admits running actions; otherwise
+     *         {@literal false}.
+     */
+    public abstract boolean isSensitive();
+
+    /**
+     * Get the device label.
+     *
+     * @return Label of the device.
+     */
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * Exception raised during the instantiation of the device.
      */
     public static class DeviceInstantiationException extends Exception {
 

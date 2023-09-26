@@ -22,28 +22,19 @@ import es.bsc.hp2c.devices.types.Sensor;
 /**
  * Represents a smoke sensor belonging to the network.
  */
-public abstract class SmokeSensor extends Device implements Sensor<SmokeSensor.Smoke> {
-    
+public abstract class SmokeSensor<T> extends Device implements Sensor<T, SmokeSensor.Smoke> {
+
     public static enum Smoke {
         NO_SMOKE,
         SMOKE
     }
-    private Smoke status = Smoke.NO_SMOKE;
-    
 
-    private final SensorProcessing[] processors = new SensorProcessing[]{
-        new SensorProcessing() {
-            @Override
-            public void sensed(float... values) {
-                SmokeSensor.this.status = sensedSmoke(values[0]);
-            }
-        }
-    };
-    
+    private Smoke status = Smoke.NO_SMOKE;
+
     protected SmokeSensor(String label, float[] position) {
         super(label, position);
     }
-    
+
     protected abstract Smoke sensedSmoke(float val);
 
     @Override
@@ -57,8 +48,10 @@ public abstract class SmokeSensor extends Device implements Sensor<SmokeSensor.S
     }
 
     @Override
-    public SensorProcessing[] getProcessors() {
-        return processors;
+    public final boolean isSensitive() {
+        return true;
     }
 
+    @Override
+    public abstract void sensed(T value);
 }

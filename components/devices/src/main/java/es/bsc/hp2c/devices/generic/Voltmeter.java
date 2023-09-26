@@ -15,31 +15,37 @@
  */
 package es.bsc.hp2c.devices.generic;
 
+import java.util.ArrayList;
+
 import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Sensor;
 
 /**
  * Sensor measuring the voltage of the network.
  */
-public abstract class Voltmeter extends Device implements Sensor<Float> {
+public abstract class Voltmeter<T> extends Device implements Sensor<T, Float> {
 
     private float value = 0.0f;
+    private ArrayList<Runnable> onReadFunctions;
 
-    private final SensorProcessing[] processors = new SensorProcessing[]{
-        new SensorProcessing() {
-
-            @Override
-            public void sensed(float... values) {
-                Voltmeter.this.value = sensedValue(values[0]);
-                System.out.println("Sensed "+Voltmeter.this.value + "v");
-            }
-        }
-    };
-    
-    protected Voltmeter(String label, float[] position){
+    protected Voltmeter(String label, float[] position) {
         super(label, position);
+        this.onReadFunctions = new ArrayList<>();
     }
-    
+
+    public void addOnReadFunction(Runnable action) {
+        this.onReadFunctions.add(action);
+    }
+
+    public void onRead() {
+        for (Runnable action : this.onReadFunctions) {
+            action.run();
+        }
+    }
+
+    @Override
+    public abstract void sensed(T value);
+
     /**
      * Converts a the sensed input to a known value;
      *
@@ -52,16 +58,19 @@ public abstract class Voltmeter extends Device implements Sensor<Float> {
     public final Float getCurrentValue() {
         return this.value;
     }
-    
-    @Override
-    public final SensorProcessing[] getProcessors() {
-        return processors;
+
+    protected void setValue(float value) {
+        this.value = value;
     }
-    
-    
+
     @Override
     public final boolean isActionable() {
         return false;
+    }
+
+    @Override
+    public final boolean isSensitive() {
+        return true;
     }
 
 }

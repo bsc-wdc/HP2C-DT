@@ -16,54 +16,62 @@
 
 package es.bsc.hp2c.devices.generic;
 
+import java.util.ArrayList;
+
 import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Sensor;
 
 /**
  * Sensor measuring the intensity of the network.
  */
-public abstract class Ammeter extends Device implements Sensor<Float> {
+public abstract class Ammeter<T> extends Device implements Sensor<T, Float> {
 
     private float value = 0.0f;
+    private ArrayList<Runnable> onReadFunctions;
 
-    private final SensorProcessing[] processors = new SensorProcessing[]{
-        new SensorProcessing() {
+    @Override
+    public abstract void sensed(T values);
 
-            @Override
-            public void sensed(float... values) {
-                Ammeter.this.value = sensedValue(values[0]);
-                System.out.println("Sensed "+Ammeter.this.value + "amps");
-            }
-
-        }
-    };
-
-    protected Ammeter(String label, float[] position){
+    protected Ammeter(String label, float[] position) {
         super(label, position);
+        this.onReadFunctions = new ArrayList<>();
     }
-    
+
+    public void addOnReadFunction(Runnable action) {
+        this.onReadFunctions.add(action);
+    }
+
+    public void onRead() {
+        for (Runnable action : this.onReadFunctions) {
+            action.run();
+        }
+    }
+
     /**
      * Converts a the sensed input to a known value;
+     * 
      * @param input input value sensed
      * @return corresponding known value
      */
     protected abstract float sensedValue(float input);
-    
+
     @Override
     public final Float getCurrentValue() {
         return this.value;
     }
-    
-    @Override
-    public final SensorProcessing[] getProcessors() {
-        return processors;
+
+    protected void setValue(float value) {
+        this.value = value;
     }
-    
-    
+
     @Override
     public final boolean isActionable() {
         return false;
     }
 
+    @Override
+    public final boolean isSensitive() {
+        return true;
+    }
 
 }

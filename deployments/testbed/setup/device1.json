@@ -30,7 +30,44 @@
                 "x":0,
                 "y":0
             },
-            "properties": []
+            "properties": {
+                "index": 2
+        }
+        }
+    ],
+
+    "funcs":[
+        {
+            "label": "VoltLimitation",
+            "lang": "Java",
+            "method_name": "es.bsc.hp2c.devices.funcs.VoltLimitation",
+            "parameters": {
+                "sensors": ["Voltmeter Gen1"],
+                "actuators": ["Switch Gen1"],
+                "other": [250]
+            },
+            "trigger": {
+                "type": "onRead", 
+                "method_name": "es.bsc.hp2c.devices.HP2CSensors.onRead",
+                "parameters": ["Voltmeter Gen1"]
+            }
+
+        },
+        {
+            "label": "CalcPower",
+            "lang": "Python",
+            "method_name": "es.bsc.hp2c.devices.funcs.CalcPower",
+            "parameters": {
+                "sensors": ["Voltmeter Gen1", "Ammeter Gen1"],
+                "actuators": [],
+                "other": []
+            },
+            "trigger": {
+                "type": "onFrequency",
+                "method_name": "es.bsc.hp2c.devices.HP2CSensors.onFrequency",
+                "parameters": [10] 
+            }
         }
     ]
+
 }

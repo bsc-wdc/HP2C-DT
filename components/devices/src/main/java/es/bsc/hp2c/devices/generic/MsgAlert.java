@@ -15,7 +15,6 @@
  */
 package es.bsc.hp2c.devices.generic;
 
-
 import es.bsc.hp2c.devices.types.Actuator;
 import es.bsc.hp2c.devices.types.Device;
 
@@ -23,16 +22,19 @@ import es.bsc.hp2c.devices.types.Device;
  * This class interacts with a switch of the electrical network.
  */
 public abstract class MsgAlert extends Device implements Actuator<String> {
-    
+
     protected MsgAlert(String label, float[] position) {
         super(label, position);
     }
-       
 
     @Override
     public final boolean isActionable() {
         return true;
     }
 
+    @Override
+    public final boolean isSensitive() {
+        return false;
+    }
 
 }

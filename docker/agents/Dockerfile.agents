@@ -6,7 +6,7 @@ FROM compss/compss:3.2 as framework
 ##################
 FROM alpine:3.18.0 as agents_manager
 
-RUN apk add --no-cache bash=5.2.15-r5 curl=8.1.2-r0 jq=1.6-r3
+RUN apk add --no-cache bash curl jq
 
 # Agents scripts
 COPY --from=framework /opt/COMPSs/Runtime/scripts/user/compss_agent_call_operation /opt/COMPSs/Runtime/scripts/user/call_operation
