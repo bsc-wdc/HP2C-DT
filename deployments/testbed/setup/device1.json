@@ -33,6 +33,17 @@
             "properties": {
                 "index": 2
         }
+        },
+        {
+            "label": "Three-Phase Ammeter Gen1",
+            "driver": "es.bsc.hp2c.devices.opalrt.OpalAmmeterThreePhase",
+            "position": {
+                "x":0,
+                "y":0
+            },
+            "properties": {
+                "index": 3
+        }
         }
     ],
 
