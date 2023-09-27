@@ -17,6 +17,8 @@ package es.bsc.hp2c.devices.opalrt;
 
 import es.bsc.hp2c.devices.generic.Voltmeter;
 import es.bsc.hp2c.devices.opalrt.OpalReader.OpalSensor;
+
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -24,17 +26,26 @@ import org.json.JSONObject;
  */
 public class OpalVoltmeter extends Voltmeter<Float> implements OpalSensor<Float> {
 
-    private final int index;
+    private int[] indexes;
 
     public OpalVoltmeter(String label, float[] position, JSONObject properties) {
         super(label, position);
-        this.index = properties.optInt("index",0);
+        JSONArray jIndexes = properties.getJSONArray("indexes");
+        this.indexes = new int[jIndexes.length()];
+        for (int i = 0; i < jIndexes.length(); ++i){
+            this.indexes[i] = (jIndexes.getInt(i));
+        }
         OpalReader.registerDevice(this);
+    }
+
+    public OpalVoltmeter(String label, float[] position, JSONObject properties, int[] indexes) {
+        super(label, position);
+        this.indexes = indexes;
     }
     
     @Override
-    public int getIndex() {
-        return this.index;
+    public int[] getIndexes() {
+        return this.indexes;
     }
 
     @Override

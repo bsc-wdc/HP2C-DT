@@ -9,7 +9,7 @@
             },
 
             "properties": {
-                "index": 0
+                "indexes": [0,1,2]
             }
         },
         {
@@ -21,8 +21,8 @@
             },
 
             "properties": {
-                "index": 1
-        }
+                "indexes": [3,4,5]
+            }
         }
     ],
 

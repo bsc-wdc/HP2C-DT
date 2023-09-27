@@ -49,8 +49,16 @@ public abstract class ThreePhaseSensor<T, S> extends Device implements Sensor<T,
         return this.nPhases;
     }
 
+    public S[] getSubSensors() {
+        return this.subSensors;
+    }
+    
     protected void setValues(Float[] values) {
         this.values = values;
+    }
+    
+    public void setSubSensors(S[] subSensors) {
+        this.subSensors = subSensors;
     }
 
     @Override

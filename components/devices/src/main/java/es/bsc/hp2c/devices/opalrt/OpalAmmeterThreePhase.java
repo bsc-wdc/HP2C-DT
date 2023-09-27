@@ -2,6 +2,11 @@ package es.bsc.hp2c.devices.opalrt;
 
 import es.bsc.hp2c.devices.generic.ThreePhaseSensor;
 import es.bsc.hp2c.devices.opalrt.OpalReader.ThreePhaseOpalSensor;
+
+import java.util.ArrayList;
+import java.util.Map;
+
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -9,16 +14,19 @@ import org.json.JSONObject;
  */
 public class OpalAmmeterThreePhase extends ThreePhaseSensor<Float[], OpalAmmeter>
     implements ThreePhaseOpalSensor<Float[]> {
-    private final int index;
+    private int[] indexes;
 
     public OpalAmmeterThreePhase(String label, float[] position, JSONObject properties) {
         super(label, position);
-        this.index = properties.optInt("index", 0);
+        JSONArray jIndexes = properties.getJSONArray("indexes");
+        for (int i = 0; i < jIndexes.length(); ++i){
+            this.indexes[i] = (jIndexes.getInt(i));
+        }
         OpalReader.registerThreePhaseDevice(this);
         subSensors = new OpalAmmeter[super.getNPhases()];
         for (int i = 0; i < super.getNPhases(); i++) {
             String subLabel = label + "." + i;
-            subSensors[i] = new OpalAmmeter(subLabel, position, properties);
+            subSensors[i] = new OpalAmmeter(subLabel, position, properties); //IMPLEMENT INDEX
         }
     }
 
@@ -36,7 +44,7 @@ public class OpalAmmeterThreePhase extends ThreePhaseSensor<Float[], OpalAmmeter
     }
 
     @Override
-    public int getIndex() {
-        return this.index;
+    public int[] getIndexes() {
+        return this.indexes;
     }
 }

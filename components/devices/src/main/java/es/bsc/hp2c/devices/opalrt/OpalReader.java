@@ -10,7 +10,9 @@ import java.nio.ByteBuffer;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The class OpalReader simulates written values for every sensor.
@@ -58,14 +60,19 @@ public class OpalReader {
 
                         synchronized (OpalReader.sensors) {
                             for (OpalSensor<?> sensor : sensors) {
-                                int idx = sensor.getIndex();
-                                float sensedValue;
-                                if (sensor instanceof Voltmeter) {
-                                    // Sense voltage between 210 and 260 volts
-                                    sensedValue = 210 + 50 * values[idx];
-                                } else {
-                                    sensedValue = values[idx];
-                                }
+                                ArrayList<Integer> indexes = sensor.getIndexes();
+                                int idx = indexes.get(0);
+                                Float sensedValue = values[idx];
+                                sensor.sensed(sensedValue);
+                                sensor.onRead();
+                            }
+                        }
+
+                        synchronized (OpalReader.threePhaseSensors) {
+                            for (OpalSensor<?> sensor : sensors) {
+                                int[] indexes = sensor.getIndexes();
+                                int idx = indexes.get(0);
+                                Float sensedValue = values[idx];
                                 sensor.sensed(sensedValue);
                                 sensor.onRead();
                             }
@@ -106,11 +113,11 @@ public class OpalReader {
     }
 
     protected static interface OpalSensor<V> extends Sensor<Float, V> {
-        public int getIndex();
+        public int[] getIndexes();
     }
 
     protected static interface ThreePhaseOpalSensor<V> extends Sensor<Float[], V> {
 
-        public int getIndex();
+        public int[] getIndexes();
     }
 }

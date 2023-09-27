@@ -9,7 +9,7 @@
             },
 
             "properties": {
-                "index": 0
+                "indexes": [0]
             }
         },
         {
@@ -20,7 +20,7 @@
                 "y":40
             },
             "properties": {
-                "index": 1
+                "indexes": [1]
             }
         },
         {
@@ -31,7 +31,7 @@
                 "y":0
             },
             "properties": {
-                "index": 2
+                "indexes": [2]
         }
         }
     ],
