@@ -32,14 +32,15 @@ public class OpalVoltmeterThreePhase extends ThreePhaseSensor<Float[], OpalVoltm
 
     @Override
     public void sensed(Float[] values) {
-        Float[] sensedValues = sensedValue(values);
+        Float[] sensedValues = sensedValues(values);
         for (int i = 0; i < subSensors.length; i++) {
-            subSensors[i].sensed(sensedValues[i]);
+            Float[] sensedValuesSensor = { sensedValues[i] };
+            subSensors[i].sensed(sensedValuesSensor);
         }
     }
 
     @Override
-    protected Float[] sensedValue(Float[] input) {
+    protected Float[] sensedValues(Float[] input) {
         return input;
     }
 

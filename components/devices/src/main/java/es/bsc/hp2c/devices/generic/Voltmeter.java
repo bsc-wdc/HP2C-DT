@@ -23,9 +23,9 @@ import es.bsc.hp2c.devices.types.Sensor;
 /**
  * Sensor measuring the voltage of the network.
  */
-public abstract class Voltmeter<T> extends Device implements Sensor<T, Float> {
+public abstract class Voltmeter<T> extends Device implements Sensor<T, Float[]> {
 
-    private float value = 0.0f;
+    private Float[] values = { 0.0f };
     private ArrayList<Runnable> onReadFunctions;
 
     protected Voltmeter(String label, float[] position) {
@@ -51,15 +51,15 @@ public abstract class Voltmeter<T> extends Device implements Sensor<T, Float> {
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract float sensedValue(float input);
+    protected abstract Float[] sensedValues(Float[] input);
 
     @Override
-    public final Float getCurrentValue() {
-        return this.value;
+    public final Float[] getCurrentValues() {
+        return this.values;
     }
 
-    protected void setValue(float value) {
-        this.value = value;
+    protected void setValues(Float[] values) {
+        this.values = values;
     }
 
     @Override

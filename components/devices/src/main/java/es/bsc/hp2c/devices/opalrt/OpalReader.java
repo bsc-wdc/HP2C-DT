@@ -59,8 +59,8 @@ public class OpalReader {
                             for (OpalSensor<?> sensor : sensors) {
                                 int[] indexes = sensor.getIndexes();
                                 int idx = indexes[0];
-                                Float sensedValue = values[idx];
-                                sensor.sensed(sensedValue);
+                                Float[] sensedValues = { values[idx] };
+                                sensor.sensed(sensedValues);
                                 sensor.onRead();
                             }
                         }
@@ -110,7 +110,7 @@ public class OpalReader {
         UDP_PORT = port;
     }
 
-    protected static interface OpalSensor<V> extends Sensor<Float, V> {
+    protected static interface OpalSensor<V> extends Sensor<Float[], V> {
         public int[] getIndexes();
     }
 

@@ -24,7 +24,7 @@ import org.json.JSONObject;
 /**
  * Ammeter simulated on an Opal-RT.
  */
-public class OpalAmmeter extends Ammeter<Float> implements OpalSensor<Float> {
+public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]> {
 
     private int[] indexes;
 
@@ -32,7 +32,7 @@ public class OpalAmmeter extends Ammeter<Float> implements OpalSensor<Float> {
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
-        for (int i = 0; i < jIndexes.length(); ++i){
+        for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
         OpalReader.registerDevice(this);
@@ -42,20 +42,22 @@ public class OpalAmmeter extends Ammeter<Float> implements OpalSensor<Float> {
         super(label, position);
         this.indexes = indexes;
     }
-    
+
     @Override
     public int[] getIndexes() {
         return this.indexes;
     }
 
     @Override
-    public void sensed(Float value) {
-        super.setValue(sensedValue(value));
-        System.out.println("Sensor " + getLabel() + " sensed " + super.getCurrentValue() + " A");
+    public void sensed(Float[] values) {
+        super.setValues(sensedValues(values));
+        for (Float value : values) {
+            System.out.println("Sensor " + getLabel() + " sensed " + value + " A");
+        }
     }
 
     @Override
-    protected float sensedValue(float input) {
+    protected Float[] sensedValues(Float[] input) {
         return input;
     }
 

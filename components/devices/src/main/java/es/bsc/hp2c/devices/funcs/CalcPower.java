@@ -19,11 +19,11 @@ public class CalcPower extends Func {
     /**
      * Calcpower method constructor.
      * 
-     * @param sensors  List of sensors declared for the function.
+     * @param sensors   List of sensors declared for the function.
      * @param actuators List of actuators declared for the function.
-     * @param others  Rest of parameters declared for de function.
+     * @param others    Rest of parameters declared for de function.
      */
-    public CalcPower(ArrayList<Sensor<?,?>> sensors, ArrayList<Actuator<?>> actuators, JSONArray others)
+    public CalcPower(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONArray others)
             throws IllegalArgumentException {
 
         super(sensors, actuators, others);
@@ -50,9 +50,9 @@ public class CalcPower extends Func {
 
     @Override
     public void run() {
-        Float voltage = this.voltmeter.getCurrentValue();
-        Float current = this.ammeter.getCurrentValue();
+        Float[] voltage = this.voltmeter.getCurrentValues();
+        Float[] current = this.ammeter.getCurrentValues();
         System.out.println("Calculating power: ");
-        System.out.println("    Power is: " + voltage * current + " W");
+        System.out.println("    Power is: " + voltage[0] * current[0] + " W");
     }
 }

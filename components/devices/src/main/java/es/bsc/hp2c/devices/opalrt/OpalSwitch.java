@@ -25,7 +25,7 @@ import org.json.JSONObject;
 /**
  * Represent a switch implemented accessible within a local OpalRT.
  */
-public class OpalSwitch extends Switch<Float> implements OpalSensor<Switch.State> {
+public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.State> {
 
     private int[] indexes;
 
@@ -33,7 +33,7 @@ public class OpalSwitch extends Switch<Float> implements OpalSensor<Switch.State
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
-        for (int i = 0; i < jIndexes.length(); ++i){
+        for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
         OpalReader.registerDevice(this);
@@ -45,7 +45,7 @@ public class OpalSwitch extends Switch<Float> implements OpalSensor<Switch.State
     }
 
     @Override
-    public void sensed(Float value) {
+    public void sensed(Float[] values) {
         // setValue(sensedValue(value));
         System.out.println("Switch state is " + this.state);
     }

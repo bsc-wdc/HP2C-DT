@@ -37,7 +37,7 @@ public abstract class SmokeSensor<T> extends Device implements Sensor<T, SmokeSe
     protected abstract Smoke sensedSmoke(float val);
 
     @Override
-    public Smoke getCurrentValue() {
+    public Smoke getCurrentValues() {
         return this.status;
     }
 

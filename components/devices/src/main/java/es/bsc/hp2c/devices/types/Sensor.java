@@ -48,5 +48,5 @@ public interface Sensor<T, V> {
      *
      * @return Value stored.
      */
-    public V getCurrentValue();
+    public V getCurrentValues();
 }

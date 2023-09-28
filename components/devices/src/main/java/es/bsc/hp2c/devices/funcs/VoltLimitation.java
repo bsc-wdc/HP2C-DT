@@ -20,11 +20,11 @@ public class VoltLimitation extends Func {
     /**
      * VoltLimitation method constructor.
      * 
-     * @param sensors  List of sensors declared for the function.
+     * @param sensors   List of sensors declared for the function.
      * @param actuators List of actuators declared for the function.
-     * @param others  Rest of parameters declared for de function.
+     * @param others    Rest of parameters declared for de function.
      */
-    public VoltLimitation(ArrayList<Sensor<?,?>> sensors, ArrayList<Actuator<?>> actuators, JSONArray others)
+    public VoltLimitation(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONArray others)
             throws FunctionInstantiationException {
 
         super(sensors, actuators, others);
@@ -52,15 +52,15 @@ public class VoltLimitation extends Func {
 
     @Override
     public void run() {
-        Float voltage = this.voltmeter.getCurrentValue();
-        if (voltage > this.threshold) {
+        Float[] voltage = this.voltmeter.getCurrentValues();
+        if (voltage[0] > this.threshold) {
             System.out.println("Voltage limit exceeded. Turning actuators off...");
 
             try {
                 sw.setValue(Switch.State.OFF);
             } catch (Exception e) {
-                e.printStackTrace(); //MSSG ERROR
-            }   
+                System.err.println("Error while setting switch OFF.");
+            }
         }
     }
 }

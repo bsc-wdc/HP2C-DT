@@ -66,7 +66,7 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
     protected abstract State sensedValue(float input);
 
     @Override
-    public final State getCurrentValue() {
+    public final State getCurrentValues() {
         return this.state;
     }
 
