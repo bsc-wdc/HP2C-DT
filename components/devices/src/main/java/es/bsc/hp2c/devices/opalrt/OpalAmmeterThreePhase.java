@@ -13,20 +13,21 @@ import org.json.JSONObject;
  * OpalAmmeterThreePhase ---- Three-phase Opal-RT voltmeter
  */
 public class OpalAmmeterThreePhase extends ThreePhaseSensor<Float[], OpalAmmeter>
-    implements ThreePhaseOpalSensor<Float[]> {
+        implements ThreePhaseOpalSensor<Float[]> {
     private int[] indexes;
 
     public OpalAmmeterThreePhase(String label, float[] position, JSONObject properties) {
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
-        for (int i = 0; i < jIndexes.length(); ++i){
+        for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
         OpalReader.registerThreePhaseDevice(this);
         subSensors = new OpalAmmeter[super.getNPhases()];
         for (int i = 0; i < super.getNPhases(); i++) {
             String subLabel = label + "." + i;
-            subSensors[i] = new OpalAmmeter(subLabel, position, properties); //IMPLEMENT INDEX
+            int[] indexes = { jIndexes.getInt(i) };
+            subSensors[i] = new OpalAmmeter(subLabel, position, properties, indexes);
         }
     }
 

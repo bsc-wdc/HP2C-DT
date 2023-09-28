@@ -10,21 +10,22 @@ import org.json.JSONObject;
  * OpalVoltmeterThreePhase ---- Three-phase Opal-RT voltmeter
  */
 public class OpalVoltmeterThreePhase extends ThreePhaseSensor<Float[], OpalVoltmeter>
-    implements ThreePhaseOpalSensor<Float[]> {
+        implements ThreePhaseOpalSensor<Float[]> {
     private int[] indexes;
 
     public OpalVoltmeterThreePhase(String label, float[] position, JSONObject properties) {
         super(label, position);
-        JSONArray jIndexes = properties.getJSONArray("indexes"); 
+        JSONArray jIndexes = properties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
-        for (int i = 0; i < jIndexes.length(); ++i){
+        for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
         OpalReader.registerThreePhaseDevice(this);
         subSensors = new OpalVoltmeter[super.getNPhases()];
-        for (int i = 0; i < super.getNPhases(); i++){
+        for (int i = 0; i < super.getNPhases(); i++) {
             String subLabel = label + "." + i;
-            subSensors[i] = new OpalVoltmeter(subLabel, position, properties);
+            int[] indexes = { jIndexes.getInt(i) };
+            subSensors[i] = new OpalVoltmeter(subLabel, position, properties, indexes);
         }
         this.setSubSensors(subSensors);
     }
@@ -35,7 +36,6 @@ public class OpalVoltmeterThreePhase extends ThreePhaseSensor<Float[], OpalVoltm
         for (int i = 0; i < subSensors.length; i++) {
             subSensors[i].sensed(sensedValues[i]);
         }
-        System.out.println("Sensed " + super.getCurrentValue() + " V");
     }
 
     @Override

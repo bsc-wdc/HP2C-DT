@@ -1,6 +1,5 @@
 package es.bsc.hp2c.devices.opalrt;
 
-import es.bsc.hp2c.devices.generic.Voltmeter;
 import es.bsc.hp2c.devices.types.Sensor;
 
 import java.net.DatagramPacket;
@@ -10,9 +9,7 @@ import java.nio.ByteBuffer;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The class OpalReader simulates written values for every sensor.
@@ -38,7 +35,7 @@ public class OpalReader {
                     System.err.println("Error initializing UDP socket at port " + UDP_PORT);
                     throw new RuntimeException(e);
                 }
-                System.out.println("\nConnected to port: " + UDP_PORT+ "\n");
+                System.out.println("\nConnected to port: " + UDP_PORT + "\n");
 
                 while (true) {
                     // Print time each iteration
@@ -60,8 +57,8 @@ public class OpalReader {
 
                         synchronized (OpalReader.sensors) {
                             for (OpalSensor<?> sensor : sensors) {
-                                ArrayList<Integer> indexes = sensor.getIndexes();
-                                int idx = indexes.get(0);
+                                int[] indexes = sensor.getIndexes();
+                                int idx = indexes[0];
                                 Float sensedValue = values[idx];
                                 sensor.sensed(sensedValue);
                                 sensor.onRead();
@@ -69,12 +66,14 @@ public class OpalReader {
                         }
 
                         synchronized (OpalReader.threePhaseSensors) {
-                            for (OpalSensor<?> sensor : sensors) {
-                                int[] indexes = sensor.getIndexes();
-                                int idx = indexes.get(0);
-                                Float sensedValue = values[idx];
-                                sensor.sensed(sensedValue);
-                                sensor.onRead();
+                            for (ThreePhaseOpalSensor<?> threePhaseSensor : threePhaseSensors) {
+                                int[] indexes = threePhaseSensor.getIndexes();
+                                Float[] sensedValues = new Float[indexes.length];
+                                for (int i = 0; i < indexes.length; ++i) {
+                                    sensedValues[i] = values[indexes[i]];
+                                }
+                                threePhaseSensor.sensed(sensedValues);
+                                threePhaseSensor.onRead();
                             }
                         }
 
@@ -107,8 +106,7 @@ public class OpalReader {
         }
     }
 
-
-    public static void setUDPPort(int port){
+    public static void setUDPPort(int port) {
         UDP_PORT = port;
     }
 
