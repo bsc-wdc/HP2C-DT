@@ -17,7 +17,6 @@ import java.util.List;
 public class OpalReader {
 
     private static final List<OpalSensor<?>> sensors = new ArrayList<>();
-    private static final List<ThreePhaseOpalSensor<?>> threePhaseSensors = new ArrayList<>();
     private static float[] values = new float[25];
     private static int UDP_PORT;
     private static DatagramSocket udpSocket;
@@ -58,22 +57,12 @@ public class OpalReader {
                         synchronized (OpalReader.sensors) {
                             for (OpalSensor<?> sensor : sensors) {
                                 int[] indexes = sensor.getIndexes();
-                                int idx = indexes[0];
-                                Float[] sensedValues = { values[idx] };
-                                sensor.sensed(sensedValues);
-                                sensor.onRead();
-                            }
-                        }
-
-                        synchronized (OpalReader.threePhaseSensors) {
-                            for (ThreePhaseOpalSensor<?> threePhaseSensor : threePhaseSensors) {
-                                int[] indexes = threePhaseSensor.getIndexes();
                                 Float[] sensedValues = new Float[indexes.length];
                                 for (int i = 0; i < indexes.length; ++i) {
                                     sensedValues[i] = values[indexes[i]];
                                 }
-                                threePhaseSensor.sensed(sensedValues);
-                                threePhaseSensor.onRead();
+                                sensor.sensed(sensedValues);
+                                sensor.onRead();
                             }
                         }
 
@@ -100,12 +89,6 @@ public class OpalReader {
         }
     }
 
-    public static void registerThreePhaseDevice(ThreePhaseOpalSensor<?> composedSensor) {
-        synchronized (OpalReader.threePhaseSensors) {
-            threePhaseSensors.add(composedSensor);
-        }
-    }
-
     public static void setUDPPort(int port) {
         UDP_PORT = port;
     }
@@ -114,8 +97,4 @@ public class OpalReader {
         public int[] getIndexes();
     }
 
-    protected static interface ThreePhaseOpalSensor<V> extends Sensor<Float[], V> {
-
-        public int[] getIndexes();
-    }
 }

@@ -1,7 +1,7 @@
 package es.bsc.hp2c.devices.opalrt;
 
 import es.bsc.hp2c.devices.generic.ThreePhaseSensor;
-import es.bsc.hp2c.devices.opalrt.OpalReader.ThreePhaseOpalSensor;
+import es.bsc.hp2c.devices.opalrt.OpalReader.OpalSensor;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -13,7 +13,7 @@ import org.json.JSONObject;
  * OpalAmmeterThreePhase ---- Three-phase Opal-RT voltmeter
  */
 public class OpalAmmeterThreePhase extends ThreePhaseSensor<Float[], OpalAmmeter>
-        implements ThreePhaseOpalSensor<Float[]> {
+        implements OpalSensor<Float[]> {
     private int[] indexes;
 
     public OpalAmmeterThreePhase(String label, float[] position, JSONObject properties) {
@@ -22,7 +22,7 @@ public class OpalAmmeterThreePhase extends ThreePhaseSensor<Float[], OpalAmmeter
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerThreePhaseDevice(this);
+        OpalReader.registerDevice(this);
         subSensors = new OpalAmmeter[super.getNPhases()];
         for (int i = 0; i < super.getNPhases(); i++) {
             String subLabel = label + "." + i;
