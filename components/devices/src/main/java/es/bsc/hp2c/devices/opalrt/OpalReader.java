@@ -1,5 +1,7 @@
 package es.bsc.hp2c.devices.opalrt;
 
+import com.rabbitmq.client.Channel;
+import es.bsc.hp2c.HP2CSensors;
 import es.bsc.hp2c.devices.types.Sensor;
 
 import java.net.DatagramPacket;
@@ -20,6 +22,9 @@ public class OpalReader {
     private static float[] values = new float[25];
     private static int UDP_PORT;
     private static DatagramSocket udpSocket;
+    private static Channel channel;
+    private static String baseTopic;
+    private static String EXCHANGE_NAME;
 
     static {
         Thread t = new Thread() {
@@ -35,6 +40,11 @@ public class OpalReader {
                     throw new RuntimeException(e);
                 }
                 System.out.println("\nConnected to port: " + UDP_PORT + "\n");
+
+                // Initialize AMQP communication
+                baseTopic = "edge." + UDP_PORT;
+                channel = HP2CSensors.getChannel();
+                EXCHANGE_NAME = HP2CSensors.getExchangeName();
 
                 while (true) {
                     // Print time each iteration
@@ -63,13 +73,23 @@ public class OpalReader {
                                 }
                                 sensor.sensed(sensedValues);
                                 sensor.onRead();
+
+                                // Publish value to corresponding topic
+                                // TODO: check why getCurrentValues does not work
+                                // float[] measurement = (float[]) sensor.getCurrentValues();
+                                for (int i = 0; i < indexes.length; ++i) {
+                                    String routingKey = baseTopic + "." + indexes[i];
+                                    String message = String.valueOf(values[indexes[i]]);
+                                    channel.basicPublish(EXCHANGE_NAME, routingKey, null,
+                                            message.getBytes("UTF-8"));
+                                }
                             }
                         }
 
                         System.out.println(); // Add empty line at the end of each measurement
                         Thread.sleep(1000);
                     } catch (Exception e) {
-                        System.err.println("Error receiving UDP message.");
+                        System.err.println("Error receiving UDP message: " + e.getMessage());
                     }
                 }
             }
