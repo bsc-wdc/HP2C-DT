@@ -49,9 +49,12 @@ public class HP2CSensors {
      * @param args Setup file.
      */
     public static void main(String[] args) throws Exception {
-        String setupFile = args[0];
-        // String
-        // setupFile="/home/flordan/projects/HP2C-DT/development/testbed/setup/device1.json";
+        String setupFile;
+        if (args.length == 1) {
+            setupFile = args[0];
+        } else {
+            setupFile = "/home/eiraola/projects/hp2cdt/deployments/testbed/setup/device1.json";
+        }
         OpalReader.setUDPPort(getJComms(setupFile));
         Map<String, Device> devices = loadDevices(setupFile);
         loadFunctions(setupFile, devices); // loadFunctions(set, dev)
