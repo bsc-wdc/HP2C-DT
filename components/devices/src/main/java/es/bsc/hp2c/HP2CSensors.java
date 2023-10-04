@@ -20,8 +20,11 @@ import es.bsc.hp2c.devices.types.Device.DeviceInstantiationException;
 import es.bsc.hp2c.devices.funcs.Func;
 import es.bsc.hp2c.devices.opalrt.OpalReader;
 
+import com.rabbitmq.client.*;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -31,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.TimeoutException;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,6 +46,10 @@ import org.json.JSONTokener;
  * storing the devices and functions.
  */
 public class HP2CSensors {
+
+    private static final String EXCHANGE_NAME = "measurements";
+    private static Connection connection;
+    private static Channel channel;
 
     /**
      * Obtain map of devices and load functions.
@@ -55,9 +63,18 @@ public class HP2CSensors {
         } else {
             setupFile = "/home/eiraola/projects/hp2cdt/deployments/testbed/setup/device1.json";
         }
+        setUpMessaging();
         OpalReader.setUDPPort(getJComms(setupFile));
         Map<String, Device> devices = loadDevices(setupFile);
         loadFunctions(setupFile, devices); // loadFunctions(set, dev)
+    }
+
+    private static void setUpMessaging() throws IOException, TimeoutException {
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost("localhost");
+        connection = factory.newConnection();
+        channel = connection.createChannel();
+        channel.exchangeDeclare(EXCHANGE_NAME, "topic");
     }
 
     /**
@@ -135,5 +152,17 @@ public class HP2CSensors {
                 System.err.println("Error parsing " + jFunc + ".");
             }
         }
+    }
+
+    public static Connection getConnection() {
+        return connection;
+    }
+
+    public static Channel getChannel() {
+        return channel;
+    }
+
+    public static String getExchangeName() {
+        return EXCHANGE_NAME;
     }
 }
