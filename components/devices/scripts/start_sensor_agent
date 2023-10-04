@@ -4,7 +4,7 @@
 /opt/COMPSs/Runtime/scripts/user/compss_agent_start --hostname=${AGENT_NAME} --rest_port=${REST_AGENT_PORT} --comm_port=${COMM_AGENT_PORT} &
 AGENT_PID=$!
 
-sleep 3
+sleep 10
 
 curl -s -XPUT http://127.0.0.1:${REST_AGENT_PORT}/COMPSs/startApplication -H "content-type: application/xml" -d \
 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
