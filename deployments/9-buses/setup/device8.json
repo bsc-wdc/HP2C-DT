@@ -1,0 +1,36 @@
+{
+    "devices": [
+        {
+            "label": "Three-Phase Voltmeter Gen1",
+            "driver": "es.bsc.hp2c.devices.opalrt.OpalVoltmeterThreePhase",
+            "position": {
+                "x":20,
+                "y":40
+            },
+
+            "properties": {
+                "indexes": [0,1,2]
+            }
+        },
+        {
+            "label": "Three-Phase Ammeter Gen1",
+            "driver": "es.bsc.hp2c.devices.opalrt.OpalAmmeterThreePhase",
+            "position": {
+                "x":0,
+                "y":0
+            },
+            "properties": {
+                "indexes": [3,4,5]
+            }
+        }
+    ],
+
+    "global-properties":{
+        "comms":{
+            "udp": {
+                "8087": ["Three-Phase Voltmeter Gen1", "Three-Phase Ammeter Gen1"]
+            },
+            "tcp": {}
+        }
+    }
+}
