@@ -75,7 +75,7 @@ public class HP2CSensors {
                 Device d = Device.parseJSON(jDevice);
                 devices.put(d.getLabel(), d);
             } catch (DeviceInstantiationException | ClassNotFoundException | JSONException e) {
-                System.err.println("Error loading device " + jDevice + ". Ignoring it.");
+                System.err.println("Error loading device " + jDevice + ". Ignoring it. " + e.getMessage());
             }
         }
         return devices;
@@ -118,7 +118,7 @@ public class HP2CSensors {
             funcs = config.getJSONArray("funcs");
 
         } catch (Exception e) {
-            System.err.println("Error parsing JSON.");
+            System.err.println("Error parsing JSON for funcs. " + e.getMessage());
         }
         
         for (Object jo : funcs) {
