@@ -77,7 +77,7 @@ public class Server implements AutoCloseable{
         // write your points asynchronously (note: you can adjust the
         // internal time interval if you need via 'enableBatch' call).
         try {
-            Thread.sleep(5_000L);
+            Thread.sleep(5L);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
