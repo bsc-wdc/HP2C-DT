@@ -52,19 +52,24 @@ public class Server implements AutoCloseable{
 
         DeliverCallback callback = (consumerTag, delivery) -> {
             String message = new String (delivery.getBody(), "UTF-8");
-            System.out.println(" [x] Received '" + delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
-            writeDB(message);
+            String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
+            System.out.println(" [x] Received '" + senderRoutingKey + "':'" + message + "'");
+            writeDB(message, senderRoutingKey);
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });
     }
 
-    private void writeDB(String message) {
-        String measurementName = "edge1";
+    private void writeDB(String message, String routingKey) {
+        // Get measurement and tag of the edge measurement. Use "\\" to scape special regex character
+        //   Example: routingKey = "edge.edge8080.voltmeter1"
+        String[] routingKeyParts = routingKey.split("\\.");
+        String measurementName = routingKeyParts[1];
+        String tagName = routingKeyParts[2];
 
         // Write points to InfluxDB.
         influxDB.write(Point.measurement(measurementName)
             .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-            .tag("device", "voltmeter1")
+            .tag("device", tagName)
             .addField("value", Float.valueOf(message))
             .build());
 
