@@ -84,7 +84,7 @@ public class Server implements AutoCloseable{
 
         // Query your data using InfluxQL.
         // https://docs.influxdata.com/influxdb/v1.7/query_language/data_exploration/#the-basic-select-statement
-        QueryResult queryResult = influxDB.query(new Query("SELECT * FROM " + measurementName));
+        QueryResult queryResult = influxDB.query(new Query("SELECT * FROM \"" + measurementName + "\""));
         System.out.println(queryResult);
     }
 
