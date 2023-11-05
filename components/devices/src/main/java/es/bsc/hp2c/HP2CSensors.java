@@ -130,7 +130,6 @@ public class HP2CSensors {
      * @param devices   map of the devices within the edge.
      */
     public static void loadFunctions(String setupFile, Map<String, Device> devices) {
-        Map<String, Runnable> actions = new HashMap<>();
         JSONArray funcs = new JSONArray();
         try {
             String content = new String(Files.readAllBytes(Paths.get(setupFile)), "UTF-8");
@@ -146,7 +145,6 @@ public class HP2CSensors {
             try {
                 String funcLabel = jFunc.optString("label", "");
                 Runnable action = Func.functionParseJSON(jFunc, devices, funcLabel);
-                actions.put(funcLabel, action);
                 Func.checkTriggers(jFunc, devices, action);
             } catch (Exception e) {
                 System.err.println("Error parsing " + jFunc + ".");
