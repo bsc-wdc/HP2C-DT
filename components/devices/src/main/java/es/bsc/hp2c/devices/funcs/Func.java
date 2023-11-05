@@ -113,13 +113,17 @@ public abstract class Func implements Runnable {
     }
 
     /**
-     * Check triggers for a concrete action.
+     * Selects and sets up the triggering method of a Func.
+     * Options:
+     *      onFrequency: sets up a timer to run the Runnable function thread at a given frequency.
+     *      onRead: adds the Runnable function to the sensor's `addOnReadFunction` so that it is triggered every time
+     *          the sensor receives a measurement.
      * 
      * @param jFunc   json description of the function.
      * @param devices map of the devices within the edge.
      * @param action  Runnable that implements the function to trigger.
      */
-    public static void checkTriggers(JSONObject jFunc, Map<String, Device> devices, Runnable action) {
+    public static void setupTrigger(JSONObject jFunc, Map<String, Device> devices, Runnable action) {
         JSONObject jTrigger = jFunc.getJSONObject("trigger");
         String triggerType = jTrigger.optString("type", "");
         JSONArray triggerParams = jTrigger.getJSONArray("parameters");

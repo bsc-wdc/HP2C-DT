@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -145,7 +144,7 @@ public class HP2CSensors {
             try {
                 String funcLabel = jFunc.optString("label", "");
                 Runnable action = Func.functionParseJSON(jFunc, devices, funcLabel);
-                Func.checkTriggers(jFunc, devices, action);
+                Func.setupTrigger(jFunc, devices, action);
             } catch (Exception e) {
                 System.err.println("Error parsing " + jFunc + ".");
             }
