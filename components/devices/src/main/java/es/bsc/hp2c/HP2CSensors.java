@@ -144,11 +144,41 @@ public class HP2CSensors {
         for (Object jo : funcs) {
             JSONObject jFunc = (JSONObject) jo;
             String funcLabel = jFunc.optString("label", "");
+            // Perform Func initialization
             try {
                 Runnable action = Func.functionParseJSON(jFunc, devices, funcLabel);
                 Func.setupTrigger(jFunc, devices, action);
             } catch (FunctionInstantiationException e) {
                 System.err.println("Error initializing function " + funcLabel);
+            }
+        }
+
+        // Load generic functions
+        JSONObject jGlobProp = config.getJSONObject("global-properties");
+        JSONObject jGlobalFuncs = jGlobProp.getJSONObject("funcs");
+        // Loop allSensors functions that apply to all sensors available
+        JSONArray jAllSensorFuncs = jGlobalFuncs.getJSONArray("allSensors");
+        for (Object jo: jAllSensorFuncs) {
+            JSONObject jGlobalFunc = (JSONObject) jo;
+            String funcLabel = jGlobalFunc.optString("label");
+            // Skip device if not a sensor
+            for (Device device: devices.values()) {
+                if (!device.isSensitive()) {
+                    continue;
+                }
+                // Create ArrayList of a single sensor and set it to the JSONObject
+                ArrayList<String> sensorList = new ArrayList<>();
+                sensorList.add(device.getLabel());
+                jGlobalFunc.getJSONObject("parameters").put("sensors", sensorList);
+                // Do same modification to triggers in JSON
+                jGlobalFunc.getJSONObject("trigger").put("parameters", sensorList);
+                // Perform Func initialization
+                try {
+                    Runnable action = Func.functionParseJSON(jGlobalFunc, devices, funcLabel);
+                    Func.setupTrigger(jGlobalFunc, devices, action);
+                } catch (FunctionInstantiationException e) {
+                    System.err.println("Error initializing general function " + funcLabel);
+                }
             }
         }
     }

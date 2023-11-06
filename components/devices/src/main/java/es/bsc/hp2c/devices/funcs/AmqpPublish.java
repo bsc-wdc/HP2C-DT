@@ -2,6 +2,7 @@ package es.bsc.hp2c.devices.funcs;
 
 import es.bsc.hp2c.HP2CSensors;
 import es.bsc.hp2c.devices.types.Actuator;
+import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Sensor;
 
 import com.rabbitmq.client.Channel;
@@ -18,11 +19,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *      edge.<EDGE_ID>.<DEVICE_ID>
  */
 public class AmqpPublish extends Func {
+    private static String baseTopic = "edge";
     private final Sensor<?, ?> sensor;
     private final Channel channel;
-    private final String baseTopic;
+    private final String edgeId;
     private final String EXCHANGE_NAME;
-    private final int[] indexes;
+    private final String sensorLabel;
 
     /**
      * Method constructor.
@@ -44,26 +46,22 @@ public class AmqpPublish extends Func {
         }
 
         // Initialize AMQP communication
-        String edgeId = String.valueOf((int) (Math.random() * 100));
-        baseTopic = "edge." + edgeId;
+        edgeId = String.valueOf((int) (Math.random() * 100));
         channel = HP2CSensors.getChannel();
         EXCHANGE_NAME = HP2CSensors.getExchangeName();
 
-        // Sensor setup
+        // Sensor setup (remove whitespaces from label)
         sensor = sensors.get(0);
-        indexes = new int[] {Integer.valueOf(edgeId)};  // Arbitrary
+        sensorLabel = ((Device) sensor).getLabel().replaceAll("\\s", "");
     }
 
     @Override
     public void run() {
         Float[] values = (Float[]) this.sensor.getCurrentValues();
-
-        // Publish value to the corresponding topic
-        // TODO: check why getCurrentValues does not work
-        // float[] measurement = (float[]) sensor.getCurrentValues();
-        for (int index : indexes) {
-            String routingKey = baseTopic + "." + index;
-            String message = String.valueOf(values[index]);
+        // Publish value to the corresponding topic (Format: edge.<EDGE_ID>.<DEVICE_ID>)
+        for (int i = 0; i < values.length; i++) {
+            String routingKey = baseTopic + "." + edgeId + "." + sensorLabel + "-" + i;
+            String message = String.valueOf(values[i]);
             try {
                 channel.basicPublish(EXCHANGE_NAME, routingKey, null,
                         message.getBytes(UTF_8));

@@ -125,6 +125,24 @@
                     8080: ["Switch Gen1"]
                 }
             }
+        },
+        "funcs": {
+            "allSensors": [
+                {
+                    "label": "AMQPPublish",
+                    "lang": "Java",
+                    "method_name": "es.bsc.hp2c.devices.funcs.AmqpPublish",
+                    "parameters": {
+                        "sensors": ["ALL"],
+                        "actuators": [],
+                        "other": []
+                    },
+                    "trigger": {
+                        "type": "onRead",
+                        "parameters": ["ALL"] 
+                    }
+                }
+            ]
         }
     }
 }
