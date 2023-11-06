@@ -140,6 +140,7 @@ public class HP2CSensors {
         JSONObject config = new JSONObject(content);
 
         // Load specific functions
+        try {
         JSONArray funcs = config.getJSONArray("funcs");
         for (Object jo : funcs) {
             JSONObject jFunc = (JSONObject) jo;
@@ -151,6 +152,9 @@ public class HP2CSensors {
             } catch (FunctionInstantiationException e) {
                 System.err.println("Error initializing function " + funcLabel);
             }
+            }
+        } catch (Exception e) {
+            System.err.println("Warning: Specific funcs might not be available in setup.");;
         }
 
         // Load generic functions
