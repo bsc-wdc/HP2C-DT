@@ -18,6 +18,7 @@ package es.bsc.hp2c;
 import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Device.DeviceInstantiationException;
 import es.bsc.hp2c.devices.funcs.Func;
+import es.bsc.hp2c.devices.funcs.Func.FunctionInstantiationException;
 import es.bsc.hp2c.devices.opalrt.OpalReader;
 
 import com.rabbitmq.client.*;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -129,24 +131,24 @@ public class HP2CSensors {
      * @param devices   map of the devices within the edge.
      */
     public static void loadFunctions(String setupFile, Map<String, Device> devices) {
-        JSONArray funcs = new JSONArray();
+        String content = null;
         try {
-            String content = new String(Files.readAllBytes(Paths.get(setupFile)), "UTF-8");
-            JSONObject config = new JSONObject(content);
-            funcs = config.getJSONArray("funcs");
-
-        } catch (Exception e) {
-            System.err.println("Error parsing JSON for funcs. " + e.getMessage());
+            content = new String(Files.readAllBytes(Paths.get(setupFile)), "UTF-8");
+        } catch (IOException e) {
+            System.err.println("Error reading setup file: " + setupFile);
         }
-        
+        JSONObject config = new JSONObject(content);
+
+        // Load specific functions
+        JSONArray funcs = config.getJSONArray("funcs");
         for (Object jo : funcs) {
             JSONObject jFunc = (JSONObject) jo;
+            String funcLabel = jFunc.optString("label", "");
             try {
-                String funcLabel = jFunc.optString("label", "");
                 Runnable action = Func.functionParseJSON(jFunc, devices, funcLabel);
                 Func.setupTrigger(jFunc, devices, action);
-            } catch (Exception e) {
-                System.err.println("Error parsing " + jFunc + ".");
+            } catch (FunctionInstantiationException e) {
+                System.err.println("Error initializing function " + funcLabel);
             }
         }
     }
