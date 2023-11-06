@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -51,6 +50,7 @@ public class HP2CSensors {
     private static final String EXCHANGE_NAME = "measurements";
     private static Connection connection;
     private static Channel channel;
+    private static boolean amqpOn = true;
 
     /**
      * Obtain map of devices and load functions.
@@ -70,12 +70,19 @@ public class HP2CSensors {
         loadFunctions(setupFile, devices); // loadFunctions(set, dev)
     }
 
-    private static void setUpMessaging() throws IOException, TimeoutException {
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost");
-        connection = factory.newConnection();
-        channel = connection.createChannel();
-        channel.exchangeDeclare(EXCHANGE_NAME, "topic");
+    private static void setUpMessaging() {
+        try {
+            ConnectionFactory factory = new ConnectionFactory();
+            factory.setHost("localhost");
+            connection = factory.newConnection();
+            channel = connection.createChannel();
+            channel.exchangeDeclare(EXCHANGE_NAME, "topic");
+            System.out.println("AMQP connection started.");
+        } catch (IOException | TimeoutException e) {
+            amqpOn = false;
+            System.err.println("Error initializing messaging.");
+            System.err.println("Continuing without AMQP connection.");
+        }
     }
 
     /**
@@ -165,6 +172,9 @@ public class HP2CSensors {
         for (Object jo: jAllSensorFuncs) {
             JSONObject jGlobalFunc = (JSONObject) jo;
             String funcLabel = jGlobalFunc.optString("label");
+            if (funcLabel.equals("AMQPPublish") && !amqpOn) {
+                continue;
+            }
             // Skip device if not a sensor
             for (Device device: devices.values()) {
                 if (!device.isSensitive()) {
