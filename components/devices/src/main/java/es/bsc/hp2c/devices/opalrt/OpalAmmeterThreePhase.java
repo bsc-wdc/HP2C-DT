@@ -42,6 +42,15 @@ public class OpalAmmeterThreePhase extends ThreePhaseSensor<Float[], OpalAmmeter
     }
 
     @Override
+    public Float[] getCurrentValues() {
+        Float[] values = new Float[subSensors.length];
+        for (int i = 0; i < subSensors.length; i++) {
+            values[i] = subSensors[i].getCurrentValues()[0];
+        }
+        return values;
+    }
+
+    @Override
     protected Float[] sensedValues(Float[] input) {
         return input;
     }
