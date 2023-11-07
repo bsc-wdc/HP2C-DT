@@ -26,11 +26,30 @@
     ],
 
     "global-properties":{
+        "label": "edge5",
         "comms":{
             "udp": {
                 "8084": ["Three-Phase Voltmeter Gen1", "Three-Phase Ammeter Gen1"]
             },
             "tcp": {}
+        },
+        "funcs": {
+            "allSensors": [
+                {
+                    "label": "AMQPPublish",
+                    "lang": "Java",
+                    "method_name": "es.bsc.hp2c.devices.funcs.AmqpPublish",
+                    "parameters": {
+                        "sensors": ["ALL"],
+                        "actuators": [],
+                        "other": []
+                    },
+                    "trigger": {
+                        "type": "onRead",
+                        "parameters": ["ALL"] 
+                    }
+                }
+            ]
         }
     }
 }
