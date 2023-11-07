@@ -61,7 +61,7 @@ public class AmqpPublish extends Func {
         Float[] values = (Float[]) this.sensor.getCurrentValues();
         // Publish value to the corresponding topic (Format: edge.<EDGE_ID>.<DEVICE_ID>)
         for (int i = 0; i < values.length; i++) {
-            String routingKey = baseTopic + "." + edgeId + "." + sensorLabel + "-" + i;
+            String routingKey = baseTopic + "." + edgeId + "." + sensorLabel + "-sensor" + i;
             String message = String.valueOf(values[i]);
             try {
                 channel.basicPublish(EXCHANGE_NAME, routingKey, null,
