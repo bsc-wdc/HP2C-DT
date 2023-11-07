@@ -164,8 +164,8 @@ public class HP2CSensors {
                     "Parameter 'label' is missing from the 'global-properties' block or not set in the setup file.");
         }
         JSONObject jGlobalFuncs = jGlobProp.getJSONObject("funcs");
-        // Loop allSensors functions that apply to all sensors available
-        JSONArray jAllSensorFuncs = jGlobalFuncs.getJSONArray("allSensors");
+        // Loop all-sensors functions that apply to all sensors available
+        JSONArray jAllSensorFuncs = jGlobalFuncs.getJSONArray("all-sensors");
         for (Object jo: jAllSensorFuncs) {
             JSONObject jGlobalFunc = (JSONObject) jo;
             String funcLabel = jGlobalFunc.optString("label");

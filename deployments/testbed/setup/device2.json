@@ -35,7 +35,7 @@
             "tcp": {}
         },
         "funcs": {
-            "allSensors": [
+            "all-sensors": [
                 {
                     "label": "AMQPPublish",
                     "lang": "Java",
