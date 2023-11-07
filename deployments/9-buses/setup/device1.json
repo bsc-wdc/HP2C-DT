@@ -26,10 +26,10 @@
     ],
 
     "global-properties":{
-        "label": "edge10",
+        "label": "edge1",
         "comms":{
             "udp": {
-                "8089": ["Three-Phase Voltmeter Gen1", "Three-Phase Ammeter Gen1"]
+                "8080": ["Three-Phase Voltmeter Gen1", "Three-Phase Ammeter Gen1"]
             },
             "tcp": {}
         },
