@@ -26,7 +26,7 @@ import es.bsc.hp2c.devices.types.Sensor;
 /**
  * This class interacts with a switch of the electrical network.
  */
-public abstract class Switch<T> extends Device implements Sensor<T, Switch.State>, Actuator<Switch.State> {
+public abstract class Switch<T> extends Device implements Sensor<T, Switch.State[]>, Actuator<Switch.State[]> {
 
     public enum State {
         ON,
@@ -39,13 +39,17 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
 
     protected State state = State.ON;
 
-    protected Switch(String label, float[] position) {
+    protected Switch(String label, float[] position, int size) {
         super(label, position);
         this.onReadFunctions = new ArrayList<>();
+        this.states = new State[size];
+        for (int i = 0; i < size; ++i){
+            this.states[i] = State.ON;
+        }
     }
 
     @Override
-    public abstract void sensed(T value);
+    public abstract void sensed(T values);
 
     public void addOnReadFunction(Runnable action) {
         this.onReadFunctions.add(action);
@@ -63,15 +67,15 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract State sensedValue(float input);
+    protected abstract State[] sensedValues(float[] input);
 
     @Override
-    public final State getCurrentValues() {
-        return this.state;
+    public final State[] getCurrentValues() {
+        return this.states;
     }
 
     @Override
-    public abstract void setValue(Switch.State value) throws Exception;
+    public abstract void setValues(Switch.State[] values) throws Exception;
 
     @Override
     public boolean isActionable() {

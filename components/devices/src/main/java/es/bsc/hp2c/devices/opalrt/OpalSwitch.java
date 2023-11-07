@@ -25,12 +25,12 @@ import org.json.JSONObject;
 /**
  * Represent a switch implemented accessible within a local OpalRT.
  */
-public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.State> {
+public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.State[]> {
 
     private int[] indexes;
 
     public OpalSwitch(String label, float[] position, JSONObject properties) {
-        super(label, position);
+        super(label, position, properties.getJSONArray("indexes").length());
         JSONArray jIndexes = properties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
         for (int i = 0; i < jIndexes.length(); ++i) {
@@ -40,14 +40,22 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     }
 
     public OpalSwitch(String label, float[] position, JSONObject properties, int[] indexes) {
-        super(label, position);
+        super(label, position, indexes.length);
         this.indexes = indexes;
     }
 
     @Override
     public void sensed(Float[] values) {
-        // setValue(sensedValue(value));
-        System.out.println("Switch state is " + this.state);
+        // setValue(sensedValues(values));
+        if (this.indexes.length > 1){
+            System.out.println("Switch states are: ");
+            for(int i = 0; i < this.states.length; ++i){
+                System.out.println("Switch " + i + " " + this.states[i]);
+            }
+        }
+        else{
+            System.out.println("Switch state is " + this.states[0]);
+        }
     }
 
     @Override
@@ -56,30 +64,32 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     }
 
     @Override
-    protected State sensedValue(float input) {
-        return input > 0.5f ? State.ON : State.OFF;
+    protected State[] sensedValues(float[] input) {
+        State[] states = new State[input.length];
+        if (input.length != this.indexes.length){
+            throw new IllegalArgumentException("Input length must be equal to switch's size");
+        }
+        for (int i = 0; i < input.length; ++i) {
+            states[i] = input[i] > 0.5f ? State.ON : State.OFF;
+        }
+        return states;
     }
 
     @Override
-    public void setValue(State value) {
-        switch (value) {
-            case ON:
-                turnON();
-                break;
-            case OFF:
-                turnOFF();
-                break;
+    public void setValues(State[] values) {
+        this.states = values;
+
+        if (this.indexes.length > 1){
+            System.out.println("New switch states has been set: ");
+            System.out.println("New states are: ");
+            for(int i = 0; i < this.states.length; ++i){
+                System.out.println("Switch " + i + " " + this.states[i]);
+            }
         }
-    }
-
-    private void turnON() {
-        this.state = State.ON;
-        System.out.println("Turning switch ON");
-    }
-
-    private void turnOFF() {
-        this.state = State.OFF;
-        System.out.println("Turning switch OFF");
+        else{
+            System.out.println("New switch state has been set: ");
+            System.out.println("New state is " + this.states[0]);
+        }
     }
 
 }

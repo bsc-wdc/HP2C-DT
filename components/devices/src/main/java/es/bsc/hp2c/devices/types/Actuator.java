@@ -29,6 +29,6 @@ public interface Actuator<V> {
      *
      * @throws Exception there was some problem while performing the action
      */
-    public void setValue(V value) throws Exception;
+    public void setValues(V value) throws Exception;
 
 }

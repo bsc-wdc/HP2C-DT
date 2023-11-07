@@ -33,7 +33,7 @@ public class MsgBox extends MsgAlert {
     }
 
     @Override
-    public final void setValue(String message) {
+    public final void setValues(String message) {
         JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
     }
 

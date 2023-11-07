@@ -57,7 +57,9 @@ public class VoltLimitation extends Func {
             System.out.println("Voltage limit exceeded. Turning actuators off...");
 
             try {
-                sw.setValue(Switch.State.OFF);
+                Switch.State[] states = sw.getCurrentValues();
+                states[0] = Switch.State.OFF;
+                sw.setValues(states);
             } catch (Exception e) {
                 System.err.println("Error while setting switch OFF.");
             }

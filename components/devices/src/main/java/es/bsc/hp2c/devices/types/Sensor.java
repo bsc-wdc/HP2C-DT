@@ -41,7 +41,7 @@ public interface Sensor<T, V> {
      *
      * @param value Type of value to return.
      */
-    public void sensed(T value);
+    public void sensed(T values);
 
     /**
      * Get the value stored.

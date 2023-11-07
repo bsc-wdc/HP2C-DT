@@ -30,7 +30,7 @@ public class Console extends MsgAlert {
 
 
     @Override
-    public void setValue(String message) throws Exception {
+    public void setValues(String message) throws Exception {
         System.out.println(message);
     }
 
