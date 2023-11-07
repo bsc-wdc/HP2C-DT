@@ -47,7 +47,7 @@ public abstract class Ammeter<T> extends Device implements Sensor<T, Float[]> {
     }
 
     /**
-     * Converts a the sensed input to a known value;
+     * Converts the sensed input to a known value;
      * 
      * @param input input value sensed
      * @return corresponding known value
