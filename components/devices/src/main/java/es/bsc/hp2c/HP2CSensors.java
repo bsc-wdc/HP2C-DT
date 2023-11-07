@@ -27,8 +27,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -58,12 +56,12 @@ public class HP2CSensors {
      * 
      * @param args Setup file.
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws FileNotFoundException{
         String setupFile;
         if (args.length == 1) {
             setupFile = args[0];
         } else {
-            setupFile = "/home/eiraola/projects/hp2cdt/deployments/testbed/setup/device1.json";
+            setupFile = "/home/eiraola/projects/hp2cdt/deployments/testbed/setup/device2.json";
         }
         setUpMessaging();
         OpalReader.setUDPPort(getJComms(setupFile));
@@ -110,13 +108,9 @@ public class HP2CSensors {
         return devices;
     }
 
-    private static int getJComms(String setupFile) {
-        InputStream is = null;
-        try {
-            is = new FileInputStream(setupFile);
-        } catch (FileNotFoundException e) {
-            System.err.println("Setup file not found.");
-        }
+    private static int getJComms(String setupFile) throws FileNotFoundException {
+        InputStream is = new FileInputStream(setupFile);
+
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);
         JSONObject jGlobProp = object.getJSONObject("global-properties");
@@ -138,35 +132,32 @@ public class HP2CSensors {
      * @param setupFile String containing JSON file.
      * @param devices   map of the devices within the edge.
      */
-    public static void loadFunctions(String setupFile, Map<String, Device> devices) {
-        String content = null;
-        try {
-            content = new String(Files.readAllBytes(Paths.get(setupFile)), "UTF-8");
-        } catch (IOException e) {
-            System.err.println("Error reading setup file: " + setupFile);
-        }
-        JSONObject config = new JSONObject(content);
+    public static void loadFunctions(String setupFile, Map<String, Device> devices) throws FileNotFoundException {
+        InputStream is = new FileInputStream(setupFile);
+
+        JSONTokener tokener = new JSONTokener(is);
+        JSONObject object = new JSONObject(tokener);
 
         // Load specific functions
         try {
-        JSONArray funcs = config.getJSONArray("funcs");
-        for (Object jo : funcs) {
-            JSONObject jFunc = (JSONObject) jo;
-            String funcLabel = jFunc.optString("label", "");
-            // Perform Func initialization
-            try {
-                Runnable action = Func.functionParseJSON(jFunc, devices, funcLabel);
-                Func.setupTrigger(jFunc, devices, action);
-            } catch (FunctionInstantiationException e) {
-                System.err.println("Error initializing function " + funcLabel);
-            }
+            JSONArray funcs = object.getJSONArray("funcs");
+            for (Object jo : funcs) {
+                JSONObject jFunc = (JSONObject) jo;
+                String funcLabel = jFunc.optString("label", "");
+                // Perform Func initialization
+                try {
+                    Runnable action = Func.functionParseJSON(jFunc, devices, funcLabel);
+                    Func.setupTrigger(jFunc, devices, action);
+                } catch (FunctionInstantiationException e) {
+                    System.err.println("Error initializing function " + funcLabel);
+                }
             }
         } catch (Exception e) {
-            System.err.println("Warning: Specific funcs might not be available in setup.");;
+            System.err.println("Warning: Specific funcs might not be available in setup.");
         }
 
         // Load generic functions
-        JSONObject jGlobProp = config.getJSONObject("global-properties");
+        JSONObject jGlobProp = object.getJSONObject("global-properties");
         edgeLabel = jGlobProp.optString("label");
         if (edgeLabel.isEmpty()) {
             throw new IllegalArgumentException(
