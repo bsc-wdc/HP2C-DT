@@ -11,6 +11,7 @@ import org.json.JSONArray;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import static es.bsc.hp2c.HP2CSensors.getEdgeLabel;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /*
@@ -46,7 +47,7 @@ public class AmqpPublish extends Func {
         }
 
         // Initialize AMQP communication
-        edgeId = String.valueOf((int) (Math.random() * 100));
+        edgeId = getEdgeLabel();
         channel = HP2CSensors.getChannel();
         EXCHANGE_NAME = HP2CSensors.getExchangeName();
 

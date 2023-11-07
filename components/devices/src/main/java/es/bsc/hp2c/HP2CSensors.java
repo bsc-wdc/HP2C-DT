@@ -47,6 +47,7 @@ import org.json.JSONTokener;
  */
 public class HP2CSensors {
 
+    private static String edgeLabel;
     private static final String EXCHANGE_NAME = "measurements";
     private static Connection connection;
     private static Channel channel;
@@ -166,6 +167,11 @@ public class HP2CSensors {
 
         // Load generic functions
         JSONObject jGlobProp = config.getJSONObject("global-properties");
+        edgeLabel = jGlobProp.optString("label");
+        if (edgeLabel.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Parameter 'label' is missing from the 'global-properties' block or not set in the setup file.");
+        }
         JSONObject jGlobalFuncs = jGlobProp.getJSONObject("funcs");
         // Loop allSensors functions that apply to all sensors available
         JSONArray jAllSensorFuncs = jGlobalFuncs.getJSONArray("allSensors");
@@ -195,6 +201,10 @@ public class HP2CSensors {
                 }
             }
         }
+    }
+
+    public static String getEdgeLabel() {
+        return edgeLabel;
     }
 
     public static Connection getConnection() {

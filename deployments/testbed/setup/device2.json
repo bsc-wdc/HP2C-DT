@@ -27,6 +27,7 @@
     ],
 
     "global-properties":{
+        "label": "edge2",
         "comms":{
             "udp": {
                 "8081": ["Three-Phase Voltmeter Gen1", "Three-Phase Ammeter Gen1"]
