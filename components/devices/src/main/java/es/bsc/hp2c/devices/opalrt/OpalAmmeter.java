@@ -38,7 +38,7 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
         OpalReader.registerDevice(this);
     }
 
-    public OpalAmmeter(String label, float[] position, JSONObject properties, int[] indexes) {
+    public OpalAmmeter(String label, float[] position, int[] indexes) {
         super(label, position);
         this.indexes = indexes;
     }

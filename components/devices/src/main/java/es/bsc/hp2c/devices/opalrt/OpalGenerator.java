@@ -39,7 +39,7 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
         OpalReader.registerDevice(this);
     }
 
-    public OpalGenerator(String label, float[] position, JSONObject properties, int[] indexes) {
+    public OpalGenerator(String label, float[] position, int[] indexes) {
         super(label, position);
         this.indexes = indexes;
     }

@@ -39,7 +39,7 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
         OpalReader.registerDevice(this);
     }
 
-    public OpalSwitch(String label, float[] position, JSONObject properties, int[] indexes) {
+    public OpalSwitch(String label, float[] position, int[] indexes) {
         super(label, position, indexes.length);
         this.indexes = indexes;
     }
