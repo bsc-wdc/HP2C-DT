@@ -24,7 +24,7 @@ import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Sensor;
 
 /**
- * This class interacts with a switch of the electrical network.
+ * This class interacts with a switch of the electrical network. It has a property
  */
 public abstract class Switch<T> extends Device implements Sensor<T, Switch.State[]>, Actuator<Switch.State[]> {
 
@@ -38,6 +38,8 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
     private ArrayList<Runnable> onReadFunctions;
 
     protected State state = State.ON;
+
+    private ArrayList<Runnable> onReadFunctions;
 
     protected Switch(String label, float[] position, int size) {
         super(label, position);

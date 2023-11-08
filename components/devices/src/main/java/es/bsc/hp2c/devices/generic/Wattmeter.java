@@ -22,7 +22,7 @@ import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Sensor;
 
 /**
- * Sensor measuring the intensity of the network.
+ * Sensor measuring the power of the network. It a has property (values) measured in Watts.
  */
 public abstract class Wattmeter<T> extends Device implements Sensor<T, Float[]> {
 
@@ -32,15 +32,30 @@ public abstract class Wattmeter<T> extends Device implements Sensor<T, Float[]> 
     @Override
     public abstract void sensed(T values);
 
+    /**
+     * Creates a new instance of varmeter;
+     *
+     * @param label device label
+     * @param position device position
+     */
     protected Wattmeter(String label, float[] position) {
         super(label, position);
         this.onReadFunctions = new ArrayList<>();
     }
 
+    /**
+     * Adds a runnable to devices "onRead" functions;
+     *
+     * @param action runnable implementing the action
+     */
     public void addOnReadFunction(Runnable action) {
         this.onReadFunctions.add(action);
     }
 
+    /**
+     * Calls actions to be performed in case of a new read;
+     *
+     */
     public void onRead() {
         for (Runnable action : this.onReadFunctions) {
             action.run();

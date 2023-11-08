@@ -8,8 +8,6 @@ MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 
 DEPLOYMENT_PREFIX="hp2c"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
-BASE_PORT=8080
-UDP_PORT=8080
 
 
 # Setting up trap to clear environment
@@ -53,10 +51,8 @@ docker network create hp2c-net > /dev/null 2>/dev/null || { echo "Cannot create 
 # Start device containers
 device_idx=0
 for f in ${setup_folder}/device*.json; do
-    mapped_port=$(( BASE_PORT + device_idx ))
     REST_AGENT_PORT=$((4610 + device_idx))1
     COMM_AGENT_PORT=$((4610 + device_idx))2
-    echo "device${device_idx} UDP port: ${mapped_port}"
     echo "device${device_idx} REST port: ${REST_AGENT_PORT}"
     echo "device${device_idx} COMM port: ${COMM_AGENT_PORT}"
 
