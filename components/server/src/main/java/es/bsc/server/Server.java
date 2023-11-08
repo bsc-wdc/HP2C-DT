@@ -24,7 +24,7 @@ public class Server implements AutoCloseable{
     private final String username = "root", password = "root";
 
     public Server() throws IOException, TimeoutException {
-        // Init RabitMQ
+        // Init RabbitMQ
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("localhost");
         connection = factory.newConnection();
@@ -53,13 +53,14 @@ public class Server implements AutoCloseable{
         DeliverCallback callback = (consumerTag, delivery) -> {
             String message = new String (delivery.getBody(), "UTF-8");
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
+            long timestampMillis = delivery.getProperties().getTimestamp().getTime();
             System.out.println(" [x] Received '" + senderRoutingKey + "':'" + message + "'");
-            writeDB(message, senderRoutingKey);
+            writeDB(message, timestampMillis, senderRoutingKey);
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });
     }
 
-    private void writeDB(String message, String routingKey) {
+    private void writeDB(String message, long timestamp, String routingKey) {
         // Get measurement and tag of the edge measurement. Use "\\" to scape special regex character
         //   Example: routingKey = "edge.edge8080.voltmeter1"
         String[] routingKeyParts = routingKey.split("\\.");
@@ -68,7 +69,7 @@ public class Server implements AutoCloseable{
 
         // Write points to InfluxDB.
         influxDB.write(Point.measurement(measurementName)
-            .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+            .time(timestamp, TimeUnit.MILLISECONDS)
             .tag("device", tagName)
             .addField("value", Float.valueOf(message))
             .build());
