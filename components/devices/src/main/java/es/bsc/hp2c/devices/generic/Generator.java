@@ -22,7 +22,7 @@ import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Sensor;
 
 /**
- * This class interacts with a switch of the electrical network.
+ * Class representing a generator. It has a property (voltageSetPoint) indicating device set point (measured in V).
  */
 public abstract class Generator<T> extends Device implements Sensor<T, Float[]>, Actuator<Float[]> {
 
@@ -30,6 +30,12 @@ public abstract class Generator<T> extends Device implements Sensor<T, Float[]>,
 
     private ArrayList<Runnable> onReadFunctions;
 
+    /**
+     * Creates a new instance of generator;
+     *
+     * @param label device label
+     * @param position device position
+     */
     protected Generator(String label, float[] position) {
         super(label, position);
         this.onReadFunctions = new ArrayList<>();
@@ -38,10 +44,18 @@ public abstract class Generator<T> extends Device implements Sensor<T, Float[]>,
     @Override
     public abstract void sensed(T value);
 
+    /**
+     * Adds a runnable to devices "onRead" functions;
+     *
+     * @param action runnable implementing the action
+     */
     public void addOnReadFunction(Runnable action) {
         this.onReadFunctions.add(action);
     }
 
+    /**
+     * Calls actions to be performed in case of a new read
+     */
     public void onRead() {
         for (Runnable action : this.onReadFunctions) {
             action.run();

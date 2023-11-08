@@ -108,6 +108,12 @@ public class HP2CSensors {
         return devices;
     }
 
+    /**
+     * Parse device's UDP port from JSON
+     *
+     * @param setupFile String containing JSON file.
+     * @return udpPort
+     */
     private static int getJComms(String setupFile) throws FileNotFoundException {
         InputStream is = new FileInputStream(setupFile);
 

@@ -33,7 +33,7 @@ public abstract class Wattmeter<T> extends Device implements Sensor<T, Float[]> 
     public abstract void sensed(T values);
 
     /**
-     * Creates a new instance of varmeter;
+     * Creates a new instance of wattmeter;
      *
      * @param label device label
      * @param position device position
@@ -53,8 +53,7 @@ public abstract class Wattmeter<T> extends Device implements Sensor<T, Float[]> 
     }
 
     /**
-     * Calls actions to be performed in case of a new read;
-     *
+     * Calls actions to be performed in case of a new read
      */
     public void onRead() {
         for (Runnable action : this.onReadFunctions) {

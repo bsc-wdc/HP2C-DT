@@ -24,7 +24,8 @@ import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Sensor;
 
 /**
- * This class interacts with a switch of the electrical network. It has a property
+ * This class interacts with a switch of the electrical network. It has a property (states), representing device's
+ * states (switch state defined as ON/OFF)
  */
 public abstract class Switch<T> extends Device implements Sensor<T, Switch.State[]>, Actuator<Switch.State[]> {
 
@@ -41,6 +42,13 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
 
     private ArrayList<Runnable> onReadFunctions;
 
+    /**
+     * Creates a new instance of switch;
+     *
+     * @param label device label
+     * @param position device position
+     * @param size device number of phases
+     */
     protected Switch(String label, float[] position, int size) {
         super(label, position);
         this.onReadFunctions = new ArrayList<>();
@@ -53,10 +61,19 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
     @Override
     public abstract void sensed(T values);
 
+    /**
+     * Adds a runnable to devices "onRead" functions;
+     *
+     * @param action runnable implementing the action
+     */
     public void addOnReadFunction(Runnable action) {
         this.onReadFunctions.add(action);
     }
 
+    /**
+     * Calls actions to be performed in case of a new read;
+     *
+     */
     public void onRead() {
         for (Runnable action : this.onReadFunctions) {
             action.run();

@@ -28,6 +28,13 @@ public class OpalVarmeter extends Varmeter<Float[]> implements OpalSensor<Float[
 
     private int[] indexes;
 
+    /*
+     * Creates a new instance of OpalVarmeter.
+     *
+     * @param label device label
+     * @param position device position
+     * @param properties JSONObject representing device properties
+     */
     public OpalVarmeter(String label, float[] position, JSONObject properties) {
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
@@ -36,11 +43,6 @@ public class OpalVarmeter extends Varmeter<Float[]> implements OpalSensor<Float[
             this.indexes[i] = (jIndexes.getInt(i));
         }
         OpalReader.registerDevice(this);
-    }
-
-    public OpalVarmeter(String label, float[] position, int[] indexes) {
-        super(label, position);
-        this.indexes = indexes;
     }
 
     @Override

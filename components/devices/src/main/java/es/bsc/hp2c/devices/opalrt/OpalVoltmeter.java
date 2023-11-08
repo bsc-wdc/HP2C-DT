@@ -28,6 +28,13 @@ public class OpalVoltmeter extends Voltmeter<Float[]> implements OpalSensor<Floa
 
     private int[] indexes;
 
+    /*
+     * Creates a new instance of OpalVoltmeter. Useful when the device is declared in a JSON file.
+     *
+     * @param label device label
+     * @param position device position
+     * @param properties JSONObject representing device properties
+     * */
     public OpalVoltmeter(String label, float[] position, JSONObject properties) {
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
@@ -38,6 +45,13 @@ public class OpalVoltmeter extends Voltmeter<Float[]> implements OpalSensor<Floa
         OpalReader.registerDevice(this);
     }
 
+    /*
+     * Creates a new instance of OpalAmmeter. Useful when the device is declared by a three-phase voltmeter.
+     *
+     * @param label device label
+     * @param position device position
+     * @param indexes assigned
+     * */
     public OpalVoltmeter(String label, float[] position, int[] indexes) {
         super(label, position);
         this.indexes = indexes;

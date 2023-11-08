@@ -29,6 +29,13 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
 
     private int[] indexes;
 
+    /*
+     * Creates a new instance of OpalSwitch.
+     *
+     * @param label device label
+     * @param position device position
+     * @param properties JSONObject representing device properties
+     */
     public OpalSwitch(String label, float[] position, JSONObject properties) {
         super(label, position, properties.getJSONArray("indexes").length());
         JSONArray jIndexes = properties.getJSONArray("indexes");
@@ -37,11 +44,6 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
             this.indexes[i] = (jIndexes.getInt(i));
         }
         OpalReader.registerDevice(this);
-    }
-
-    public OpalSwitch(String label, float[] position, int[] indexes) {
-        super(label, position, indexes.length);
-        this.indexes = indexes;
     }
 
     @Override
@@ -66,7 +68,8 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     @Override
     protected State[] sensedValues(float[] input) {
         State[] states = new State[input.length];
-        if (input.length != this.indexes.length){
+        // check if the number of input values equals the number of phases
+        if (input.length != this.indexes.length) {
             throw new IllegalArgumentException("Input length must be equal to switch's size");
         }
         for (int i = 0; i < input.length; ++i) {

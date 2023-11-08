@@ -28,6 +28,13 @@ public class OpalWattmeter extends Wattmeter<Float[]> implements OpalSensor<Floa
 
     private int[] indexes;
 
+    /*
+     * Creates a new instance of OpalWattmeter.
+     *
+     * @param label device label
+     * @param position device position
+     * @param properties JSONObject representing device properties
+     * */
     public OpalWattmeter(String label, float[] position, JSONObject properties) {
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
@@ -36,11 +43,6 @@ public class OpalWattmeter extends Wattmeter<Float[]> implements OpalSensor<Floa
             this.indexes[i] = (jIndexes.getInt(i));
         }
         OpalReader.registerDevice(this);
-    }
-
-    public OpalWattmeter(String label, float[] position, int[] indexes) {
-        super(label, position);
-        this.indexes = indexes;
     }
 
     @Override

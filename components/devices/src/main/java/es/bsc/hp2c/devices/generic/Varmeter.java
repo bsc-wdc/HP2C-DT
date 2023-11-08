@@ -22,8 +22,7 @@ import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Sensor;
 
 /**
- * Sensor measuring the reactive power of the network. It has a property(values) measured in VAR (volt-ampere reactive)
- *
+ * Sensor measuring the reactive power of the network. It has a property (values) measured in VAR (volt-ampere reactive)
  */
 public abstract class Varmeter<T> extends Device implements Sensor<T, Float[]> {
 
@@ -54,8 +53,7 @@ public abstract class Varmeter<T> extends Device implements Sensor<T, Float[]> {
     }
 
     /**
-     * Calls actions to be performed in case of a new read;
-     *
+     * Calls actions to be performed in case of a new read
      */
     public void onRead() {
         for (Runnable action : this.onReadFunctions) {

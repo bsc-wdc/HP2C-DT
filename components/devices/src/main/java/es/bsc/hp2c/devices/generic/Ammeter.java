@@ -22,7 +22,7 @@ import es.bsc.hp2c.devices.types.Device;
 import es.bsc.hp2c.devices.types.Sensor;
 
 /**
- * Sensor measuring the intensity of the network.
+ * Sensor measuring the intensity of the network. It has only one property representing devices current.
  */
 public abstract class Ammeter<T> extends Device implements Sensor<T, Float[]> {
 
@@ -31,15 +31,29 @@ public abstract class Ammeter<T> extends Device implements Sensor<T, Float[]> {
     @Override
     public abstract void sensed(T values);
 
+    /**
+     * Creates a new instance of ammeter;
+     *
+     * @param label device label
+     * @param position device position
+     */
     protected Ammeter(String label, float[] position) {
         super(label, position);
         this.onReadFunctions = new ArrayList<>();
     }
 
+    /**
+     * Adds a runnable to devices "onRead" functions;
+     *
+     * @param action runnable implementing the action
+     */
     public void addOnReadFunction(Runnable action) {
         this.onReadFunctions.add(action);
     }
 
+    /**
+     * Calls actions to be performed in case of a new read
+     */
     public void onRead() {
         for (Runnable action : this.onReadFunctions) {
             action.run();

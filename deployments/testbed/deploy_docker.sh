@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Run one container for each JSON file. Container's name will be "hp2c_" plus
+# the label specified in global-properties.label.
+
 # Loading Constants
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -10,6 +13,8 @@ DEPLOYMENT_PREFIX="hp2c"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 
 setup_folder=$(realpath "${SCRIPT_DIR}/setup")
+
+# create a dictionary containg pairs of label-files(JSON files)
 declare -A labels
 for f in ${setup_folder}/*.json; do
     label=$(jq -r '.["global-properties"].label' "${f}")

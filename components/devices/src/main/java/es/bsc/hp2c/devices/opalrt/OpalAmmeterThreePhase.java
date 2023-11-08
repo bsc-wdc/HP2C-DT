@@ -16,6 +16,13 @@ public class OpalAmmeterThreePhase extends ThreePhaseSensor<Float[], OpalAmmeter
         implements OpalSensor<Float[]> {
     private int[] indexes;
 
+    /*
+     * Creates a new instance of OpalAmmeterThreePhase.
+     *
+     * @param label device label
+     * @param position device position
+     * @param properties JSONObject representing device properties
+     */
     public OpalAmmeterThreePhase(String label, float[] position, JSONObject properties) {
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
@@ -32,6 +39,11 @@ public class OpalAmmeterThreePhase extends ThreePhaseSensor<Float[], OpalAmmeter
         }
     }
 
+    /*
+    * Sends received values to the corresponding sensors
+    *
+    * @param values received
+    */
     @Override
     public void sensed(Float[] values) {
         Float[] sensedValues = sensedValues(values);
