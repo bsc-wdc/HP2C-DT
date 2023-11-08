@@ -8,8 +8,18 @@ MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 
 DEPLOYMENT_PREFIX="hp2c"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
-BASE_PORT=8080
-UDP_PORT=8080
+
+setup_folder=$(realpath "${SCRIPT_DIR}/setup")
+declare -A labels
+for f in ${setup_folder}/*.json; do
+    label=$(jq -r '.["global-properties"].label' "${f}")
+    if [ "$label" != "null" ]; then
+        labels["${label}"]="${f}" 
+    else 
+        echo "Property 'global-properties.label' not found in ${f}"
+    fi
+done
+
 
 
 # Setting up trap to clear environment
@@ -17,10 +27,8 @@ on_exit(){
     echo "Clearing deployment"
 
     echo "Removing containers"
-    device_idx=0
-    for f in ${setup_folder}/device*.json; do
-        docker stop ${DEPLOYMENT_PREFIX}_device_${device_idx}
-        device_idx=$(( device_idx + 1 ))
+    for label in "${!labels[@]}"; do
+        docker stop ${DEPLOYMENT_PREFIX}_"$label"
     done    
 
     echo "Removing network"
@@ -32,10 +40,8 @@ trap 'on_exit' EXIT
 
 # Auxiliar application to wait for all container deployed
 wait_containers(){
-    device_idx=0
-    for f in ${setup_folder}/device*.json; do
-        docker wait ${DEPLOYMENT_PREFIX}_device_${device_idx}
-        device_idx=$(( device_idx + 1 ))
+    for label in "${!labels[@]}"; do
+        docker wait ${DEPLOYMENT_PREFIX}_"$label"
     done   
 }
 
@@ -44,29 +50,25 @@ wait_containers(){
 # SCRIPT MAIN CODE
 #################
 
-setup_folder=$(realpath "${SCRIPT_DIR}/setup")
-
 
 # Create network
 docker network create hp2c-net > /dev/null 2>/dev/null || { echo "Cannot create network"; exit 1; } 
 
 # Start device containers
 device_idx=0
-for f in ${setup_folder}/device*.json; do
-    mapped_port=$(( BASE_PORT + device_idx ))
+for label in "${!labels[@]}"; do
     REST_AGENT_PORT=$((4610 + device_idx))1
     COMM_AGENT_PORT=$((4610 + device_idx))2
-    echo "device${device_idx} UDP port: ${mapped_port}"
-    echo "device${device_idx} REST port: ${REST_AGENT_PORT}"
-    echo "device${device_idx} COMM port: ${COMM_AGENT_PORT}"
+    echo "$label REST port: ${REST_AGENT_PORT}"
+    echo "$label COMM port: ${COMM_AGENT_PORT}"
 
-    echo "deploying container for $f"
+    echo "deploying container for $label"
     docker \
         run \
         -d --rm \
-        --name ${DEPLOYMENT_PREFIX}_device_${device_idx} \
+        --name ${DEPLOYMENT_PREFIX}_"$label" \
         --network host \
-        -v ${f}:/data/setup.json \
+        -v ${labels[$label]}:/data/setup.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
         ${DEVICES_DOCKER_IMAGE} 
