@@ -30,7 +30,7 @@
         "label": "edge2",
         "comms":{
             "udp": {
-                "21001": ["Three-Phase Voltmeter Gen1", "Three-Phase Ammeter Gen1"]
+                "21002": ["Three-Phase Voltmeter Gen1", "Three-Phase Ammeter Gen1"]
             },
             "tcp": {}
         },
