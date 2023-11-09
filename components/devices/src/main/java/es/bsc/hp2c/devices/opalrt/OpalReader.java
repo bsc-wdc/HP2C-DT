@@ -47,7 +47,7 @@ public class OpalReader {
                         byte[] buffer = new byte[values.length * Float.BYTES];
                         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                         udpSocket.receive(packet);
-
+                        System.out.println("Packet received");
                         ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
                         for (int i = 0; i < values.length; i++) {
                             float receivedValue = byteBuffer.getFloat();
