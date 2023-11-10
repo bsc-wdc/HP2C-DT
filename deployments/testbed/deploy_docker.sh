@@ -33,7 +33,7 @@ on_exit(){
 
     echo "Removing containers"
     for label in "${!labels[@]}"; do
-        docker stop ${DEPLOYMENT_PREFIX}_"$label"
+        docker stop "$label"
     done    
 
     echo "Removing network"
@@ -46,7 +46,7 @@ trap 'on_exit' EXIT
 # Auxiliar application to wait for all container deployed
 wait_containers(){
     for label in "${!labels[@]}"; do
-        docker wait ${DEPLOYMENT_PREFIX}_"$label"
+        docker wait "$label"
     done   
 }
 
@@ -71,7 +71,7 @@ for label in "${!labels[@]}"; do
     docker \
         run \
         -d --rm \
-        --name ${DEPLOYMENT_PREFIX}_"$label" \
+        --name "$label" \
         --network host \
         -v ${labels[$label]}:/data/setup.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
