@@ -66,7 +66,7 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
         for (Float value : values) {
-            System.out.println("Sensor " + getLabel() + " sensed " + value + " A");
+            System.out.println("Device " + getLabel() + " sensed " + value + " A");
         }
     }
 

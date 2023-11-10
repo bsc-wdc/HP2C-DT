@@ -58,7 +58,7 @@ public class OpalVarmeter extends Varmeter<Float[]> implements OpalSensor<Float[
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        System.out.println("Sensor " + getLabel() + " sensed " + values[0] + " VAR");
+        System.out.println("Device " + getLabel() + " sensed " + values[0] + " VAR");
     }
 
 }

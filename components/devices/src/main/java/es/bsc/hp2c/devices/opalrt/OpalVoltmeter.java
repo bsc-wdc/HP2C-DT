@@ -70,7 +70,7 @@ public class OpalVoltmeter extends Voltmeter<Float[]> implements OpalSensor<Floa
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        System.out.println("Sensor " + getLabel() + " sensed " + values[0] + " V");
+        System.out.println("Device " + getLabel() + " sensed " + values[0] + " V");
     }
 
 }
