@@ -22,9 +22,9 @@ WORKDIR /app
 RUN mvn clean package
 
 FROM compss/java_agents:${COMPSS_VERSION}
-COPY --from=builder /app/target/*.jar /app/sensors.jar
+COPY --from=builder /app/target/*.jar /app/edges.jar
 COPY --from=builder /root/.m2/repository/com/rabbitmq/amqp-client/5.16.0/amqp-client-5.16.0.jar /app/rabbitmq.jar
-ENV CLASSPATH="${CLASSPATH}:/app/sensors.jar:/app/rabbitmq.jar"
+ENV CLASSPATH="${CLASSPATH}:/app/edges.jar:/app/rabbitmq.jar"
 COPY scripts /scripts
 
 CMD [ "/scripts/start_sensor_agent" ]

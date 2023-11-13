@@ -3,7 +3,7 @@
 # Loading Constants
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-DEVICES_DOCKER_IMAGE="hp2c/devices:latest"
+DEVICES_DOCKER_IMAGE="hp2c/edges:latest"
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 
 DEPLOYMENT_PREFIX="hp2c"
