@@ -6,7 +6,7 @@
 # Loading Constants
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-DEVICES_DOCKER_IMAGE="hp2c/edges:latest"
+EDGE_DOCKER_IMAGE="hp2c/edge:latest"
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 
 DEPLOYMENT_PREFIX="hp2c"
@@ -59,11 +59,11 @@ wait_containers(){
 # Create network
 docker network create hp2c-net > /dev/null 2>/dev/null || { echo "Cannot create network"; exit 1; } 
 
-# Start device containers
-device_idx=0
+# Start edge containers
+edge_idx=0
 for label in "${!labels[@]}"; do
-    REST_AGENT_PORT=$((4610 + device_idx))1
-    COMM_AGENT_PORT=$((4610 + device_idx))2
+    REST_AGENT_PORT=$((4610 + edge_idx))1
+    COMM_AGENT_PORT=$((4610 + edge_idx))2
     echo "$label REST port: ${REST_AGENT_PORT}"
     echo "$label COMM port: ${COMM_AGENT_PORT}"
 
@@ -76,8 +76,8 @@ for label in "${!labels[@]}"; do
         -v ${labels[$label]}:/data/setup.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
-        ${DEVICES_DOCKER_IMAGE} 
-    device_idx=$(( device_idx + 1 ))
+        ${EDGE_DOCKER_IMAGE}
+    edge_idx=$(( edge_idx + 1 ))
 done
 
 echo "Testbed properly deployed"
