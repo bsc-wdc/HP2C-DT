@@ -14,7 +14,7 @@ NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 
 setup_folder=$(realpath "${SCRIPT_DIR}/setup")
 
-# create a dictionary containg pairs of label-files(JSON files)
+# Create a dictionary containg pairs of label-files (JSON files)
 declare -A labels
 for f in ${setup_folder}/*.json; do
     label=$(jq -r '.["global-properties"].label' "${f}")

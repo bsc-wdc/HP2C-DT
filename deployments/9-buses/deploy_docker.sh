@@ -9,6 +9,7 @@ MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 DEPLOYMENT_PREFIX="hp2c"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 
+# Create a dictionary containg pairs of label-files (JSON files)
 setup_folder=$(realpath "${SCRIPT_DIR}/setup")
 declare -A labels
 for f in ${setup_folder}/*.json; do
