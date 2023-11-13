@@ -1,4 +1,4 @@
-package bsc.es.hp2c.opalSimulator;
+package es.bsc.hp2c.opalSimulator;
 
 import java.io.DataInputStream;
 import java.net.DatagramPacket;

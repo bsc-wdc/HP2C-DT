@@ -1,4 +1,4 @@
-package es.bsc.server;
+package es.bsc.hp2c.server;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
