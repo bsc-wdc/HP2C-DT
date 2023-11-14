@@ -2,7 +2,7 @@
     "devices": [
         {
             "label": "Three-Phase Voltmeter Gen1",
-            "driver": "es.bsc.hp2c.devices.opalrt.OpalVoltmeterThreePhase",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeterThreePhase",
             "position": {
                 "x":20,
                 "y":40
@@ -14,7 +14,7 @@
         },
         {
             "label": "Three-Phase Ammeter Gen1",
-            "driver": "es.bsc.hp2c.devices.opalrt.OpalAmmeterThreePhase",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalAmmeterThreePhase",
             "position": {
                 "x":0,
                 "y":0
@@ -38,7 +38,7 @@
                 {
                     "label": "AMQPPublish",
                     "lang": "Java",
-                    "method_name": "es.bsc.hp2c.devices.funcs.AmqpPublish",
+                    "method_name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
                     "parameters": {
                         "sensors": ["ALL"],
                         "actuators": [],
