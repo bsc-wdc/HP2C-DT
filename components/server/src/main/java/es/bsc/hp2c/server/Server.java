@@ -91,18 +91,6 @@ public class Server implements AutoCloseable {
             .tag("device", tagName)
             .addField("value", Float.valueOf(message))
             .build());
-
-        // Wait a few seconds in order to let the InfluxDB client write your points asynchronously (note: you can adjust
-        // the internal time interval if you need via 'enableBatch' call). Just for testing to read DB after writing
-        try {
-            Thread.sleep(5L);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        // Query data using InfluxQL for testing
-        QueryResult queryResult = influxDB.query(new Query("SELECT * FROM \"" + measurementName + "\""));
-        System.out.println(queryResult);
     }
 
     /**
