@@ -67,7 +67,7 @@ public class OpalReader {
                         }
 
                         System.out.println(); // Add empty line at the end of each measurement
-                        Thread.sleep(1000);
+                        Thread.sleep(1);
                     } catch (Exception e) {
                         System.err.println("Error receiving UDP message: " + e.getMessage());
                     }
