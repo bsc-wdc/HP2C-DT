@@ -1,9 +1,12 @@
 #!/bin/bash
 
+# Run one container for each JSON file. Container's name will be "hp2c_" plus
+# the label specified in global-properties.label.
+
 # Loading Constants
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-DEVICES_DOCKER_IMAGE="hp2c/edge:latest"
+EDGE_DOCKER_IMAGE="hp2c/edge:latest"
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 
 DEPLOYMENT_PREFIX="hp2c"
@@ -72,7 +75,7 @@ for label in "${!labels[@]}"; do
         -v ${labels[$label]}:/data/setup.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
-        ${DEVICES_DOCKER_IMAGE} 
+        ${EDGE_DOCKER_IMAGE}
     edge_idx=$(( edge_idx + 1 ))
 done
 

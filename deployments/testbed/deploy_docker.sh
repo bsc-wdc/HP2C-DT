@@ -12,9 +12,8 @@ MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 DEPLOYMENT_PREFIX="hp2c"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 
-setup_folder=$(realpath "${SCRIPT_DIR}/setup")
-
 # Create a dictionary containg pairs of label-files (JSON files)
+setup_folder=$(realpath "${SCRIPT_DIR}/setup")
 declare -A labels
 for f in ${setup_folder}/*.json; do
     label=$(jq -r '.["global-properties"].label' "${f}")
@@ -33,7 +32,7 @@ on_exit(){
 
     echo "Removing containers"
     for label in "${!labels[@]}"; do
-        docker stop "$label"
+        docker stop ${DEPLOYMENT_PREFIX}_"$label"
     done    
 
     echo "Removing network"
@@ -46,7 +45,7 @@ trap 'on_exit' EXIT
 # Auxiliar application to wait for all container deployed
 wait_containers(){
     for label in "${!labels[@]}"; do
-        docker wait "$label"
+        docker wait ${DEPLOYMENT_PREFIX}_"$label"
     done   
 }
 
@@ -71,7 +70,7 @@ for label in "${!labels[@]}"; do
     docker \
         run \
         -d --rm \
-        --name "$label" \
+        --name ${DEPLOYMENT_PREFIX}_"$label" \
         --network host \
         -v ${labels[$label]}:/data/setup.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
