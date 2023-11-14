@@ -51,9 +51,9 @@ public class AmqpPublish extends Func {
         channel = HP2CEdge.getChannel();
         EXCHANGE_NAME = HP2CEdge.getExchangeName();
 
-        // Sensor setup (remove whitespaces from label)
+        // Sensor setup (remove whitespaces and dashes to avoid Influx especial characters)
         sensor = sensors.get(0);
-        sensorLabel = ((Device) sensor).getLabel().replaceAll("\\s", "");
+        sensorLabel = ((Device) sensor).getLabel().replaceAll("\\s", "").replaceAll("-", "");
     }
 
     @Override
@@ -61,7 +61,7 @@ public class AmqpPublish extends Func {
         Float[] values = (Float[]) this.sensor.getCurrentValues();
         // Publish value to the corresponding topic (Format: edge.<EDGE_ID>.<DEVICE_ID>)
         for (int i = 0; i < values.length; i++) {
-            String routingKey = baseTopic + "." + edgeId + "." + sensorLabel + "-sensor" + i;
+            String routingKey = baseTopic + "." + edgeId + "." + sensorLabel + "_sensor" + i;
             String message = String.valueOf(values[i]);
             try {
                 channel.basicPublish(EXCHANGE_NAME, routingKey, null,
