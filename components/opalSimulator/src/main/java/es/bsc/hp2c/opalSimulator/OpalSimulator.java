@@ -12,6 +12,7 @@ public class OpalSimulator {
     private static final String SERVER_ADDRESS = "localhost"; 
     private static final int TCP_PORT = 8080;
     private static final int BASE_UDP_PORT = 8080;
+    private static final double frequency = 1.0 / 20.0;  // period = 20 s
 
     public static void main(String[] args) {
         // Get number of ports to open
@@ -36,8 +37,13 @@ public class OpalSimulator {
                 InetAddress address = InetAddress.getByName(SERVER_ADDRESS);
                 while (true) {
                     ByteBuffer byteBuffer = ByteBuffer.allocate(25 * Float.BYTES);
-                    for (int i = 0; i < 25; i++) {
-                        float value = (float) Math.random();
+                    float[] values = genSineValues(25);
+                    // Modify voltages (0, 1, 2)
+                    values[0] *= (float) Math.sqrt(2) * 230;
+                    values[1] *= (float) Math.sqrt(2) * 230;
+                    values[2] *= (float) Math.sqrt(2) * 230;
+                    for (float value: values) {
+                        // float value = (float) Math.random();
                         byteBuffer.putFloat(value);
                         System.out.println("Prepared UDP value: " + value);
                     }
@@ -45,7 +51,7 @@ public class OpalSimulator {
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, udpPort);
                     udpSocket.send(packet);
                     System.out.println("Sent UDP packet.");
-                    Thread.sleep(1000);
+                    Thread.sleep(10);
                 }
             } catch (Exception e) {
                 System.err.println("Error sending data through UDP.");
@@ -69,4 +75,17 @@ public class OpalSimulator {
         }).start();
     }
 
+    public static float[] genSineValues(int size) {
+        float[] values = new float[size];
+        long currentTimeMillis = System.currentTimeMillis();
+        double time = currentTimeMillis / 1000.0; // Convert milliseconds to seconds
+        double angularFrequency = 2 * Math.PI * frequency;
+
+        for (int i = 0; i < size; i++) {
+            double shift = i * (2 * Math.PI / 3);
+            values[i] = (float) Math.sin(angularFrequency * time + shift);
+        }
+
+        return values;
+    }
 }
