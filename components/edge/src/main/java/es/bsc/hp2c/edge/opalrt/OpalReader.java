@@ -2,9 +2,7 @@ package es.bsc.hp2c.edge.opalrt;
 
 import es.bsc.hp2c.edge.types.Sensor;
 
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -19,6 +17,7 @@ public class OpalReader {
     private static final List<OpalSensor<?>> sensors = new ArrayList<>();
     private static float[] values = new float[25];
     private static int UDP_PORT;
+    private static String UDP_IP;
     private static DatagramSocket udpSocket;
 
     static {
@@ -26,12 +25,15 @@ public class OpalReader {
             public void run() {
                 // Initialize UDP server socket to read measurements
                 try {
+                    InetAddress serverAddress = InetAddress.getByName(UDP_IP);
                     if (UDP_PORT == 0) {
                         throw new SocketException();
                     }
-                    udpSocket = new DatagramSocket(UDP_PORT);
+                    udpSocket = new DatagramSocket(UDP_PORT, serverAddress);
                 } catch (SocketException e) {
-                    System.err.println("Error initializing UDP socket at port " + UDP_PORT);
+                    System.err.println("Error initializing UDP socket at IP " + UDP_IP +" and port " +  UDP_PORT);
+                    throw new RuntimeException(e);
+                } catch (UnknownHostException e) {
                     throw new RuntimeException(e);
                 }
                 System.out.println("\nConnected to port: " + UDP_PORT + "\n");
@@ -91,6 +93,10 @@ public class OpalReader {
 
     public static void setUDPPort(int port) {
         UDP_PORT = port;
+    }
+
+    public static void setUDPIP(String IP) {
+        UDP_IP = IP;
     }
 
     protected interface OpalSensor<V> extends Sensor<Float[], V> {

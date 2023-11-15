@@ -64,7 +64,21 @@ public class HP2CEdge {
             setupFile = "/home/mauro/Documentos/BSC/hp2cdt/deployments/testbed/setup/edge1.json";
         }
         setUpMessaging();
-        OpalReader.setUDPPort(getJComms(setupFile));
+
+        InputStream is = new FileInputStream(setupFile);
+        JSONTokener tokener = new JSONTokener(is);
+        JSONObject object = new JSONObject(tokener);
+        JSONObject jGlobProp = object.getJSONObject("global-properties");
+        JSONObject jComms = jGlobProp.getJSONObject("comms");
+        JSONObject jUDP = jComms.getJSONObject("udp");
+
+        String ip = getIp(jUDP);
+        TreeMap<Integer, ArrayList<String>> ports = getPorts(jUDP);
+
+        OpalReader.setUDPIP(ip);
+        int firstPort = ports.firstKey();
+        OpalReader.setUDPPort(firstPort);
+
         Map<String, Device> devices = loadDevices(setupFile);
         loadFunctions(setupFile, devices); // loadFunctions(set, dev)
     }
@@ -114,22 +128,34 @@ public class HP2CEdge {
      * @param setupFile String containing JSON file.
      * @return udpPort
      */
-    private static int getJComms(String setupFile) throws FileNotFoundException {
-        InputStream is = new FileInputStream(setupFile);
+    private static TreeMap<Integer, ArrayList<String>> getPorts(JSONObject jProtocol) throws FileNotFoundException {
 
-        JSONTokener tokener = new JSONTokener(is);
-        JSONObject object = new JSONObject(tokener);
-        JSONObject jGlobProp = object.getJSONObject("global-properties");
-        JSONObject jComms = jGlobProp.getJSONObject("comms");
-        JSONObject jUDPPort = jComms.getJSONObject("udp");
+        // Map of pairs IP - Ports (each port can be linked to a list of sensors)
+        TreeMap<Integer, ArrayList<String>> portsDevicesMap = new TreeMap<>();
+        JSONObject jPorts = jProtocol.getJSONObject("ports");
 
         List<String> keysList = new ArrayList<>();
-        Iterator<String> keys = jUDPPort.keys();
+        Iterator<String> keys = jPorts.keys();
         while(keys.hasNext()) {
             keysList.add(keys.next());
         }
-        int udpPort = Integer.parseInt(keysList.get(0));
-        return udpPort;
+
+        for (int i = 0; i < keysList.size(); ++i){
+            String sPort = keysList.get(i);
+            ArrayList<String> sDevices = new ArrayList<>();
+            JSONArray jDevices = jPorts.getJSONArray(sPort);
+            for (int j = 0; j < jDevices.length(); j++) {
+                sDevices.add(jDevices.getString(i));
+            }
+            portsDevicesMap.put(Integer.parseInt(sPort), sDevices);
+        }
+
+        return portsDevicesMap;
+    }
+
+    private static String getIp(JSONObject jProtocol) throws FileNotFoundException {
+        String ip = jProtocol.getString("ip");
+        return ip;
     }
 
     /**

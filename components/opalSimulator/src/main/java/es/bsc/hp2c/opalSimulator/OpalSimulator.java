@@ -9,9 +9,9 @@ import java.nio.ByteBuffer;
 
 public class OpalSimulator {
 
-    private static final String SERVER_ADDRESS = "localhost"; 
+    private static final String SERVER_ADDRESS = "127.0.0.1";
     private static final int TCP_PORT = 8080;
-    private static final int BASE_UDP_PORT = 8080;
+    private static final int BASE_UDP_PORT = 21002;
     private static final double frequency = 1.0 / 20.0;  // period = 20 s
 
     public static void main(String[] args) {
@@ -26,7 +26,7 @@ public class OpalSimulator {
         // Launch communication threads
         for (int i = 0; i < nPorts; i++) {
             int udpPort = BASE_UDP_PORT + i;
-            System.out.println("Starting UDP communication in port " + udpPort);
+            System.out.println("Starting UDP communication in port " + udpPort + " ip " + SERVER_ADDRESS);
             startUDPClient(udpPort);
         }
     }
