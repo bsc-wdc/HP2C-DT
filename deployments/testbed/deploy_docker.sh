@@ -14,11 +14,14 @@ NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 
 # Create a dictionary containg pairs of label-files (JSON files)
 setup_folder=$(realpath "${SCRIPT_DIR}/setup")
-declare -A labels
+declare -A labels_paths
+declare -A labels_ports
 for f in ${setup_folder}/*.json; do
     label=$(jq -r '.["global-properties"].label' "${f}")
+    udp_port=$(jq -r '.["global-properties"].comms.udp.ports | keys_unsorted[0]' "${f}")
     if [ "$label" != "null" ]; then
-        labels["${label}"]="${f}" 
+        labels_paths["${label}"]="${f}"
+        labels_ports["${label}"]="${udp_port}"
     else 
         echo "Property 'global-properties.label' not found in ${f}"
     fi
@@ -31,7 +34,7 @@ on_exit(){
     echo "Clearing deployment"
 
     echo "Removing containers"
-    for label in "${!labels[@]}"; do
+    for label in "${!labels_paths[@]}"; do
         docker stop ${DEPLOYMENT_PREFIX}_"$label"
     done    
 
@@ -44,7 +47,7 @@ trap 'on_exit' EXIT
 
 # Auxiliar application to wait for all container deployed
 wait_containers(){
-    for label in "${!labels[@]}"; do
+    for label in "${!labels_paths[@]}"; do
         docker wait ${DEPLOYMENT_PREFIX}_"$label"
     done   
 }
@@ -60,7 +63,7 @@ docker network create hp2c-net > /dev/null 2>/dev/null || { echo "Cannot create 
 
 # Start edge containers
 edge_idx=0
-for label in "${!labels[@]}"; do
+for label in "${!labels_paths[@]}"; do
     REST_AGENT_PORT=$((4610 + edge_idx))1
     COMM_AGENT_PORT=$((4610 + edge_idx))2
     echo "$label REST port: ${REST_AGENT_PORT}"
@@ -71,8 +74,8 @@ for label in "${!labels[@]}"; do
         run \
         -d --rm \
         --name ${DEPLOYMENT_PREFIX}_"$label" \
-        --network host \
-        -v ${labels[$label]}:/data/setup.json \
+        -p "${labels_ports[$label]}:${labels_ports[$label]}/udp" \
+        -v ${labels_paths[$label]}:/data/setup.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
         ${EDGE_DOCKER_IMAGE}
