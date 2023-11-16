@@ -65,12 +65,7 @@ public class HP2CEdge {
         }
         setUpMessaging();
 
-        InputStream is = new FileInputStream(setupFile);
-        JSONTokener tokener = new JSONTokener(is);
-        JSONObject object = new JSONObject(tokener);
-        JSONObject jGlobProp = object.getJSONObject("global-properties");
-        JSONObject jComms = jGlobProp.getJSONObject("comms");
-        JSONObject jUDP = jComms.getJSONObject("udp");
+        JSONObject jUDP = getjUDP(setupFile);
 
         String ip = getIp(jUDP);
         TreeMap<Integer, ArrayList<String>> ports = getPorts(jUDP);
@@ -81,6 +76,15 @@ public class HP2CEdge {
 
         Map<String, Device> devices = loadDevices(setupFile);
         loadFunctions(setupFile, devices); // loadFunctions(set, dev)
+    }
+
+    private static JSONObject getjUDP(String setupFile) throws FileNotFoundException {
+        InputStream is = new FileInputStream(setupFile);
+        JSONTokener tokener = new JSONTokener(is);
+        JSONObject object = new JSONObject(tokener);
+        JSONObject jGlobProp = object.getJSONObject("global-properties");
+        JSONObject jComms = jGlobProp.getJSONObject("comms");
+        return jComms.getJSONObject("udp");
     }
 
     private static void setUpMessaging() {
@@ -125,10 +129,10 @@ public class HP2CEdge {
     /**
      * Parse device's UDP port from JSON
      *
-     * @param setupFile String containing JSON file.
-     * @return udpPort
+     * @param jProtocol JSON object (UDP section or TCP section)
+     * @return map of pairs IP-Ports (each port can be linked to a list of sensors)
      */
-    private static TreeMap<Integer, ArrayList<String>> getPorts(JSONObject jProtocol) throws FileNotFoundException {
+    private static TreeMap<Integer, ArrayList<String>> getPorts(JSONObject jProtocol) {
 
         // Map of pairs IP - Ports (each port can be linked to a list of sensors)
         TreeMap<Integer, ArrayList<String>> portsDevicesMap = new TreeMap<>();
@@ -153,9 +157,8 @@ public class HP2CEdge {
         return portsDevicesMap;
     }
 
-    private static String getIp(JSONObject jProtocol) throws FileNotFoundException {
-        String ip = jProtocol.getString("ip");
-        return ip;
+    private static String getIp(JSONObject jProtocol) {
+        return jProtocol.getString("ip");
     }
 
     /**
