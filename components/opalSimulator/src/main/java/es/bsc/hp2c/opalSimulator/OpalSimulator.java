@@ -25,7 +25,7 @@ public class OpalSimulator {
         }
         // Launch communication threads
         for (int i = 0; i < nPorts; i++) {
-            int udpPort = BASE_UDP_PORT + i;
+            int udpPort = BASE_UDP_PORT + (i * 1000);
             System.out.println("Starting UDP communication in port " + udpPort + " ip " + SERVER_ADDRESS);
             startUDPClient(udpPort);
         }
