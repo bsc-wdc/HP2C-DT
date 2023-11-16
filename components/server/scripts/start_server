@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Verify I am in the right folder and move one level down otherwise
+if [ ! -d "src" ]; then
+    cd ..
+fi
+
+# Compile and run
+mvn clean package
+mvn exec:java -Dexec.mainClass="es.bsc.hp2c.server.Server"
