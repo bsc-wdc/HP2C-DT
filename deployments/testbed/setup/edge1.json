@@ -1,4 +1,37 @@
 {
+    "global-properties":{
+        "label": "edge1",
+        "comms":{
+            "udp": {
+                "ip": "0.0.0.0",
+                "ports": {
+                    "21002": []
+                }
+            },
+            "tcp": {
+                "9080": []
+            }
+        },
+        "funcs": {
+            "all-sensors": [
+                {
+                    "label": "AMQPPublish",
+                    "lang": "Java",
+                    "method_name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
+                    "parameters": {
+                        "sensors": ["ALL"],
+                        "actuators": [],
+                        "other": []
+                    },
+                    "trigger": {
+                        "type": "onRead",
+                        "parameters": ["ALL"]
+                    }
+                }
+            ]
+        }
+    },
+
     "devices": [
         {
             "label": "Ammeter Gen1",
@@ -79,38 +112,5 @@
                 "parameters": [10] 
             }
         }
-    ],
-
-    "global-properties":{
-        "label": "edge1",
-        "comms":{
-            "udp": {
-                "ip": "0.0.0.0",
-                "ports": {
-                    "21002": []
-                }
-            },
-            "tcp": {
-                "9080": []
-            }
-        },
-        "funcs": {
-            "all-sensors": [
-                {
-                    "label": "AMQPPublish",
-                    "lang": "Java",
-                    "method_name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
-                    "parameters": {
-                        "sensors": ["ALL"],
-                        "actuators": [],
-                        "other": []
-                    },
-                    "trigger": {
-                        "type": "onRead",
-                        "parameters": ["ALL"] 
-                    }
-                }
-            ]
-        }
-    }
+    ]
 }

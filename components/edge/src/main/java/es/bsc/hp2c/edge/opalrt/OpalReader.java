@@ -34,6 +34,7 @@ public class OpalReader {
                     System.err.println("Error initializing UDP socket at IP " + UDP_IP +" and port " +  UDP_PORT);
                     throw new RuntimeException(e);
                 } catch (UnknownHostException e) {
+                    System.err.println("Unable to resolve " + UDP_IP + " for the specified host.");
                     throw new RuntimeException(e);
                 }
                 System.out.println("\nConnected to port: " + UDP_PORT + "\n");

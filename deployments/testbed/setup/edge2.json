@@ -1,4 +1,37 @@
 {
+    "global-properties":{
+        "label": "edge2",
+        "comms":{
+            "udp": {
+                "ip": "0.0.0.0",
+                "ports": {
+                    "22002": []
+                }
+            },
+            "tcp": {
+                "9080": []
+            }
+        },
+        "funcs": {
+            "all-sensors": [
+                {
+                    "label": "AMQPPublish",
+                    "lang": "Java",
+                    "method_name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
+                    "parameters": {
+                        "sensors": ["ALL"],
+                        "actuators": [],
+                        "other": []
+                    },
+                    "trigger": {
+                        "type": "onRead",
+                        "parameters": ["ALL"]
+                    }
+                }
+            ]
+        }
+    },
+
     "devices": [
         {
             "label": "Three-Phase Voltmeter Gen1",
@@ -24,38 +57,5 @@
                 "indexes": [3,4,5]
             }
         }
-    ],
-
-    "global-properties":{
-        "label": "edge2",
-        "comms":{
-            "udp": {
-                "ip": "0.0.0.0",
-                "ports": {
-                    "21003": []
-                }
-            },
-            "tcp": {
-                "9080": []
-            }
-        },
-        "funcs": {
-            "all-sensors": [
-                {
-                    "label": "AMQPPublish",
-                    "lang": "Java",
-                    "method_name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
-                    "parameters": {
-                        "sensors": ["ALL"],
-                        "actuators": [],
-                        "other": []
-                    },
-                    "trigger": {
-                        "type": "onRead",
-                        "parameters": ["ALL"] 
-                    }
-                }
-            ]
-        }
-    }
+    ]
 }
