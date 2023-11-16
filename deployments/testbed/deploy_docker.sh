@@ -16,7 +16,10 @@ NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 setup_folder=$(realpath "${SCRIPT_DIR}/setup")
 declare -A labels_paths
 declare -A labels_ports
-for f in ${setup_folder}/*.json; do
+
+sorted_setup_folder=($(ls -v "${setup_folder}"/*.json))
+
+for f in "${sorted_setup_folder[@]}"; do
     label=$(jq -r '.["global-properties"].label' "${f}")
     udp_port=$(jq -r '.["global-properties"].comms.udp.ports | keys_unsorted[0]' "${f}")
     if [ "$label" != "null" ]; then
