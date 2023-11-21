@@ -65,26 +65,31 @@ public class HP2CEdge {
         }
         setUpMessaging();
 
-        JSONObject jUDP = getjUDP(setupFile);
+        JSONObject jUDP = getjProtocol(setupFile, "udp");
+        JSONObject jTCP = getjProtocol(setupFile, "tcp");
 
-        String ip = getIp(jUDP);
-        TreeMap<Integer, ArrayList<String>> ports = getPorts(jUDP);
+        String ip_udp = getIp(jUDP);
+        TreeMap<Integer, ArrayList<String>> ports_udp = getPorts(jUDP);
+        String ip_tcp = getIp(jTCP);
+        TreeMap<Integer, ArrayList<String>> ports_tcp = getPorts(jTCP);
 
-        OpalReader.setUDPIP(ip);
-        int firstPort = ports.firstKey();
-        OpalReader.setUDPPort(firstPort);
+        OpalReader.setUDP_IP(ip_udp);
+        OpalReader.setUDP_PORT(ports_udp.firstKey());
+        OpalReader.setTCP_IP(ip_tcp);
+        OpalReader.setTCP_PORT(ports_tcp.firstKey());
 
         Map<String, Device> devices = loadDevices(setupFile);
         loadFunctions(setupFile, devices); // loadFunctions(set, dev)
     }
 
-    private static JSONObject getjUDP(String setupFile) throws FileNotFoundException {
+    private static JSONObject getjProtocol(String setupFile, String protocol) throws FileNotFoundException {
         InputStream is = new FileInputStream(setupFile);
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);
         JSONObject jGlobProp = object.getJSONObject("global-properties");
+        OpalReader.setUDP_SENSORS(jGlobProp.getInt("udp-sensors"));
         JSONObject jComms = jGlobProp.getJSONObject("comms");
-        return jComms.getJSONObject("udp");
+        return jComms.getJSONObject(protocol);
     }
 
     private static void setUpMessaging() {
