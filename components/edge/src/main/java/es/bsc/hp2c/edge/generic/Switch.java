@@ -15,6 +15,7 @@
  */
 package es.bsc.hp2c.edge.generic;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import es.bsc.hp2c.edge.types.Actuator;
@@ -55,6 +56,9 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
     @Override
     public abstract void sensed(T values);
 
+    @Override
+    public abstract void actuate(Float[] value, int[] indexes) throws IOException;
+
     /**
      * Adds a runnable to devices "onRead" functions;
      *
@@ -80,7 +84,9 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract State[] sensedValues(float[] input);
+    protected abstract State[] sensedValues(Float[] input);
+
+    protected abstract Float[] actuateValues(State[] values);
 
     @Override
     public final State[] getCurrentValues() {

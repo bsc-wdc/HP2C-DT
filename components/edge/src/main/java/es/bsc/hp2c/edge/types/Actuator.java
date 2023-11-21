@@ -15,6 +15,8 @@
  */
 package es.bsc.hp2c.edge.types;
 
+import java.io.IOException;
+
 /**
  * Class interacting with the real network element.
  *
@@ -30,5 +32,7 @@ public interface Actuator<V> {
      * @throws Exception there was some problem while performing the action
      */
     public void setValues(V value) throws Exception;
+
+    public void actuate(Float[] value, int[] indexes) throws IOException;
 
 }

@@ -44,6 +44,9 @@ public abstract class Generator<T> extends Device implements Sensor<T, Float[]>,
     @Override
     public abstract void sensed(T value);
 
+    @Override
+    public abstract void actuate(Float[] value, int[] indexes);
+
     /**
      * Adds a runnable to devices "onRead" functions;
      *

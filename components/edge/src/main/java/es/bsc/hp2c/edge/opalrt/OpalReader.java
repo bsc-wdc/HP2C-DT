@@ -1,5 +1,6 @@
 package es.bsc.hp2c.edge.opalrt;
 
+import es.bsc.hp2c.edge.types.Actuator;
 import es.bsc.hp2c.edge.types.Sensor;
 
 import java.io.DataInputStream;
@@ -25,6 +26,7 @@ public class OpalReader {
     private static int UDP_SENSORS;
     private static DatagramSocket udpSocket;
     private static ServerSocket tcpSocket;
+    private static Socket actuateSocket;
 
     static {
         Thread t_udp = new Thread() {
@@ -169,8 +171,22 @@ public class OpalReader {
 
     public static void setTCP_IP(String tcp_ip) { TCP_IP = tcp_ip; }
 
+    public static void setActuateSocket(String ip, int port){
+        try {
+            actuateSocket = new Socket(ip, port);
+        } catch (Exception e) {
+            System.err.println("Error connecting to TCP server: " + e.getMessage());
+        }
+    }
+
     protected interface OpalSensor<V> extends Sensor<Float[], V> {
         public int[] getIndexes();
+    }
+
+    protected interface OpalActuator<V> extends Actuator<V> {
+        Socket actuateSocket = OpalReader.actuateSocket;
+        int actuators = OpalReader.sensors.size() - UDP_SENSORS;
+        int udp_sensors = OpalReader.UDP_SENSORS;
     }
 
 }

@@ -37,4 +37,7 @@ public abstract class MsgAlert extends Device implements Actuator<String> {
         return false;
     }
 
+    @Override
+    public abstract void actuate(Float[] value, int[] indexes);
+
 }

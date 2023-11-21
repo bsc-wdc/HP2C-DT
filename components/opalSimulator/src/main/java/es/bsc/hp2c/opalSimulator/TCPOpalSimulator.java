@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
 
 public class TCPOpalSimulator {
 
-    private static final String SERVER_ADDRESS = "127.0.0.1";
+    private static final String SERVER_ADDRESS = "0.0.0.0";
     private static final int BASE_TCP_PORT = 11002;
     private static final double frequency = 1.0 / 20.0;  // period = 20 s
 

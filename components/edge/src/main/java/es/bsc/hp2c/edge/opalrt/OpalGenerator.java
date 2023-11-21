@@ -17,6 +17,7 @@
 package es.bsc.hp2c.edge.opalrt;
 
 import es.bsc.hp2c.edge.generic.Generator;
+import es.bsc.hp2c.edge.generic.Switch;
 import es.bsc.hp2c.edge.opalrt.OpalReader.OpalSensor;
 
 import org.json.JSONArray;
@@ -51,6 +52,15 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
         System.out.println("Device " + getLabel() + " voltage set point is " + values[0] + " V");
+    }
+
+    @Override
+    public void actuate(Float[] value, int[] indexes){
+
+    }
+
+    protected Float[] actuateValues(Float[] values){
+
     }
 
     @Override

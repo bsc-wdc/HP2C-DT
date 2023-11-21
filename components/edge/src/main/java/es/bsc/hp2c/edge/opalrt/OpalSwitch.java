@@ -18,14 +18,19 @@ package es.bsc.hp2c.edge.opalrt;
 
 import es.bsc.hp2c.edge.generic.Switch;
 import es.bsc.hp2c.edge.opalrt.OpalReader.OpalSensor;
+import es.bsc.hp2c.edge.opalrt.OpalReader.OpalActuator;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 /**
  * Represent a switch implemented accessible within a local OpalRT.
  */
-public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.State[]> {
+public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.State[]>, OpalActuator<Switch.State[]> {
 
     private int[] indexes;
 
@@ -61,12 +66,55 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     }
 
     @Override
+    public void actuate(Float[] values, int[] indexes) throws IOException {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(OpalActuator.actuators * Float.BYTES);
+        // Scale actuators indexes (ignore udp sensors)
+        for (int i = 0; i < indexes.length; ++i){
+            indexes[i] -= OpalActuator.udp_sensors;
+        }
+
+        // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
+        for (int i = 0; i < OpalActuator.actuators; ++i){
+            // Check if current index is in indexes
+            boolean found = false;
+            int index = 0; // index in values
+            for (int j : indexes) {
+                if (j == i) {
+                    found = true;
+                    index = j;
+                    break;
+                }
+                index += 1;
+            }
+            if (found){ byteBuffer.putFloat(values[index]); }
+            else { byteBuffer.putFloat(Float.MIN_VALUE); }
+        }
+
+        DataOutputStream outputStream = new DataOutputStream(OpalActuator.actuateSocket.getOutputStream());
+        byte[] buffer = byteBuffer.array();
+        outputStream.write(buffer);
+    }
+
+    protected Float[] actuateValues(State[] values){
+        Float[] outputValues = new Float[values.length];
+        for (int i = 0; i < values.length; ++i){
+            if (values[i] == State.ON){
+                outputValues[i] = 1.0f;
+            }
+            else {
+                outputValues[i] = 0.0f;
+            }
+        }
+        return outputValues;
+    }
+
+    @Override
     public int[] getIndexes() {
         return this.indexes;
     }
 
     @Override
-    protected State[] sensedValues(float[] input) {
+    protected State[] sensedValues(Float[] input) {
         State[] states = new State[input.length];
         // check if the number of input values equals the number of phases
         if (input.length != this.indexes.length) {
@@ -77,6 +125,7 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
         }
         return states;
     }
+
 
     @Override
     public void setValues(State[] values) {

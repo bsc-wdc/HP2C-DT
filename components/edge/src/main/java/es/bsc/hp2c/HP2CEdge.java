@@ -67,16 +67,20 @@ public class HP2CEdge {
 
         JSONObject jUDP = getjProtocol(setupFile, "udp");
         JSONObject jTCP = getjProtocol(setupFile, "tcp");
+        JSONObject jActuate = getjProtocol(setupFile, "actuate");
 
         String ip_udp = getIp(jUDP);
         TreeMap<Integer, ArrayList<String>> ports_udp = getPorts(jUDP);
         String ip_tcp = getIp(jTCP);
         TreeMap<Integer, ArrayList<String>> ports_tcp = getPorts(jTCP);
+        String ip_Actuate = getIp(jActuate);
+        TreeMap<Integer, ArrayList<String>> ports_Actuate = getPorts(jActuate);
 
         OpalReader.setUDP_IP(ip_udp);
         OpalReader.setUDP_PORT(ports_udp.firstKey());
         OpalReader.setTCP_IP(ip_tcp);
         OpalReader.setTCP_PORT(ports_tcp.firstKey());
+        OpalReader.setActuateSocket(ip_Actuate, ports_Actuate.firstKey());
 
         Map<String, Device> devices = loadDevices(setupFile);
         loadFunctions(setupFile, devices); // loadFunctions(set, dev)
