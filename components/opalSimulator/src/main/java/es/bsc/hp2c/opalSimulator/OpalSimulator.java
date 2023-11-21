@@ -1,6 +1,8 @@
 package es.bsc.hp2c.opalSimulator;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -10,7 +12,7 @@ import java.nio.ByteBuffer;
 public class OpalSimulator {
 
     private static final String SERVER_ADDRESS = "127.0.0.1";
-    private static final int TCP_PORT = 8080;
+    private static final int BASE_TCP_PORT = 11002;
     private static final int BASE_UDP_PORT = 21002;
     private static final double frequency = 1.0 / 20.0;  // period = 20 s
 
@@ -27,7 +29,10 @@ public class OpalSimulator {
         for (int i = 0; i < nPorts; i++) {
             int udpPort = BASE_UDP_PORT + (i * 1000);
             System.out.println("Starting UDP communication in port " + udpPort + " ip " + SERVER_ADDRESS);
+            int tcpPort = BASE_TCP_PORT + (i * 1000);
+            System.out.println("Starting UDP communication in port " + udpPort + " ip " + SERVER_ADDRESS);
             startUDPClient(udpPort);
+            startTCPClient(tcpPort);
         }
     }
     
@@ -51,7 +56,7 @@ public class OpalSimulator {
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, udpPort);
                     udpSocket.send(packet);
                     System.out.println("Sent UDP packet.");
-                    Thread.sleep(10);
+                    Thread.sleep(10000);
                 }
             } catch (Exception e) {
                 System.err.println("Error sending data through UDP.");
@@ -59,21 +64,41 @@ public class OpalSimulator {
         }).start();
     }
 
-    private static void startTCPClient() {
+    private static void startTCPClient(int tcpPort) {
         new Thread(() -> {
-            try (Socket socket = new Socket(SERVER_ADDRESS, TCP_PORT);
-                 DataInputStream in = new DataInputStream(socket.getInputStream())) {
-
-                System.out.println("Connected to TCP Server at " + SERVER_ADDRESS);
+            try (Socket tcpSocket = new Socket(SERVER_ADDRESS, tcpPort)) {
                 while (true) {
-                    float receivedValue = in.readFloat();
-                    System.out.println("Received TCP value: " + receivedValue);
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(25 * Float.BYTES);
+                    float[] values = genSineValues(25);
+    
+                    float valueToSubtract = 5.0f;
+                    for (int i = 0; i < values.length; i++) {
+                        values[i] -= valueToSubtract;
+                    }
+    
+                    for (float value : values) {
+                        byteBuffer.putFloat(value);
+                        System.out.println("Prepared TCP value: " + value);
+                    }
+    
+                    try {
+                        DataOutputStream outputStream = new DataOutputStream(tcpSocket.getOutputStream());
+                        byte[] buffer = byteBuffer.array();
+                        outputStream.write(buffer);
+                        System.out.println("Sent TCP packet.");
+                    } catch (IOException e) {
+                        System.err.println("Error sending data through TCP: " + e.getMessage());
+                        break;  // Salir del bucle si hay un error al enviar
+                    }
+    
+                    Thread.sleep(5000);  // Esperar antes de enviar el siguiente paquete
                 }
             } catch (Exception e) {
-                System.err.println("Error with TCP connection.");
+                System.err.println("Error connecting to TCP server: " + e.getMessage());
             }
         }).start();
     }
+
 
     public static float[] genSineValues(int size) {
         float[] values = new float[size];
