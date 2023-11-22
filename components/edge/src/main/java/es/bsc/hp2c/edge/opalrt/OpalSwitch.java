@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * Represent a switch implemented accessible within a local OpalRT.
@@ -48,7 +49,8 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerDevice(this);
+        OpalReader.registerSensor(this);
+        OpalReader.registerActuator(this);
     }
 
     @Override
@@ -66,33 +68,9 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     }
 
     @Override
-    public void actuate(Float[] values, int[] indexes) throws IOException {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(OpalActuator.actuators * Float.BYTES);
-        // Scale actuators indexes (ignore udp sensors)
-        for (int i = 0; i < indexes.length; ++i){
-            indexes[i] -= OpalActuator.udp_sensors;
-        }
-
-        // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
-        for (int i = 0; i < OpalActuator.actuators; ++i){
-            // Check if current index is in indexes
-            boolean found = false;
-            int index = 0; // index in values
-            for (int j : indexes) {
-                if (j == i) {
-                    found = true;
-                    index = j;
-                    break;
-                }
-                index += 1;
-            }
-            if (found){ byteBuffer.putFloat(values[index]); }
-            else { byteBuffer.putFloat(Float.MIN_VALUE); }
-        }
-
-        DataOutputStream outputStream = new DataOutputStream(OpalActuator.actuateSocket.getOutputStream());
-        byte[] buffer = byteBuffer.array();
-        outputStream.write(buffer);
+    public void actuate(State[] raw_values) throws IOException {
+        Float[] values = actuateValues(raw_values);
+        OpalReader.commitActuation(this, values);
     }
 
     protected Float[] actuateValues(State[] values){

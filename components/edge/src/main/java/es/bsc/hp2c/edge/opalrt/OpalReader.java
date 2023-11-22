@@ -4,12 +4,14 @@ import es.bsc.hp2c.edge.types.Actuator;
 import es.bsc.hp2c.edge.types.Sensor;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -18,6 +20,7 @@ import java.util.List;
 public class OpalReader {
 
     private static final List<OpalSensor<?>> sensors = new ArrayList<>();
+    private static final List<OpalActuator<?>> actuators = new ArrayList<>();
     private static float[] values = new float[25];
     private static int UDP_PORT;
     private static int TCP_PORT;
@@ -63,7 +66,6 @@ public class OpalReader {
                         byte[] buffer = new byte[values.length * Float.BYTES];
                         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                         udpSocket.receive(packet);
-                        System.out.println("Packet received");
                         ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
                         for (int i = 0; i < values.length; i++) {
                             float receivedValue = byteBuffer.getFloat();
@@ -126,12 +128,12 @@ public class OpalReader {
                         synchronized (OpalReader.sensors) {
                             for (int i = UDP_SENSORS; i < sensors.size(); ++i) {
                                 OpalSensor<?> sensor = sensors.get(i);
-                                int[] indexes = sensor.getIndexes();
-                                for (int k = 0; k < indexes.length; ++k) {
-                                    indexes[k] -= UDP_SENSORS;
+                                int[] indexes_local = Arrays.copyOf(sensor.getIndexes(), sensor.getIndexes().length);
+                                for (int k = 0; k < indexes_local.length; ++k) {
+                                    indexes_local[k] -= UDP_SENSORS;
                                 }
-                                Float[] sensedValues = new Float[indexes.length];
-                                for (int j = 0; j < indexes.length; ++j) {
+                                Float[] sensedValues = new Float[indexes_local.length];
+                                for (int j = 0; j < indexes_local.length; ++j) {
                                     sensedValues[j] = byteBuffer.getFloat();
                                 }
                                 sensor.sensed(sensedValues);
@@ -155,9 +157,15 @@ public class OpalReader {
      *
      * @param sensor Sensor to register
      */
-    public static void registerDevice(OpalSensor<?> sensor) {
+    public static void registerSensor(OpalSensor<?> sensor) {
         synchronized (OpalReader.sensors) {
             sensors.add(sensor);
+        }
+    }
+
+    public static void registerActuator(OpalActuator<?> actuator) {
+        synchronized (OpalReader.actuators) {
+            actuators.add(actuator);
         }
     }
 
@@ -174,19 +182,58 @@ public class OpalReader {
     public static void setActuateSocket(String ip, int port){
         try {
             actuateSocket = new Socket(ip, port);
+            System.out.println("Connected to server " + ip + " through port " + port);
         } catch (Exception e) {
-            System.err.println("Error connecting to TCP server: " + e.getMessage());
+            System.err.println("Error connecting to ____________TCP server: " + e.getMessage());
+        }
+    }
+
+    public static void commitActuation(OpalActuator<?> actuator, Float[] values) throws IOException {
+        int nIndexes = 0;
+        for (OpalActuator<?> opalActuator : actuators) {
+            int nIndexesDevice = opalActuator.getIndexes().length;
+            nIndexes += nIndexesDevice;
+        }
+        ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
+
+        // Scale actuators indexes (ignore udp sensors)
+        int[] indexes_local = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
+        for (int i = 0; i < indexes_local.length; ++i){
+            indexes_local[i] -= UDP_SENSORS;
+        }
+
+        // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
+        for (int i = 0; i < actuators.size(); ++i){
+            // Check if current index is in indexes
+            boolean found = false;
+            int index = 0; // index in values
+            for (int j : indexes_local) {
+                if (j == i) {
+                    found = true;
+                    break;
+                }
+                index += 1;
+            }
+            if (found){ byteBuffer.putFloat(values[index]); }
+            else { byteBuffer.putFloat(Float.NEGATIVE_INFINITY); }
+        }
+
+        DataOutputStream outputStream = new DataOutputStream(actuateSocket.getOutputStream());
+        byte[] buffer = byteBuffer.array();
+        outputStream.write(buffer);
+        System.out.print("Packet sent with pairs value/index: ");
+        for (int i = 0; i < values.length; ++i){
+            System.out.print(values[i]);
+            System.out.print("/" + indexes_local[i]);
+            System.out.println("");
         }
     }
 
     protected interface OpalSensor<V> extends Sensor<Float[], V> {
-        public int[] getIndexes();
+        int[] getIndexes();
     }
 
     protected interface OpalActuator<V> extends Actuator<V> {
-        Socket actuateSocket = OpalReader.actuateSocket;
-        int actuators = OpalReader.sensors.size() - UDP_SENSORS;
-        int udp_sensors = OpalReader.UDP_SENSORS;
+        int[] getIndexes();
     }
-
 }

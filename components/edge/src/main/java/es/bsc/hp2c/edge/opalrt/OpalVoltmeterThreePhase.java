@@ -27,7 +27,7 @@ public class OpalVoltmeterThreePhase extends ThreePhaseSensor<Float[], OpalVoltm
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerDevice(this);
+        OpalReader.registerSensor(this);
         subSensors = new OpalVoltmeter[super.getNPhases()];
         for (int i = 0; i < super.getNPhases(); i++) {
             String subLabel = label + "." + i;

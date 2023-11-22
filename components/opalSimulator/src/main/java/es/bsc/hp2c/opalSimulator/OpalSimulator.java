@@ -56,7 +56,7 @@ public class OpalSimulator {
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, udpPort);
                     udpSocket.send(packet);
                     System.out.println("Sent UDP packet.");
-                    Thread.sleep(10000);
+                    Thread.sleep(5000);
                 }
             } catch (Exception e) {
                 System.err.println("Error sending data through UDP.");

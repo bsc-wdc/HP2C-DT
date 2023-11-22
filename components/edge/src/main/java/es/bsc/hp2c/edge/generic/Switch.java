@@ -57,7 +57,7 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
     public abstract void sensed(T values);
 
     @Override
-    public abstract void actuate(Float[] value, int[] indexes) throws IOException;
+    public abstract void actuate(State[] values) throws IOException;
 
     /**
      * Adds a runnable to devices "onRead" functions;

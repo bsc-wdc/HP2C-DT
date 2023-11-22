@@ -34,4 +34,8 @@ public class Console extends MsgAlert {
         System.out.println(message);
     }
 
+    @Override
+    public void actuate(String values) {
+
+    }
 }

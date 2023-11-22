@@ -33,6 +33,6 @@ public interface Actuator<V> {
      */
     public void setValues(V value) throws Exception;
 
-    public void actuate(Float[] value, int[] indexes) throws IOException;
+    public void actuate(V values) throws IOException;
 
 }

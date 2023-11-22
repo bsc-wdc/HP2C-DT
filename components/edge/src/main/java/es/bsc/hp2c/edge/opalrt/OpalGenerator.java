@@ -19,14 +19,19 @@ package es.bsc.hp2c.edge.opalrt;
 import es.bsc.hp2c.edge.generic.Generator;
 import es.bsc.hp2c.edge.generic.Switch;
 import es.bsc.hp2c.edge.opalrt.OpalReader.OpalSensor;
+import es.bsc.hp2c.edge.opalrt.OpalReader.OpalActuator;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 /**
  * Represent a switch implemented accessible within a local OpalRT.
  */
-public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Float[]> {
+public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Float[]>, OpalActuator<Float[]> {
 
     private int[] indexes;
 
@@ -44,9 +49,9 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerDevice(this);
+        OpalReader.registerSensor(this);
+        OpalReader.registerActuator(this);
     }
-
 
     @Override
     public void sensed(Float[] values) {
@@ -55,12 +60,13 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     }
 
     @Override
-    public void actuate(Float[] value, int[] indexes){
-
+    public void actuate(Float[] raw_values) throws IOException {
+        Float[] values = actuateValues(raw_values);
+        OpalReader.commitActuation(this, values);
     }
 
     protected Float[] actuateValues(Float[] values){
-
+        return values;
     }
 
     @Override

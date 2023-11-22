@@ -42,7 +42,7 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerDevice(this);
+        OpalReader.registerSensor(this);
     }
 
     /*

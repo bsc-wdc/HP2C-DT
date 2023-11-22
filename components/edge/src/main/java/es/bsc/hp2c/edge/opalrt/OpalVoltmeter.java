@@ -42,7 +42,7 @@ public class OpalVoltmeter extends Voltmeter<Float[]> implements OpalSensor<Floa
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerDevice(this);
+        OpalReader.registerSensor(this);
     }
 
     /*

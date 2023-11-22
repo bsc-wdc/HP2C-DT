@@ -74,7 +74,7 @@
                 "y":0
             },
             "properties": {
-                "indexes": [2]
+                "indexes": [3]
             }
         },
         {
@@ -85,7 +85,7 @@
                 "y":0
             },
             "properties": {
-                "indexes": [3]
+                "indexes": [2]
             }
         }
     ],
