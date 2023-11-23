@@ -15,9 +15,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The class OpalReader simulates written values for every sensor.
+ * The class OpalComm simulates written values for every sensor.
  */
-public class OpalReader {
+public class OpalComm {
 
     private static final List<OpalSensor<?>> sensors = new ArrayList<>();
     private static final List<OpalActuator<?>> actuators = new ArrayList<>();
@@ -72,7 +72,7 @@ public class OpalReader {
                             values[i] = receivedValue;
                         }
 
-                        synchronized (OpalReader.sensors) {
+                        synchronized (OpalComm.sensors) {
                             for (int i = 0; i < UDP_SENSORS; ++i){
                                 OpalSensor<?> sensor = sensors.get(i);
                                 int[] indexes = sensor.getIndexes();
@@ -93,7 +93,7 @@ public class OpalReader {
                 }
             }
         };
-        t_udp.setName("OpalReader");
+        t_udp.setName("OpalComm");
         t_udp.start();
 
 
@@ -125,7 +125,7 @@ public class OpalReader {
                         inputStream.readFully(buffer);
                         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
 
-                        synchronized (OpalReader.sensors) {
+                        synchronized (OpalComm.sensors) {
                             for (int i = UDP_SENSORS; i < sensors.size(); ++i) {
                                 OpalSensor<?> sensor = sensors.get(i);
                                 int[] indexes_local = Arrays.copyOf(sensor.getIndexes(), sensor.getIndexes().length);
@@ -158,13 +158,13 @@ public class OpalReader {
      * @param sensor Sensor to register
      */
     public static void registerSensor(OpalSensor<?> sensor) {
-        synchronized (OpalReader.sensors) {
+        synchronized (OpalComm.sensors) {
             sensors.add(sensor);
         }
     }
 
     public static void registerActuator(OpalActuator<?> actuator) {
-        synchronized (OpalReader.actuators) {
+        synchronized (OpalComm.actuators) {
             actuators.add(actuator);
         }
     }

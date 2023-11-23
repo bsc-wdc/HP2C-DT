@@ -1,7 +1,7 @@
 package es.bsc.hp2c.edge.opalrt;
 
 import es.bsc.hp2c.edge.generic.ThreePhaseSensor;
-import es.bsc.hp2c.edge.opalrt.OpalReader.OpalSensor;
+import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -27,7 +27,7 @@ public class OpalAmmeterThreePhase extends ThreePhaseSensor<Float[], OpalAmmeter
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerSensor(this);
+        OpalComm.registerSensor(this);
         subSensors = new OpalAmmeter[super.getNPhases()];
         for (int i = 0; i < super.getNPhases(); i++) {
             String subLabel = label + "." + i;

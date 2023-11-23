@@ -17,16 +17,13 @@
 package es.bsc.hp2c.edge.opalrt;
 
 import es.bsc.hp2c.edge.generic.Switch;
-import es.bsc.hp2c.edge.opalrt.OpalReader.OpalSensor;
-import es.bsc.hp2c.edge.opalrt.OpalReader.OpalActuator;
+import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
+import es.bsc.hp2c.edge.opalrt.OpalComm.OpalActuator;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * Represent a switch implemented accessible within a local OpalRT.
@@ -49,8 +46,8 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerSensor(this);
-        OpalReader.registerActuator(this);
+        OpalComm.registerSensor(this);
+        OpalComm.registerActuator(this);
     }
 
     @Override
@@ -70,7 +67,7 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     @Override
     public void actuate(State[] raw_values) throws IOException {
         Float[] values = actuateValues(raw_values);
-        OpalReader.commitActuation(this, values);
+        OpalComm.commitActuation(this, values);
     }
 
     protected Float[] actuateValues(State[] values){

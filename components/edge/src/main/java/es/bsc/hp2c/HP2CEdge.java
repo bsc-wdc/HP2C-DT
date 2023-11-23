@@ -15,11 +15,11 @@
  */
 package es.bsc.hp2c;
 
+import es.bsc.hp2c.edge.opalrt.OpalComm;
 import es.bsc.hp2c.edge.types.Device;
 import es.bsc.hp2c.edge.types.Device.DeviceInstantiationException;
 import es.bsc.hp2c.edge.funcs.Func;
 import es.bsc.hp2c.edge.funcs.Func.FunctionInstantiationException;
-import es.bsc.hp2c.edge.opalrt.OpalReader;
 
 import com.rabbitmq.client.*;
 
@@ -76,11 +76,11 @@ public class HP2CEdge {
         String ip_Actuate = getIp(jActuate);
         TreeMap<Integer, ArrayList<String>> ports_Actuate = getPorts(jActuate);
 
-        OpalReader.setUDP_IP(ip_udp);
-        OpalReader.setUDP_PORT(ports_udp.firstKey());
-        OpalReader.setTCP_IP(ip_tcp);
-        OpalReader.setTCP_PORT(ports_tcp.firstKey());
-        OpalReader.setActuateSocket(ip_Actuate, ports_Actuate.firstKey());
+        OpalComm.setUDP_IP(ip_udp);
+        OpalComm.setUDP_PORT(ports_udp.firstKey());
+        OpalComm.setTCP_IP(ip_tcp);
+        OpalComm.setTCP_PORT(ports_tcp.firstKey());
+        OpalComm.setActuateSocket(ip_Actuate, ports_Actuate.firstKey());
 
         Map<String, Device> devices = loadDevices(setupFile);
         loadFunctions(setupFile, devices); // loadFunctions(set, dev)
@@ -91,7 +91,7 @@ public class HP2CEdge {
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);
         JSONObject jGlobProp = object.getJSONObject("global-properties");
-        OpalReader.setUDP_SENSORS(jGlobProp.getInt("udp-sensors"));
+        OpalComm.setUDP_SENSORS(jGlobProp.getInt("udp-sensors"));
         JSONObject jComms = jGlobProp.getJSONObject("comms");
         return jComms.getJSONObject(protocol);
     }

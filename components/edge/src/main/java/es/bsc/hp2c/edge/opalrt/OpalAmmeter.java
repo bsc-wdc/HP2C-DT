@@ -16,7 +16,7 @@
 package es.bsc.hp2c.edge.opalrt;
 
 import es.bsc.hp2c.edge.generic.Ammeter;
-import es.bsc.hp2c.edge.opalrt.OpalReader.OpalSensor;
+import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -42,7 +42,7 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerSensor(this);
+        OpalComm.registerSensor(this);
     }
 
     /*
