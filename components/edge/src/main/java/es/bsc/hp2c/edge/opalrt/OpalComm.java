@@ -184,7 +184,8 @@ public class OpalComm {
             actuateSocket = new Socket(ip, port);
             System.out.println("Connected to server " + ip + " through port " + port);
         } catch (Exception e) {
-            System.err.println("Error connecting to ____________TCP server: " + e.getMessage());
+            System.out.println("Failed to connect to server " + ip + " through port " + port);
+            System.err.println("Error connecting to TCP server: " + e.getMessage());
         }
     }
 
@@ -203,7 +204,7 @@ public class OpalComm {
         }
 
         // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
-        for (int i = 0; i < actuators.size(); ++i){
+        for (int i = 0; i < nIndexes; ++i){
             // Check if current index is in indexes
             boolean found = false;
             int index = 0; // index in values
@@ -221,7 +222,7 @@ public class OpalComm {
         DataOutputStream outputStream = new DataOutputStream(actuateSocket.getOutputStream());
         byte[] buffer = byteBuffer.array();
         outputStream.write(buffer);
-        System.out.print("Packet sent with pairs value/index: ");
+        System.out.println("Packet sent with pairs value/index: ");
         for (int i = 0; i < values.length; ++i){
             System.out.print(values[i]);
             System.out.print("/" + indexes_local[i]);

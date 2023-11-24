@@ -15,17 +15,20 @@ NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 # Create a dictionary containg pairs of label-files (JSON files)
 setup_folder=$(realpath "${SCRIPT_DIR}/setup")
 declare -A labels_paths
-declare -A labels_ports
+declare -A labels_udp_ports
+declare -A labels_tcp_sensors_ports
 
 sorted_setup_folder=($(ls -v "${setup_folder}"/*.json))
 
 for f in "${sorted_setup_folder[@]}"; do
     label=$(jq -r '.["global-properties"].label' "${f}")
     udp_port=$(jq -r '.["global-properties"].comms.udp.ports | keys_unsorted[0]' "${f}")
+    tcp_sensors_port=$(jq -r '.["global-properties"].comms.tcp_sensors.ports | keys_unsorted[0]' "${f}")
     if [ "$label" != "null" ]; then
         labels_paths["${label}"]="${f}"
-        labels_ports["${label}"]="${udp_port}"
-    else 
+        labels_udp_ports["${label}"]="${udp_port}"
+        labels_tcp_sensors_ports["${label}"]="${tcp_sensors_port}"
+    else
         echo "Property 'global-properties.label' not found in ${f}"
     fi
 done
@@ -62,7 +65,8 @@ wait_containers(){
 
 
 # Create network
-docker network create hp2c-net > /dev/null 2>/dev/null || { echo "Cannot create network"; exit 1; } 
+docker network create hp2c-net > /dev/null 2>/dev/null || { echo "Cannot create network"; exit 1; }
+
 
 # Start edge containers
 edge_idx=0
@@ -77,7 +81,8 @@ for label in "${!labels_paths[@]}"; do
         run \
         -d --rm \
         --name ${DEPLOYMENT_PREFIX}_"$label" \
-        -p "${labels_ports[$label]}:${labels_ports[$label]}/udp" \
+        -p "${labels_udp_ports[$label]}:${labels_udp_ports[$label]}/udp" \
+        -p "${labels_tcp_sensors_ports[$label]}:${labels_tcp_sensors_ports[$label]}/tcp" \
         -v ${labels_paths[$label]}:/data/setup.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \

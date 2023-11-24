@@ -66,8 +66,8 @@ public class HP2CEdge {
         setUpMessaging();
 
         JSONObject jUDP = getjProtocol(setupFile, "udp");
-        JSONObject jTCP = getjProtocol(setupFile, "tcp");
-        JSONObject jActuate = getjProtocol(setupFile, "actuate");
+        JSONObject jTCP = getjProtocol(setupFile, "tcp_sensors");
+        JSONObject jActuate = getjProtocol(setupFile, "tcp_actuators");
 
         String ip_udp = getIp(jUDP);
         TreeMap<Integer, ArrayList<String>> ports_udp = getPorts(jUDP);
@@ -91,7 +91,7 @@ public class HP2CEdge {
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);
         JSONObject jGlobProp = object.getJSONObject("global-properties");
-        OpalComm.setUDP_SENSORS(jGlobProp.getInt("udp-sensors"));
+        OpalComm.setUDP_SENSORS(jGlobProp.getInt("udp-sensors-indexes"));
         JSONObject jComms = jGlobProp.getJSONObject("comms");
         return jComms.getJSONObject(protocol);
     }

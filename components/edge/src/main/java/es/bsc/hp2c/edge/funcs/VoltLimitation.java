@@ -58,7 +58,7 @@ public class VoltLimitation extends Func {
 
             try {
                 Switch.State[] states = sw.getCurrentValues();
-                Switch.State[] values = {Switch.State.OFF};
+                Switch.State[] values = {Switch.State.OFF, Switch.State.ON, Switch.State.ON};
                 states[0] = Switch.State.OFF;
                 sw.actuate(values);
                 sw.setValues(states);

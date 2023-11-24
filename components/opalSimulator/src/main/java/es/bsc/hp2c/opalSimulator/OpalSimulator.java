@@ -30,7 +30,7 @@ public class OpalSimulator {
             int udpPort = BASE_UDP_PORT + (i * 1000);
             System.out.println("Starting UDP communication in port " + udpPort + " ip " + SERVER_ADDRESS);
             int tcpPort = BASE_TCP_PORT + (i * 1000);
-            System.out.println("Starting UDP communication in port " + udpPort + " ip " + SERVER_ADDRESS);
+            System.out.println("Starting TCP communication in port " + tcpPort + " ip " + SERVER_ADDRESS);
             startUDPClient(udpPort);
             startTCPClient(tcpPort);
         }
@@ -88,10 +88,10 @@ public class OpalSimulator {
                         System.out.println("Sent TCP packet.");
                     } catch (IOException e) {
                         System.err.println("Error sending data through TCP: " + e.getMessage());
-                        break;  // Salir del bucle si hay un error al enviar
+                        break; 
                     }
     
-                    Thread.sleep(5000);  // Esperar antes de enviar el siguiente paquete
+                    Thread.sleep(5000);
                 }
             } catch (Exception e) {
                 System.err.println("Error connecting to TCP server: " + e.getMessage());

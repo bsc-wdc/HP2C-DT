@@ -1,7 +1,7 @@
 {
     "global-properties":{
         "label": "edge2",
-        "udp-sensors": 6,
+        "udp-sensors-indexes": 6,
         "comms":{
             "udp": {
                 "ip": "0.0.0.0",
@@ -9,13 +9,13 @@
                     "22002": []
                 }
             },
-            "tcp": {
+            "tcp_sensors": {
                 "ip": "0.0.0.0",
                 "ports": {
                     "12002": []
                 }
             },
-            "actuate": {
+            "tcp_actuators": {
                 "ip": "0.0.0.0",
                 "ports": {
                     "32002": []
