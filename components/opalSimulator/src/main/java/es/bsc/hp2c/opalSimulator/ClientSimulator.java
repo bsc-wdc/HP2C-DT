@@ -9,14 +9,15 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
-public class OpalSimulator {
+public class ClientSimulator {
 
     private static final String SERVER_ADDRESS = "127.0.0.1";
     private static final int BASE_TCP_PORT = 11002;
     private static final int BASE_UDP_PORT = 21002;
     private static final double frequency = 1.0 / 20.0;  // period = 20 s
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
+        Thread.sleep(5000);
         // Get number of ports to open
         int nPorts;
         if (args.length == 1) {
