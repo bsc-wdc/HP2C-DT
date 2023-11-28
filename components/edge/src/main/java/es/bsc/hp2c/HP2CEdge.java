@@ -68,38 +68,47 @@ public class HP2CEdge {
 
         // Set up AMQP connections
         setUpMessaging(localIP);
+        // Set up udp and tcp connections
+        setupComms(setupFile, localIP);
+        // Load devices and functions
+        Map<String, Device> devices = loadDevices(setupFile);
+        loadFunctions(setupFile, devices);
+    }
 
+    private static void setupComms(String setupFile, String localIP) throws FileNotFoundException {
         // Parse setup file
-        JSONObject jUDP = getjProtocol(setupFile, "udp");
-        JSONObject jTCP = getjProtocol(setupFile, "tcp_sensors");
-        JSONObject jActuate = getjProtocol(setupFile, "tcp_actuators");
+        JSONObject jComms = getjComms(setupFile);
+        JSONObject jUDP = jComms.getJSONObject("udp");
+        JSONObject jTCP= jComms.getJSONObject("tcp_sensors");
+
+        if (jComms.has("tcp_actuators")){
+            OpalComm.setUseTCPActuators();
+            JSONObject jActuate = jComms.getJSONObject("tcp_actuators");
+            TreeMap<Integer, ArrayList<String>> ports_Actuate = getPorts(jActuate);
+            OpalComm.setActuateSocket(localIP, ports_Actuate.firstKey());
+        } else{
+            System.out.println("In order to enable actuations, 'tcp_actuators' must be declared within 'comms' section");
+        }
+
         String ip_udp = getIp(jUDP);
         TreeMap<Integer, ArrayList<String>> ports_udp = getPorts(jUDP);
         String ip_tcp = getIp(jTCP);
         TreeMap<Integer, ArrayList<String>> ports_tcp = getPorts(jTCP);
-        String ip_Actuate = getIp(jActuate);
-        TreeMap<Integer, ArrayList<String>> ports_Actuate = getPorts(jActuate);
 
         // Set local communication parameters
         OpalComm.setUDP_IP(ip_udp);
         OpalComm.setUDP_PORT(ports_udp.firstKey());
         OpalComm.setTCP_IP(ip_tcp);
         OpalComm.setTCP_PORT(ports_tcp.firstKey());
-        OpalComm.setActuateSocket(localIP, ports_Actuate.firstKey());
-
-        // Load devices and functions
-        Map<String, Device> devices = loadDevices(setupFile);
-        loadFunctions(setupFile, devices);
     }
 
-    private static JSONObject getjProtocol(String setupFile, String protocol) throws FileNotFoundException {
+    private static JSONObject getjComms(String setupFile) throws FileNotFoundException {
         InputStream is = new FileInputStream(setupFile);
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);
         JSONObject jGlobProp = object.getJSONObject("global-properties");
         OpalComm.setUDP_SENSORS(jGlobProp.getInt("udp-sensors-indexes"));
-        JSONObject jComms = jGlobProp.getJSONObject("comms");
-        return jComms.getJSONObject(protocol);
+        return jGlobProp.getJSONObject("comms");
     }
 
     private static void setUpMessaging(String ip) {

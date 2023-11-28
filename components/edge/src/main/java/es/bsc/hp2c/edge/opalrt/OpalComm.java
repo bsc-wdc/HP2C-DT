@@ -30,6 +30,7 @@ public class OpalComm {
     private static DatagramSocket udpSocket;
     private static ServerSocket tcpSocket;
     private static Socket actuateSocket;
+    private static boolean useTCPActuators = false;
 
     static {
         Thread t_udp = new Thread() {
@@ -179,6 +180,8 @@ public class OpalComm {
 
     public static void setTCP_IP(String tcp_ip) { TCP_IP = tcp_ip; }
 
+    public static void setUseTCPActuators() { useTCPActuators = true; }
+
     public static void setActuateSocket(String ip, int port){
         try {
             actuateSocket = new Socket(ip, port);
@@ -190,43 +193,45 @@ public class OpalComm {
     }
 
     public static void commitActuation(OpalActuator<?> actuator, Float[] values) throws IOException {
-        int nIndexes = 0;
-        for (OpalActuator<?> opalActuator : actuators) {
-            int nIndexesDevice = opalActuator.getIndexes().length;
-            nIndexes += nIndexesDevice;
-        }
-        ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
-
-        // Scale actuators indexes (ignore udp sensors)
-        int[] indexes_local = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
-        for (int i = 0; i < indexes_local.length; ++i){
-            indexes_local[i] -= UDP_SENSORS;
-        }
-
-        // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
-        for (int i = 0; i < nIndexes; ++i){
-            // Check if current index is in indexes
-            boolean found = false;
-            int index = 0; // index in values
-            for (int j : indexes_local) {
-                if (j == i) {
-                    found = true;
-                    break;
-                }
-                index += 1;
+        if (useTCPActuators){
+            int nIndexes = 0;
+            for (OpalActuator<?> opalActuator : actuators) {
+                int nIndexesDevice = opalActuator.getIndexes().length;
+                nIndexes += nIndexesDevice;
             }
-            if (found){ byteBuffer.putFloat(values[index]); }
-            else { byteBuffer.putFloat(Float.NEGATIVE_INFINITY); }
-        }
+            ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
 
-        DataOutputStream outputStream = new DataOutputStream(actuateSocket.getOutputStream());
-        byte[] buffer = byteBuffer.array();
-        outputStream.write(buffer);
-        System.out.println("Packet sent with pairs value/index: ");
-        for (int i = 0; i < values.length; ++i){
-            System.out.print(values[i]);
-            System.out.print("/" + indexes_local[i]);
-            System.out.println("");
+            // Scale actuators indexes (ignore udp sensors)
+            int[] indexes_local = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
+            for (int i = 0; i < indexes_local.length; ++i){
+                indexes_local[i] -= UDP_SENSORS;
+            }
+
+            // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
+            for (int i = 0; i < nIndexes; ++i){
+                // Check if current index is in indexes
+                boolean found = false;
+                int index = 0; // index in values
+                for (int j : indexes_local) {
+                    if (j == i) {
+                        found = true;
+                        break;
+                    }
+                    index += 1;
+                }
+                if (found){ byteBuffer.putFloat(values[index]); }
+                else { byteBuffer.putFloat(Float.NEGATIVE_INFINITY); }
+            }
+
+            DataOutputStream outputStream = new DataOutputStream(actuateSocket.getOutputStream());
+            byte[] buffer = byteBuffer.array();
+            outputStream.write(buffer);
+            System.out.println("Packet sent with pairs value/index: ");
+            for (int i = 0; i < values.length; ++i){
+                System.out.print(values[i]);
+                System.out.print("/" + indexes_local[i]);
+                System.out.println("");
+            }
         }
     }
 
