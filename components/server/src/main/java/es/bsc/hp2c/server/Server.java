@@ -81,11 +81,15 @@ public class Server implements AutoCloseable {
         System.out.println(" [x] Awaiting requests");
 
         DeliverCallback callback = (consumerTag, delivery) -> {
+            // Parse message. For instance: routingKey = "edge.edge1.voltmeter1"
             String message = new String (delivery.getBody(), "UTF-8");
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
             long timestampMillis = delivery.getProperties().getTimestamp().getTime();
+            String edgeName = getEdgeName(senderRoutingKey);
+            String deviceName = getDeviceName(senderRoutingKey);
             System.out.println(" [x] Received '" + senderRoutingKey + "':'" + message + "'");
-            writeDB(message, timestampMillis, senderRoutingKey);
+            // Write entry in database
+            writeDB(message, timestampMillis, edgeName, deviceName);
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });
     }
@@ -96,15 +100,12 @@ public class Server implements AutoCloseable {
      * (time series) and the third field (DEVICE_ID) as the `tag` value.
      * @param message Message of a measurement in string format.
      * @param timestamp Message timestamp in long integer format.
-     * @param routingKey Routing key/topic the message was published to.
+     * @param measurementName Name of the Influx measurement (series) where we
+     *                        will write. Typically, the name of the edge node.
+     * @param tagName Name of the Influx tag where we will write. Typically,
+     *                the name of the device.
      */
-    private void writeDB(String message, long timestamp, String routingKey) {
-        // Get measurement and tag of the edge measurement. Use "\\" to scape special regex character
-        //   Example: routingKey = "edge.edge8080.voltmeter1"
-        String[] routingKeyParts = routingKey.split("\\.");
-        String measurementName = routingKeyParts[1];
-        String tagName = routingKeyParts[2];
-
+    private void writeDB(String message, long timestamp, String measurementName, String tagName) {
         // Write points to InfluxDB.
         influxDB.write(Point.measurement(measurementName)
             .time(timestamp, TimeUnit.MILLISECONDS)
@@ -143,6 +144,22 @@ public class Server implements AutoCloseable {
 
         // Close when application terminates.
         Runtime.getRuntime().addShutdownHook(new Thread(influxDB::close));
+    }
+
+    /*
+     * Parse device name from the routing key in deliverer's message.
+     */
+    public String getDeviceName(String routingKey){
+        String[] routingKeyParts = routingKey.split("\\.");
+        return routingKeyParts[2];
+    }
+
+    /*
+     * Parse device name from the routing key in deliverer's message.
+     */
+    public String getEdgeName(String routingKey){
+        String[] routingKeyParts = routingKey.split("\\.");
+        return routingKeyParts[1];
     }
 
     @Override
