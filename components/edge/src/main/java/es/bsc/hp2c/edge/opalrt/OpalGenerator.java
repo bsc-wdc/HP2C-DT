@@ -43,6 +43,10 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
+        if (this.indexes.length < 2 ){
+            throw new IllegalArgumentException("Generator indexes must be 2 at least: 1 for voltage Setpoint and 1 " +
+                    "for powerSetpoint");
+        }
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
@@ -53,7 +57,8 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        System.out.println("Device " + getLabel() + " voltage set point is " + values[0] + " V");
+        System.out.println("Device " + getLabel() + " voltage set point is " + this.voltageSetpoint[0] + " V");
+        System.out.println("Device " + getLabel() + " power set point is " + this.powerSetpoint[0] + " V");
     }
 
     @Override
@@ -74,11 +79,6 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     @Override
     protected Float[] sensedValues(Float[] input) {
         return input;
-    }
-
-    @Override
-    public void setValues(Float[] value) {
-        this.voltageSetpoint = new Float[]{value[0]};
     }
 
 }

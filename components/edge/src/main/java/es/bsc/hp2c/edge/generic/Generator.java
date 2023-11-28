@@ -27,7 +27,8 @@ import es.bsc.hp2c.edge.types.Sensor;
  */
 public abstract class Generator<T> extends Device implements Sensor<T, Float[]>, Actuator<Float[]> {
 
-    public Float[] voltageSetpoint = { 0.0f };
+    protected Float[] voltageSetpoint = { 0.0f };
+    protected Float[] powerSetpoint = { 0.0f };
 
     private ArrayList<Runnable> onReadFunctions;
 
@@ -76,12 +77,25 @@ public abstract class Generator<T> extends Device implements Sensor<T, Float[]>,
 
     @Override
     public final Float[] getCurrentValues() {
-        return this.voltageSetpoint;
+        int totalLength = this.voltageSetpoint.length + this.powerSetpoint.length;
+        Float[] combinedValues = new Float[totalLength];
+
+        System.arraycopy(this.voltageSetpoint, 0, combinedValues, 0, this.voltageSetpoint.length);
+        System.arraycopy(this.powerSetpoint, 0, combinedValues, this.voltageSetpoint.length, this.powerSetpoint.length);
+
+        return combinedValues;
     }
 
     public void setValues(Float[] values) {
-        this.voltageSetpoint = values;
+        if (values.length >= this.voltageSetpoint.length + this.powerSetpoint.length) {
+            System.arraycopy(values, 0, this.voltageSetpoint, 0, this.voltageSetpoint.length);
+
+            System.arraycopy(values, this.voltageSetpoint.length, this.powerSetpoint, 0, this.powerSetpoint.length);
+        } else {
+            System.err.println("Values length is not enough to assign to voltageSetpoint and powerSetpoint.");
+        }
     }
+
 
     @Override
     public boolean isActionable() {
