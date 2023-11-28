@@ -57,18 +57,22 @@ public class HP2CEdge {
      * @param args Setup file.
      */
     public static void main(String[] args) throws FileNotFoundException{
+        // Get input data
         String setupFile;
         if (args.length == 1) {
             setupFile = args[0];
         } else {
             setupFile = "/home/mauro/Documentos/BSC/hp2cdt/deployments/testbed/setup/edge1.json";
         }
-        setUpMessaging();
+        String localIP = System.getenv("LOCAL_IP");
 
+        // Set up AMQP connections
+        setUpMessaging(localIP);
+
+        // Parse setup file
         JSONObject jUDP = getjProtocol(setupFile, "udp");
         JSONObject jTCP = getjProtocol(setupFile, "tcp_sensors");
         JSONObject jActuate = getjProtocol(setupFile, "tcp_actuators");
-
         String ip_udp = getIp(jUDP);
         TreeMap<Integer, ArrayList<String>> ports_udp = getPorts(jUDP);
         String ip_tcp = getIp(jTCP);
@@ -76,14 +80,16 @@ public class HP2CEdge {
         String ip_Actuate = getIp(jActuate);
         TreeMap<Integer, ArrayList<String>> ports_Actuate = getPorts(jActuate);
 
+        // Set local communication parameters
         OpalComm.setUDP_IP(ip_udp);
         OpalComm.setUDP_PORT(ports_udp.firstKey());
         OpalComm.setTCP_IP(ip_tcp);
         OpalComm.setTCP_PORT(ports_tcp.firstKey());
-        OpalComm.setActuateSocket(ip_Actuate, ports_Actuate.firstKey());
+        OpalComm.setActuateSocket(localIP, ports_Actuate.firstKey());
 
+        // Load devices and functions
         Map<String, Device> devices = loadDevices(setupFile);
-        loadFunctions(setupFile, devices); // loadFunctions(set, dev)
+        loadFunctions(setupFile, devices);
     }
 
     private static JSONObject getjProtocol(String setupFile, String protocol) throws FileNotFoundException {
@@ -96,10 +102,10 @@ public class HP2CEdge {
         return jComms.getJSONObject(protocol);
     }
 
-    private static void setUpMessaging() {
+    private static void setUpMessaging(String ip) {
         try {
             ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost("localhost");
+            factory.setHost(ip);
             connection = factory.newConnection();
             channel = connection.createChannel();
             channel.exchangeDeclare(EXCHANGE_NAME, "topic");

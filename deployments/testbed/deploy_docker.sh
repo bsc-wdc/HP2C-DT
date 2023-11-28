@@ -34,6 +34,15 @@ for f in "${sorted_setup_folder[@]}"; do
 done
 
 
+# Get the IPv4 address from wlp or eth interfaces
+ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'wlp[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
+
+if [ -z "$ip_address" ]; then
+    ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'eth[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
+fi
+
+echo "Local IPv4 Address: $ip_address"
+
 
 # Setting up trap to clear environment
 on_exit(){
@@ -86,6 +95,7 @@ for label in "${!labels_paths[@]}"; do
         -v ${labels_paths[$label]}:/data/setup.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
+        -e LOCAL_IP=$ip_address \
         ${EDGE_DOCKER_IMAGE}
     edge_idx=$(( edge_idx + 1 ))
 done
