@@ -4,16 +4,21 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
+import es.bsc.hp2c.edge.types.Device;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
-import org.influxdb.dto.QueryResult;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static es.bsc.hp2c.HP2CEdge.loadDevices;
 
 /**
  * Implementation of the server logic interacting with an InfluxDB database and
@@ -37,7 +42,22 @@ public class Server implements AutoCloseable {
         initDB();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
+        // Load setup files
+        File setupDir;
+        if (args.length == 1) {
+            setupDir = new File(args[0]);
+        } else {
+            setupDir = new File("/home/eiraola/projects/hp2cdt/deployments/testbed");
+        }
+        setupDir = new File(setupDir, "setup");
+        File[] setupFiles = setupDir.listFiles();
+        for (File setupFile: setupFiles) {
+            System.out.println(setupFile.toString());
+            Map<String, Device> devices = loadDevices(setupFile.toString(), "driver-dt");
+        }
+
+        // Deploy listener
         try {
             Server server = new Server();
             server.startListener();
