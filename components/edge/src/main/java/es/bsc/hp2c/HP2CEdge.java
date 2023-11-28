@@ -92,7 +92,10 @@ public class HP2CEdge {
      * @param setupFile String containing JSON file.
      * @return Map containing all declared devices.
      */
-    private static Map<String, Device> loadDevices(String setupFile) throws FileNotFoundException {
+    public static Map<String, Device> loadDevices(String setupFile) throws FileNotFoundException {
+        return loadDevices(setupFile, "driver");
+    }
+    public static Map<String, Device> loadDevices(String setupFile, String driverType) throws FileNotFoundException {
         InputStream is = new FileInputStream(setupFile);
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);        
@@ -103,7 +106,7 @@ public class HP2CEdge {
         for (Object jo : jDevices) {
             JSONObject jDevice = (JSONObject) jo;
             try {
-                Device d = Device.parseJSON(jDevice, jGlobProp);
+                Device d = Device.parseJSON(jDevice, jGlobProp, driverType);
                 if (devices.containsKey(d.getLabel())){
                     throw new DeviceInstantiationException("Device label " + d.getLabel() + " is already in use");
                 }

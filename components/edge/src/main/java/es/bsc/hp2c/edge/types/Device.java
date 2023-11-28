@@ -36,9 +36,9 @@ public abstract class Device {
      * @throws DeviceInstantiationException Error raised during the instantiation of
      *                                      the device.
      */
-    public static Device parseJSON(JSONObject jDevice, JSONObject jGlobalProperties)
+    public static Device parseJSON(JSONObject jDevice, JSONObject jGlobalProperties, String driverType)
             throws JSONException, ClassNotFoundException, DeviceInstantiationException {
-        String driver = jDevice.optString("driver", null);
+        String driver = jDevice.optString(driverType, null);
         if (driver == null) {
             throw new JSONException("Malformed JSON. No driver indicated");
         }
