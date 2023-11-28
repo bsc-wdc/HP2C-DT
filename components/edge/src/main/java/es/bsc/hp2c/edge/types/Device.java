@@ -57,6 +57,8 @@ public abstract class Device {
         }
 
         String label = jDevice.optString("label", "");
+        // Reformat label to comply with AMQP/database naming limitations
+        label = label.replaceAll("\\s", "").replaceAll("-", "");
 
         JSONObject jpos = jDevice.optJSONObject("position");
         float[] position;

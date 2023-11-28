@@ -53,7 +53,7 @@ public class AmqpPublish extends Func {
 
         // Sensor setup (remove whitespaces and dashes to avoid Influx especial characters)
         sensor = sensors.get(0);
-        sensorLabel = ((Device) sensor).getLabel().replaceAll("\\s", "").replaceAll("-", "");
+        sensorLabel = ((Device) sensor).getLabel();
     }
 
     @Override
