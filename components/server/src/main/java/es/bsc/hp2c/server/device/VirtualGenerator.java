@@ -1,12 +1,12 @@
 /*
  *  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
- * 
+ *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  *   Unless required by applicable law or agreed to in writing, software
  *   distributed under the License is distributed on an "AS IS" BASIS,
  *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,21 +16,21 @@
 
 package es.bsc.hp2c.server.device;
 
-import es.bsc.hp2c.edge.generic.Ammeter;
+import es.bsc.hp2c.edge.generic.Generator;
 import org.json.JSONObject;
 
 /**
- * Digital Twin Ammeter.
+ * Digital twin Generator.
  */
-public class VirtualAmmeter extends Ammeter<Float[]> {
+public class VirtualGenerator extends Generator<Float[]> {
     /*
-    * Creates a new instance of VirtualAmmeter.
-    *
-    * @param label device label
-    * @param position device position
-    * @param properties JSONObject representing device properties
-    * */
-    public VirtualAmmeter(String label, float[] position, JSONObject properties) {
+     * Creates a new instance of VirtualGenerator.
+     *
+     * @param label device label
+     * @param position device position
+     * @param properties JSONObject representing device properties
+     * */
+    public VirtualGenerator(String label, float[] position, JSONObject properties) {
         super(label, position);
     }
 
@@ -41,9 +41,7 @@ public class VirtualAmmeter extends Ammeter<Float[]> {
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        for (Float value : values) {
-            System.out.println("Device " + getLabel() + " sensed " + value + " A");
-        }
+        System.out.println("Device " + getLabel() + " voltage set point is " + values[0] + " V");
     }
 
     /*
@@ -54,3 +52,4 @@ public class VirtualAmmeter extends Ammeter<Float[]> {
         return input;
     }
 }
+

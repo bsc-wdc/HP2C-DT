@@ -16,21 +16,21 @@
 
 package es.bsc.hp2c.server.device;
 
-import es.bsc.hp2c.edge.generic.Ammeter;
+import es.bsc.hp2c.edge.generic.Voltmeter;
 import org.json.JSONObject;
 
 /**
- * Digital Twin Ammeter.
+ * Digital twin Voltmeter.
  */
-public class VirtualAmmeter extends Ammeter<Float[]> {
+public class VirtualVoltmeter extends Voltmeter<Float[]> {
     /*
-    * Creates a new instance of VirtualAmmeter.
-    *
-    * @param label device label
-    * @param position device position
-    * @param properties JSONObject representing device properties
-    * */
-    public VirtualAmmeter(String label, float[] position, JSONObject properties) {
+     * Creates a new instance of VirtualVoltmeter.
+     *
+     * @param label device label
+     * @param position device position
+     * @param properties JSONObject representing device properties
+     * */
+    public VirtualVoltmeter(String label, float[] position, JSONObject properties) {
         super(label, position);
     }
 
@@ -41,8 +41,8 @@ public class VirtualAmmeter extends Ammeter<Float[]> {
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        for (Float value : values) {
-            System.out.println("Device " + getLabel() + " sensed " + value + " A");
+        for (Float value: values) {
+            System.out.println("Device " + getLabel() + " sensed " + value + " V");
         }
     }
 
@@ -53,4 +53,5 @@ public class VirtualAmmeter extends Ammeter<Float[]> {
     protected Float[] sensedValues(Float[] input) {
         return input;
     }
+
 }
