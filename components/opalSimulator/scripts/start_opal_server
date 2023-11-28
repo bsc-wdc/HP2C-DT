@@ -5,15 +5,10 @@ if [ ! -d "src" ]; then
     cd ..
 fi
 
-# Parse arguments and give a default if any
-if [ $# -eq 0 ]; then
-    echo "No arguments supplied, using default value 2"
-    echo "Usage: start_opal_sim <number of desired ports>"
-    n_ports=2
-else
-    n_ports=$1
-fi
+export ARGS=`echo "$@"`
 
 # Compile and run
 mvn clean package
-mvn exec:java -Dexec.mainClass="es.bsc.hp2c.opalSimulator.ServerSimulator" -Dexec.args=$n_ports
+mvn exec:java -Dexec.mainClass="es.bsc.hp2c.opalSimulator.ServerSimulator" -Dexec.args="$ARGS"
+
+
