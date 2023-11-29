@@ -28,6 +28,8 @@ import java.util.TimerTask;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import static es.bsc.hp2c.edge.types.Device.formatLabel;
+
 /**
  * Represents a user-declared function. The function constructor always receives
  * the same parameters: a list of sensors, a list of actuators, and a JSON array
@@ -72,6 +74,7 @@ public abstract class Func implements Runnable {
         ArrayList<Sensor> sensors = new ArrayList<>();
         for (int i = 0; i < jSensors.length(); i++) {
             String label = jSensors.getString(i);
+            label = formatLabel(label);
             Device d = devices.get(label);
             if (d.isSensitive()) {
                 sensors.add((Sensor<?,?>) d);
@@ -83,6 +86,7 @@ public abstract class Func implements Runnable {
         ArrayList<Actuator<?>> actuators = new ArrayList<>();
         for (int i = 0; i < jActuators.length(); i++) {
             String label = jActuators.getString(i);
+            label = formatLabel(label);
             Device d = devices.get(label);
             if (d == null){
                 throw new FunctionInstantiationException(
@@ -145,6 +149,7 @@ public abstract class Func implements Runnable {
 
             case "onRead":
                 String triggerSensorName = triggerParams.getString(0);
+                triggerSensorName = formatLabel(triggerSensorName);
                 Sensor<?,?> triggerSensor = (Sensor<?,?>) devices.get(triggerSensorName);
                 triggerSensor.addOnReadFunction(action);
                 break;

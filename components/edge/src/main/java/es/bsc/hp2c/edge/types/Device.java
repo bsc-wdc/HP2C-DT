@@ -57,8 +57,7 @@ public abstract class Device {
         }
 
         String label = jDevice.optString("label", "");
-        // Reformat label to comply with AMQP/database naming limitations
-        label = label.replaceAll("\\s", "").replaceAll("-", "");
+        label = formatLabel(label);
 
         JSONObject jpos = jDevice.optJSONObject("position");
         float[] position;
@@ -74,6 +73,15 @@ public abstract class Device {
         } catch (Exception e) {
             throw new DeviceInstantiationException(label, e);
         }
+    }
+
+    /**
+     * Reformat device label to comply with message protocol and database
+     * naming limitations
+     */
+    public static String formatLabel(String label) {
+        label = label.replaceAll("\\s", "").replaceAll("-", "");
+        return label;
     }
 
     private final String label;
