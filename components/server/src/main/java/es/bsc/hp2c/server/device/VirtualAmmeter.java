@@ -1,4 +1,4 @@
-/*
+/**
  *  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
  * 
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ import org.json.JSONObject;
  * Digital Twin Ammeter.
  */
 public class VirtualAmmeter extends Ammeter<Float[]> {
-    /*
+    /**
     * Creates a new instance of VirtualAmmeter.
     *
     * @param label device label
@@ -34,7 +34,7 @@ public class VirtualAmmeter extends Ammeter<Float[]> {
         super(label, position);
     }
 
-    /*
+    /**
      * Receive a new measurement and preprocess it for storage as the current
      * device state.
      */
@@ -46,7 +46,7 @@ public class VirtualAmmeter extends Ammeter<Float[]> {
         }
     }
 
-    /*
+    /**
      * Preprocess a raw measurement.
      */
     @Override

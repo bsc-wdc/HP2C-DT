@@ -1,4 +1,4 @@
-/*
+/**
  *  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
  * 
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ import org.json.JSONObject;
  * Digital twin Switch.
  */
 public class VirtualSwitch extends Switch<Float[]> {
-    /*
+    /**
      * Creates a new instance of VirtualSwitch.
      *
      * @param label device label
@@ -34,7 +34,7 @@ public class VirtualSwitch extends Switch<Float[]> {
         super(label, position, properties.getJSONArray("indexes").length());
     }
 
-    /*
+    /**
      * Receive a new measurement and preprocess it for storage as the current
      * device state.
      */
@@ -52,7 +52,7 @@ public class VirtualSwitch extends Switch<Float[]> {
         }
     }
 
-    /*
+    /**
      * Preprocess a raw measurement.
      */
     @Override
@@ -68,7 +68,7 @@ public class VirtualSwitch extends Switch<Float[]> {
         return states;
     }
 
-    /*
+    /**
      * Update current sensor state.
      */
     public void setValues(State[] values) {

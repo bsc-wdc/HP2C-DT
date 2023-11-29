@@ -1,4 +1,4 @@
-/*
+/**
  *  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
  * 
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ import org.json.JSONObject;
  * Digital twin Voltmeter.
  */
 public class VirtualVoltmeter extends Voltmeter<Float[]> {
-    /*
+    /**
      * Creates a new instance of VirtualVoltmeter.
      *
      * @param label device label
@@ -34,7 +34,7 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> {
         super(label, position);
     }
 
-    /*
+    /**
      * Receive a new measurement and preprocess it for storage as the current
      * device state.
      */
@@ -46,7 +46,7 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> {
         }
     }
 
-    /*
+    /**
      * Preprocess a raw measurement.
      */
     @Override

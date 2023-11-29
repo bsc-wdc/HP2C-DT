@@ -1,4 +1,4 @@
-/*
+/**
  *  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ import org.json.JSONObject;
  * Digital twin Generator.
  */
 public class VirtualGenerator extends Generator<Float[]> {
-    /*
+    /**
      * Creates a new instance of VirtualGenerator.
      *
      * @param label device label
@@ -34,7 +34,7 @@ public class VirtualGenerator extends Generator<Float[]> {
         super(label, position);
     }
 
-    /*
+    /**
      * Receive a new measurement and preprocess it for storage as the current
      * device state.
      */
@@ -44,7 +44,7 @@ public class VirtualGenerator extends Generator<Float[]> {
         System.out.println("Device " + getLabel() + " voltage set point is " + values[0] + " V");
     }
 
-    /*
+    /**
      * Preprocess a raw measurement.
      */
     @Override
