@@ -54,6 +54,16 @@ public abstract class ThreePhaseSensor<R, S> extends Device implements Sensor<R,
      */
     protected abstract Float[] sensedValues(R input);
 
+    @Override
+    public final String getCurrentValuesAsString() {
+        Float[] values = this.getCurrentValues();
+        StringBuilder message = new StringBuilder(String.valueOf(values[0]));
+        for (int i = 1; i < values.length; i++) {
+            message.append(",").append(values[i]);
+        }
+        return message.toString();
+    }
+
     public final int getNPhases() {
         return this.nPhases;
     }

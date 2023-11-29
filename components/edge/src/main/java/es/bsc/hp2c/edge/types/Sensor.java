@@ -49,4 +49,9 @@ public interface Sensor<R, V> {
      * @return Value stored.
      */
     public V getCurrentValues();
+
+    /**
+     * Get current values formatted as String to be sent a via messaging protocol.
+     */
+    public String getCurrentValuesAsString();
 }

@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-/*
+/**
  * Publish current measurement to the corresponding AMQP topic if the requirements are satisfied.
  * The topic has the following format:
  *      edge.<EDGE_ID>.<DEVICE_ID>
@@ -23,9 +23,8 @@ public class AmqpPublish extends Func {
     private static String baseTopic = "edge";
     private final Sensor<?, ?> sensor;
     private final Channel channel;
-    private final String edgeId;
     private final String EXCHANGE_NAME;
-    private final String sensorLabel;
+    private final String routingKey;
 
     /**
      * Method constructor.
@@ -45,31 +44,25 @@ public class AmqpPublish extends Func {
         if (!actuators.isEmpty()) {
             throw new IllegalArgumentException("AmqpPublish does not use actuators");
         }
-
-        // Initialize AMQP communication
-        edgeId = getEdgeLabel();
-        channel = HP2CEdge.getChannel();
-        EXCHANGE_NAME = HP2CEdge.getExchangeName();
-
         // Sensor setup (remove whitespaces and dashes to avoid Influx especial characters)
         sensor = sensors.get(0);
-        sensorLabel = ((Device) sensor).getLabel();
+        String sensorLabel = ((Device) sensor).getLabel();
+
+        // Initialize AMQP communication
+        String edgeId = getEdgeLabel();
+        channel = HP2CEdge.getChannel();
+        EXCHANGE_NAME = HP2CEdge.getExchangeName();
+        routingKey = baseTopic + "." + edgeId + "." + sensorLabel;
     }
 
     @Override
     public void run() {
-        Float[] values = (Float[]) this.sensor.getCurrentValues();
-        // Publish value to the corresponding topic (Format: edge.<EDGE_ID>.<DEVICE_ID>)
-        for (int i = 0; i < values.length; i++) {
-            String routingKey = baseTopic + "." + edgeId + "." + sensorLabel + "_sensor" + i;
-            String message = String.valueOf(values[i]);
-            try {
-                channel.basicPublish(EXCHANGE_NAME, routingKey, null,
-                        message.getBytes(UTF_8));
-            } catch (IOException e) {
-                System.out.println("IOException during AMQP publish: " + e.getMessage());
-                throw new RuntimeException(e);
-            }
+        String message = this.sensor.getCurrentValuesAsString();
+        try {
+            channel.basicPublish(EXCHANGE_NAME, routingKey, null, message.getBytes(UTF_8));
+        } catch (IOException e) {
+            System.err.println("IOException during AMQP publishing");
+            throw new RuntimeException(e);
         }
     }
 }

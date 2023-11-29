@@ -43,6 +43,12 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
     }
 
     @Override
+    public final String getCurrentValuesAsString() {
+        Smoke value = this.getCurrentValues();
+        return String.valueOf(value);
+    }
+
+    @Override
     public boolean isActionable() {
         return false;
     }
