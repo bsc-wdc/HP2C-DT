@@ -3,10 +3,9 @@ package es.bsc.hp2c.opalSimulator;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 
 public class ServerSimulator {
@@ -16,6 +15,8 @@ public class ServerSimulator {
     private static final int BASE_TCP_ACTUATORS_PORT = 31002;
     private static boolean runClient = false;
     private static Float[][] devices;
+    private static final int BASE_UDP_PORT = 21002;
+    private static final double frequency = 1.0 / 20.0;
 
     public static void main(String[] args) throws InterruptedException {
         int nSockets;
@@ -34,16 +35,14 @@ public class ServerSimulator {
         devices = new Float[nSockets][];
         for (int i = 1; i <= nSockets; ++i){
             Float[] edgeI = new Float[Integer.parseInt(args[i])];
-            for (int j = 0; j < edgeI.length; ++j){
-                edgeI[j] = Float.NEGATIVE_INFINITY;
-            }
+            Arrays.fill(edgeI, Float.NEGATIVE_INFINITY);
             devices[i - 1] = edgeI;
         }
 
         for (int i = 0; i < nSockets; ++i){
             int port = BASE_TCP_ACTUATORS_PORT + (i * 1000);
             int finalI = i;
-            Thread t = new Thread(() -> {
+            new Thread(() -> {
                 try {
                     server = new ServerSocket(port, 0, InetAddress.getByName("0.0.0.0"));
                     System.out.println("Server running. Waiting for client requests...");
@@ -55,16 +54,32 @@ public class ServerSimulator {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-            });
-            t.start();
+            }).start();
         }
-        while (runClient == false){
+        while (!runClient){
             Thread.sleep(1000);
         }
+        Thread.sleep(3000);
+
         for (int i = 0; i < nSockets; ++i){
-            int tcpPort = BASE_TCP_SENSORS_PORT + (i * 1000);
-            System.out.println("Starting UDP communication in port " + tcpPort + " ip " + SERVER_ADDRESS);
-            startTCPClient(tcpPort, i);
+            int finalI = i;
+            new Thread(() -> {
+                int tcpPort = BASE_TCP_SENSORS_PORT + (finalI * 1000);
+                System.out.println("Starting TCP communication in port " + tcpPort + " ip " + SERVER_ADDRESS);
+                startTCPClient(tcpPort, finalI);
+            }).start();
+        }
+
+        Thread.sleep(3000);
+        for (int i = 0; i < nSockets; ++i){
+            int finalI = i;
+            /*
+            new Thread(() -> {
+                int udpPort = BASE_UDP_PORT + (finalI * 1000);
+                System.out.println("Starting UDP communication in port " + udpPort + " ip " + SERVER_ADDRESS);
+                startUDPClient(udpPort, finalI);
+            }).start();
+            */
         }
     }
 
@@ -91,36 +106,72 @@ public class ServerSimulator {
     }
 
     private static void startTCPClient(int tcpPort, int edgeNumber) {
-        new Thread(() -> {
-            try (Socket tcpSocket = new Socket(SERVER_ADDRESS, tcpPort)) {
-                while (true) {
-                    ByteBuffer byteBuffer = ByteBuffer.allocate(devices[edgeNumber].length * Float.BYTES);
-                    float[] values = new float[devices[edgeNumber].length];
-                    for (int i = 0; i < devices[edgeNumber].length; i++) {
-                        values[i] = devices[edgeNumber][i];
-                    }
-
-                    for (float value : values) {
-                        byteBuffer.putFloat(value);
-                        System.out.println("Prepared TCP value: " + value);
-                    }
-
-                    try {
-                        DataOutputStream outputStream = new DataOutputStream(tcpSocket.getOutputStream());
-                        byte[] buffer = byteBuffer.array();
-                        outputStream.write(buffer);
-                        System.out.println("Sent TCP packet.");
-                    } catch (IOException e) {
-                        System.err.println("Error sending data through TCP: " + e.getMessage());
-                        break;
-                    }
-
-                    Thread.sleep(5000);
+        try (Socket tcpSocket = new Socket(SERVER_ADDRESS, tcpPort)) {
+            while (true) {
+                ByteBuffer byteBuffer = ByteBuffer.allocate(devices[edgeNumber].length * Float.BYTES);
+                float[] values = new float[devices[edgeNumber].length];
+                for (int i = 0; i < devices[edgeNumber].length; i++) {
+                    values[i] = devices[edgeNumber][i];
                 }
-            } catch (Exception e) {
-                System.err.println("Error connecting to TCP server: " + e.getMessage());
+
+                for (float value : values) {
+                    byteBuffer.putFloat(value);
+                    System.out.println("Prepared TCP value: " + value);
+                }
+
+                try {
+                    DataOutputStream outputStream = new DataOutputStream(tcpSocket.getOutputStream());
+                    byte[] buffer = byteBuffer.array();
+                    outputStream.write(buffer);
+                    System.out.println("Sent TCP packet.");
+                } catch (IOException e) {
+                    System.err.println("Error sending data through TCP: " + e.getMessage());
+                    break;
+                }
+                Thread.sleep(1000);
             }
-        }).start();
+        } catch (Exception e) {
+            System.err.println("Error connecting to TCP server: " + e.getMessage());
+        }
     }
 
+    private static void startUDPClient(int udpPort, int edgeNumber) {
+        try (DatagramSocket udpSocket = new DatagramSocket()) {
+            InetAddress address = InetAddress.getByName(SERVER_ADDRESS);
+            while (true) {
+                ByteBuffer byteBuffer = ByteBuffer.allocate(devices[edgeNumber].length * Float.BYTES);
+                float[] values = genSineValues(devices[edgeNumber].length);
+                // Modify voltages (0, 1, 2)
+                values[0] *= (float) Math.sqrt(2) * 230;
+                values[1] *= (float) Math.sqrt(2) * 230;
+                values[2] *= (float) Math.sqrt(2) * 230;
+                for (float value: values) {
+                    // float value = (float) Math.random();
+                    byteBuffer.putFloat(value);
+                    System.out.println("Prepared UDP value: " + value);
+                }
+                byte[] buffer = byteBuffer.array();
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, udpPort);
+                udpSocket.send(packet);
+                System.out.println("Sent UDP packet.");
+                Thread.sleep(5000);
+            }
+        } catch (Exception e) {
+            System.err.println("Error sending data through UDP.");
+        }
+    }
+
+    public static float[] genSineValues(int size) {
+        float[] values = new float[size];
+        long currentTimeMillis = System.currentTimeMillis();
+        double time = currentTimeMillis / 1000.0; // Convert milliseconds to seconds
+        double angularFrequency = 2 * Math.PI * frequency;
+
+        for (int i = 0; i < size; i++) {
+            double shift = i * (2 * Math.PI / 3);
+            values[i] = (float) Math.sin(angularFrequency * time + shift);
+        }
+
+        return values;
+    }
 }

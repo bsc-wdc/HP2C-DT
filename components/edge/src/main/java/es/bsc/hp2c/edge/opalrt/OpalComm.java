@@ -87,7 +87,6 @@ public class OpalComm {
                         }
 
                         System.out.println(); // Add empty line at the end of each measurement
-                        Thread.sleep(1);
                     } catch (Exception e) {
                         System.err.println("Error receiving UDP message: " + e.getMessage());
                     }
@@ -116,14 +115,14 @@ public class OpalComm {
 
                     while (true) {
                         // Print time each iteration
-                        LocalTime currentTime = LocalTime.now();
+                                                LocalTime currentTime = LocalTime.now();
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
                         String formattedTime = currentTime.format(formatter);
                         System.out.println("Current time: " + formattedTime);
 
                         DataInputStream inputStream = new DataInputStream(clientSocket.getInputStream());
                         byte[] buffer = new byte[values.length * Float.BYTES];
-                        inputStream.readFully(buffer);
+                                                inputStream.readFully(buffer);
                         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
 
                         synchronized (OpalComm.sensors) {
