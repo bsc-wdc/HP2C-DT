@@ -101,13 +101,18 @@ public class OpalComm {
             public void run() {
                 // Initialize UDP server socket to read measurements
                 try {
+
                     try {
-                        Thread.sleep(500);
+                        Thread.sleep(1000);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
+                    int nIndexes = 0;
+                    for (OpalActuator<?> opalActuator : actuators) {
+                        int nIndexesDevice = opalActuator.getIndexes().length;
+                        nIndexes += nIndexesDevice;
+                    }
                     InetAddress serverAddress = InetAddress.getByName(TCP_IP);
-
                     tcpSocket = new ServerSocket(TCP_PORT,0, serverAddress);
                     System.out.println("\nTCP Server running on port: " + TCP_PORT + "\n");
 
@@ -115,15 +120,17 @@ public class OpalComm {
 
                     while (true) {
                         // Print time each iteration
-                                                LocalTime currentTime = LocalTime.now();
+                        LocalTime currentTime = LocalTime.now();
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
                         String formattedTime = currentTime.format(formatter);
                         System.out.println("Current time: " + formattedTime);
 
                         DataInputStream inputStream = new DataInputStream(clientSocket.getInputStream());
-                        byte[] buffer = new byte[values.length * Float.BYTES];
+                        byte[] buffer = new byte[nIndexes * Float.BYTES + Integer.BYTES + Character.BYTES];
                                                 inputStream.readFully(buffer);
                         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
+                        int length = byteBuffer.getInt();
+                        if (length != nIndexes){ throw new IOException("Input length does not match expected length"); }
 
                         synchronized (OpalComm.sensors) {
                             for (int i = UDP_SENSORS; i < sensors.size(); ++i) {
@@ -140,7 +147,10 @@ public class OpalComm {
                                 sensor.onRead();
                             }
                         }
-                            System.out.println(); // Add empty line at the end of each measurement
+
+                        int finalChar = byteBuffer.getChar();
+                        if (finalChar != '\n'){ throw new IOException("Input doesn't end with an endline"); }
+                        System.out.println(); // Add empty line at the end of each measurement
                     }
                 } catch (IOException e) {
                     System.err.println("Error initializing TCP server: " + e.getMessage());
