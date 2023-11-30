@@ -62,7 +62,7 @@ public class HP2CEdge {
         if (args.length == 1) {
             setupFile = args[0];
         } else {
-            setupFile = "/home/mauro/Documentos/BSC/hp2cdt/deployments/testbed/setup/edge1.json";
+            setupFile = "../../deployments/testbed/setup/edge1.json";
         }
         String localIP = System.getenv("LOCAL_IP");
 
