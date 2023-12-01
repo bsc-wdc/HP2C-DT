@@ -1,7 +1,7 @@
 {
     "global-properties":{
         "label": "edge2",
-        "udp-sensors-indexes": 6,
+        "udp-sensors": 3,
         "comms":{
             "udp": {
                 "ip": "0.0.0.0",
@@ -43,6 +43,17 @@
 
     "devices": [
         {
+            "label": "Voltmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+            "properties": {
+                "indexes": [0]
+            }
+        },
+        {
             "label": "Three-Phase Voltmeter Gen1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeterThreePhase",
             "position": {
@@ -51,7 +62,7 @@
             },
 
             "properties": {
-                "indexes": [0,1,2]
+                "indexes": [1,2,3]
             }
         },
         {
@@ -63,8 +74,38 @@
             },
 
             "properties": {
-                "indexes": [3,4,5]
+                "indexes": [4,5,6]
             }
+        },
+        {
+            "label": "Switch Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalSwitch",
+            "position": {
+                "x":0,
+                "y":0
+            },
+            "properties": {
+                "indexes": [7,8,9]
+            }
+        }
+    ],
+
+    "funcs":[
+        {
+            "label": "VoltLimitation",
+            "lang": "Java",
+            "method_name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
+            "parameters": {
+                "sensors": ["Voltmeter Gen1"],
+                "actuators": ["Switch Gen1"],
+                "other": [200]
+            },
+            "trigger": {
+                "type": "onRead",
+                "method_name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
+                "parameters": ["Voltmeter Gen1"]
+            }
+
         }
     ]
 }

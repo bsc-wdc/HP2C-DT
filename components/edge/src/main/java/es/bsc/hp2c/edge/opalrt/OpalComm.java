@@ -103,87 +103,19 @@ public class OpalComm {
     }
 
     private static JSONObject getjComms(JSONObject jGlobProp) {
-        OpalComm.setUDP_SENSORS(jGlobProp.getInt("udp-sensors-indexes"));
+        OpalComm.setUDP_SENSORS(jGlobProp.getInt("udp-sensors"));
         return jGlobProp.getJSONObject("comms");
     }
 
     private static void startTCPServer() {
-        Thread t_tcp = new Thread() {
-            public void run() {
-                // Initialize UDP server socket to read measurements
-                try {
-                    InetAddress serverAddress = InetAddress.getByName(TCP_IP);
-                    tcpSocket = new ServerSocket(TCP_PORT,0, serverAddress);
-                    System.out.println("\nTCP Server running on port: " + TCP_PORT + "\n");
+        Thread t_tcp = new Thread(() -> {
+            // Initialize UDP server socket to read measurements
+            try {
+                InetAddress serverAddress = InetAddress.getByName(TCP_IP);
+                tcpSocket = new ServerSocket(TCP_PORT,0, serverAddress);
+                System.out.println("\nTCP Server running on port: " + TCP_PORT + "\n");
 
-                    Socket clientSocket = tcpSocket.accept();
-
-                    while (true) {
-                        // Print time each iteration
-                        LocalTime currentTime = LocalTime.now();
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-                        String formattedTime = currentTime.format(formatter);
-                        System.out.println("Current time: " + formattedTime);
-
-                        DataInputStream inputStream = new DataInputStream(clientSocket.getInputStream());
-                        int messageLength = inputStream.readInt();
-
-                        byte[] buffer = new byte[messageLength * Float.BYTES];
-                        inputStream.readFully(buffer);
-
-                        char endChar = inputStream.readChar();
-                        if (endChar != '\n') {
-                            throw new IOException("End character not found.");
-                        }
-
-                        ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
-                        Float[] messageValues = new Float[messageLength];
-                        for (int i = 0; i < messageLength; i++) {
-                            messageValues[i] = byteBuffer.getFloat();
-                        }
-
-                        synchronized (OpalComm.sensors) {
-                            for (int i = UDP_SENSORS; i < sensors.size(); ++i) {
-                                OpalSensor<?> sensor = sensors.get(i);
-                                int[] indexes_local = Arrays.copyOf(sensor.getIndexes(), sensor.getIndexes().length);
-                                Float[] sensedValues = new Float[indexes_local.length];
-                                for (int k = 0; k < indexes_local.length; ++k) {
-                                    indexes_local[k] -= UDP_SENSORS;
-                                    sensedValues[k] = messageValues[indexes_local[k]];
-                                }
-                                sensor.sensed(sensedValues);
-                                sensor.onRead();
-                            }
-                        }
-                        System.out.println(); // Add empty line at the end of each measurement
-                    }
-                } catch (IOException e) {
-                    System.err.println("Error initializing TCP server: " + e.getMessage());
-                }
-            }
-        };
-        t_tcp.setName("Actuators");
-        t_tcp.start();
-    }
-
-    private static void startUDPServer() {
-        Thread t_udp = new Thread() {
-            public void run() {
-                // Initialize UDP server socket to read measurements
-                try {
-                    InetAddress serverAddress = InetAddress.getByName(UDP_IP);
-                    if (UDP_PORT == 0) {
-                        throw new SocketException();
-                    }
-                    udpSocket = new DatagramSocket(UDP_PORT, serverAddress);
-                } catch (SocketException e) {
-                    System.err.println("Error initializing UDP socket at IP " + UDP_IP +" and port " +  UDP_PORT);
-                    throw new RuntimeException(e);
-                } catch (UnknownHostException e) {
-                    System.err.println("Unable to resolve " + UDP_IP + " for the specified host.");
-                    throw new RuntimeException(e);
-                }
-                System.out.println("\nUDP socket running on port: " + UDP_PORT + "\n");
+                Socket clientSocket = tcpSocket.accept();
 
                 while (true) {
                     // Print time each iteration
@@ -192,40 +124,108 @@ public class OpalComm {
                     String formattedTime = currentTime.format(formatter);
                     System.out.println("Current time: " + formattedTime);
 
-                    try {
-                        byte[] buffer = new byte[values.length * Float.BYTES];
-                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                        udpSocket.receive(packet);
-                        ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
-                        for (int i = 0; i < values.length; i++) {
-                            float receivedValue = byteBuffer.getFloat();
-                            values[i] = receivedValue;
-                        }
+                    DataInputStream inputStream = new DataInputStream(clientSocket.getInputStream());
+                    int messageLength = inputStream.readInt();
 
-                        synchronized (OpalComm.sensors) {
-                            int checkedIndexes = 0;
-                            int i = 0;
-                            while (checkedIndexes < UDP_SENSORS){
-                                OpalSensor<?> sensor = sensors.get(i);
-                                int[] indexes = sensor.getIndexes();
-                                checkedIndexes += indexes.length;
-                                Float[] sensedValues = new Float[indexes.length];
-                                for (int j = 0; j < indexes.length; ++j) {
-                                    sensedValues[j] = values[indexes[j]];
-                                }
-                                sensor.sensed(sensedValues);
-                                sensor.onRead();
-                                i += 1;
-                            }
-                        }
+                    byte[] buffer = new byte[messageLength * Float.BYTES];
+                    inputStream.readFully(buffer);
 
-                        System.out.println(); // Add empty line at the end of each measurement
-                    } catch (Exception e) {
-                        System.err.println("Error receiving UDP message: " + e.getMessage());
+                    char endChar = inputStream.readChar();
+                    if (endChar != '\n') {
+                        throw new IOException("End character not found.");
                     }
+
+                    ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
+                    Float[] messageValues = new Float[messageLength];
+                    for (int i = 0; i < messageLength; i++) {
+                        messageValues[i] = byteBuffer.getFloat();
+                    }
+
+                    synchronized (OpalComm.sensors) {
+                        int nIndexes = 0;
+                        for (int i = 0; i < UDP_SENSORS; ++i) {
+                            OpalSensor<?> sensor = sensors.get(i);
+                            nIndexes += sensor.getIndexes().length;
+                        }
+
+                        for (int i = UDP_SENSORS; i < sensors.size(); ++i) {
+                            OpalSensor<?> sensor = sensors.get(i);
+                            int[] indexes_local = Arrays.copyOf(sensor.getIndexes(), sensor.getIndexes().length);
+                            Float[] sensedValues = new Float[indexes_local.length];
+
+                            for (int k = 0; k < indexes_local.length; ++k) {
+                                indexes_local[k] -= nIndexes;
+                                sensedValues[k] = messageValues[indexes_local[k]];
+                            }
+                            sensor.sensed(sensedValues);
+                            sensor.onRead();
+                        }
+                    }
+                    System.out.println(); // Add empty line at the end of each measurement
+                }
+            } catch (IOException e) {
+                System.err.println("Error initializing TCP server: " + e.getMessage());
+            }
+        });
+        t_tcp.setName("Actuators");
+        t_tcp.start();
+    }
+
+    private static void startUDPServer() {
+        Thread t_udp = new Thread(() -> {
+            // Initialize UDP server socket to read measurements
+            try {
+                InetAddress serverAddress = InetAddress.getByName(UDP_IP);
+                if (UDP_PORT == 0) {
+                    throw new SocketException();
+                }
+                udpSocket = new DatagramSocket(UDP_PORT, serverAddress);
+            } catch (SocketException e) {
+                System.err.println("Error initializing UDP socket at IP " + UDP_IP +" and port " +  UDP_PORT);
+                throw new RuntimeException(e);
+            } catch (UnknownHostException e) {
+                System.err.println("Unable to resolve " + UDP_IP + " for the specified host.");
+                throw new RuntimeException(e);
+            }
+            System.out.println("\nUDP socket running on port: " + UDP_PORT + "\n");
+
+            while (true) {
+                // Print time each iteration
+                LocalTime currentTime = LocalTime.now();
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+                String formattedTime = currentTime.format(formatter);
+                System.out.println("Current time: " + formattedTime);
+
+                try {
+                    byte[] buffer = new byte[values.length * Float.BYTES];
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                    udpSocket.receive(packet);
+                    ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
+                    for (int i = 0; i < values.length; i++) {
+                        float receivedValue = byteBuffer.getFloat();
+                        values[i] = receivedValue;
+                    }
+
+                    synchronized (OpalComm.sensors) {
+                        for (int i = 0; i < UDP_SENSORS; ++i){
+                            OpalSensor<?> sensor = sensors.get(i);
+                            int[] indexes = sensor.getIndexes();
+                            Float[] sensedValues = new Float[indexes.length];
+                            for (int j = 0; j < indexes.length; ++j) {
+                                sensedValues[j] = values[indexes[j]];
+                            }
+                            sensor.sensed(sensedValues);
+                            sensor.onRead();
+                        }
+
+                    }
+
+                    System.out.println(); // Add empty line at the end of each measurement
+                } catch (Exception e) {
+                    System.err.println("Error receiving UDP message: " + e.getMessage());
                 }
             }
-        };
+        });
         t_udp.setName("OpalComm");
         t_udp.start();
     }
@@ -241,8 +241,14 @@ public class OpalComm {
 
             // Scale actuators indexes (ignore udp sensors)
             int[] indexes_local = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
+            int nIndexesUdp = 0;
+            for (int i = 0; i < UDP_SENSORS; ++i) {
+                OpalSensor<?> sensor = sensors.get(i);
+                nIndexesUdp += sensor.getIndexes().length;
+            }
+
             for (int i = 0; i < indexes_local.length; ++i){
-                indexes_local[i] -= UDP_SENSORS;
+                indexes_local[i] -= nIndexesUdp;
             }
 
             // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
