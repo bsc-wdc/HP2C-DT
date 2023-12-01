@@ -35,7 +35,7 @@ public abstract class Device {
      * @throws DeviceInstantiationException Error raised during the instantiation of
      *                                      the device.
      */
-    public static Device parseJSON(JSONObject jDevice)
+    public static Device parseJSON(JSONObject jDevice, JSONObject jGlobalProperties)
             throws JSONException, ClassNotFoundException, DeviceInstantiationException {
         String driver = jDevice.optString("driver", null);
         if (driver == null) {
@@ -45,7 +45,7 @@ public abstract class Device {
         Class<?> c = Class.forName(driver);
         Constructor<?> ct;
         try {
-            ct = c.getConstructor(String.class, float[].class, JSONObject.class);
+            ct = c.getConstructor(String.class, float[].class, JSONObject.class, JSONObject.class);
         } catch (NoSuchMethodException | SecurityException e) {
             throw new DeviceInstantiationException(driver, e);
         }
@@ -62,7 +62,7 @@ public abstract class Device {
 
         JSONObject properties = jDevice.optJSONObject("properties");
         try {
-            return (Device) ct.newInstance(label, position, properties);
+            return (Device) ct.newInstance(label, position, properties, jGlobalProperties);
         } catch (Exception e) {
             throw new DeviceInstantiationException(label, e);
         }

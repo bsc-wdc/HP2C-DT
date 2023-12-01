@@ -39,7 +39,7 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
      * @param position device position
      * @param properties JSONObject representing device properties
      */
-    public OpalSwitch(String label, float[] position, JSONObject properties) {
+    public OpalSwitch(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position, properties.getJSONArray("indexes").length());
         JSONArray jIndexes = properties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
@@ -48,6 +48,7 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
         }
         OpalComm.registerSensor(this);
         OpalComm.registerActuator(this);
+        OpalComm.init(jGlobalProperties);
     }
 
     @Override

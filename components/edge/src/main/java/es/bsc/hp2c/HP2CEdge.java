@@ -15,7 +15,6 @@
  */
 package es.bsc.hp2c;
 
-import es.bsc.hp2c.edge.opalrt.OpalComm;
 import es.bsc.hp2c.edge.types.Device;
 import es.bsc.hp2c.edge.types.Device.DeviceInstantiationException;
 import es.bsc.hp2c.edge.funcs.Func;
@@ -28,8 +27,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
@@ -68,47 +65,10 @@ public class HP2CEdge {
 
         // Set up AMQP connections
         setUpMessaging(localIP);
-        // Set up udp and tcp connections
-        setupComms(setupFile, localIP);
+
         // Load devices and functions
         Map<String, Device> devices = loadDevices(setupFile);
         loadFunctions(setupFile, devices);
-    }
-
-    private static void setupComms(String setupFile, String localIP) throws FileNotFoundException {
-        // Parse setup file
-        JSONObject jComms = getjComms(setupFile);
-        JSONObject jUDP = jComms.getJSONObject("udp");
-        JSONObject jTCP= jComms.getJSONObject("tcp_sensors");
-
-        if (jComms.has("tcp_actuators")){
-            OpalComm.setUseTCPActuators();
-            JSONObject jActuate = jComms.getJSONObject("tcp_actuators");
-            TreeMap<Integer, ArrayList<String>> ports_Actuate = getPorts(jActuate);
-            OpalComm.setActuateSocket(localIP, ports_Actuate.firstKey());
-        } else{
-            System.out.println("In order to enable actuations, 'tcp_actuators' must be declared within 'comms' section");
-        }
-
-        String ip_udp = getIp(jUDP);
-        TreeMap<Integer, ArrayList<String>> ports_udp = getPorts(jUDP);
-        String ip_tcp = getIp(jTCP);
-        TreeMap<Integer, ArrayList<String>> ports_tcp = getPorts(jTCP);
-
-        // Set local communication parameters
-        OpalComm.setUDP_IP(ip_udp);
-        OpalComm.setUDP_PORT(ports_udp.firstKey());
-        OpalComm.setTCP_IP(ip_tcp);
-        OpalComm.setTCP_PORT(ports_tcp.firstKey());
-    }
-
-    private static JSONObject getjComms(String setupFile) throws FileNotFoundException {
-        InputStream is = new FileInputStream(setupFile);
-        JSONTokener tokener = new JSONTokener(is);
-        JSONObject object = new JSONObject(tokener);
-        JSONObject jGlobProp = object.getJSONObject("global-properties");
-        OpalComm.setUDP_SENSORS(jGlobProp.getInt("udp-sensors-indexes"));
-        return jGlobProp.getJSONObject("comms");
     }
 
     private static void setUpMessaging(String ip) {
@@ -137,11 +97,14 @@ public class HP2CEdge {
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);        
         JSONArray jDevices = object.getJSONArray("devices");
+
+        JSONObject jGlobProp = object.getJSONObject("global-properties");
+
         TreeMap<String, Device> devices = new TreeMap<>();
         for (Object jo : jDevices) {
             JSONObject jDevice = (JSONObject) jo;
             try {
-                Device d = Device.parseJSON(jDevice);
+                Device d = Device.parseJSON(jDevice, jGlobProp);
                 devices.put(d.getLabel(), d);
             } catch (DeviceInstantiationException | ClassNotFoundException | JSONException e) {
                 System.err.println("Error loading device " + jDevice + ". Ignoring it. " + e.getMessage());
@@ -150,40 +113,7 @@ public class HP2CEdge {
         return devices;
     }
 
-    /**
-     * Parse device's UDP port from JSON
-     *
-     * @param jProtocol JSON object (UDP section or TCP section)
-     * @return map of pairs IP-Ports (each port can be linked to a list of sensors)
-     */
-    private static TreeMap<Integer, ArrayList<String>> getPorts(JSONObject jProtocol) {
 
-        // Map of pairs IP - Ports (each port can be linked to a list of sensors)
-        TreeMap<Integer, ArrayList<String>> portsDevicesMap = new TreeMap<>();
-        JSONObject jPorts = jProtocol.getJSONObject("ports");
-
-        List<String> keysList = new ArrayList<>();
-        Iterator<String> keys = jPorts.keys();
-        while(keys.hasNext()) {
-            keysList.add(keys.next());
-        }
-
-        for (int i = 0; i < keysList.size(); ++i){
-            String sPort = keysList.get(i);
-            ArrayList<String> sDevices = new ArrayList<>();
-            JSONArray jDevices = jPorts.getJSONArray(sPort);
-            for (int j = 0; j < jDevices.length(); j++) {
-                sDevices.add(jDevices.getString(i));
-            }
-            portsDevicesMap.put(Integer.parseInt(sPort), sDevices);
-        }
-
-        return portsDevicesMap;
-    }
-
-    private static String getIp(JSONObject jProtocol) {
-        return jProtocol.getString("ip");
-    }
 
     /**
      * Parse functions from JSON and, for each one, parse and check its triggers.

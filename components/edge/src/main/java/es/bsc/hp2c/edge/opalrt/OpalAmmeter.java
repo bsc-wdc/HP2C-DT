@@ -35,7 +35,7 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     * @param position device position
     * @param properties JSONObject representing device properties
     * */
-    public OpalAmmeter(String label, float[] position, JSONObject properties) {
+    public OpalAmmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
@@ -43,6 +43,7 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
             this.indexes[i] = (jIndexes.getInt(i));
         }
         OpalComm.registerSensor(this);
+        OpalComm.init(jGlobalProperties);
     }
 
     /*

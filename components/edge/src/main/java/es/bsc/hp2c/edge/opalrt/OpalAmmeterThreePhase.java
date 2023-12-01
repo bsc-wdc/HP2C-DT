@@ -20,7 +20,7 @@ public class OpalAmmeterThreePhase extends ThreePhaseSensor<Float[], OpalAmmeter
      * @param position device position
      * @param properties JSONObject representing device properties
      */
-    public OpalAmmeterThreePhase(String label, float[] position, JSONObject properties) {
+    public OpalAmmeterThreePhase(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];

@@ -20,7 +20,7 @@ public class OpalVoltmeterThreePhase extends ThreePhaseSensor<Float[], OpalVoltm
      * @param position device position
      * @param properties JSONObject representing device properties
      */
-    public OpalVoltmeterThreePhase(String label, float[] position, JSONObject properties) {
+    public OpalVoltmeterThreePhase(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
@@ -28,6 +28,7 @@ public class OpalVoltmeterThreePhase extends ThreePhaseSensor<Float[], OpalVoltm
             this.indexes[i] = (jIndexes.getInt(i));
         }
         OpalComm.registerSensor(this);
+        OpalComm.init(jGlobalProperties);
         subSensors = new OpalVoltmeter[super.getNPhases()];
         for (int i = 0; i < super.getNPhases(); i++) {
             String subLabel = label + "." + i;

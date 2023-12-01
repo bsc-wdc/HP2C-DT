@@ -9,11 +9,10 @@ import java.util.Arrays;
 
 
 public class OpalSimulator {
-    private static ServerSocket server;
     private static final String SERVER_ADDRESS = "127.0.0.1";
     private static final int BASE_TCP_SENSORS_PORT = 11002;
     private static final int BASE_TCP_ACTUATORS_PORT = 31002;
-    private static boolean runClient = false;
+    private static int runClient = 0;
     private static Float[][] devices;
     private static final int BASE_UDP_PORT = 21002;
     private static final double frequency = 1.0 / 20.0;
@@ -26,7 +25,7 @@ public class OpalSimulator {
             System.out.println("User must input as arguments: ");
             System.out.println("    nSockets: Number of edge devices (number of client ant server sockets)");
             System.out.println("    Number of indexes for each edge node (nSockets inputs) ");
-            args = new String[]{"1", "5"};
+            args = new String[]{"2", "5", "0"};
             nSockets = Integer.parseInt(args[0]);
         }
 
@@ -44,19 +43,22 @@ public class OpalSimulator {
             int finalI = i;
             new Thread(() -> {
                 try {
-                    server = new ServerSocket(port, 0, InetAddress.getByName("0.0.0.0"));
-                    System.out.println("Server running. Waiting for client requests...");
+                    ServerSocket server = new ServerSocket(port, 0, InetAddress.getByName("0.0.0.0"));
+                    System.out.println(finalI);
+                    System.out.println("Server running in port " + port + ". Waiting for client requests...");
                     Socket clientSocket = null;
                     clientSocket = server.accept();
-                    runClient = true;
+                    runClient += 1;
                     System.out.println("Accepted connection from: " + clientSocket.getInetAddress().getHostAddress());
+                    System.out.println(finalI);
                     handleClient(clientSocket, finalI);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }).start();
         }
-        while (!runClient){
+
+        while (runClient < nSockets){
             Thread.sleep(1000);
         }
         Thread.sleep(3000);

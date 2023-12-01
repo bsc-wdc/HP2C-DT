@@ -39,7 +39,7 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
      * @param position device position
      * @param properties JSONObject representing device properties
      * */
-    public OpalGenerator(String label, float[] position, JSONObject properties) {
+    public OpalGenerator(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
         JSONArray jIndexes = properties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
@@ -52,6 +52,7 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
         }
         OpalComm.registerSensor(this);
         OpalComm.registerActuator(this);
+        OpalComm.init(jGlobalProperties);
     }
 
     @Override
