@@ -15,7 +15,7 @@ public class OpalSimulator {
     private static final int BASE_TCP_SENSORS_PORT = 11002;
     private static final int BASE_TCP_ACTUATORS_PORT = 31002;
     private static int runClient = 0;
-    private static Map<Integer, Float[]> devices = new HashMap<>();;
+    private static Map<Integer, Float[]> devices = new HashMap<>();
     private static final int BASE_UDP_PORT = 21002;
     private static final double frequency = 1.0 / 20.0;
 

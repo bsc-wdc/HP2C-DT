@@ -64,7 +64,7 @@ public abstract class Func implements Runnable {
             String funcLabel)
             throws FunctionInstantiationException {
 
-        String driver = jFunc.optString("method_name", "");
+        String driver = jFunc.optString("method-name", "");
         JSONObject parameters = jFunc.getJSONObject("parameters");
         JSONArray jSensors = parameters.getJSONArray("sensors");
         JSONArray jActuators = parameters.getJSONArray("actuators");

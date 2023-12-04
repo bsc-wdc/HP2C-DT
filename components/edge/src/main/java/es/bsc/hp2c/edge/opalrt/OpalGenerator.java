@@ -63,8 +63,8 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     }
 
     @Override
-    public void actuate(Float[] raw_values) throws IOException {
-        Float[] values = actuateValues(raw_values);
+    public void actuate(Float[] rawValues) throws IOException {
+        Float[] values = actuateValues(rawValues);
         OpalComm.commitActuation(this, values);
     }
 

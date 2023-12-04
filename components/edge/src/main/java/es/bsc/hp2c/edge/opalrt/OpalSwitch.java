@@ -57,8 +57,8 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     }
 
     @Override
-    public void actuate(State[] raw_values) throws IOException {
-        Float[] values = actuateValues(raw_values);
+    public void actuate(State[] rawValues) throws IOException {
+        Float[] values = actuateValues(rawValues);
         OpalComm.commitActuation(this, values);
     }
 

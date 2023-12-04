@@ -9,13 +9,13 @@
                     "22002": []
                 }
             },
-            "tcp_sensors": {
+            "tcp-sensors": {
                 "ip": "0.0.0.0",
                 "ports": {
                     "12002": []
                 }
             },
-            "tcp_actuators": {
+            "tcp-actuators": {
                 "ports": {
                     "32002": []
                 }
@@ -26,7 +26,7 @@
                 {
                     "label": "AMQPPublish",
                     "lang": "Java",
-                    "method_name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
+                    "method-name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
                     "parameters": {
                         "sensors": ["ALL"],
                         "actuators": [],
@@ -94,7 +94,7 @@
         {
             "label": "VoltLimitation",
             "lang": "Java",
-            "method_name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
+            "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
             "parameters": {
                 "sensors": ["Voltmeter Gen1"],
                 "actuators": ["Switch Gen1"],
@@ -102,7 +102,7 @@
             },
             "trigger": {
                 "type": "onRead",
-                "method_name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
+                "method-name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
                 "parameters": ["Voltmeter Gen1"]
             }
 
