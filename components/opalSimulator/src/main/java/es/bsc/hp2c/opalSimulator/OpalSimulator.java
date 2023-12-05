@@ -100,6 +100,8 @@ public class OpalSimulator {
                     devices.put(edgeNumber, aux);
                     index += 1;
                 }
+                System.out.println("    Message is: " + Arrays.toString(devices.get(edgeNumber)) +
+                        " for edge " + edgeNumber);
             }
         } catch (IOException e) {
             System.err.println("Error handling client: " + e.getMessage());
