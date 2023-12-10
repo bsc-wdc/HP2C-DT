@@ -63,7 +63,7 @@ public abstract class ThreePhaseSensor<R, S> extends Device implements Sensor<R,
     }
 
     @Override
-    public abstract Float[] decodeValues(byte[] message);
+    public abstract T decodeValues(byte[] message);
 
     public final int getNPhases() {
         return this.nPhases;

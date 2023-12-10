@@ -87,7 +87,7 @@ public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
     }
 
     @Override
-    public abstract Float[] decodeValues(byte[] message);
+    public abstract T decodeValues(byte[] message);
 
     @Override
     public final boolean isActionable() {

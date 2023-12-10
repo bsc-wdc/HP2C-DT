@@ -105,7 +105,7 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     }
 
     @Override
-    public abstract Float[] decodeValues(byte[] message);
+    public abstract T decodeValues(byte[] message);
 
 
     @Override

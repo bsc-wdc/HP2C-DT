@@ -122,8 +122,7 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     }
 
     @Override
-    public final State[] decodeValues(byte[] message) {
-        Float[] rawValues = BytesToFloatArray(message);
-        return sensedValues(rawValues);
+    public final Float[] decodeValues(byte[] message) {
+        return BytesToFloatArray(message);
     }
 }

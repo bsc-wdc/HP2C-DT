@@ -58,7 +58,6 @@ public class VirtualAmmeter extends Ammeter<Float[]> {
 
     @Override
     public final Float[] decodeValues(byte[] message) {
-        Float[] rawValues = BytesToFloatArray(message);
-        return sensedValues(rawValues);
+        return BytesToFloatArray(message);
     }
 }

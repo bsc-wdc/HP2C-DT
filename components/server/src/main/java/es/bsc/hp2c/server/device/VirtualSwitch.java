@@ -78,8 +78,7 @@ public class VirtualSwitch extends Switch<Float[]> {
     }
 
     @Override
-    public final State[] decodeValues(byte[] message) {
-        Float[] rawValues = BytesToFloatArray(message);
-        return sensedValues(rawValues);
+    public final Float[] decodeValues(byte[] message) {
+        return BytesToFloatArray(message);
     }
 }

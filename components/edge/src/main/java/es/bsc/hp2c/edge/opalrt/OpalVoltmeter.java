@@ -75,7 +75,6 @@ public class OpalVoltmeter extends Voltmeter<Float[]> implements OpalSensor<Floa
 
     @Override
     public final Float[] decodeValues(byte[] message) {
-        Float[] rawValues = BytesToFloatArray(message);
-        return sensedValues(rawValues);
+        return BytesToFloatArray(message);
     }
 }

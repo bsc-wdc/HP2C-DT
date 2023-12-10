@@ -55,7 +55,7 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
     }
 
     @Override
-    public abstract Smoke decodeValues(byte[] message);
+    public abstract T decodeValues(byte[] message);
 
     @Override
     public boolean isActionable() {

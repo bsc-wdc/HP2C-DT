@@ -107,7 +107,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     }
 
     @Override
-    public abstract State[] decodeValues(byte[] message);
+    public abstract T decodeValues(byte[] message);
 
     @Override
     public boolean isActionable() {

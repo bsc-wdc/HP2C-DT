@@ -63,5 +63,5 @@ public interface Sensor<R, V> {
      * @param messageBytes String containing the values of the sensor.
      * @return The actual values in the corresponding data type.
      */
-    public V decodeValues(byte[] messageBytes);
+    public T decodeValues(byte[] messageBytes);
 }
