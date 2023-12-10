@@ -23,7 +23,7 @@ sorted_setup_folder=($(ls -v "${setup_folder}"/*.json))
 for f in "${sorted_setup_folder[@]}"; do
     label=$(jq -r '.["global-properties"].label' "${f}")
     udp_port=$(jq -r '.["global-properties"].comms.udp.ports | keys_unsorted[0]' "${f}")
-    tcp_sensors_port=$(jq -r '.["global-properties"].comms.tcp_sensors.ports | keys_unsorted[0]' "${f}")
+    tcp_sensors_port=$(jq -r '.["global-properties"]["comms"]["tcp-sensors"].ports | keys_unsorted[0]' "${f}")
     if [ "$label" != "null" ]; then
         labels_paths["${label}"]="${f}"
         labels_udp_ports["${label}"]="${udp_port}"
