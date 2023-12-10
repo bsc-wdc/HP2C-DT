@@ -5,6 +5,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import es.bsc.hp2c.edge.types.Device;
+import es.bsc.hp2c.edge.types.Sensor;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
@@ -14,6 +15,8 @@ import org.influxdb.dto.Query;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -31,6 +34,7 @@ public class Server implements AutoCloseable {
     private final String EXCHANGE_NAME = "measurements";
     private final String serverURL = "http://127.0.0.1:8086";
     private final String username = "root", password = "root";
+    private static Map<String, Device> devices = new HashMap<>();
 
     public Server() throws IOException, TimeoutException {
         // Init RabbitMQ
@@ -52,9 +56,21 @@ public class Server implements AutoCloseable {
         }
         setupDir = new File(setupDir, "setup");
         File[] setupFiles = setupDir.listFiles();
+        ArrayList<Map<String, Device>> deviceMapList = new ArrayList<>();
         for (File setupFile: setupFiles) {
             System.out.println(setupFile.toString());
-            Map<String, Device> devices = loadDevices(setupFile.toString(), "driver-dt");
+            deviceMapList.add(loadDevices(setupFile.toString(), "driver-dt"));
+        }
+
+        // Merge device maps from each edge
+        for (Map<String, Device> deviceMap : deviceMapList) {
+            for (String deviceLabel : deviceMap.keySet()) {
+                Device deviceObject = deviceMap.get(deviceLabel);
+                if (devices.containsKey(deviceLabel)) {
+                    System.err.println("Warning: Device '" + deviceLabel + "' is being overridden.");
+                }
+                devices.put(deviceLabel, deviceObject);
+            }
         }
 
         // Deploy listener
