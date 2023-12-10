@@ -22,6 +22,8 @@ import es.bsc.hp2c.edge.types.Actuator;
 import es.bsc.hp2c.edge.types.Device;
 import es.bsc.hp2c.edge.types.Sensor;
 
+import static es.bsc.hp2c.edge.utils.CommUtils.FloatArrayToBytes;
+
 /**
  * This class interacts with a switch of the electrical network. It has a property (states), representing device's
  * states (switch state defined as ON/OFF)
@@ -93,7 +95,19 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
         return this.states;
     }
 
-    protected void setValues(State[] values) { this.states = values; }
+    protected void setValues(State[] values) {
+        this.states = values;
+    }
+    
+    @Override
+    public final byte[] encodeValues() {
+        State[] state = this.getCurrentValues();
+        Float[] values = actuateValues(state);
+        return FloatArrayToBytes(values);
+    }
+
+    @Override
+    public abstract State[] decodeValues(byte[] message);
 
     @Override
     public boolean isActionable() {

@@ -5,6 +5,8 @@ import es.bsc.hp2c.edge.types.Sensor;
 
 import java.util.ArrayList;
 
+import static es.bsc.hp2c.edge.utils.CommUtils.FloatArrayToBytes;
+
 /**
  * ThreePhaseSensor --- Compound abstract class sensor with three inner sensors. It has two properties: the number
  * of phases and an array gathering its inner sensors.
@@ -55,14 +57,13 @@ public abstract class ThreePhaseSensor<R, S> extends Device implements Sensor<R,
     protected abstract Float[] sensedValues(R input);
 
     @Override
-    public final String getCurrentValuesAsString() {
+    public final byte[] encodeValues() {
         Float[] values = this.getCurrentValues();
-        StringBuilder message = new StringBuilder(String.valueOf(values[0]));
-        for (int i = 1; i < values.length; i++) {
-            message.append(",").append(values[i]);
-        }
-        return message.toString();
+        return FloatArrayToBytes(values);
     }
+
+    @Override
+    public abstract Float[] decodeValues(byte[] message);
 
     public final int getNPhases() {
         return this.nPhases;

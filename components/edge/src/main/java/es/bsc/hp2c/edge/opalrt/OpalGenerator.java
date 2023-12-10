@@ -25,6 +25,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
+
 /**
  * Represent a switch implemented accessible within a local OpalRT.
  */
@@ -86,5 +88,10 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
         return input;
     }
 
+    @Override
+    public final Float[] decodeValues(byte[] message) {
+        Float[] rawValues = BytesToFloatArray(message);
+        return sensedValues(rawValues);
+    }
 }
 

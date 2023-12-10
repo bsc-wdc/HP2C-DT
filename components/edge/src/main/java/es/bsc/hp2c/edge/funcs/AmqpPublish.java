@@ -57,9 +57,9 @@ public class AmqpPublish extends Func {
 
     @Override
     public void run() {
-        String message = this.sensor.getCurrentValuesAsString();
+        byte[] message = this.sensor.encodeValues();
         try {
-            channel.basicPublish(EXCHANGE_NAME, routingKey, null, message.getBytes(UTF_8));
+            channel.basicPublish(EXCHANGE_NAME, routingKey, null, message);
         } catch (IOException e) {
             System.err.println("IOException during AMQP publishing");
             throw new RuntimeException(e);

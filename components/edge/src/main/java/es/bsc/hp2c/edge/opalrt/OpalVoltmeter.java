@@ -21,6 +21,8 @@ import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
+
 /**
  * Voltmeter simulated on an Opal-RT.
  */
@@ -71,4 +73,9 @@ public class OpalVoltmeter extends Voltmeter<Float[]> implements OpalSensor<Floa
         }
     }
 
+    @Override
+    public final Float[] decodeValues(byte[] message) {
+        Float[] rawValues = BytesToFloatArray(message);
+        return sensedValues(rawValues);
+    }
 }

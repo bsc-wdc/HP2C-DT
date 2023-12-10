@@ -21,6 +21,8 @@ import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
+
 /**
  * Ammeter simulated on an Opal-RT.
  */
@@ -69,6 +71,12 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     @Override
     protected Float[] sensedValues(Float[] input) {
         return input;
+    }
+
+    @Override
+    public final Float[] decodeValues(byte[] message) {
+        Float[] rawValues = BytesToFloatArray(message);
+        return sensedValues(rawValues);
     }
 
 }

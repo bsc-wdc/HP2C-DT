@@ -24,6 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
 
 /**
  * Represent a switch implemented accessible within a local OpalRT.
@@ -102,5 +103,27 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
             states[i] = input[i] > 0.5f ? State.ON : State.OFF;
         }
         return states;
+    }
+
+    @Override
+    public void setValues(State[] values) {
+        this.states = values;
+        if (this.indexes.length > 1){
+            System.out.println("New switch states has been set: ");
+            System.out.println("New states are: ");
+            for(int i = 0; i < this.states.length; ++i){
+                System.out.println("Switch " + i + " " + this.states[i]);
+            }
+        }
+        else{
+            System.out.println("New switch state has been set: ");
+            System.out.println("New state is " + this.states[0]);
+        }
+    }
+
+    @Override
+    public final State[] decodeValues(byte[] message) {
+        Float[] rawValues = BytesToFloatArray(message);
+        return sensedValues(rawValues);
     }
 }

@@ -19,6 +19,8 @@ package es.bsc.hp2c.server.device;
 import es.bsc.hp2c.edge.generic.Switch;
 import org.json.JSONObject;
 
+import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
+
 /**
  * Digital twin Switch.
  */
@@ -40,7 +42,7 @@ public class VirtualSwitch extends Switch<Float[]> {
      */
     @Override
     public void sensed(Float[] values) {
-        float[] sensedValues = new float[values.length];
+        Float[] sensedValues = new Float[values.length];
         for(int i = 0; i < values.length; i++){
             sensedValues[i] = values[i];
             System.out.println("Switch " + i + " " + this.states[i]);
@@ -56,7 +58,7 @@ public class VirtualSwitch extends Switch<Float[]> {
      * Preprocess a raw measurement.
      */
     @Override
-    protected State[] sensedValues(float[] input) {
+    protected State[] sensedValues(Float[] input) {
         State[] states = new State[input.length];
         // check if the number of input values equals the number of phases
         if (input.length != this.states.length) {
@@ -73,5 +75,11 @@ public class VirtualSwitch extends Switch<Float[]> {
      */
     public void setValues(State[] values) {
         this.states = values;
+    }
+
+    @Override
+    public final State[] decodeValues(byte[] message) {
+        Float[] rawValues = BytesToFloatArray(message);
+        return sensedValues(rawValues);
     }
 }

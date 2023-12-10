@@ -22,6 +22,8 @@ import es.bsc.hp2c.edge.types.Actuator;
 import es.bsc.hp2c.edge.types.Device;
 import es.bsc.hp2c.edge.types.Sensor;
 
+import static es.bsc.hp2c.edge.utils.CommUtils.FloatArrayToBytes;
+
 /**
  * Class representing a generator. It has a property (voltageSetPoint) indicating device set point (measured in V).
  */
@@ -95,6 +97,15 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
             System.err.println("Values length is not enough to assign to voltageSetpoint and powerSetpoint.");
         }
     }
+
+    @Override
+    public final byte[] encodeValues() {
+        Float[] values = this.getCurrentValues();
+        return FloatArrayToBytes(values);
+    }
+
+    @Override
+    public abstract Float[] decodeValues(byte[] message);
 
 
     @Override

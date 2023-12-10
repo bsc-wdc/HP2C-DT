@@ -19,6 +19,8 @@ package es.bsc.hp2c.server.device;
 import es.bsc.hp2c.edge.generic.Generator;
 import org.json.JSONObject;
 
+import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
+
 /**
  * Digital twin Generator.
  */
@@ -50,6 +52,12 @@ public class VirtualGenerator extends Generator<Float[]> {
     @Override
     protected Float[] sensedValues(Float[] input) {
         return input;
+    }
+
+    @Override
+    public final Float[] decodeValues(byte[] message) {
+        Float[] rawValues = BytesToFloatArray(message);
+        return sensedValues(rawValues);
     }
 }
 

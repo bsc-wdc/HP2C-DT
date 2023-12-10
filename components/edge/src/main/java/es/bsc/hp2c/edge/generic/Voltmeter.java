@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import es.bsc.hp2c.edge.types.Device;
 import es.bsc.hp2c.edge.types.Sensor;
 
+import static es.bsc.hp2c.edge.utils.CommUtils.FloatArrayToBytes;
+
 /**
  * Sensor measuring the voltage of the network. It has only one property representing devices current voltage
  */
@@ -73,19 +75,18 @@ public abstract class Voltmeter<R> extends Device implements Sensor<R, Float[]> 
         return this.values;
     }
 
-    @Override
-    public final String getCurrentValuesAsString() {
-        Float[] values = this.getCurrentValues();
-        StringBuilder message = new StringBuilder(String.valueOf(values[0]));
-        for (int i = 1; i < values.length; i++) {
-            message.append(",").append(values[i]);
-        }
-        return message.toString();
-    }
-
     protected void setValues(Float[] values) {
         this.values = values;
     }
+
+    @Override
+    public final byte[] encodeValues() {
+        Float[] values = this.getCurrentValues();
+        return FloatArrayToBytes(values);
+    }
+
+    @Override
+    public abstract Float[] decodeValues(byte[] message);
 
     @Override
     public final boolean isActionable() {

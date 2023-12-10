@@ -51,7 +51,17 @@ public interface Sensor<R, V> {
     public V getCurrentValues();
 
     /**
-     * Get current values formatted as String to be sent a via messaging protocol.
+     * Get current values formatted as byte array to be sent a via messaging protocol.
+     *
+     * @return Byte array message with the set of current values
      */
-    public String getCurrentValuesAsString();
+    public byte[] encodeValues();
+
+    /**
+     * Decode values from a message made of an array of bytes.
+     *
+     * @param messageBytes String containing the values of the sensor.
+     * @return The actual values in the corresponding data type.
+     */
+    public V decodeValues(byte[] messageBytes);
 }

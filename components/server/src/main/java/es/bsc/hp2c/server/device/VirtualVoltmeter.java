@@ -19,6 +19,8 @@ package es.bsc.hp2c.server.device;
 import es.bsc.hp2c.edge.generic.Voltmeter;
 import org.json.JSONObject;
 
+import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
+
 /**
  * Digital twin Voltmeter.
  */
@@ -54,4 +56,9 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> {
         return input;
     }
 
+    @Override
+    public final Float[] decodeValues(byte[] message) {
+        Float[] rawValues = BytesToFloatArray(message);
+        return sensedValues(rawValues);
+    }
 }

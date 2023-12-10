@@ -19,6 +19,8 @@ package es.bsc.hp2c.edge.generic;
 import es.bsc.hp2c.edge.types.Device;
 import es.bsc.hp2c.edge.types.Sensor;
 
+import static es.bsc.hp2c.edge.utils.CommUtils.FloatArrayToBytes;
+
 /**
  * Represents a smoke sensor belonging to the network.
  */
@@ -42,11 +44,18 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
         return this.status;
     }
 
+    public abstract Smoke sensedValues(T value);
+
     @Override
-    public final String getCurrentValuesAsString() {
-        Smoke value = this.getCurrentValues();
-        return String.valueOf(value);
+    public final byte[] encodeValues() {
+        Smoke state = this.getCurrentValues();
+        Float[] values = new Float[1];
+        values[0] = (float) ((state == Smoke.SMOKE) ? 1.0 : 0.0);
+        return FloatArrayToBytes(values);
     }
+
+    @Override
+    public abstract Smoke decodeValues(byte[] message);
 
     @Override
     public boolean isActionable() {
