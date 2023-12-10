@@ -32,7 +32,7 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> {
      * @param position device position
      * @param properties JSONObject representing device properties
      * */
-    public VirtualVoltmeter(String label, float[] position, JSONObject properties) {
+    public VirtualVoltmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
     }
 

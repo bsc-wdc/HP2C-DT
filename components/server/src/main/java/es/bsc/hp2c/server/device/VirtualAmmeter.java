@@ -32,7 +32,7 @@ public class VirtualAmmeter extends Ammeter<Float[]> {
     * @param position device position
     * @param properties JSONObject representing device properties
     * */
-    public VirtualAmmeter(String label, float[] position, JSONObject properties) {
+    public VirtualAmmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
     }
 

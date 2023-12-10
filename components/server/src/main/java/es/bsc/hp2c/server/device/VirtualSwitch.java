@@ -19,6 +19,8 @@ package es.bsc.hp2c.server.device;
 import es.bsc.hp2c.edge.generic.Switch;
 import org.json.JSONObject;
 
+import java.io.IOException;
+
 import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
 
 /**
@@ -32,7 +34,7 @@ public class VirtualSwitch extends Switch<Float[]> {
      * @param position device position
      * @param properties JSONObject representing device properties
      */
-    public VirtualSwitch(String label, float[] position, JSONObject properties) {
+    public VirtualSwitch(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position, properties.getJSONArray("indexes").length());
     }
 
@@ -54,6 +56,11 @@ public class VirtualSwitch extends Switch<Float[]> {
         }
     }
 
+    @Override
+    public void actuate(State[] values) throws IOException {
+
+    }
+
     /**
      * Preprocess a raw measurement.
      */
@@ -68,6 +75,11 @@ public class VirtualSwitch extends Switch<Float[]> {
             states[i] = input[i] > 0.5f ? State.ON : State.OFF;
         }
         return states;
+    }
+
+    @Override
+    protected Float[] actuateValues(State[] values) {
+        return new Float[0];
     }
 
     /**

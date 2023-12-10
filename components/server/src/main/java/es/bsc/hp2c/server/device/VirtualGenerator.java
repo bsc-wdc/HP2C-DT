@@ -19,6 +19,8 @@ package es.bsc.hp2c.server.device;
 import es.bsc.hp2c.edge.generic.Generator;
 import org.json.JSONObject;
 
+import java.io.IOException;
+
 import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
 
 /**
@@ -32,7 +34,7 @@ public class VirtualGenerator extends Generator<Float[]> {
      * @param position device position
      * @param properties JSONObject representing device properties
      * */
-    public VirtualGenerator(String label, float[] position, JSONObject properties) {
+    public VirtualGenerator(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
     }
 
@@ -44,6 +46,11 @@ public class VirtualGenerator extends Generator<Float[]> {
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
         System.out.println("Device " + getLabel() + " voltage set point is " + values[0] + " V");
+    }
+
+    @Override
+    public void actuate(Float[] value) throws IOException {
+
     }
 
     /**
