@@ -44,6 +44,9 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     public OpalSwitch(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position, properties.getJSONArray("indexes").length());
         JSONArray jIndexes = properties.getJSONArray("indexes");
+        if (jIndexes.length() != 1 && jIndexes.length() != 3){
+            throw new IllegalArgumentException("The switch must have either one or three indexes.");
+        }
         this.indexes = new int[jIndexes.length()];
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
