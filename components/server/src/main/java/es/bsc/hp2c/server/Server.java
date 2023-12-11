@@ -98,12 +98,14 @@ public class Server implements AutoCloseable {
 
         DeliverCallback callback = (consumerTag, delivery) -> {
             // Parse message. For instance: routingKey = "edge.edge1.voltmeter1"
-            String message = new String (delivery.getBody(), "UTF-8");
+            byte[] message = delivery.getBody();
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
             long timestampMillis = delivery.getProperties().getTimestamp().getTime();
             String edgeName = getEdgeName(senderRoutingKey);
             String deviceName = getDeviceName(senderRoutingKey);
-            System.out.println(" [x] Received '" + senderRoutingKey + "':'" + message + "'");
+            // Sense to the corresponding sensor
+            Sensor<?, ?> sensor = (Sensor<?, ?>) devices.get(deviceName);
+            sensor.sensed(message);
             // Write entry in database
             writeDB((Float[]) sensor.decodeValues(message), timestampMillis, edgeName, deviceName);
         };
