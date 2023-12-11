@@ -9,7 +9,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-
+/*
+ * Runs nEdges TCP servers in order to receive actuations, nEdges TCP clients to update the values on the edges
+ * (just of TCP sensors), and nEdges UDP servers with the aim of sending UDP sensors values. The OpalSimulator also
+ * keeps track of the state of every TCP sensor within each edge by maintaining a map where the second digit of the
+ * ports serves as the key (unique for each edge), and a Float array represents the corresponding values.
+ *
+ */
 public class OpalSimulator {
     private static final String SERVER_ADDRESS = "127.0.0.1";
     private static final int BASE_TCP_SENSORS_PORT = 11002;
@@ -19,28 +25,34 @@ public class OpalSimulator {
     private static final int BASE_UDP_PORT = 21002;
     private static final double frequency = 1.0 / 20.0;
 
+    /*
+    * Runs nEdges TCP servers in order to receive actuations, nEdges TCP clients to update the values on the edges
+    * (just of TCP sensors), and nEdges UDP servers with the aim of sending UDP sensors values.
+    *
+    * @param args User should input the number of edges and nEdges more arguments indicating the TCP sensors within each
+    * node. In this case, the number of UDP sensors will not be read, as we are sending always 25 values.
+    * */
     public static void main(String[] args) throws InterruptedException {
-        int nSockets;
+        int nEdges;
         if (args.length > 0){
-            nSockets = Integer.parseInt(args[0]);
+            nEdges = Integer.parseInt(args[0]);
         } else {
             System.out.println("User must input as arguments: ");
-            System.out.println("    nSockets: Number of edge devices (number of client ant server sockets)");
-            System.out.println("    Number of indexes for each edge node (nSockets inputs) ");
+            System.out.println("    nEdges: Number of edge devices (number of client ant server sockets)");
+            System.out.println("    Number of indexes for each edge node (nEdges inputs) ");
             args = new String[]{"2", "5", "0"};
-            nSockets = Integer.parseInt(args[0]);
+            nEdges = Integer.parseInt(args[0]);
         }
 
         // while each of the columns represents the indexes within the edge.
-        for (int i = 1; i <= nSockets; ++i){
+        for (int i = 1; i <= nEdges; ++i){
             Float[] edgeI = new Float[Integer.parseInt(args[i])];
             Arrays.fill(edgeI, Float.NEGATIVE_INFINITY);
             devices.put(i, edgeI);
         }
 
-        for (int i = 0; i < nSockets; ++i){
+        for (int i = 0; i < nEdges; ++i){
             int port = BASE_TCP_ACTUATORS_PORT + (i * 1000);
-            int finalI = i;
             new Thread(() -> {
                 try {
                     ServerSocket server = new ServerSocket(port, 0, InetAddress.getByName("0.0.0.0"));
@@ -49,21 +61,20 @@ public class OpalSimulator {
                     clientSocket = server.accept();
                     runClient += 1;
                     System.out.println("Accepted connection from: " + clientSocket.getInetAddress().getHostAddress());
-                    handleClient(clientSocket, (port / 1000) % 10);
+                    handleActuateClient(clientSocket, (port / 1000) % 10);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }).start();
         }
 
-        while (runClient < nSockets){
+        while (runClient < nEdges){
             Thread.sleep(1000);
         }
         Thread.sleep(3000);
 
-        for (int i = 0; i < nSockets; ++i){
-            int finalI = i;
-            int tcpPort = BASE_TCP_SENSORS_PORT + (finalI * 1000);
+        for (int i = 0; i < nEdges; ++i){
+            int tcpPort = BASE_TCP_SENSORS_PORT + (i * 1000);
             new Thread(() -> {
                 System.out.println("Starting TCP communication in port " + tcpPort + " ip " + SERVER_ADDRESS);
                 startTCPClient(tcpPort, (tcpPort / 1000) % 10);
@@ -71,7 +82,7 @@ public class OpalSimulator {
         }
 
         Thread.sleep(5000);
-        for (int i = 0; i < nSockets; ++i){
+        for (int i = 0; i < nEdges; ++i){
             int finalI = i;
             new Thread(() -> {
                 int udpPort = BASE_UDP_PORT + (finalI * 1000);
@@ -81,11 +92,16 @@ public class OpalSimulator {
         }
     }
 
-    private static void handleClient(Socket clientSocket, int edgeNumber) {
+    /*
+    * This method uses a TCP socket to receive actuations and update the corresponding values in "devices" map.
+    *
+    * @param clientSocket Socket through which we will receive the messages.
+    * @param edgeNumber Map key where value must be updated.
+    * */
+    private static void handleActuateClient(Socket clientSocket, int edgeNumber) {
         try {
             if (devices.get(edgeNumber).length < 1){ return; }
             DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
-
             while (true) {
                 byte[] buffer = new byte[devices.get(edgeNumber).length * Float.BYTES];
                 dis.readFully(buffer);
@@ -108,6 +124,11 @@ public class OpalSimulator {
         }
     }
 
+    /*
+    * This method starts a TCP client to update the value on the corresponding edge. To do so, we check start of message
+    * with a readInt() that checks the expected length (number of floats) of the message, then get the buffer with that
+    * messageLength, and lastly the end of line (EoL) character.
+    * */
     private static void startTCPClient(int tcpPort, int edgeNumber) {
         if (devices.get(edgeNumber).length < 1){ return; }
         try {

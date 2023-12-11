@@ -31,6 +31,12 @@ public class OpalComm {
     private static boolean useTCPActuators = false;
     private static boolean initialCall = true;
 
+    /*
+    * This method receives the global properties of the edge and, if it is the first call (first declared device),
+    * initializes ports and ips for communications.
+    *
+    * @param jGlobalProperties JSONObject representing the global properties of the edge
+    * */
     public static void init(JSONObject jGlobalProperties) {
         if (!initialCall){ return; }
         initialCall = false;
@@ -39,7 +45,8 @@ public class OpalComm {
             // Set up udp and tcp connections
             setupComms(jGlobalProperties, localIP);
             startUDPServer();
-            startTCPServer();}).start();
+            startTCPServer();
+        }).start();
     }
 
     private static void setupComms(JSONObject jGlobalProperties, String localIP){
@@ -49,10 +56,10 @@ public class OpalComm {
         JSONObject jTCP= jComms.getJSONObject("tcp-sensors");
 
         if (jComms.has("tcp-actuators")){
-            OpalComm.setUseTCPActuators();
+            setUseTCPActuators(true);
             JSONObject jActuate = jComms.getJSONObject("tcp-actuators");
             TreeMap<Integer, ArrayList<String>> portsActuate = getPorts(jActuate);
-            OpalComm.setActuateSocket(localIP, portsActuate.firstKey());
+            setActuateSocket(localIP, portsActuate.firstKey());
         } else{
             System.out.println("In order to enable actuations, 'tcp-actuators' must be declared within 'comms' section");
         }
@@ -63,10 +70,10 @@ public class OpalComm {
         TreeMap<Integer, ArrayList<String>> portsTcp = getPorts(jTCP);
 
         // Set local communication parameters
-        OpalComm.setUdpIp(ipUdp);
-        OpalComm.setUdpPort(portsUdp.firstKey());
-        OpalComm.setTcpIp(iptcp);
-        OpalComm.setTcpPort(portsTcp.firstKey());
+        setUdpIp(ipUdp);
+        setUdpPort(portsUdp.firstKey());
+        setTcpIp(iptcp);
+        setTcpPort(portsTcp.firstKey());
     }
 
     /**
@@ -102,12 +109,12 @@ public class OpalComm {
     }
 
     private static JSONObject getjComms(JSONObject jGlobProp) {
-        OpalComm.setUdpSensors(jGlobProp.getInt("udp-sensors"));
+        setUdpSensors(jGlobProp.getInt("udp-sensors"));
         return jGlobProp.getJSONObject("comms");
     }
 
     private static void startTCPServer() {
-        Thread tTcp = new Thread(() -> {
+        Thread TCPSensorsThread = new Thread(() -> {
             // Initialize UDP server socket to read measurements
             try {
                 InetAddress serverAddress = InetAddress.getByName(tcpIP);
@@ -140,7 +147,7 @@ public class OpalComm {
                         messageValues[i] = byteBuffer.getFloat();
                     }
 
-                    synchronized (OpalComm.sensors) {
+                    synchronized (sensors) {
                         int nIndexes = 0;
                         for (int i = 0; i < udpSensors; ++i) {
                             OpalSensor<?> sensor = sensors.get(i);
@@ -166,12 +173,12 @@ public class OpalComm {
                 System.err.println("Error initializing TCP server: " + e.getMessage());
             }
         });
-        tTcp.setName("Actuators");
-        tTcp.start();
+        TCPSensorsThread.setName("TCPSensorsThread");
+        TCPSensorsThread.start();
     }
 
     private static void startUDPServer() {
-        Thread tUdp = new Thread(() -> {
+        Thread UDPSensorsThread = new Thread(() -> {
             // Initialize UDP server socket to read measurements
             try {
                 InetAddress serverAddress = InetAddress.getByName(udpIP);
@@ -205,7 +212,7 @@ public class OpalComm {
                         values[i] = receivedValue;
                     }
 
-                    synchronized (OpalComm.sensors) {
+                    synchronized (sensors) {
                         for (int i = 0; i < udpSensors; ++i){
                             OpalSensor<?> sensor = sensors.get(i);
                             int[] indexes = sensor.getIndexes();
@@ -225,8 +232,8 @@ public class OpalComm {
                 }
             }
         });
-        tUdp.setName("OpalComm");
-        tUdp.start();
+        UDPSensorsThread.setName("UDPSensorsThread");
+        UDPSensorsThread.start();
     }
 
     public static void commitActuation(OpalActuator<?> actuator, Float[] values) throws IOException {
@@ -284,13 +291,13 @@ public class OpalComm {
      * @param sensor Sensor to register
      */
     public static void registerSensor(OpalSensor<?> sensor) {
-        synchronized (OpalComm.sensors) {
+        synchronized (sensors) {
             sensors.add(sensor);
         }
     }
 
     public static void registerActuator(OpalActuator<?> actuator) {
-        synchronized (OpalComm.actuators) {
+        synchronized (actuators) {
             actuators.add(actuator);
         }
     }
@@ -299,13 +306,13 @@ public class OpalComm {
 
     public static void setTcpPort(int port) { tcpPORT = port; }
 
-    public static void setUdpSensors(int udpSensors) { OpalComm.udpSensors = udpSensors; }
+    public static void setUdpSensors(int inputUDPSensors) { udpSensors = inputUDPSensors; }
 
     public static void setUdpIp(String udpIp) { udpIP = udpIp; }
 
     public static void setTcpIp(String tcpIp) { tcpIP = tcpIp; }
 
-    public static void setUseTCPActuators() { useTCPActuators = true; }
+    public static void setUseTCPActuators(boolean b) { useTCPActuators = b; }
 
     public static void setActuateSocket(String ip, int port){
         try {

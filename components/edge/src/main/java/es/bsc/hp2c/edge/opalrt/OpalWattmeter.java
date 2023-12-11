@@ -29,11 +29,13 @@ public class OpalWattmeter extends Wattmeter<Float[]> implements OpalSensor<Floa
     private int[] indexes;
 
     /*
-     * Creates a new instance of OpalWattmeter.
+     * Creates a new instance of OpalWattmeter when the device is declared in the JSON file. If an Opal device is used by
+     * the edge, OpalComm.init() initializes ports and ips for communications according to the data in jGlobalProperties.
      *
      * @param label device label
      * @param position device position
-     * @param properties JSONObject representing device properties
+     * @param jProperties JSONObject representing device properties
+     * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
     public OpalWattmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);

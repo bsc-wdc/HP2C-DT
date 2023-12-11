@@ -29,11 +29,13 @@ public class OpalVoltmeter extends Voltmeter<Float[]> implements OpalSensor<Floa
     private int[] indexes;
 
     /*
-     * Creates a new instance of OpalVoltmeter. Useful when the device is declared in a JSON file.
+     * Creates a new instance of OpalVoltmeter when the device is declared in the JSON file. If an Opal device is used by
+     * the edge, OpalComm.init() initializes ports and ips for communications according to the data in jGlobalProperties.
      *
      * @param label device label
      * @param position device position
-     * @param properties JSONObject representing device properties
+     * @param jProperties JSONObject representing device properties
+     * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
     public OpalVoltmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);

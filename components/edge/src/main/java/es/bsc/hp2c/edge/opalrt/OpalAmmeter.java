@@ -29,15 +29,17 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     private int[] indexes;
 
     /*
-    * Creates a new instance of OpalAmmeter. Useful when the device is declared in a JSON file.
+    * Creates a new instance of OpalAmmeter when the device is declared in the JSON file. If an Opal device is used by
+    * the edge, OpalComm.init() initializes ports and ips for communications according to the data in jGlobalProperties.
     *
     * @param label device label
     * @param position device position
-    * @param properties JSONObject representing device properties
+    * @param jProperties JSONObject representing device properties
+    * @param jGlobalProperties JSONObject representing the global properties of the edge
     * */
-    public OpalAmmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
+    public OpalAmmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
-        JSONArray jIndexes = properties.getJSONArray("indexes");
+        JSONArray jIndexes = jProperties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
