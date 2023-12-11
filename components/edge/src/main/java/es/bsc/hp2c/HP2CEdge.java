@@ -41,7 +41,6 @@ import org.json.JSONTokener;
  * storing the devices and functions.
  */
 public class HP2CEdge {
-
     private static String edgeLabel;
     private static final String EXCHANGE_NAME = "measurements";
     private static Connection connection;

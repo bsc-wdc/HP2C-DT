@@ -40,13 +40,11 @@ public class OpalComm {
     public static void init(JSONObject jGlobalProperties) {
         if (!initialCall){ return; }
         initialCall = false;
-        new Thread (() -> {
-            String localIP = System.getenv("LOCAL_IP");
-            // Set up udp and tcp connections
-            setupComms(jGlobalProperties, localIP);
-            startUDPServer();
-            startTCPServer();
-        }).start();
+        String localIP = System.getenv("LOCAL_IP");
+        // Set up udp and tcp connections
+        setupComms(jGlobalProperties, localIP);
+        startUDPServer();
+        startTCPServer();
     }
 
     private static void setupComms(JSONObject jGlobalProperties, String localIP){
