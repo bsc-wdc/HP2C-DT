@@ -44,7 +44,7 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
         return this.status;
     }
 
-    public abstract Smoke sensedValues(T value);
+    public abstract Smoke sensedValues(R value);
 
     @Override
     public final byte[] encodeValues() {
@@ -55,7 +55,7 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
     }
 
     @Override
-    public abstract T decodeValues(byte[] message);
+    public abstract R decodeValues(byte[] message);
 
     @Override
     public boolean isActionable() {
@@ -69,4 +69,9 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
 
     @Override
     public abstract void sensed(R value);
+
+    @Override
+    public void sensed(byte[] messageBytes) {
+        sensed(decodeValues(messageBytes));
+    }
 }

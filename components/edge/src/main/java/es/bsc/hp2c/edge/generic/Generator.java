@@ -49,6 +49,11 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     public abstract void sensed(R value);
 
     @Override
+    public void sensed(byte[] messageBytes) {
+        sensed(decodeValues(messageBytes));
+    }
+
+    @Override
     public abstract void actuate(Float[] value) throws IOException;
 
     /**
@@ -105,7 +110,7 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     }
 
     @Override
-    public abstract T decodeValues(byte[] message);
+    public abstract R decodeValues(byte[] message);
 
 
     @Override

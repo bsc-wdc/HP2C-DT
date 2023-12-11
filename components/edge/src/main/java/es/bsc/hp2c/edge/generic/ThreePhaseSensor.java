@@ -48,6 +48,11 @@ public abstract class ThreePhaseSensor<R, S> extends Device implements Sensor<R,
     @Override
     public abstract void sensed(R values);
 
+    @Override
+    public void sensed(byte[] messageBytes) {
+        sensed(decodeValues(messageBytes));
+    }
+
     /**
      * Converts the sensed input to a known value;
      *
@@ -63,7 +68,7 @@ public abstract class ThreePhaseSensor<R, S> extends Device implements Sensor<R,
     }
 
     @Override
-    public abstract T decodeValues(byte[] message);
+    public abstract R decodeValues(byte[] message);
 
     public final int getNPhases() {
         return this.nPhases;

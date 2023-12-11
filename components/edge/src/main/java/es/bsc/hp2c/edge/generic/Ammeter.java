@@ -44,6 +44,11 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
     @Override
     public abstract void sensed(R values);
 
+    @Override
+    public void sensed(byte[] messageBytes) {
+        sensed(decodeValues(messageBytes));
+    }
+
     /**
      * Adds a runnable to devices "onRead" functions;
      *
@@ -86,7 +91,7 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
     }
 
     @Override
-    public abstract T decodeValues(byte[] message);
+    public abstract R decodeValues(byte[] message);
 
     @Override
     public final boolean isActionable() {
