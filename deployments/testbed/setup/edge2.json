@@ -6,18 +6,18 @@
             "udp": {
                 "ip": "0.0.0.0",
                 "ports": {
-                    "22002": []
+                    "22002": ["Voltmeter Gen1", "Three-Phase Voltmeter Gen1", "Three-Phase Ammeter Gen1"]
                 }
             },
             "tcp-sensors": {
                 "ip": "0.0.0.0",
                 "ports": {
-                    "12002": []
+                    "12002": ["Switch Gen1"]
                 }
             },
             "tcp-actuators": {
                 "ports": {
-                    "32002": []
+                    "32002": ["Switch Gen1"]
                 }
             }
         },

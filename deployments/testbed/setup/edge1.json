@@ -99,7 +99,7 @@
                 "actuators": ["Switch Gen1"],
                 "other": [200]
             },
-            "trigger": {
+                        "trigger": {
                 "type": "onRead", 
                 "method-name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
                 "parameters": ["Voltmeter Gen1"]
