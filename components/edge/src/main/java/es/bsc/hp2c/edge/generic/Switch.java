@@ -84,7 +84,7 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract State[] sensedValues(Float[] input);
+    protected abstract State[] sensedValues(T input);
 
     protected abstract Float[] actuateValues(State[] values);
 

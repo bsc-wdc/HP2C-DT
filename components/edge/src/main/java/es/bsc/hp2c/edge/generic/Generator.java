@@ -73,7 +73,7 @@ public abstract class Generator<T> extends Device implements Sensor<T, Float[]>,
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract Float[] sensedValues(Float[] input);
+    protected abstract Float[] sensedValues(T input);
 
     @Override
     public final Float[] getCurrentValues() {

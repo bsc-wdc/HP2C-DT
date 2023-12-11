@@ -52,7 +52,7 @@ public abstract class ThreePhaseSensor<T, S> extends Device implements Sensor<T,
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract Float[] sensedValues(Float[] input);
+    protected abstract Float[] sensedValues(T input);
 
     public final int getNPhases() {
         return this.nPhases;
