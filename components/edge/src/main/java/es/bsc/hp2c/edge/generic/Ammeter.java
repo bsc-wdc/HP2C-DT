@@ -29,9 +29,6 @@ public abstract class Ammeter<T> extends Device implements Sensor<T, Float[]> {
     private Float[] values = { 0.0f };
     private ArrayList<Runnable> onReadFunctions;
 
-    @Override
-    public abstract void sensed(T values);
-
     /**
      * Creates a new instance of ammeter;
      *
@@ -42,6 +39,9 @@ public abstract class Ammeter<T> extends Device implements Sensor<T, Float[]> {
         super(label, position);
         this.onReadFunctions = new ArrayList<>();
     }
+
+    @Override
+    public abstract void sensed(T values);
 
     /**
      * Adds a runnable to devices "onRead" functions;

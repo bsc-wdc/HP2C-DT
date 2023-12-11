@@ -92,22 +92,4 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
         }
         return states;
     }
-
-
-    @Override
-    public void setValues(State[] values) {
-        this.states = values;
-        if (this.indexes.length > 1){
-            System.out.println("New switch states has been set: ");
-            System.out.println("New states are: ");
-            for(int i = 0; i < this.states.length; ++i){
-                System.out.println("Switch " + i + " " + this.states[i]);
-            }
-        }
-        else{
-            System.out.println("New switch state has been set: ");
-            System.out.println("New state is " + this.states[0]);
-        }
-    }
-
 }

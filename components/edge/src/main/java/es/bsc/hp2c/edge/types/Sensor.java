@@ -39,7 +39,7 @@ public interface Sensor<T, V> {
      * Receive the raw sensed value and sets value attribute according to what
      * sensedValue(value) returns.
      *
-     * @param value Type of value to return.
+     * @param values Type of value to return.
      */
     public void sensed(T values);
 

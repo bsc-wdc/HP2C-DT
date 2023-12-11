@@ -93,8 +93,14 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
         return this.states;
     }
 
-    @Override
-    public abstract void setValues(Switch.State[] values) throws Exception;
+    protected void setValues(State[] values) {
+        this.states = values;
+        System.out.println("New switch states has been set: ");
+        System.out.println("New states are: ");
+        for(int i = 0; i < this.states.length; ++i){
+            System.out.println("Switch " + i + " " + this.states[i]);
+        }
+    }
 
     @Override
     public boolean isActionable() {

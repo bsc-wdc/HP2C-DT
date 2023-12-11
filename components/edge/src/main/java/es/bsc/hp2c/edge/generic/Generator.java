@@ -86,7 +86,7 @@ public abstract class Generator<T> extends Device implements Sensor<T, Float[]>,
         return combinedValues;
     }
 
-    public void setValues(Float[] values) {
+    protected void setValues(Float[] values) {
         if (values.length >= this.voltageSetpoint.length + this.powerSetpoint.length) {
             System.arraycopy(values, 0, this.voltageSetpoint, 0, this.voltageSetpoint.length);
 

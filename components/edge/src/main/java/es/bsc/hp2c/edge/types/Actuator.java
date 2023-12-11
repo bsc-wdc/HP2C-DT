@@ -24,15 +24,6 @@ import java.io.IOException;
  */
 public interface Actuator<V> {
 
-    /**
-     * Sets the status of the actuator.
-     *
-     * @param value value to be set on the actuator
-     *
-     * @throws Exception there was some problem while performing the action
-     */
-    public void setValues(V value) throws Exception;
-
     public void actuate(V values) throws IOException;
 
 }

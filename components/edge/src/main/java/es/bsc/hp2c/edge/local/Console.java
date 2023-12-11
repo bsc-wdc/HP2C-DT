@@ -29,13 +29,9 @@ public class Console extends MsgAlert {
     }
 
 
+
     @Override
-    public void setValues(String message) throws Exception {
+    public void actuate(String message) {
         System.out.println(message);
-    }
-
-    @Override
-    public void actuate(String values) {
-
     }
 }
