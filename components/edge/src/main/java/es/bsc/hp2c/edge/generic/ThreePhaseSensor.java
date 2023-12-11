@@ -9,7 +9,7 @@ import java.util.ArrayList;
  * ThreePhaseSensor --- Compound abstract class sensor with three inner sensors. It has two properties: the number
  * of phases and an array gathering its inner sensors.
  */
-public abstract class ThreePhaseSensor<T, S> extends Device implements Sensor<T, Float[]> {
+public abstract class ThreePhaseSensor<R, S> extends Device implements Sensor<R, Float[]> {
     private final int nPhases = 3;
     protected S[] subSensors;
     private ArrayList<Runnable> onReadFunctions;
@@ -44,7 +44,7 @@ public abstract class ThreePhaseSensor<T, S> extends Device implements Sensor<T,
     }
 
     @Override
-    public abstract void sensed(T values);
+    public abstract void sensed(R values);
 
     /**
      * Converts the sensed input to a known value;
@@ -52,7 +52,7 @@ public abstract class ThreePhaseSensor<T, S> extends Device implements Sensor<T,
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract Float[] sensedValues(T input);
+    protected abstract Float[] sensedValues(R input);
 
     public final int getNPhases() {
         return this.nPhases;

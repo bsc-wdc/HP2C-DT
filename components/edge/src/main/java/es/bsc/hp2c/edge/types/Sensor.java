@@ -18,10 +18,10 @@ package es.bsc.hp2c.edge.types;
 /**
  * Class collecting information from the electrical network.
  *
- * @param <T> Type of value to receive.
+ * @param <R> Type of value to receive.
  * @param <V> Type of value to return.
  */
-public interface Sensor<T, V> {
+public interface Sensor<R, V> {
 
     /**
      * Receive a function and add it to the list of onRead functions.
@@ -41,7 +41,7 @@ public interface Sensor<T, V> {
      *
      * @param values Type of value to return.
      */
-    public void sensed(T values);
+    public void sensed(R values);
 
     /**
      * Get the value stored.

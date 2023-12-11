@@ -22,7 +22,7 @@ import es.bsc.hp2c.edge.types.Sensor;
 /**
  * Represents a smoke sensor belonging to the network.
  */
-public abstract class SmokeSensor<T> extends Device implements Sensor<T, SmokeSensor.Smoke> {
+public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSensor.Smoke> {
 
     public static enum Smoke {
         NO_SMOKE,
@@ -53,5 +53,5 @@ public abstract class SmokeSensor<T> extends Device implements Sensor<T, SmokeSe
     }
 
     @Override
-    public abstract void sensed(T value);
+    public abstract void sensed(R value);
 }

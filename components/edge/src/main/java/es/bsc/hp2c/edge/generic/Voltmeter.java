@@ -23,7 +23,7 @@ import es.bsc.hp2c.edge.types.Sensor;
 /**
  * Sensor measuring the voltage of the network. It has only one property representing devices current voltage
  */
-public abstract class Voltmeter<T> extends Device implements Sensor<T, Float[]> {
+public abstract class Voltmeter<R> extends Device implements Sensor<R, Float[]> {
 
     private Float[] values = { 0.0f };
     private ArrayList<Runnable> onReadFunctions;
@@ -58,7 +58,7 @@ public abstract class Voltmeter<T> extends Device implements Sensor<T, Float[]> 
     }
 
     @Override
-    public abstract void sensed(T value);
+    public abstract void sensed(R value);
 
     /**
      * Converts the sensed input to a known value;
@@ -66,7 +66,7 @@ public abstract class Voltmeter<T> extends Device implements Sensor<T, Float[]> 
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract Float[] sensedValues(T input);
+    protected abstract Float[] sensedValues(R input);
 
     @Override
     public final Float[] getCurrentValues() {

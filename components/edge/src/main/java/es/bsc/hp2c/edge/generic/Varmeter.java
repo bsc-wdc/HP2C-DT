@@ -24,13 +24,13 @@ import es.bsc.hp2c.edge.types.Sensor;
 /**
  * Sensor measuring the reactive power of the network. It has a property (values) measured in VAR (volt-ampere reactive)
  */
-public abstract class Varmeter<T> extends Device implements Sensor<T, Float[]> {
+public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
 
     private Float[] values = { 0.0f };
     private ArrayList<Runnable> onReadFunctions;
 
     @Override
-    public abstract void sensed(T values);
+    public abstract void sensed(R values);
 
     /**
      * Creates a new instance of varmeter;
@@ -67,7 +67,7 @@ public abstract class Varmeter<T> extends Device implements Sensor<T, Float[]> {
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract Float[] sensedValues(T input);
+    protected abstract Float[] sensedValues(R input);
 
     @Override
     public final Float[] getCurrentValues() {

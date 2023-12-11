@@ -25,7 +25,7 @@ import es.bsc.hp2c.edge.types.Sensor;
 /**
  * Class representing a generator. It has a property (voltageSetPoint) indicating device set point (measured in V).
  */
-public abstract class Generator<T> extends Device implements Sensor<T, Float[]>, Actuator<Float[]> {
+public abstract class Generator<R> extends Device implements Sensor<R, Float[]>, Actuator<Float[]> {
 
     protected Float[] voltageSetpoint = { 0.0f };
     protected Float[] powerSetpoint = { 0.0f };
@@ -44,7 +44,7 @@ public abstract class Generator<T> extends Device implements Sensor<T, Float[]>,
     }
 
     @Override
-    public abstract void sensed(T value);
+    public abstract void sensed(R value);
 
     @Override
     public abstract void actuate(Float[] value) throws IOException;
@@ -73,7 +73,7 @@ public abstract class Generator<T> extends Device implements Sensor<T, Float[]>,
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract Float[] sensedValues(T input);
+    protected abstract Float[] sensedValues(R input);
 
     @Override
     public final Float[] getCurrentValues() {
