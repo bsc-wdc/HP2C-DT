@@ -105,7 +105,7 @@ public class Server implements AutoCloseable {
             String deviceName = getDeviceName(senderRoutingKey);
             System.out.println(" [x] Received '" + senderRoutingKey + "':'" + message + "'");
             // Write entry in database
-            writeDB(message, timestampMillis, edgeName, deviceName);
+            writeDB((Float[]) sensor.decodeValues(message), timestampMillis, edgeName, deviceName);
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });
     }
@@ -114,20 +114,23 @@ public class Server implements AutoCloseable {
      * Write to Influx database.
      * Use the second field of the routing key (EDGE_ID) as the `measurement`
      * (time series) and the third field (DEVICE_ID) as the `tag` value.
-     * @param message Message of a measurement in string format.
+     * @param values Message of a measurements as an integer format.
      * @param timestamp Message timestamp in long integer format.
-     * @param measurementName Name of the Influx measurement (series) where we
-     *                        will write. Typically, the name of the edge node.
-     * @param tagName Name of the Influx tag where we will write. Typically,
-     *                the name of the device.
+     * @param edgeName Name of the Influx measurement (series) where we
+     *                 will write. Typically, the name of the edge node.
+     * @param deviceName Name of the Influx tag where we will write. Typically,
+     *                   the name of the device.
      */
-    private void writeDB(String message, long timestamp, String measurementName, String tagName) {
-        // Write points to InfluxDB.
-        influxDB.write(Point.measurement(measurementName)
-            .time(timestamp, TimeUnit.MILLISECONDS)
-            .tag("device", tagName)
-            .addField("value", Float.valueOf(message))
-            .build());
+    private void writeDB(Float[] values, long timestamp, String edgeName, String deviceName) {
+        for (int i = 0; i < values.length; i++) {
+            String tagName = deviceName + "Sensor" + i;
+            System.out.println(" [x] Received '" + edgeName + "." + deviceName + "':'" + Arrays.toString(values) + "'");
+            influxDB.write(Point.measurement(edgeName)
+                    .time(timestamp, TimeUnit.MILLISECONDS)
+                    .tag("device", tagName)
+                    .addField("value", values[i])
+                    .build());
+        }
     }
 
     /**
