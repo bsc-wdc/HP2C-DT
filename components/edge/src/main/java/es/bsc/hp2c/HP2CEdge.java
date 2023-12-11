@@ -82,6 +82,7 @@ public class HP2CEdge {
         } catch (IOException | TimeoutException e) {
             amqpOn = false;
             System.err.println("Error initializing messaging.");
+            System.out.println("Caused by: " + e.getMessage());
             System.err.println("Continuing without AMQP connection.");
         }
     }
@@ -108,6 +109,7 @@ public class HP2CEdge {
                 devices.put(d.getLabel(), d);
             } catch (DeviceInstantiationException | ClassNotFoundException | JSONException e) {
                 System.err.println("Error loading device " + jDevice + ". Ignoring it. " + e.getMessage());
+                System.out.println("Caused by: " + e.getMessage());
             }
         }
         return devices;
@@ -139,10 +141,12 @@ public class HP2CEdge {
                     Func.setupTrigger(jFunc, devices, action);
                 } catch (FunctionInstantiationException e) {
                     System.err.println("Error initializing function " + funcLabel);
+                    System.out.println("Caused by: " + e.getMessage());
                 }
             }
         } catch (Exception e) {
             System.err.println("Warning: Specific funcs might not be available in setup.");
+            System.out.println("Caused by: " + e.getMessage());
         }
 
         // Load generic functions
@@ -178,6 +182,7 @@ public class HP2CEdge {
                     Func.setupTrigger(jGlobalFunc, devices, action);
                 } catch (FunctionInstantiationException e) {
                     System.err.println("Error initializing general function " + funcLabel);
+                    System.out.println("Caused by: " + e.getMessage());
                 }
             }
         }

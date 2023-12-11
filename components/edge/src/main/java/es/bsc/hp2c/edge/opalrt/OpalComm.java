@@ -116,13 +116,19 @@ public class OpalComm {
     private static void startTCPServer() {
         Thread TCPSensorsThread = new Thread(() -> {
             // Initialize UDP server socket to read measurements
+            InetAddress serverAddress = null;
+            Socket clientSocket = null;
             try {
-                InetAddress serverAddress = InetAddress.getByName(tcpIP);
+                serverAddress = InetAddress.getByName(tcpIP);
                 tcpSocket = new ServerSocket(tcpPORT,0, serverAddress);
                 System.out.println("\nTCP Server running on port: " + tcpPORT + "\n");
-
-                Socket clientSocket = tcpSocket.accept();
-
+                clientSocket = tcpSocket.accept();
+            } catch (IOException e) {
+                System.out.println("Error starting TCP server.");
+                System.out.println("Caused by: " + e.getMessage());
+                throw new RuntimeException(e);
+            }
+            try {
                 while (true) {
                     // Print time each iteration
                     LocalTime currentTime = LocalTime.now();
@@ -169,8 +175,9 @@ public class OpalComm {
                     }
                     System.out.println(); // Add empty line at the end of each measurement
                 }
-            } catch (IOException e) {
-                System.err.println("Error initializing TCP server: " + e.getMessage());
+            } catch (IOException e){
+                System.out.println("Error reading messages though TCP.");
+                System.out.println("Caused by: " + e.getMessage());
             }
         });
         TCPSensorsThread.setName("TCPSensorsThread");
@@ -320,7 +327,7 @@ public class OpalComm {
             System.out.println("Connected to server " + ip + " through port " + port);
         } catch (Exception e) {
             System.out.println("Failed to connect to server " + ip + " through port " + port);
-            System.err.println("Error connecting to TCP server: " + e.getMessage());
+            System.err.println("Caused by: " + e.getMessage());
         }
     }
 
