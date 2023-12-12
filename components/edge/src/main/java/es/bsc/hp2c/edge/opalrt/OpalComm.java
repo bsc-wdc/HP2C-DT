@@ -135,8 +135,7 @@ public class OpalComm {
                 System.out.println("\nTCP Server running on port: " + tcpPORT + "\n");
                 clientSocket = tcpSocket.accept();
             } catch (IOException e) {
-                System.out.println("Error starting TCP server.");
-                System.out.println("Caused by: " + e.getMessage());
+                System.err.println("Error starting TCP server: " + e.getMessage());
                 throw new RuntimeException(e);
             }
             try {
@@ -189,8 +188,7 @@ public class OpalComm {
                     System.out.println(); // Add empty line at the end of each measurement
                 }
             } catch (IOException e){
-                System.out.println("Error reading messages though TCP.");
-                System.out.println("Caused by: " + e.getMessage());
+                System.err.println("Error reading messages though TCP: " + e.getMessage());
             }
         });
         TCPSensorsThread.setName("TCPSensorsThread");
@@ -340,8 +338,7 @@ public class OpalComm {
             actuateSocket = new Socket(ip, port);
             System.out.println("Connected to server " + ip + " through port " + port);
         } catch (Exception e) {
-            System.out.println("Failed to connect to server " + ip + " through port " + port);
-            System.err.println("Caused by: " + e.getMessage());
+            System.err.println("Failed to connect to server " + ip + " through port " + port + ": " + e.getMessage());
         }
     }
 

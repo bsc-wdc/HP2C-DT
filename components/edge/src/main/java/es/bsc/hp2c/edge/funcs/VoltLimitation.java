@@ -61,8 +61,7 @@ public class VoltLimitation extends Func {
                 states[0] = Switch.State.OFF;
                 sw.actuate(values);
             } catch (Exception e) {
-                System.err.println("Error while setting switch OFF.");
-                System.err.println("Caused by: " + e.getMessage());
+                System.err.println("Error while setting switch OFF: " + e.getMessage());
             }
         }
     }
