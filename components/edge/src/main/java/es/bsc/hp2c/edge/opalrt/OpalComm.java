@@ -41,13 +41,14 @@ public class OpalComm {
         if (!initialCall){ return; }
         initialCall = false;
         String localIP = System.getenv("LOCAL_IP");
+        String customIp = System.getenv("CUSTOM_IP");
         // Set up udp and tcp connections
-        setupComms(jGlobalProperties, localIP);
+        setupComms(jGlobalProperties, localIP, customIp);
         startUDPServer();
         startTCPServer();
     }
 
-    private static void setupComms(JSONObject jGlobalProperties, String localIP){
+    private static void setupComms(JSONObject jGlobalProperties, String localIP, String customIp){
         // Parse setup file
         JSONObject jComms = getjComms(jGlobalProperties);
         JSONObject jUDP = jComms.getJSONObject("udp");
@@ -57,7 +58,7 @@ public class OpalComm {
             setUseTCPActuators(true);
             JSONObject jActuate = jComms.getJSONObject("tcp-actuators");
             TreeMap<Integer, ArrayList<String>> portsActuate = getPorts(jActuate);
-            setActuateSocket(localIP, portsActuate.firstKey());
+            setActuateSocket(localIP, customIp, portsActuate.firstKey());
         } else{
             System.out.println("In order to enable actuations, 'tcp-actuators' must be declared within 'comms' section");
         }
@@ -333,12 +334,21 @@ public class OpalComm {
 
     public static void setUseTCPActuators(boolean b) { useTCPActuators = b; }
 
-    public static void setActuateSocket(String ip, int port){
+    public static void setActuateSocket(String localIp, String customIp, int port){
         try {
-            actuateSocket = new Socket(ip, port);
-            System.out.println("Connected to server " + ip + " through port " + port);
+            actuateSocket = new Socket(localIp, port);
+            System.out.println("Connected to server " + localIp + " through port " + port);
         } catch (Exception e) {
-            System.err.println("Failed to connect to server " + ip + " through port " + port + ": " + e.getMessage());
+            System.err.println("Failed to connect to server " + localIp + " through port " + port + ": " +
+                    e.getMessage());
+            System.out.println("Trying to connect to server " + customIp + " through port " + port);
+            try {
+                actuateSocket = new Socket(customIp, port);
+                System.out.println("Connected to server " + customIp + " through port " + port);
+            } catch (Exception e1) {
+                System.err.println("Failed to connect to server " + customIp + " through port " + port + ": " +
+                        e1.getMessage());
+            }
         }
     }
 

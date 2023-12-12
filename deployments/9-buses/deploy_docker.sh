@@ -41,7 +41,10 @@ if [ -z "$ip_address" ]; then
     ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'eth[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
 fi
 
+custom_ip_address="172.29.128.1"
+
 echo "Local IPv4 Address: $ip_address"
+echo "Custom IP Address: $custom_ip_address"
 
 
 # Setting up trap to clear environment
@@ -96,6 +99,7 @@ for label in "${!labels_paths[@]}"; do
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
         -e LOCAL_IP=$ip_address \
+        -e CUSTOM_IP=$custom_ip_address \
         ${EDGE_DOCKER_IMAGE}
     edge_idx=$(( edge_idx + 1 ))
 done

@@ -8,5 +8,5 @@ cd ${SCRIPT_DIR}/agents
 ./create_images.sh "${COMPSS_VERSION}"
 cd ..
 
-docker build -t hp2c/edge:${HP2C_VERSION} --build-arg="COMPSS_VERSION=${COMPSS_VERSION}" -f ${SCRIPT_DIR}/Dockerfile.edge ${SCRIPT_DIR}/../components/edge
-docker tag hp2c/edge:${HP2C_VERSION} hp2c/edge:latest
+docker build -t maaurogl/edge:${HP2C_VERSION} --build-arg="COMPSS_VERSION=${COMPSS_VERSION}" -f ${SCRIPT_DIR}/Dockerfile.edge ${SCRIPT_DIR}/../components/edge
+docker tag maaurogl/edge:${HP2C_VERSION} maaurogl/edge:latest
