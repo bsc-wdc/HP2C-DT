@@ -15,13 +15,13 @@ import org.influxdb.dto.Query;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static es.bsc.hp2c.HP2CEdge.loadDevices;
+import static es.bsc.hp2c.edge.utils.FileUtils.readEdgeLabel;
 
 /**
  * Implementation of the server logic interacting with an InfluxDB database and
@@ -34,7 +34,7 @@ public class Server implements AutoCloseable {
     private final String EXCHANGE_NAME = "measurements";
     private final String serverURL = "http://127.0.0.1:8086";
     private final String username = "root", password = "root";
-    private static Map<String, Device> devices = new HashMap<>();
+    private static Map<String, Map<String, Device>> deviceMap = new HashMap<>();
 
     public Server() throws IOException, TimeoutException {
         // Init RabbitMQ
@@ -56,21 +56,14 @@ public class Server implements AutoCloseable {
         }
         setupDir = new File(setupDir, "setup");
         File[] setupFiles = setupDir.listFiles();
-        ArrayList<Map<String, Device>> deviceMapList = new ArrayList<>();
-        for (File setupFile: setupFiles) {
-            System.out.println(setupFile.toString());
-            deviceMapList.add(loadDevices(setupFile.toString(), "driver-dt"));
-        }
+        assert setupFiles != null;
 
-        // Merge device maps from each edge
-        for (Map<String, Device> deviceMap : deviceMapList) {
-            for (String deviceLabel : deviceMap.keySet()) {
-                Device deviceObject = deviceMap.get(deviceLabel);
-                if (devices.containsKey(deviceLabel)) {
-                    System.err.println("Warning: Device '" + deviceLabel + "' is being overridden.");
-                }
-                devices.put(deviceLabel, deviceObject);
-            }
+        // Fill in edge-devices map
+        for (File setupFile: setupFiles) {
+            String filePath = setupFile.toString();
+            System.out.println("Loading setup configuration for file " + filePath);
+            String edgeLabel = readEdgeLabel(filePath);
+            deviceMap.put(edgeLabel, loadDevices(filePath, "driver-dt"));
         }
 
         // Deploy listener
@@ -103,8 +96,20 @@ public class Server implements AutoCloseable {
             long timestampMillis = delivery.getProperties().getTimestamp().getTime();
             String edgeName = getEdgeName(senderRoutingKey);
             String deviceName = getDeviceName(senderRoutingKey);
+            // Check existence of pair edge-device
+            if (deviceMap.containsKey(edgeName)){
+                if (!deviceMap.get(edgeName).containsKey(deviceName)) {
+                    System.err.println("Edge " + edgeName + ", Device " + deviceName
+                            + ": message received but device not listed as " + edgeName + " digital twin devices.");
+                    return;
+                }
+            } else {
+                System.err.println("Edge " + edgeName + ", Device " + deviceName
+                        + ": message received but " + edgeName + " is not listed as digital twin edge.");
+                return;
+            }
             // Sense to the corresponding sensor
-            Sensor<?, ?> sensor = (Sensor<?, ?>) devices.get(deviceName);
+            Sensor<?, ?> sensor = (Sensor<?, ?>) deviceMap.get(edgeName).get(deviceName);
             sensor.sensed(message);
             // Write entry in database
             writeDB((Float[]) sensor.decodeValues(message), timestampMillis, edgeName, deviceName);
