@@ -37,9 +37,9 @@ public class OpalVoltmeter extends Voltmeter<Float[]> implements OpalSensor<Floa
      * @param jProperties JSONObject representing device properties
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
-    public OpalVoltmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
+    public OpalVoltmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
-        JSONArray jIndexes = properties.getJSONArray("indexes");
+        JSONArray jIndexes = jProperties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));

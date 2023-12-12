@@ -60,9 +60,9 @@ public abstract class Device {
             position = new float[] { 0, 0, 0 };
         }
 
-        JSONObject properties = jDevice.optJSONObject("properties");
+        JSONObject jProperties = jDevice.optJSONObject("properties");
         try {
-            return (Device) ct.newInstance(label, position, properties, jGlobalProperties);
+            return (Device) ct.newInstance(label, position, jProperties, jGlobalProperties);
         } catch (Exception e) {
             throw new DeviceInstantiationException(label, e);
         }

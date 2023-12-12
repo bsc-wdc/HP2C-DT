@@ -41,9 +41,9 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
      * @param jProperties JSONObject representing device properties
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
-    public OpalSwitch(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
-        super(label, position, properties.getJSONArray("indexes").length());
-        JSONArray jIndexes = properties.getJSONArray("indexes");
+    public OpalSwitch(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
+        super(label, position, jProperties.getJSONArray("indexes").length());
+        JSONArray jIndexes = jProperties.getJSONArray("indexes");
         if (jIndexes.length() != 1 && jIndexes.length() != 3){
             throw new IllegalArgumentException("The switch must have either one or three indexes.");
         }
@@ -62,9 +62,9 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     }
 
     @Override
-    public void actuate(State[] rawValues) throws IOException {
-        Float[] values = actuateValues(rawValues);
-        OpalComm.commitActuation(this, values);
+    public void actuate(State[] values) throws IOException {
+        Float[] rawValues = actuateValues(values);
+        OpalComm.commitActuation(this, rawValues);
     }
 
     protected Float[] actuateValues(State[] values){

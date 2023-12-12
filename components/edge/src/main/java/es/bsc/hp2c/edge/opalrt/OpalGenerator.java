@@ -41,9 +41,9 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
      * @param jProperties JSONObject representing device properties
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
-    public OpalGenerator(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
+    public OpalGenerator(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
-        JSONArray jIndexes = properties.getJSONArray("indexes");
+        JSONArray jIndexes = jProperties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
         if (this.indexes.length < 2 ){
             throw new IllegalArgumentException("Generator indexes must be 2 at least: 1 for voltageSetpoint and 1 " +
@@ -65,9 +65,9 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     }
 
     @Override
-    public void actuate(Float[] rawValues) throws IOException {
-        Float[] values = actuateValues(rawValues);
-        OpalComm.commitActuation(this, values);
+    public void actuate(Float[] values) throws IOException {
+        Float[] rawValues = actuateValues(values);
+        OpalComm.commitActuation(this, rawValues);
     }
 
     protected Float[] actuateValues(Float[] values){

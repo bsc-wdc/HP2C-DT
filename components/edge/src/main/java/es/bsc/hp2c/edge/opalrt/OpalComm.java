@@ -111,6 +111,19 @@ public class OpalComm {
         return jGlobProp.getJSONObject("comms");
     }
 
+    /*
+     * This method is in charge of reading the values of the TCP sensors from Opal. To do so, we check start of message
+     * with a readInt() that checks the expected length (number of incoming floats) of the message, then get the buffer
+     * with that messageLength, and lastly the end of line (EoL) character, otherwise throwing an error. For example, a
+     * TCP message could be of the form: "3, Switch[0], Switch[1], Switch[2], "\n", where "3" is the number of floats
+     * and "\n" is the EoL character.
+     *
+     * We also use an attribute called udpSensors to know the number of udp indexes that we need to substract from these
+     * tcp sensors in order to start reading from index 0. For example, we have two single-phase udp sensors. udpSensors
+     * will take value 2, and therefore, nIndexesUDP will be 2. If the Switch indexes are [2, 3, 4] in the setup file,
+     * they are subtracted nIndexesUDP=2 to convert them to [0, 1, 2] and correctly map the TCP message.
+     *
+     * */
     private static void startTCPServer() {
         Thread TCPSensorsThread = new Thread(() -> {
             // Initialize UDP server socket to read measurements
@@ -152,10 +165,11 @@ public class OpalComm {
                     }
 
                     synchronized (sensors) {
-                        int nIndexes = 0;
+                        int nIndexesUDP = 0;
+                        // count UDP-sensors indexes
                         for (int i = 0; i < udpSensors; ++i) {
                             OpalSensor<?> sensor = sensors.get(i);
-                            nIndexes += sensor.getIndexes().length;
+                            nIndexesUDP += sensor.getIndexes().length;
                         }
 
                         for (int i = udpSensors; i < sensors.size(); ++i) {
@@ -164,7 +178,8 @@ public class OpalComm {
                             Float[] sensedValues = new Float[indexesLocal.length];
 
                             for (int k = 0; k < indexesLocal.length; ++k) {
-                                indexesLocal[k] -= nIndexes;
+                                // substract nIndexesUDP to local indexes
+                                indexesLocal[k] -= nIndexesUDP;
                                 sensedValues[k] = messageValues[indexesLocal[k]];
                             }
                             sensor.sensed(sensedValues);
@@ -243,6 +258,7 @@ public class OpalComm {
 
     public static void commitActuation(OpalActuator<?> actuator, Float[] values) throws IOException {
         if (useTCPActuators){
+            // count the number of floats to be sended
             int nIndexes = 0;
             for (OpalActuator<?> opalActuator : actuators) {
                 int nIndexesDevice = opalActuator.getIndexes().length;
@@ -252,14 +268,14 @@ public class OpalComm {
 
             // Scale actuators indexes (ignore udp sensors)
             int[] indexesLocal = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
-            int nIndexesUdp = 0;
+            int nIndexesUDP = 0;
             for (int i = 0; i < udpSensors; ++i) {
                 OpalSensor<?> sensor = sensors.get(i);
-                nIndexesUdp += sensor.getIndexes().length;
+                nIndexesUDP += sensor.getIndexes().length;
             }
 
             for (int i = 0; i < indexesLocal.length; ++i){
-                indexesLocal[i] -= nIndexesUdp;
+                indexesLocal[i] -= nIndexesUDP;
             }
 
             // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
