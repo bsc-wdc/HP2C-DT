@@ -1,4 +1,4 @@
-package es.bsc.hp2c.server;
+package es.bsc.hp2c;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -27,7 +27,7 @@ import static es.bsc.hp2c.edge.utils.FileUtils.readEdgeLabel;
  * Implementation of the server logic interacting with an InfluxDB database and
  * with edge devices via AMQP.
  */
-public class Server implements AutoCloseable {
+public class HP2CServer implements AutoCloseable {
     private final Connection connection;
     private Channel channel;
     private InfluxDB influxDB;
@@ -36,7 +36,7 @@ public class Server implements AutoCloseable {
     private final String username = "root", password = "root";
     private static Map<String, Map<String, Device>> deviceMap = new HashMap<>();
 
-    public Server() throws IOException, TimeoutException {
+    public HP2CServer() throws IOException, TimeoutException {
         // Init RabbitMQ
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("localhost");
@@ -68,7 +68,7 @@ public class Server implements AutoCloseable {
 
         // Deploy listener
         try {
-            Server server = new Server();
+            HP2CServer server = new HP2CServer();
             server.startListener();
         } catch (IOException | TimeoutException e) {
             System.out.println("Error: " + e.getMessage());
