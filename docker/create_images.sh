@@ -4,9 +4,15 @@ COMPSS_VERSION=3.2
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+if [ $# -eq 1 ]; then
+  IMAGE_NAME=$1/edge
+else
+  IMAGE_NAME=hp2c/edge
+fi
+
 cd ${SCRIPT_DIR}/agents
 ./create_images.sh "${COMPSS_VERSION}"
 cd ..
 
-docker build -t maaurogl/edge:${HP2C_VERSION} --build-arg="COMPSS_VERSION=${COMPSS_VERSION}" -f ${SCRIPT_DIR}/Dockerfile.edge ${SCRIPT_DIR}/../components/edge
-docker tag maaurogl/edge:${HP2C_VERSION} maaurogl/edge:latest
+docker build -t ${IMAGE_NAME}:${HP2C_VERSION} --build-arg="COMPSS_VERSION=${COMPSS_VERSION}" -f ${SCRIPT_DIR}/Dockerfile.edge ${SCRIPT_DIR}/../components/edge
+docker tag ${IMAGE_NAME}:${HP2C_VERSION} ${IMAGE_NAME}:latest
