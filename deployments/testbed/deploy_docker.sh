@@ -6,7 +6,12 @@
 # Loading Constants
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-EDGE_DOCKER_IMAGE="hp2c/edge:latest"
+if [ $# -eq 1 ]; then
+  EDGE_DOCKER_IMAGE="$1/edge:latest"
+else
+  EDGE_DOCKER_IMAGE="hp2c/edge:latest"
+fi
+
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 
 DEPLOYMENT_PREFIX="hp2c"
