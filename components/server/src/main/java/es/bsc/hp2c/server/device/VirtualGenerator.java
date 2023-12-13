@@ -33,6 +33,7 @@ public class VirtualGenerator extends Generator<Float[]> {
      * @param label device label
      * @param position device position
      * @param properties JSONObject representing device properties
+     * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
     public VirtualGenerator(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
