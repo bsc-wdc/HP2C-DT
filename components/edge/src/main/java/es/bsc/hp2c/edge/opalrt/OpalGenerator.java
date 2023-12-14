@@ -45,8 +45,8 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
         super(label, position);
         JSONArray jIndexes = jProperties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
-        if (this.indexes.length < 2 ){
-            throw new IllegalArgumentException("Generator indexes must be 2 at least: 1 for voltageSetpoint and 1 " +
+        if (this.indexes.length != 2){
+            throw new IllegalArgumentException("Generator indexes must be 2: 1 for voltageSetpoint and 1 " +
                     "for powerSetpoint");
         }
         for (int i = 0; i < jIndexes.length(); ++i) {

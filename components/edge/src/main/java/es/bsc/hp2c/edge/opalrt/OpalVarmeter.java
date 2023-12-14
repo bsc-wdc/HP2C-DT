@@ -40,6 +40,9 @@ public class OpalVarmeter extends Varmeter<Float[]> implements OpalSensor<Float[
     public OpalVarmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
         JSONArray jIndexes = jProperties.getJSONArray("indexes");
+        if (jIndexes.length() != 1){
+            throw new IllegalArgumentException("The varmeter must have one index.");
+        }
         this.indexes = new int[jIndexes.length()];
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));

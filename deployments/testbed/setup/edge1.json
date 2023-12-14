@@ -51,7 +51,7 @@
             },
 
             "properties": {
-                "indexes": [0,1,2]
+                "indexes": [0]
             }
         },
         {
@@ -62,7 +62,7 @@
                 "y":40
             },
             "properties": {
-                "indexes": [3,4,5]
+                "indexes": [1]
             }
         },
         {
@@ -73,7 +73,7 @@
                 "y":0
             },
             "properties": {
-                "indexes": [6,7,8]
+                "indexes": [2,3,4]
             }
         },
         {
@@ -84,7 +84,7 @@
                 "y":0
             },
             "properties": {
-                "indexes": [9,10]
+                "indexes": [5,6]
             }
         }
     ],

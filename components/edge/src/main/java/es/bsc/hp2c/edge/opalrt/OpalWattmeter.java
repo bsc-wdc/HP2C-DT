@@ -40,6 +40,9 @@ public class OpalWattmeter extends Wattmeter<Float[]> implements OpalSensor<Floa
     public OpalWattmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
         JSONArray jIndexes = jProperties.getJSONArray("indexes");
+        if (jIndexes.length() != 1){
+            throw new IllegalArgumentException("The wattmeter must have one index.");
+        }
         this.indexes = new int[jIndexes.length()];
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));

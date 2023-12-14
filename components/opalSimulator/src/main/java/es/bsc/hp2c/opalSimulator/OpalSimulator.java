@@ -40,7 +40,7 @@ public class OpalSimulator {
             System.out.println("User must input as arguments: ");
             System.out.println("    nEdges: Number of edge devices (number of client ant server sockets)");
             System.out.println("    Number of indexes for each edge node (nEdges inputs) ");
-            args = new String[]{"2", "5", "0"};
+            args = new String[]{"1", "5"};
             nEdges = Integer.parseInt(args[0]);
         }
 

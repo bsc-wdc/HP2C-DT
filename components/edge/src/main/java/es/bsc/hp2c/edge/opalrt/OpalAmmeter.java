@@ -40,24 +40,15 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     public OpalAmmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
         JSONArray jIndexes = jProperties.getJSONArray("indexes");
+        if (jIndexes.length() != 1 && jIndexes.length() != 3){
+            throw new IllegalArgumentException("The ammeter must have either one or three indexes.");
+        }
         this.indexes = new int[jIndexes.length()];
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
         OpalComm.registerSensor(this);
         OpalComm.init(jGlobalProperties);
-    }
-
-    /*
-     * Creates a new instance of OpalAmmeter. Useful when the device is declared by a three-phase voltmeter.
-     *
-     * @param label device label
-     * @param position device position
-     * @param indexes assigned
-     * */
-    public OpalAmmeter(String label, float[] position, int[] indexes) {
-        super(label, position);
-        this.indexes = indexes;
     }
 
     @Override
