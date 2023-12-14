@@ -95,8 +95,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
 
     protected void setValues(State[] values) {
         this.states = values;
-        System.out.println("New switch states has been set: ");
-        System.out.println("New states are: ");
+        System.out.println(getLabel() + " states are: ");
         for(int i = 0; i < this.states.length; ++i){
             System.out.println("Switch " + i + " " + this.states[i]);
         }
