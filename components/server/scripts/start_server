@@ -7,4 +7,4 @@ fi
 
 # Compile and run
 mvn clean package
-mvn exec:java -Dexec.mainClass="es.bsc.hp2c.server.Server"
+mvn exec:java -Dexec.mainClass="es.bsc.hp2c.HP2CServer"
