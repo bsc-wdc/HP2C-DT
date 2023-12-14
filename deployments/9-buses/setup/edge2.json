@@ -54,8 +54,8 @@
             }
         },
         {
-            "label": "Three-Phase Voltmeter Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeterThreePhase",
+            "label": "Wattmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalWattmeter",
             "position": {
                 "x":20,
                 "y":40
@@ -66,8 +66,8 @@
             }
         },
         {
-            "label": "Three-Phase Ammeter Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalAmmeterThreePhase",
+            "label": "Ammeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalAmmeter",
             "position": {
                 "x":20,
                 "y":40
