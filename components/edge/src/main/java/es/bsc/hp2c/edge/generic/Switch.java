@@ -93,13 +93,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
         return this.states;
     }
 
-    protected void setValues(State[] values) {
-        this.states = values;
-        System.out.println(getLabel() + " states are: ");
-        for(int i = 0; i < this.states.length; ++i){
-            System.out.println("Switch " + i + " " + this.states[i]);
-        }
-    }
+    protected void setValues(State[] values) { this.states = values; }
 
     @Override
     public boolean isActionable() {
