@@ -107,7 +107,7 @@ public abstract class Device {
     public static class DeviceInstantiationException extends Exception {
 
         public DeviceInstantiationException(String label, Exception e) {
-            super("Error instantiating the " + label + " device", e);
+            super("Error instantiating " + label + " device", e);
         }
     }
 

@@ -3,21 +3,22 @@
         "label": "edge2",
         "udp-sensors": 3,
         "comms":{
-            "udp": {
-                "ip": "0.0.0.0",
-                "ports": {
-                    "22002": []
+            "opal-udp": {
+                "protocol": "udp",
+                "sensors": {
+                    "ip": "0.0.0.0",
+                    "port": "22002"
                 }
             },
-            "tcp-sensors": {
-                "ip": "0.0.0.0",
-                "ports": {
-                    "12002": []
-                }
-            },
-            "tcp-actuators": {
-                "ports": {
-                    "32002": []
+            "opal-tcp": {
+                "protocol": "tcp",
+                "sensors": {
+                    "ip": "0.0.0.0",
+                    "port": "12002"
+                },
+                "actuators": {
+                    "ip": "$LOCAL_IP",
+                    "port": "32002"
                 }
             }
         },
@@ -97,7 +98,7 @@
             "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
             "parameters": {
                 "sensors": ["Voltmeter Gen1"],
-                "actuators": ["Switch Gen1"],
+                "actuators": ["Three-Phase Switch Gen1"],
                 "other": [200]
             },
             "trigger": {

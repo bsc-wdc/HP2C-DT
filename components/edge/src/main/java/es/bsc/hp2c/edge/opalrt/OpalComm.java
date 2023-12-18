@@ -40,67 +40,51 @@ public class OpalComm {
     public static void init(JSONObject jGlobalProperties) {
         if (!initialCall){ return; }
         initialCall = false;
-        String localIP = System.getenv("LOCAL_IP");
-        String customIp = System.getenv("CUSTOM_IP");
         // Set up udp and tcp connections
-        setupComms(jGlobalProperties, localIP, customIp);
+        setupComms(jGlobalProperties);
         startUDPServer();
         startTCPServer();
     }
 
-    private static void setupComms(JSONObject jGlobalProperties, String localIP, String customIp){
+    private static void setupComms(JSONObject jGlobalProperties){
         // Parse setup file
         JSONObject jComms = getjComms(jGlobalProperties);
-        JSONObject jUDP = jComms.getJSONObject("udp");
-        JSONObject jTCP= jComms.getJSONObject("tcp-sensors");
+        JSONObject jUDP = jComms.getJSONObject("opal-udp");
+        JSONObject jTCP= jComms.getJSONObject("opal-tcp");
 
-        if (jComms.has("tcp-actuators")){
+        if (jTCP.has("actuators")){
             setUseTCPActuators(true);
-            JSONObject jActuate = jComms.getJSONObject("tcp-actuators");
-            TreeMap<Integer, ArrayList<String>> portsActuate = getPorts(jActuate);
-            setActuateSocket(localIP, customIp, portsActuate.firstKey());
+            JSONObject jTcpActuators = jTCP.getJSONObject("actuators");
+            int portActuate = getPort(jTcpActuators);
+            Object ipObject = jTcpActuators.get("ip");
+            setActuateSocket(ipObject, portActuate);
         } else{
-            System.out.println("In order to enable actuations, 'tcp-actuators' must be declared within 'comms' section");
+            System.out.println("In order to enable actuations, 'actuators' must be declared within 'opal-tcp' section");
         }
 
-        String ipUdp = getIp(jUDP);
-        TreeMap<Integer, ArrayList<String>> portsUdp = getPorts(jUDP);
-        String iptcp = getIp(jTCP);
-        TreeMap<Integer, ArrayList<String>> portsTcp = getPorts(jTCP);
+        JSONObject jUdpSensors = jUDP.getJSONObject("sensors");
+        String ipUdpSensors = getIp(jUdpSensors);
+        int portUdpSensors = getPort(jUdpSensors);
+
+        JSONObject jTcpSensors = jTCP.getJSONObject("sensors");
+        String ipTcpSensors = getIp(jTcpSensors);
+        int portTcpSensors = getPort(jTcpSensors);
 
         // Set local communication parameters
-        setUdpIp(ipUdp);
-        setUdpPort(portsUdp.firstKey());
-        setTcpIp(iptcp);
-        setTcpPort(portsTcp.firstKey());
+        setUdpIp(ipUdpSensors);
+        setUdpPort(portUdpSensors);
+        setTcpIp(ipTcpSensors);
+        setTcpPort(portTcpSensors);
     }
 
     /**
      * Parse device's UDP port from JSON
      *
      * @param jProtocol JSON object (UDP section or TCP section)
-     * @return map of pairs IP-Ports (each port can be linked to a list of sensors)
+     * @return port
      */
-    private static TreeMap<Integer, ArrayList<String>> getPorts(JSONObject jProtocol) {
-        // Map of pairs IP - Ports (each port can be linked to a list of sensors)
-        TreeMap<Integer, ArrayList<String>> portsDevicesMap = new TreeMap<>();
-        JSONObject jPorts = jProtocol.getJSONObject("ports");
-
-        List<String> keysList = new ArrayList<>();
-        Iterator<String> keys = jPorts.keys();
-        while(keys.hasNext()) {
-            keysList.add(keys.next());
-        }
-        for (int i = 0; i < keysList.size(); ++i){
-            String sPort = keysList.get(i);
-            ArrayList<String> sDevices = new ArrayList<>();
-            JSONArray jDevices = jPorts.getJSONArray(sPort);
-            for (int j = 0; j < jDevices.length(); j++) {
-                sDevices.add(jDevices.getString(i));
-            }
-            portsDevicesMap.put(Integer.parseInt(sPort), sDevices);
-        }
-        return portsDevicesMap;
+    private static int getPort(JSONObject jProtocol) {
+        return jProtocol.getInt("port");
     }
 
     private static String getIp(JSONObject jProtocol) {
@@ -334,20 +318,31 @@ public class OpalComm {
 
     public static void setUseTCPActuators(boolean b) { useTCPActuators = b; }
 
-    public static void setActuateSocket(String localIp, String customIp, int port){
-        try {
-            actuateSocket = new Socket(localIp, port);
-            System.out.println("Connected to server " + localIp + " through port " + port);
-        } catch (Exception e) {
-            System.err.println("Failed to connect to server " + localIp + " through port " + port + ": " +
-                    e.getMessage());
-            System.out.println("Trying to connect to server " + customIp + " through port " + port);
+    public static void setActuateSocket(Object ipObject, int port){
+        ArrayList<String> ipList = new ArrayList<>();
+        if (ipObject instanceof String){
+            String ip = (String) ipObject;
+            ipList.add(ip);
+        }
+        else{
+            JSONArray ipArray = (JSONArray) ipObject;
+            for (Object element : ipArray){
+                if (element instanceof String){
+                    ipList.add((String) element);
+                }
+            }
+        }
+        for (String ip : ipList){
+            actuateSocket = new Socket();
+            if (ip.equals("$LOCAL_IP")){ ip = System.getenv("LOCAL_IP"); }
+            else if (ip.equals("$CUSTOM_IP")){ ip = System.getenv("CUSTOM_IP"); }
             try {
-                actuateSocket = new Socket(customIp, port);
-                System.out.println("Connected to server " + customIp + " through port " + port);
-            } catch (Exception e1) {
-                System.err.println("Failed to connect to server " + customIp + " through port " + port + ": " +
-                        e1.getMessage());
+                actuateSocket.connect(new InetSocketAddress(ip, port), 1000);
+                System.out.println("Connected to server " + ip + " through port " + port);
+                break;
+            } catch (Exception e) {
+                System.err.println("Failed to connect to server " + ip + " through port " + port + ": " +
+                        e.getMessage());
             }
         }
     }
