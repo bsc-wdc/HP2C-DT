@@ -17,14 +17,14 @@ import java.util.*;
  */
 public class OpalComm {
 
-    private static final List<OpalSensor<?>> sensors = new ArrayList<>();
+    private static final List<OpalSensor<?>> udpSensorsList = new ArrayList<>();
+    private static final List<OpalSensor<?>> tcpSensorsList = new ArrayList<>();
     private static final List<OpalActuator<?>> actuators = new ArrayList<>();
     private static float[] values = new float[25];
     private static int udpPORT;
     private static int tcpPORT;
     private static String udpIP;
     private static String tcpIP;
-    private static int udpSensors;
     private static DatagramSocket udpSocket;
     private static ServerSocket tcpSocket;
     private static Socket actuateSocket;
@@ -92,7 +92,6 @@ public class OpalComm {
     }
 
     private static JSONObject getjComms(JSONObject jGlobProp) {
-        setUdpSensors(jGlobProp.getInt("udp-sensors"));
         return jGlobProp.getJSONObject("comms");
     }
 
@@ -148,23 +147,12 @@ public class OpalComm {
                         messageValues[i] = byteBuffer.getFloat();
                     }
 
-                    synchronized (sensors) {
-                        int nIndexesUDP = 0;
-                        // count UDP-sensors indexes
-                        for (int i = 0; i < udpSensors; ++i) {
-                            OpalSensor<?> sensor = sensors.get(i);
-                            nIndexesUDP += sensor.getIndexes().length;
-                        }
-
-                        for (int i = udpSensors; i < sensors.size(); ++i) {
-                            OpalSensor<?> sensor = sensors.get(i);
-                            int[] indexesLocal = Arrays.copyOf(sensor.getIndexes(), sensor.getIndexes().length);
-                            Float[] sensedValues = new Float[indexesLocal.length];
-
-                            for (int k = 0; k < indexesLocal.length; ++k) {
-                                // substract nIndexesUDP to local indexes
-                                indexesLocal[k] -= nIndexesUDP;
-                                sensedValues[k] = messageValues[indexesLocal[k]];
+                    synchronized (tcpSensorsList) {
+                        for (OpalSensor<?> sensor : tcpSensorsList) {
+                            int[] indexes = sensor.getIndexes();
+                            Float[] sensedValues = new Float[indexes.length];
+                            for (int j = 0; j < indexes.length; ++j) {
+                                sensedValues[j] = messageValues[indexes[j]];
                             }
                             sensor.sensed(sensedValues);
                             sensor.onRead();
@@ -215,9 +203,8 @@ public class OpalComm {
                         values[i] = receivedValue;
                     }
 
-                    synchronized (sensors) {
-                        for (int i = 0; i < udpSensors; ++i){
-                            OpalSensor<?> sensor = sensors.get(i);
+                    synchronized (udpSensorsList) {
+                        for (OpalSensor<?> sensor : udpSensorsList){
                             int[] indexes = sensor.getIndexes();
                             Float[] sensedValues = new Float[indexes.length];
                             for (int j = 0; j < indexes.length; ++j) {
@@ -251,15 +238,6 @@ public class OpalComm {
 
             // Scale actuators indexes (ignore udp sensors)
             int[] indexesLocal = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
-            int nIndexesUDP = 0;
-            for (int i = 0; i < udpSensors; ++i) {
-                OpalSensor<?> sensor = sensors.get(i);
-                nIndexesUDP += sensor.getIndexes().length;
-            }
-
-            for (int i = 0; i < indexesLocal.length; ++i){
-                indexesLocal[i] -= nIndexesUDP;
-            }
 
             // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
             for (int i = 0; i < nIndexes; ++i){
@@ -294,9 +272,16 @@ public class OpalComm {
      *
      * @param sensor Sensor to register
      */
-    public static void registerSensor(OpalSensor<?> sensor) {
-        synchronized (sensors) {
-            sensors.add(sensor);
+    public static void registerSensor(OpalSensor<?> sensor, String commType) {
+        if (commType.equals("opal-udp")){
+            synchronized (udpSensorsList) {
+                udpSensorsList.add(sensor);
+            }
+        }
+        if (commType.equals("opal-tcp")){
+            synchronized (tcpSensorsList) {
+                tcpSensorsList.add(sensor);
+            }
         }
     }
 
@@ -309,8 +294,6 @@ public class OpalComm {
     public static void setUdpPort(int port) { udpPORT = port; }
 
     public static void setTcpPort(int port) { tcpPORT = port; }
-
-    public static void setUdpSensors(int inputUDPSensors) { udpSensors = inputUDPSensors; }
 
     public static void setUdpIp(String udpIp) { udpIP = udpIp; }
 

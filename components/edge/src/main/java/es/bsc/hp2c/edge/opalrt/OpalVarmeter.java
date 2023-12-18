@@ -47,7 +47,9 @@ public class OpalVarmeter extends Varmeter<Float[]> implements OpalSensor<Float[
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalComm.registerSensor(this);
+
+        String commType = jProperties.getString("comm-type");
+        OpalComm.registerSensor(this, commType);
         OpalComm.init(jGlobalProperties);
     }
 

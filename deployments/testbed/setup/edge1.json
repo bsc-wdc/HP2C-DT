@@ -52,18 +52,8 @@
             },
 
             "properties": {
+                "comm-type": "opal-udp",
                 "indexes": [0]
-            }
-        },
-        {
-            "label": "Voltmeter Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
-            "position": {
-                "x":20,
-                "y":40
-            },
-            "properties": {
-                "indexes": [1]
             }
         },
         {
@@ -74,7 +64,20 @@
                 "y":0
             },
             "properties": {
-                "indexes": [2,3,4]
+                "comm-type": "opal-tcp",
+                "indexes": [0,1,2]
+            }
+        },
+        {
+            "label": "Voltmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+            "properties": {
+                "comm-type": "opal-udp",
+                "indexes": [1]
             }
         },
         {
@@ -85,7 +88,8 @@
                 "y":0
             },
             "properties": {
-                "indexes": [5,6]
+                "comm-type": "opal-tcp",
+                "indexes": [3,4]
             }
         }
     ],
