@@ -16,8 +16,8 @@
 package es.bsc.hp2c;
 
 import es.bsc.hp2c.edge.opalrt.OpalComm;
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Device.DeviceInstantiationException;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Device.DeviceInstantiationException;
 import es.bsc.hp2c.edge.funcs.Func;
 import es.bsc.hp2c.edge.funcs.Func.FunctionInstantiationException;
 

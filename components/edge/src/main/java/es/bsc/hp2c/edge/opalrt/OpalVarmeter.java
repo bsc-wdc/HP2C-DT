@@ -15,13 +15,13 @@
  */
 package es.bsc.hp2c.edge.opalrt;
 
-import es.bsc.hp2c.edge.generic.Varmeter;
+import es.bsc.hp2c.common.generic.Varmeter;
 import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
+import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 
 /**
  * Voltmeter simulated on an Opal-RT.

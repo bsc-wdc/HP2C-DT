@@ -1,8 +1,8 @@
 package es.bsc.hp2c.edge.opalrt;
 
-import es.bsc.hp2c.edge.types.Actuator;
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Sensor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

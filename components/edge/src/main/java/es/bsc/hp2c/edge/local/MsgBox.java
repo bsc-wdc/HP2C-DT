@@ -16,7 +16,7 @@
 
 package es.bsc.hp2c.edge.local;
 
-import es.bsc.hp2c.edge.generic.MsgAlert;
+import es.bsc.hp2c.common.generic.MsgAlert;
 import javax.swing.JOptionPane;
 import org.json.JSONObject;
 

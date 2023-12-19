@@ -16,7 +16,7 @@
 
 package es.bsc.hp2c.edge.opalrt;
 
-import es.bsc.hp2c.edge.generic.Generator;
+import es.bsc.hp2c.common.generic.Generator;
 import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 import es.bsc.hp2c.edge.opalrt.OpalComm.OpalActuator;
 
@@ -25,7 +25,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
-import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
+import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 
 /**
  * Represent a switch implemented accessible within a local OpalRT.

@@ -15,9 +15,9 @@
  */
 package es.bsc.hp2c.edge.funcs;
 
-import es.bsc.hp2c.edge.types.Actuator;
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
+import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ import java.util.TimerTask;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import static es.bsc.hp2c.edge.types.Device.formatLabel;
+import static es.bsc.hp2c.common.types.Device.formatLabel;
 
 /**
  * Represents a user-declared function. The function constructor always receives

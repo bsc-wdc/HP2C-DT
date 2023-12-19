@@ -1,9 +1,9 @@
 package es.bsc.hp2c.edge.funcs;
 
 import es.bsc.hp2c.HP2CEdge;
-import es.bsc.hp2c.edge.types.Actuator;
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
+import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
 
 import com.rabbitmq.client.Channel;
 import org.json.JSONArray;
@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Publish current measurement to the corresponding AMQP topic if the requirements are satisfied.

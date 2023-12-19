@@ -1,9 +1,9 @@
 package es.bsc.hp2c.edge.funcs;
 
-import es.bsc.hp2c.edge.generic.Switch;
-import es.bsc.hp2c.edge.generic.Voltmeter;
-import es.bsc.hp2c.edge.types.Actuator;
-import es.bsc.hp2c.edge.types.Sensor;
+import es.bsc.hp2c.common.generic.Switch;
+import es.bsc.hp2c.common.generic.Voltmeter;
+import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Sensor;
 
 import java.util.ArrayList;
 
