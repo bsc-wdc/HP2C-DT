@@ -234,6 +234,10 @@ public class OpalComm {
                 int nIndexesDevice = opalActuator.getIndexes().length;
                 nIndexes += nIndexesDevice;
             }
+            for (OpalSensor<?> opalSensor : tcpSensorsList) {
+                int nIndexesDevice = opalSensor.getIndexes().length;
+                nIndexes += nIndexesDevice;
+            }
             ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
 
             // Scale actuators indexes (ignore udp sensors)
@@ -315,6 +319,8 @@ public class OpalComm {
                 }
             }
         }
+        //TODO: throw warning if env == null
+        //TODO: check if ip starts with $ and look for env
         for (String ip : ipList){
             actuateSocket = new Socket();
             if (ip.equals("$LOCAL_IP")){ ip = System.getenv("LOCAL_IP"); }
