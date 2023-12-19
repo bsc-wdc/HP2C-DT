@@ -16,12 +16,12 @@
 
 package es.bsc.hp2c.server.device;
 
-import es.bsc.hp2c.edge.generic.Switch;
+import es.bsc.hp2c.common.generic.Switch;
+import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 import java.io.IOException;
 
-import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
 
 /**
  * Digital twin Switch.
@@ -92,6 +92,6 @@ public class VirtualSwitch extends Switch<Float[]> {
 
     @Override
     public final Float[] decodeValues(byte[] message) {
-        return BytesToFloatArray(message);
+        return CommUtils.BytesToFloatArray(message);
     }
 }

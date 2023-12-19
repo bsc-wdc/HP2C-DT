@@ -16,10 +16,9 @@
 
 package es.bsc.hp2c.server.device;
 
-import es.bsc.hp2c.edge.generic.Varmeter;
+import es.bsc.hp2c.common.generic.Varmeter;
+import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
-
-import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
 
 /**
  * Digital twin Varmeter.
@@ -50,6 +49,6 @@ public class VirtualVarmeter extends Varmeter<Float[]> {
 
     @Override
     public final Float[] decodeValues(byte[] message) {
-        return BytesToFloatArray(message);
+        return CommUtils.BytesToFloatArray(message);
     }
 }

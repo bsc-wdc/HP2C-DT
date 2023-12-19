@@ -16,10 +16,9 @@
 
 package es.bsc.hp2c.server.device;
 
-import es.bsc.hp2c.edge.generic.Ammeter;
+import es.bsc.hp2c.common.generic.Ammeter;
+import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
-
-import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
 
 /**
  * Digital Twin Ammeter.
@@ -59,6 +58,6 @@ public class VirtualAmmeter extends Ammeter<Float[]> {
 
     @Override
     public final Float[] decodeValues(byte[] message) {
-        return BytesToFloatArray(message);
+        return CommUtils.BytesToFloatArray(message);
     }
 }
