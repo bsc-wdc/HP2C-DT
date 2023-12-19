@@ -1,12 +1,12 @@
 /*
  *  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
- * 
+ *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  *   Unless required by applicable law or agreed to in writing, software
  *   distributed under the License is distributed on an "AS IS" BASIS,
  *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,32 +14,21 @@
  *   limitations under the License.
  */
 
-package es.bsc.hp2c.edge.generic;
+package es.bsc.hp2c.common.generic;
 
 import java.util.ArrayList;
 
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
-import static es.bsc.hp2c.edge.utils.CommUtils.FloatArrayToBytes;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
+import es.bsc.hp2c.common.utils.CommUtils;
 
 /**
- * Sensor measuring the intensity of the network. It has only one property representing devices current.
+ * Sensor measuring the reactive power of the network. It has a property (values) measured in VAR (volt-ampere reactive)
  */
-public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
+public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
 
     private Float[] values = { 0.0f };
     private ArrayList<Runnable> onReadFunctions;
-
-    /**
-     * Creates a new instance of ammeter;
-     *
-     * @param label device label
-     * @param position device position
-     */
-    protected Ammeter(String label, float[] position) {
-        super(label, position);
-        this.onReadFunctions = new ArrayList<>();
-    }
 
     @Override
     public abstract void sensed(R values);
@@ -47,6 +36,17 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
     @Override
     public void sensed(byte[] messageBytes) {
         sensed(decodeValues(messageBytes));
+    }
+
+    /**
+     * Creates a new instance of varmeter;
+     *
+     * @param label device label
+     * @param position device position
+     */
+    protected Varmeter(String label, float[] position) {
+        super(label, position);
+        this.onReadFunctions = new ArrayList<>();
     }
 
     /**
@@ -69,7 +69,7 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
 
     /**
      * Converts the sensed input to a known value;
-     * 
+     *
      * @param input input value sensed
      * @return corresponding known value
      */
@@ -87,7 +87,7 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
     @Override
     public final byte[] encodeValues() {
         Float[] values = this.getCurrentValues();
-        return FloatArrayToBytes(values);
+        return CommUtils.FloatArrayToBytes(values);
     }
 
     @Override

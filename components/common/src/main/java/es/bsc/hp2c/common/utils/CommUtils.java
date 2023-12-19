@@ -1,4 +1,4 @@
-package es.bsc.hp2c.edge.utils;
+package es.bsc.hp2c.common.utils;
 
 import java.nio.ByteBuffer;
 

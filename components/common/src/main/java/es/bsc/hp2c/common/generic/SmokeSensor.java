@@ -14,12 +14,11 @@
  *   limitations under the License.
  */
 
-package es.bsc.hp2c.edge.generic;
+package es.bsc.hp2c.common.generic;
 
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
-
-import static es.bsc.hp2c.edge.utils.CommUtils.FloatArrayToBytes;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
+import es.bsc.hp2c.common.utils.CommUtils;
 
 /**
  * Represents a smoke sensor belonging to the network.
@@ -51,7 +50,7 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
         Smoke state = this.getCurrentValues();
         Float[] values = new Float[1];
         values[0] = (float) ((state == Smoke.SMOKE) ? 1.0 : 0.0);
-        return FloatArrayToBytes(values);
+        return CommUtils.FloatArrayToBytes(values);
     }
 
     @Override

@@ -1,6 +1,5 @@
-package es.bsc.hp2c.edge.utils;
+package es.bsc.hp2c.common.utils;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;

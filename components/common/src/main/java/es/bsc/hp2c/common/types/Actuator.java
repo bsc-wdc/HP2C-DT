@@ -13,31 +13,17 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.edge.generic;
+package es.bsc.hp2c.common.types;
 
-import es.bsc.hp2c.edge.types.Actuator;
-import es.bsc.hp2c.edge.types.Device;
+import java.io.IOException;
 
 /**
- * This class interacts with a switch of the electrical network.
+ * Class interacting with the real network element.
+ *
+ * @param <V>  Type of value to set
  */
-public abstract class MsgAlert extends Device implements Actuator<String> {
+public interface Actuator<V> {
 
-    protected MsgAlert(String label, float[] position) {
-        super(label, position);
-    }
-
-    @Override
-    public final boolean isActionable() {
-        return true;
-    }
-
-    @Override
-    public final boolean isSensitive() {
-        return false;
-    }
-
-    @Override
-    public abstract void actuate(String values);
+    public void actuate(V values) throws IOException;
 
 }

@@ -14,19 +14,18 @@
  *   limitations under the License.
  */
 
-package es.bsc.hp2c.edge.generic;
+package es.bsc.hp2c.common.generic;
 
 import java.util.ArrayList;
 
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
-
-import static es.bsc.hp2c.edge.utils.CommUtils.FloatArrayToBytes;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
+import es.bsc.hp2c.common.utils.CommUtils;
 
 /**
- * Sensor measuring the reactive power of the network. It has a property (values) measured in VAR (volt-ampere reactive)
+ * Sensor measuring the power of the network. It a has property (values) measured in Watts.
  */
-public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
+public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> {
 
     private Float[] values = { 0.0f };
     private ArrayList<Runnable> onReadFunctions;
@@ -40,12 +39,12 @@ public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
     }
 
     /**
-     * Creates a new instance of varmeter;
+     * Creates a new instance of wattmeter;
      *
      * @param label device label
      * @param position device position
      */
-    protected Varmeter(String label, float[] position) {
+    protected Wattmeter(String label, float[] position) {
         super(label, position);
         this.onReadFunctions = new ArrayList<>();
     }
@@ -88,7 +87,7 @@ public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
     @Override
     public final byte[] encodeValues() {
         Float[] values = this.getCurrentValues();
-        return FloatArrayToBytes(values);
+        return CommUtils.FloatArrayToBytes(values);
     }
 
     @Override
@@ -105,3 +104,4 @@ public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
     }
 
 }
+

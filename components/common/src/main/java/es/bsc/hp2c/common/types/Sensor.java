@@ -13,7 +13,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.edge.types;
+package es.bsc.hp2c.common.types;
 
 /**
  * Class collecting information from the electrical network.

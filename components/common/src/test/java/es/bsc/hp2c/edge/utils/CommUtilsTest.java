@@ -2,8 +2,8 @@ package es.bsc.hp2c.edge.utils;
 
 import java.nio.ByteBuffer;
 
-import static es.bsc.hp2c.edge.utils.CommUtils.BytesToFloatArray;
-import static es.bsc.hp2c.edge.utils.CommUtils.FloatArrayToBytes;
+import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
+import static es.bsc.hp2c.common.utils.CommUtils.FloatArrayToBytes;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CommUtilsTest {

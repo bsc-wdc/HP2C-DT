@@ -13,46 +13,32 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.edge.generic;
 
-import java.io.IOException;
+package es.bsc.hp2c.common.generic;
+
 import java.util.ArrayList;
 
-import es.bsc.hp2c.edge.types.Actuator;
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
-
-import static es.bsc.hp2c.edge.utils.CommUtils.FloatArrayToBytes;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
+import es.bsc.hp2c.common.utils.CommUtils;
 
 /**
- * This class interacts with a switch of the electrical network. It has a property (states), representing device's
- * states (switch state defined as ON/OFF)
+ * Sensor measuring the intensity of the network. It has only one property representing devices current.
  */
-public abstract class Switch<R> extends Device implements Sensor<R, Switch.State[]>, Actuator<Switch.State[]> {
+public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
 
-    public enum State {
-        ON,
-        OFF
-    }
-
-    protected State[] states;
-
+    private Float[] values = { 0.0f };
     private ArrayList<Runnable> onReadFunctions;
 
     /**
-     * Creates a new instance of switch;
+     * Creates a new instance of ammeter;
      *
      * @param label device label
      * @param position device position
-     * @param size device number of phases
      */
-    protected Switch(String label, float[] position, int size) {
+    protected Ammeter(String label, float[] position) {
         super(label, position);
         this.onReadFunctions = new ArrayList<>();
-        this.states = new State[size];
-        for (int i = 0; i < size; ++i){
-            this.states[i] = State.ON;
-        }
     }
 
     @Override
@@ -62,9 +48,6 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     public void sensed(byte[] messageBytes) {
         sensed(decodeValues(messageBytes));
     }
-
-    @Override
-    public abstract void actuate(State[] values) throws IOException;
 
     /**
      * Adds a runnable to devices "onRead" functions;
@@ -76,8 +59,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     }
 
     /**
-     * Calls actions to be performed in case of a new read;
-     *
+     * Calls actions to be performed in case of a new read
      */
     public void onRead() {
         for (Runnable action : this.onReadFunctions) {
@@ -87,40 +69,38 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
 
     /**
      * Converts the sensed input to a known value;
-     *
+     * 
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract State[] sensedValues(R input);
-
-    protected abstract Float[] actuateValues(State[] values);
+    protected abstract Float[] sensedValues(R input);
 
     @Override
-    public final State[] getCurrentValues() {
-        return this.states;
+    public final Float[] getCurrentValues() {
+        return this.values;
     }
 
-    protected void setValues(State[] values) {
-        this.states = values;
+    protected void setValues(Float[] values) {
+        this.values = values;
     }
-    
+
     @Override
     public final byte[] encodeValues() {
-        State[] state = this.getCurrentValues();
-        Float[] values = actuateValues(state);
-        return FloatArrayToBytes(values);
+        Float[] values = this.getCurrentValues();
+        return CommUtils.FloatArrayToBytes(values);
     }
 
     @Override
     public abstract R decodeValues(byte[] message);
 
     @Override
-    public boolean isActionable() {
-        return true;
+    public final boolean isActionable() {
+        return false;
     }
 
     @Override
     public final boolean isSensitive() {
         return true;
     }
+
 }
