@@ -84,6 +84,10 @@ public abstract class Func implements Runnable {
         for (int i = 0; i < jActuators.length(); i++) {
             String label = jActuators.getString(i);
             Device d = devices.get(label);
+            if (d == null){
+                throw new FunctionInstantiationException(
+                        "Function " + funcLabel + "cannot be instantiated because " + label + " was not found");
+            }
             if (d.isActionable()) {
                 actuators.add((Actuator<?>) d);
             } else {
