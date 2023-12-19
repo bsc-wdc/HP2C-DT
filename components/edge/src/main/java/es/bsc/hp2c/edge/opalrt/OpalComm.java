@@ -319,12 +319,17 @@ public class OpalComm {
                 }
             }
         }
-        //TODO: throw warning if env == null
-        //TODO: check if ip starts with $ and look for env
+        
         for (String ip : ipList){
             actuateSocket = new Socket();
-            if (ip.equals("$LOCAL_IP")){ ip = System.getenv("LOCAL_IP"); }
-            else if (ip.equals("$CUSTOM_IP")){ ip = System.getenv("CUSTOM_IP"); }
+            char firstChar = ip.charAt(0);
+            if (firstChar == '$'){
+                String env = ip.substring(1);
+                ip = System.getenv(env);
+                if (ip == null){
+                    System.err.println("Environment variable " + env + " was not found");
+                }
+            }
             try {
                 actuateSocket.connect(new InetSocketAddress(ip, port), 1000);
                 System.out.println("Connected to server " + ip + " through port " + port);
