@@ -17,15 +17,21 @@ ENV MAVEN_HOME /usr/share/maven
 ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 EXPOSE 8080
 
-COPY . /app
+COPY ./common/ /app/common
+WORKDIR /app/common
+RUN mvn install package
+
+COPY ./edge/ /app
 WORKDIR /app
 RUN mvn clean package
 
+
 FROM compss/java_agents:${COMPSS_VERSION}
 COPY --from=builder /app/target/*.jar /app/edge.jar
+COPY --from=builder /app/common/target/*.jar /app/common.jar
 COPY --from=builder /root/.m2/repository/com/rabbitmq/amqp-client/5.16.0/amqp-client-5.16.0.jar /app/rabbitmq.jar
-ENV CLASSPATH="${CLASSPATH}:/app/edge.jar:/app/rabbitmq.jar"
-COPY scripts /scripts
+ENV CLASSPATH="${CLASSPATH}:/app/edge.jar:/app/rabbitmq.jar:/app/common.jar"
+COPY ./edge/scripts /scripts
 
 CMD [ "/scripts/start_sensor_agent" ]
 
