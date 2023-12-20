@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static es.bsc.hp2c.HP2CEdge.loadDevices;
+import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
 import static es.bsc.hp2c.common.utils.FileUtils.readEdgeLabel;
 
 /**
