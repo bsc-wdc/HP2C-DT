@@ -49,14 +49,13 @@ wait_containers(){
 ####################
 
 echo "Deploying container for SERVER"
-docker \
-    run \
+docker run \
     -d --rm \
     --name ${DEPLOYMENT_PREFIX}_server \
     -v ${setup_folder}:/data/ \
     -e LOCAL_IP=$ip_address \
     -e CUSTOM_IP=$custom_ip_address \
-    ${EDGE_DOCKER_IMAGE}
+    ${DOCKER_IMAGE}
 
 echo "Testbed properly deployed"
 wait_containers

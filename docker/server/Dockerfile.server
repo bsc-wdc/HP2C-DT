@@ -2,7 +2,7 @@
 ARG COMPSS_VERSION=3.2
 
 
-FROM openjdk:8-jdk-alpine as builder
+FROM openjdk:8-jdk-alpine
 ARG MAVEN_VERSION=3.9.3
 
 RUN apk add --no-cache bash=4.4.19-r1 curl=7.64.0-r5 tar=1.32-r0
@@ -20,17 +20,9 @@ COPY ./common/ /app/common
 WORKDIR /app/common
 RUN mvn install package
 
-COPY ./server/ /app
-WORKDIR /app
+COPY ./server/ /app/server/
+WORKDIR /app/server/
 RUN mvn clean package
 
-
-FROM compss/java_agents:${COMPSS_VERSION}
-COPY --from=builder /app/target/*.jar /app/server.jar
-COPY --from=builder /app/common/target/*.jar /app/common.jar
-COPY --from=builder /root/.m2/repository/com/rabbitmq/amqp-client/5.16.0/amqp-client-5.16.0.jar /app/rabbitmq.jar
-ENV CLASSPATH="${CLASSPATH}:/app/server.jar:/app/rabbitmq.jar:/app/common.jar"
-
 # Specify the command to start the application using the desired main class
-CMD ["java", "-cp", "/app/server.jar:/app/rabbitmq.jar:/app/common.jar", "es.bsc.hp2c.HP2CServer", "/data/"]
-
+CMD ["mvn", "exec:java", "-Dexec.mainClass=es.bsc.hp2c.HP2CServer", "-Dexec.args=/data/"]
