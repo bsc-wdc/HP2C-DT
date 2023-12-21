@@ -1,6 +1,7 @@
 package es.bsc.hp2c.edge.opalrt;
 
 import es.bsc.hp2c.edge.types.Actuator;
+import es.bsc.hp2c.edge.types.Device;
 import es.bsc.hp2c.edge.types.Sensor;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -230,13 +231,17 @@ public class OpalComm {
         if (useTCPActuators){
             // count the number of floats to be sended
             int nIndexes = 0;
+            List<String> labels = new ArrayList<>();
             for (OpalActuator<?> opalActuator : actuators) {
                 int nIndexesDevice = opalActuator.getIndexes().length;
+                labels.add(((Device) opalActuator).getLabel());
                 nIndexes += nIndexesDevice;
             }
             for (OpalSensor<?> opalSensor : tcpSensorsList) {
-                int nIndexesDevice = opalSensor.getIndexes().length;
-                nIndexes += nIndexesDevice;
+                if (!(labels.contains(((Device) opalSensor).getLabel()))) {
+                    int nIndexesDevice = opalSensor.getIndexes().length;
+                    nIndexes += nIndexesDevice;
+                }
             }
             ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
 
@@ -332,6 +337,7 @@ public class OpalComm {
             }
             try {
                 actuateSocket.connect(new InetSocketAddress(ip, port), 1000);
+                //actuateSocket = new Socket(ip, port);
                 System.out.println("Connected to server " + ip + " through port " + port);
                 break;
             } catch (Exception e) {
