@@ -32,29 +32,33 @@ public class HP2CServer implements AutoCloseable {
     private Channel channel;
     private InfluxDB influxDB;
     private final String EXCHANGE_NAME = "measurements";
-    private final String serverURL = "http://127.0.0.1:8086";
+    private final long dbPort = 8086;
     private final String username = "root", password = "root";
     private static Map<String, Map<String, Device>> deviceMap = new HashMap<>();
 
-    public HP2CServer() throws IOException, TimeoutException {
+    public HP2CServer(String hostIp) throws IOException, TimeoutException {
         // Init RabbitMQ
+        System.out.println("Connecting to AMQP broker at host IP " + hostIp + "...");
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost");
+        factory.setHost(hostIp);
         connection = factory.newConnection();
         channel = connection.createChannel();
+        System.out.println("AMQP Connection successful");
         // Init InfluxDB
-        initDB();
+        initDB(hostIp, dbPort);
     }
 
     public static void main(String[] args) throws FileNotFoundException {
         // Load setup files
+        String hostIp;
         File setupDir;
         if (args.length == 1) {
             setupDir = new File(args[0]);
+            hostIp = System.getenv("LOCAL_IP");
         } else {
-            setupDir = new File("/home/eiraola/projects/hp2cdt/deployments/testbed");
+            setupDir = new File("../../deployments/testbed/setup");
+            hostIp = "0.0.0.0";
         }
-        setupDir = new File(setupDir, "setup");
         File[] setupFiles = setupDir.listFiles();
         assert setupFiles != null;
 
@@ -68,7 +72,7 @@ public class HP2CServer implements AutoCloseable {
 
         // Deploy listener
         try {
-            HP2CServer server = new HP2CServer();
+            HP2CServer server = new HP2CServer(hostIp);
             server.startListener();
         } catch (IOException | TimeoutException e) {
             System.out.println("Error: " + e.getMessage());
@@ -144,9 +148,12 @@ public class HP2CServer implements AutoCloseable {
     /**
      * Initializes the "hp2cdt" InfluxDB database instance.
      */
-    private void initDB() {
+    private void initDB(String ip, long port) {
         // Create an object to handle the communication with InfluxDB.
+        System.out.println("Connecting to InfluxDB at host IP " + ip + ", port " + port + "...");
+        String serverURL = "http://" + ip + ":" + port;
         influxDB = InfluxDBFactory.connect(serverURL, username, password);
+        System.out.println("InfluxDB Connection successful");
 
         // Create a database if it does not already exist
         String databaseName = "hp2cdt";
