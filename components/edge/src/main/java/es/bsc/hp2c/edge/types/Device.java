@@ -16,6 +16,7 @@
 package es.bsc.hp2c.edge.types;
 
 import java.lang.reflect.Constructor;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -42,12 +43,17 @@ public abstract class Device {
             throw new JSONException("Malformed JSON. No driver indicated");
         }
         System.out.println("looking for class " + driver);
-        Class<?> c = Class.forName(driver);
+        Class<?> c;
+        try{
+            c = Class.forName(driver);
+        } catch(ClassNotFoundException e){
+            throw new DeviceInstantiationException("Error finding the driver " + driver, e);
+        }
         Constructor<?> ct;
         try {
             ct = c.getConstructor(String.class, float[].class, JSONObject.class, JSONObject.class);
         } catch (NoSuchMethodException | SecurityException e) {
-            throw new DeviceInstantiationException(driver, e);
+            throw new DeviceInstantiationException("Error finding the constructor for " + driver, e);
         }
 
         String label = jDevice.optString("label", "");
@@ -106,8 +112,12 @@ public abstract class Device {
      */
     public static class DeviceInstantiationException extends Exception {
 
-        public DeviceInstantiationException(String label, Exception e) {
-            super("Error instantiating " + label + " device", e);
+        public DeviceInstantiationException(String message) {
+            super(message);
+        }
+
+        public DeviceInstantiationException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 

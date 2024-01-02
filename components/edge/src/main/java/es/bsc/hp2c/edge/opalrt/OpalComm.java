@@ -21,7 +21,7 @@ public class OpalComm {
     private static final List<OpalSensor<?>> udpSensorsList = new ArrayList<>();
     private static final List<OpalSensor<?>> tcpSensorsList = new ArrayList<>();
     private static final List<OpalActuator<?>> actuators = new ArrayList<>();
-    private static float[] values = new float[25];
+    private static int maxUdpIndexesLength = 25;
     private static int udpPORT;
     private static int tcpPORT;
     private static String udpIP;
@@ -195,13 +195,14 @@ public class OpalComm {
                 System.out.println("Current time: " + formattedTime);
 
                 try {
-                    byte[] buffer = new byte[values.length * Float.BYTES];
+                    byte[] buffer = new byte[maxUdpIndexesLength * Float.BYTES];
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                     udpSocket.receive(packet);
                     ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
-                    for (int i = 0; i < values.length; i++) {
+                    Float[] messageValues = new Float[maxUdpIndexesLength];
+                    for (int i = 0; i < messageValues.length; i++) {
                         float receivedValue = byteBuffer.getFloat();
-                        values[i] = receivedValue;
+                        messageValues[i] = receivedValue;
                     }
 
                     synchronized (udpSensorsList) {
@@ -209,14 +210,13 @@ public class OpalComm {
                             int[] indexes = sensor.getIndexes();
                             Float[] sensedValues = new Float[indexes.length];
                             for (int j = 0; j < indexes.length; ++j) {
-                                sensedValues[j] = values[indexes[j]];
+                                sensedValues[j] = messageValues[indexes[j]];
                             }
                             sensor.sensed(sensedValues);
                             sensor.onRead();
                         }
 
                     }
-
                     System.out.println(); // Add empty line at the end of each measurement
                 } catch (Exception e) {
                     System.err.println("Error receiving UDP message: " + e.getMessage());

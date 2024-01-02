@@ -108,7 +108,7 @@ public abstract class Func implements Runnable {
             return action;
 
         } catch (ClassNotFoundException e) {
-            throw new FunctionInstantiationException("Class " + driver + " not found. ", e);
+            throw new FunctionInstantiationException("Error finding the driver " + driver, e);
         } catch (NoSuchMethodException | SecurityException e) {
             throw new FunctionInstantiationException("Error finding the constructor for " + driver, e);
         } catch (Exception e) {

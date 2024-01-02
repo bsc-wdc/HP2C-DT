@@ -105,8 +105,10 @@ public class HP2CEdge {
             try {
                 Device d = Device.parseJSON(jDevice, jGlobProp);
                 devices.put(d.getLabel(), d);
-            } catch (DeviceInstantiationException | ClassNotFoundException | JSONException e) {
-                System.err.println("Error loading device " + jDevice + ". Ignoring it. " + e.getMessage());
+            } catch (ClassNotFoundException | JSONException e) {
+                System.err.println("Error loading device " + jDevice + ": " + e.getMessage() + ". Ignoring it. ");
+            } catch (DeviceInstantiationException e){
+                System.err.println("Error loading device. " + e.getMessage());
             }
         }
         return devices;
@@ -137,7 +139,7 @@ public class HP2CEdge {
                     Runnable action = Func.functionParseJSON(jFunc, devices, funcLabel);
                     Func.setupTrigger(jFunc, devices, action);
                 } catch (FunctionInstantiationException e) {
-                    System.err.println("Error initializing function: " + e.getMessage());
+                    System.err.println("Error loading function. " + e.getMessage());
                 }
             }
         } catch (Exception e) {
