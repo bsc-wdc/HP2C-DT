@@ -31,6 +31,7 @@ public class OpalComm {
     private static Socket actuateSocket;
     private static boolean useTCPActuators = false;
     private static boolean initialCall = true;
+    private static boolean loadedDevices = false;
 
     /*
     * This method receives the global properties of the edge and, if it is the first call (first declared device),
@@ -47,6 +48,52 @@ public class OpalComm {
         startTCPServer();
     }
 
+    static {
+        Thread verifyIndexes = new Thread(() -> {
+            try {
+                waitForDevicesLoaded();
+
+                synchronized (actuators) {
+                    verifyIndexesActuators(actuators);
+                }
+                synchronized (udpSensorsList) {
+                    verifyIndexesSensors(udpSensorsList);
+                }
+                synchronized (tcpSensorsList) {
+                    verifyIndexesSensors(tcpSensorsList);
+                }
+            } catch (Device.DeviceInstantiationException e) {
+                System.err.println(e.getMessage());
+            }
+        });
+        verifyIndexes.start();
+    }
+
+    private static void waitForDevicesLoaded() {
+        synchronized (OpalComm.class) {
+            while (!loadedDevices) {
+                try {
+                    OpalComm.class.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            notifyDevicesLoaded();
+        }
+    }
+
+    private static void notifyDevicesLoaded() {
+        synchronized (OpalComm.class) {
+            loadedDevices = true;
+            OpalComm.class.notifyAll();
+        }
+    }
+
+    /**
+     * Set up UDP and TCP communications
+     *
+     * @param jGlobalProperties JSONObject containing the setup file
+     */
     private static void setupComms(JSONObject jGlobalProperties){
         // Parse setup file
         JSONObject jComms = getjComms(jGlobalProperties);
@@ -76,6 +123,60 @@ public class OpalComm {
         setUdpPort(portUdpSensors);
         setTcpIp(ipTcpSensors);
         setTcpPort(portTcpSensors);
+    }
+
+    /**
+     * Verifies indexes within a list of OpalActuators
+     *
+     * @param devices Devices involved
+     * @throws Device.DeviceInstantiationException
+     */
+    public static void verifyIndexesActuators(List<OpalActuator<?>> devices) throws Device.DeviceInstantiationException {
+        HashSet<Integer> indexesSet = new HashSet<>();
+        for (OpalActuator<?> device : devices) {
+            int[] indexes = device.getIndexes();
+            // Check for repeated indices
+            for (int index : indexes) {
+                if (!indexesSet.add(index)) {
+                    throw new Device.DeviceInstantiationException("Repeated index found: " + index);
+                }
+            }
+        }
+        // Check if indices are consecutive
+        int minIndex = indexesSet.stream().mapToInt(Integer::intValue).min().orElse(-1);
+        int maxIndex = indexesSet.stream().mapToInt(Integer::intValue).max().orElse(-1);
+        for (int i = minIndex; i <= maxIndex; i++) {
+            if (!indexesSet.contains(i)) {
+                throw new Device.DeviceInstantiationException("Missing index found: " + i);
+            }
+        }
+    }
+
+    /**
+     * Verifies indexes within a list of OpalSensors
+     *
+     * @param devices Devices involved
+     * @throws Device.DeviceInstantiationException
+     */
+    public static void verifyIndexesSensors(List<OpalSensor<?>> devices) throws Device.DeviceInstantiationException {
+        HashSet<Integer> indexesSet = new HashSet<>();
+        for (OpalSensor<?> device : devices) {
+            int[] indexes = device.getIndexes();
+            // Check for repeated indices
+            for (int index : indexes) {
+                if (!indexesSet.add(index)) {
+                    throw new Device.DeviceInstantiationException("Repeated index found: " + index);
+                }
+            }
+        }
+        // Check if indices are consecutive
+        int minIndex = indexesSet.stream().mapToInt(Integer::intValue).min().orElse(-1);
+        int maxIndex = indexesSet.stream().mapToInt(Integer::intValue).max().orElse(-1);
+        for (int i = minIndex; i <= maxIndex; i++) {
+            if (!indexesSet.contains(i)) {
+                throw new Device.DeviceInstantiationException("Missing index found: " + i);
+            }
+        }
     }
 
     /**
@@ -309,6 +410,13 @@ public class OpalComm {
     public static void setTcpIp(String tcpIp) { tcpIP = tcpIp; }
 
     public static void setUseTCPActuators(boolean b) { useTCPActuators = b; }
+
+    public static void setLoadedDevices(boolean b) {
+        synchronized (OpalComm.class){
+            loadedDevices = b;
+            OpalComm.class.notifyAll();
+        }
+    }
 
     public static void setActuateSocket(Object ipObject, int port){
         ArrayList<String> ipList = new ArrayList<>();

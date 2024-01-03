@@ -77,7 +77,7 @@ public abstract class Func implements Runnable {
                 sensors.add((Sensor<?,?>) d);
             } else {
                 throw new FunctionInstantiationException(
-                        "Function " + funcLabel + "cannot be instantiated because " + label + " is not a sensor");
+                        "Function " + funcLabel + " cannot be instantiated because " + label + " is not a sensor");
             }
         }
         ArrayList<Actuator<?>> actuators = new ArrayList<>();
@@ -86,13 +86,13 @@ public abstract class Func implements Runnable {
             Device d = devices.get(label);
             if (d == null){
                 throw new FunctionInstantiationException(
-                        "Function " + funcLabel + "cannot be instantiated because " + label + " was not found");
+                        "Function " + funcLabel + " cannot be instantiated because " + label + " was not found");
             }
             if (d.isActionable()) {
                 actuators.add((Actuator<?>) d);
             } else {
                 throw new FunctionInstantiationException(
-                        "Function " + funcLabel + "cannot be instantiated because " + label + " is not an actuator");
+                        "Function " + funcLabel + " cannot be instantiated because " + label + " is not an actuator");
             }
         }
 

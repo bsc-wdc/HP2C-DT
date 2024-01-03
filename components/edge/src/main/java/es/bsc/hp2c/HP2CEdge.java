@@ -15,6 +15,7 @@
  */
 package es.bsc.hp2c;
 
+import es.bsc.hp2c.edge.opalrt.OpalComm;
 import es.bsc.hp2c.edge.types.Device;
 import es.bsc.hp2c.edge.types.Device.DeviceInstantiationException;
 import es.bsc.hp2c.edge.funcs.Func;
@@ -96,7 +97,6 @@ public class HP2CEdge {
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);        
         JSONArray jDevices = object.getJSONArray("devices");
-
         JSONObject jGlobProp = object.getJSONObject("global-properties");
 
         TreeMap<String, Device> devices = new TreeMap<>();
@@ -114,6 +114,7 @@ public class HP2CEdge {
                 System.err.println("Error loading device. " + e.getMessage());
             }
         }
+        OpalComm.setLoadedDevices(true);
         return devices;
     }
 
