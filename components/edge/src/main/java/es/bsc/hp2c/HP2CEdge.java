@@ -104,6 +104,9 @@ public class HP2CEdge {
             JSONObject jDevice = (JSONObject) jo;
             try {
                 Device d = Device.parseJSON(jDevice, jGlobProp);
+                if (devices.containsKey(d.getLabel())){
+                    throw new DeviceInstantiationException("Device label " + d.getLabel() + " is already in use");
+                }
                 devices.put(d.getLabel(), d);
             } catch (ClassNotFoundException | JSONException e) {
                 System.err.println("Error loading device " + jDevice + ": " + e.getMessage() + ". Ignoring it. ");
