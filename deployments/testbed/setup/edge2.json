@@ -1,7 +1,6 @@
 {
     "global-properties":{
         "label": "edge2",
-        "udp-sensors": 3,
         "comms":{
             "opal-udp": {
                 "protocol": "udp",

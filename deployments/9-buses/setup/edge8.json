@@ -1,7 +1,6 @@
 {
     "global-properties":{
         "label": "edge8",
-        "udp-sensors": 3,
         "comms":{
             "udp": {
                 "ip": "0.0.0.0",
