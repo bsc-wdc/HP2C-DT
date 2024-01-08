@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Creating RabbitMQ BROKER image"
+echo "Creating EDGE image"
 
 # Set default values
 COMPSS_VERSION="3.2"
@@ -22,6 +22,5 @@ fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-docker build -t ${ORG_NAME}/broker:${HP2C_VERSION} -f Dockerfile.broker ${SCRIPT_DIR}/../../components/broker
-docker tag ${ORG_NAME}/broker:${HP2C_VERSION} ${ORG_NAME}/broker:latest
-
+docker build -t ${ORG_NAME}/edge:${HP2C_VERSION} --build-arg="COMPSS_VERSION=${COMPSS_VERSION}" -f ${SCRIPT_DIR}/Dockerfile.edge ${SCRIPT_DIR}/../../components/
+docker tag ${ORG_NAME}/edge:${HP2C_VERSION} ${ORG_NAME}/edge:latest
