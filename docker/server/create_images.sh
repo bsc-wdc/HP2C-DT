@@ -2,17 +2,25 @@
 
 echo "Creating SERVER image"
 
-if [[ "${#}" -lt "1" ]]; then
-    VERSION_TAG="3.2"
-else 
-    VERSION_TAG="${1}"
+# Set default values
+COMPSS_VERSION="3.2"
+ORG_NAME="hp2c"
+HP2C_VERSION="1.0"
+
+# Check provided arguments
+if [[ "${#}" -ge "1" ]]; then
+    COMPSS_VERSION="${1}"
 fi
 
-IMAGE_NAME="hp2c"
+if [[ "${#}" -ge "2" ]]; then
+    ORG_NAME="${2}"
+fi
 
-HP2C_VERSION=1.0
-COMPSS_VERSION=3.2
+if [[ "${#}" -ge "3" ]]; then
+    HP2C_VERSION="${3}"
+fi
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-docker build -t ${IMAGE_NAME}/server:${HP2C_VERSION} -f Dockerfile.server ${SCRIPT_DIR}/../../components/
-docker tag ${IMAGE_NAME}/server:${HP2C_VERSION} ${IMAGE_NAME}/server:latest
+docker build -t ${ORG_NAME}/server:${HP2C_VERSION} -f Dockerfile.server ${SCRIPT_DIR}/../../components/
+docker tag ${ORG_NAME}/server:${HP2C_VERSION} ${ORG_NAME}/server:latest

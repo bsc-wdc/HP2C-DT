@@ -18,7 +18,7 @@ ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
  
 COPY ./common/ /app/common
 WORKDIR /app/common
-RUN mvn clean package
+RUN mvn clean install
 
 COPY ./server/ /app/server/
 WORKDIR /app/server/
