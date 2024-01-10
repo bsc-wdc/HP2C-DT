@@ -418,6 +418,12 @@ public class OpalComm {
         }
     }
 
+    /*
+    * The method will try to connect every IP declared within setup file
+    *
+    * @param ipObject IP or list of IPs
+    * @param port destination port
+    * */
     public static void setActuateSocket(Object ipObject, int port){
         ArrayList<String> ipList = new ArrayList<>();
         if (ipObject instanceof String){
