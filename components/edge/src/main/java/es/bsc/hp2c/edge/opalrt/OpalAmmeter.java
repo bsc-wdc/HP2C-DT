@@ -15,11 +15,13 @@
  */
 package es.bsc.hp2c.edge.opalrt;
 
-import es.bsc.hp2c.edge.generic.Ammeter;
-import es.bsc.hp2c.edge.opalrt.OpalReader.OpalSensor;
+import es.bsc.hp2c.common.generic.Ammeter;
+import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 
 /**
  * Ammeter simulated on an Opal-RT.
@@ -29,32 +31,28 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     private int[] indexes;
 
     /*
-    * Creates a new instance of OpalAmmeter. Useful when the device is declared in a JSON file.
+    * Creates a new instance of OpalAmmeter when the device is declared in the JSON file. If an Opal device is used by
+    * the edge, OpalComm.init() initializes ports and ips for communications according to the data in jGlobalProperties.
     *
     * @param label device label
     * @param position device position
-    * @param properties JSONObject representing device properties
+    * @param jProperties JSONObject representing device properties
+    * @param jGlobalProperties JSONObject representing the global properties of the edge
     * */
-    public OpalAmmeter(String label, float[] position, JSONObject properties) {
+    public OpalAmmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
-        JSONArray jIndexes = properties.getJSONArray("indexes");
+        JSONArray jIndexes = jProperties.getJSONArray("indexes");
+        if (jIndexes.length() != 1 && jIndexes.length() != 3){
+            throw new IllegalArgumentException("The ammeter must have either one or three indexes.");
+        }
         this.indexes = new int[jIndexes.length()];
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerDevice(this);
-    }
 
-    /*
-     * Creates a new instance of OpalAmmeter. Useful when the device is declared by a three-phase voltmeter.
-     *
-     * @param label device label
-     * @param position device position
-     * @param indexes assigned
-     * */
-    public OpalAmmeter(String label, float[] position, int[] indexes) {
-        super(label, position);
-        this.indexes = indexes;
+        String commType = jProperties.getString("comm-type");
+        OpalComm.registerSensor(this, commType);
+        OpalComm.init(jGlobalProperties);
     }
 
     @Override
@@ -73,6 +71,11 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     @Override
     protected Float[] sensedValues(Float[] input) {
         return input;
+    }
+
+    @Override
+    public final Float[] decodeValues(byte[] message) {
+        return BytesToFloatArray(message);
     }
 
 }

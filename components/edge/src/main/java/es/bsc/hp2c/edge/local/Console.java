@@ -16,7 +16,7 @@
 
 package es.bsc.hp2c.edge.local;
 
-import es.bsc.hp2c.edge.generic.MsgAlert;
+import es.bsc.hp2c.common.generic.MsgAlert;
 import org.json.JSONObject;
 
 /**
@@ -29,9 +29,9 @@ public class Console extends MsgAlert {
     }
 
 
+
     @Override
-    public void setValues(String message) throws Exception {
+    public void actuate(String message) {
         System.out.println(message);
     }
-
 }

@@ -14,31 +14,37 @@
  *   limitations under the License.
  */
 
-package es.bsc.hp2c.edge.generic;
+package es.bsc.hp2c.common.generic;
 
 import java.util.ArrayList;
 
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
+import es.bsc.hp2c.common.utils.CommUtils;
 
 /**
- * Sensor measuring the reactive power of the network. It has a property (values) measured in VAR (volt-ampere reactive)
+ * Sensor measuring the power of the network. It a has property (values) measured in Watts.
  */
-public abstract class Varmeter<T> extends Device implements Sensor<T, Float[]> {
+public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> {
 
     private Float[] values = { 0.0f };
     private ArrayList<Runnable> onReadFunctions;
 
     @Override
-    public abstract void sensed(T values);
+    public abstract void sensed(R values);
+
+    @Override
+    public void sensed(byte[] messageBytes) {
+        sensed(decodeValues(messageBytes));
+    }
 
     /**
-     * Creates a new instance of varmeter;
+     * Creates a new instance of wattmeter;
      *
      * @param label device label
      * @param position device position
      */
-    protected Varmeter(String label, float[] position) {
+    protected Wattmeter(String label, float[] position) {
         super(label, position);
         this.onReadFunctions = new ArrayList<>();
     }
@@ -67,7 +73,7 @@ public abstract class Varmeter<T> extends Device implements Sensor<T, Float[]> {
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract Float[] sensedValues(Float[] input);
+    protected abstract Float[] sensedValues(R input);
 
     @Override
     public final Float[] getCurrentValues() {
@@ -77,6 +83,15 @@ public abstract class Varmeter<T> extends Device implements Sensor<T, Float[]> {
     protected void setValues(Float[] values) {
         this.values = values;
     }
+
+    @Override
+    public final byte[] encodeValues() {
+        Float[] values = this.getCurrentValues();
+        return CommUtils.FloatArrayToBytes(values);
+    }
+
+    @Override
+    public abstract R decodeValues(byte[] message);
 
     @Override
     public final boolean isActionable() {
@@ -89,3 +104,4 @@ public abstract class Varmeter<T> extends Device implements Sensor<T, Float[]> {
     }
 
 }
+

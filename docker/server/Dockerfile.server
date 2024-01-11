@@ -15,17 +15,20 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
 
 ENV MAVEN_HOME /usr/share/maven
 ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
-EXPOSE 8080
+ 
+COPY ./common/ /app/common
+WORKDIR /app/common
+RUN mvn clean install
 
-COPY . /app
-WORKDIR /app
+COPY ./server/ /app/server/
+WORKDIR /app/server/
 RUN mvn clean package
 
-FROM compss/java_agents:${COMPSS_VERSION}
-COPY --from=builder /app/target/*.jar /app/edge.jar
+
+FROM openjdk:8-jdk-alpine
+COPY --from=builder /app/server/target/*.jar /app/server.jar
+COPY --from=builder /app/common/target/*.jar /app/common.jar
 COPY --from=builder /root/.m2/repository/com/rabbitmq/amqp-client/5.16.0/amqp-client-5.16.0.jar /app/rabbitmq.jar
-ENV CLASSPATH="${CLASSPATH}:/app/edge.jar:/app/rabbitmq.jar"
-COPY scripts /scripts
 
-CMD [ "/scripts/start_sensor_agent" ]
-
+# Specify the command to start the application using the desired main class
+CMD ["java", "-cp", "/app/server.jar", "es.bsc.hp2c.HP2CServer", "/data/"]

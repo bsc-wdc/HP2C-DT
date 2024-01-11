@@ -5,6 +5,11 @@ if [ ! -d "src" ]; then
     cd ..
 fi
 
+# Compile commons library (important: use "mvn install")
+cd ../common
+mvn clean install
+
 # Compile and run
+cd ../server
 mvn clean package
-mvn exec:java -Dexec.mainClass="es.bsc.hp2c.server.Server"
+mvn exec:java -Dexec.mainClass="es.bsc.hp2c.HP2CServer"

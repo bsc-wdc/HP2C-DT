@@ -13,15 +13,15 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.edge.types;
+package es.bsc.hp2c.common.types;
 
 /**
  * Class collecting information from the electrical network.
  *
- * @param <T> Type of value to receive.
+ * @param <R> Type of value to receive.
  * @param <V> Type of value to return.
  */
-public interface Sensor<T, V> {
+public interface Sensor<R, V> {
 
     /**
      * Receive a function and add it to the list of onRead functions.
@@ -39,9 +39,18 @@ public interface Sensor<T, V> {
      * Receive the raw sensed value and sets value attribute according to what
      * sensedValue(value) returns.
      *
-     * @param value Type of value to return.
+     * @param values Type of value to return.
      */
-    public void sensed(T values);
+    public void sensed(R values);
+
+    /**
+     * Method overloading of sensed value when provided an array of bytes.
+     * Again, sets value attribute according to what sensedValue(value)
+     * returns, but first decodes the values with decodeValues.
+     *
+     * @param values Type of value to return.
+     */
+    public void sensed(byte[] values);
 
     /**
      * Get the value stored.
@@ -49,4 +58,19 @@ public interface Sensor<T, V> {
      * @return Value stored.
      */
     public V getCurrentValues();
+
+    /**
+     * Get current values formatted as byte array to be sent a via messaging protocol.
+     *
+     * @return Byte array message with the set of current values
+     */
+    public byte[] encodeValues();
+
+    /**
+     * Decode values from a message made of an array of bytes.
+     *
+     * @param messageBytes contains the values of the sensor.
+     * @return The actual values in the corresponding data type.
+     */
+    public R decodeValues(byte[] messageBytes);
 }

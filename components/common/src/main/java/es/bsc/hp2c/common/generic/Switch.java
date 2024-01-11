@@ -13,19 +13,21 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.edge.generic;
+package es.bsc.hp2c.common.generic;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
-import es.bsc.hp2c.edge.types.Actuator;
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
+import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
+import es.bsc.hp2c.common.utils.CommUtils;
 
 /**
  * This class interacts with a switch of the electrical network. It has a property (states), representing device's
  * states (switch state defined as ON/OFF)
  */
-public abstract class Switch<T> extends Device implements Sensor<T, Switch.State[]>, Actuator<Switch.State[]> {
+public abstract class Switch<R> extends Device implements Sensor<R, Switch.State[]>, Actuator<Switch.State[]> {
 
     public enum State {
         ON,
@@ -53,7 +55,15 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
     }
 
     @Override
-    public abstract void sensed(T values);
+    public abstract void sensed(R values);
+
+    @Override
+    public void sensed(byte[] messageBytes) {
+        sensed(decodeValues(messageBytes));
+    }
+
+    @Override
+    public abstract void actuate(State[] values) throws IOException;
 
     /**
      * Adds a runnable to devices "onRead" functions;
@@ -80,15 +90,28 @@ public abstract class Switch<T> extends Device implements Sensor<T, Switch.State
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract State[] sensedValues(float[] input);
+    protected abstract State[] sensedValues(R input);
+
+    protected abstract Float[] actuateValues(State[] values);
 
     @Override
     public final State[] getCurrentValues() {
         return this.states;
     }
 
+    protected void setValues(State[] values) {
+        this.states = values;
+    }
+    
     @Override
-    public abstract void setValues(Switch.State[] values) throws Exception;
+    public final byte[] encodeValues() {
+        State[] state = this.getCurrentValues();
+        Float[] values = actuateValues(state);
+        return CommUtils.FloatArrayToBytes(values);
+    }
+
+    @Override
+    public abstract R decodeValues(byte[] message);
 
     @Override
     public boolean isActionable() {

@@ -15,11 +15,12 @@
  */
 package es.bsc.hp2c;
 
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Device.DeviceInstantiationException;
+import es.bsc.hp2c.edge.opalrt.OpalComm;
+import es.bsc.hp2c.common.types.Device;
+import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
+
 import es.bsc.hp2c.edge.funcs.Func;
 import es.bsc.hp2c.edge.funcs.Func.FunctionInstantiationException;
-import es.bsc.hp2c.edge.opalrt.OpalReader;
 
 import com.rabbitmq.client.*;
 
@@ -28,14 +29,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -44,7 +41,6 @@ import org.json.JSONTokener;
  * storing the devices and functions.
  */
 public class HP2CEdge {
-
     private static String edgeLabel;
     private static final String EXCHANGE_NAME = "measurements";
     private static Connection connection;
@@ -57,108 +53,37 @@ public class HP2CEdge {
      * @param args Setup file.
      */
     public static void main(String[] args) throws FileNotFoundException{
+        // Get input data
         String setupFile;
         if (args.length == 1) {
             setupFile = args[0];
         } else {
-            setupFile = "/home/mauro/Documentos/BSC/hp2cdt/deployments/testbed/setup/edge1.json";
+            setupFile = "../../deployments/testbed/setup/edge1.json";
         }
-        setUpMessaging();
+        String localIP = System.getenv("LOCAL_IP");
 
-        JSONObject jUDP = getjUDP(setupFile);
+        // Set up AMQP connections
+        setUpMessaging(localIP);
 
-        String ip = getIp(jUDP);
-        TreeMap<Integer, ArrayList<String>> ports = getPorts(jUDP);
-
-        OpalReader.setUDPIP(ip);
-        int firstPort = ports.firstKey();
-        OpalReader.setUDPPort(firstPort);
-
+        // Load devices and functions
         Map<String, Device> devices = loadDevices(setupFile);
-        loadFunctions(setupFile, devices); // loadFunctions(set, dev)
+        OpalComm.setLoadedDevices(true);
+        loadFunctions(setupFile, devices);
     }
 
-    private static JSONObject getjUDP(String setupFile) throws FileNotFoundException {
-        InputStream is = new FileInputStream(setupFile);
-        JSONTokener tokener = new JSONTokener(is);
-        JSONObject object = new JSONObject(tokener);
-        JSONObject jGlobProp = object.getJSONObject("global-properties");
-        JSONObject jComms = jGlobProp.getJSONObject("comms");
-        return jComms.getJSONObject("udp");
-    }
-
-    private static void setUpMessaging() {
+    private static void setUpMessaging(String ip) {
         try {
             ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost("localhost");
+            factory.setHost(ip);
             connection = factory.newConnection();
             channel = connection.createChannel();
             channel.exchangeDeclare(EXCHANGE_NAME, "topic");
             System.out.println("AMQP connection started.");
         } catch (IOException | TimeoutException e) {
             amqpOn = false;
-            System.err.println("Error initializing messaging.");
+            System.err.println("Error initializing messaging: " + e.getMessage());
             System.err.println("Continuing without AMQP connection.");
         }
-    }
-
-    /**
-     * Parse devices from JSON and return a map.
-     * 
-     * @param setupFile String containing JSON file.
-     * @return Map containing all declared devices.
-     */
-    private static Map<String, Device> loadDevices(String setupFile) throws FileNotFoundException {
-        InputStream is = new FileInputStream(setupFile);
-        JSONTokener tokener = new JSONTokener(is);
-        JSONObject object = new JSONObject(tokener);        
-        JSONArray jDevices = object.getJSONArray("devices");
-        TreeMap<String, Device> devices = new TreeMap<>();
-        for (Object jo : jDevices) {
-            JSONObject jDevice = (JSONObject) jo;
-            try {
-                Device d = Device.parseJSON(jDevice);
-                devices.put(d.getLabel(), d);
-            } catch (DeviceInstantiationException | ClassNotFoundException | JSONException e) {
-                System.err.println("Error loading device " + jDevice + ". Ignoring it. " + e.getMessage());
-            }
-        }
-        return devices;
-    }
-
-    /**
-     * Parse device's UDP port from JSON
-     *
-     * @param jProtocol JSON object (UDP section or TCP section)
-     * @return map of pairs IP-Ports (each port can be linked to a list of sensors)
-     */
-    private static TreeMap<Integer, ArrayList<String>> getPorts(JSONObject jProtocol) {
-
-        // Map of pairs IP - Ports (each port can be linked to a list of sensors)
-        TreeMap<Integer, ArrayList<String>> portsDevicesMap = new TreeMap<>();
-        JSONObject jPorts = jProtocol.getJSONObject("ports");
-
-        List<String> keysList = new ArrayList<>();
-        Iterator<String> keys = jPorts.keys();
-        while(keys.hasNext()) {
-            keysList.add(keys.next());
-        }
-
-        for (int i = 0; i < keysList.size(); ++i){
-            String sPort = keysList.get(i);
-            ArrayList<String> sDevices = new ArrayList<>();
-            JSONArray jDevices = jPorts.getJSONArray(sPort);
-            for (int j = 0; j < jDevices.length(); j++) {
-                sDevices.add(jDevices.getString(i));
-            }
-            portsDevicesMap.put(Integer.parseInt(sPort), sDevices);
-        }
-
-        return portsDevicesMap;
-    }
-
-    private static String getIp(JSONObject jProtocol) {
-        return jProtocol.getString("ip");
     }
 
     /**
@@ -184,11 +109,11 @@ public class HP2CEdge {
                     Runnable action = Func.functionParseJSON(jFunc, devices, funcLabel);
                     Func.setupTrigger(jFunc, devices, action);
                 } catch (FunctionInstantiationException e) {
-                    System.err.println("Error initializing function " + funcLabel);
+                    System.err.println("Error loading function. " + e.getMessage());
                 }
             }
         } catch (Exception e) {
-            System.err.println("Warning: Specific funcs might not be available in setup.");
+            System.err.println("Warning: Specific funcs might not be available in setup: " + e.getMessage());
         }
 
         // Load generic functions
@@ -223,7 +148,7 @@ public class HP2CEdge {
                     Runnable action = Func.functionParseJSON(jGlobalFunc, devices, funcLabel);
                     Func.setupTrigger(jGlobalFunc, devices, action);
                 } catch (FunctionInstantiationException e) {
-                    System.err.println("Error initializing general function " + funcLabel);
+                    System.err.println("Error initializing general function: " + e.getMessage());
                 }
             }
         }

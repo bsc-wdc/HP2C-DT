@@ -13,9 +13,10 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.edge.types;
+package es.bsc.hp2c.common.types;
 
 import java.lang.reflect.Constructor;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -35,22 +36,28 @@ public abstract class Device {
      * @throws DeviceInstantiationException Error raised during the instantiation of
      *                                      the device.
      */
-    public static Device parseJSON(JSONObject jDevice)
+    public static Device parseJSON(JSONObject jDevice, JSONObject jGlobalProperties, String driverType)
             throws JSONException, ClassNotFoundException, DeviceInstantiationException {
-        String driver = jDevice.optString("driver", null);
+        String driver = jDevice.optString(driverType, null);
         if (driver == null) {
             throw new JSONException("Malformed JSON. No driver indicated");
         }
         System.out.println("looking for class " + driver);
-        Class<?> c = Class.forName(driver);
+        Class<?> c;
+        try{
+            c = Class.forName(driver);
+        } catch(ClassNotFoundException e){
+            throw new DeviceInstantiationException("Error finding the driver " + driver, e);
+        }
         Constructor<?> ct;
         try {
-            ct = c.getConstructor(String.class, float[].class, JSONObject.class);
+            ct = c.getConstructor(String.class, float[].class, JSONObject.class, JSONObject.class);
         } catch (NoSuchMethodException | SecurityException e) {
-            throw new DeviceInstantiationException(driver, e);
+            throw new DeviceInstantiationException("Error finding the constructor for " + driver, e);
         }
 
         String label = jDevice.optString("label", "");
+        label = formatLabel(label);
 
         JSONObject jpos = jDevice.optJSONObject("position");
         float[] position;
@@ -60,12 +67,21 @@ public abstract class Device {
             position = new float[] { 0, 0, 0 };
         }
 
-        JSONObject properties = jDevice.optJSONObject("properties");
+        JSONObject jProperties = jDevice.optJSONObject("properties");
         try {
-            return (Device) ct.newInstance(label, position, properties);
+            return (Device) ct.newInstance(label, position, jProperties, jGlobalProperties);
         } catch (Exception e) {
             throw new DeviceInstantiationException(label, e);
         }
+    }
+
+    /**
+     * Reformat device label to comply with message protocol and database
+     * naming limitations
+     */
+    public static String formatLabel(String label) {
+        label = label.replaceAll("\\s", "").replaceAll("-", "");
+        return label;
     }
 
     private final String label;
@@ -106,8 +122,12 @@ public abstract class Device {
      */
     public static class DeviceInstantiationException extends Exception {
 
-        public DeviceInstantiationException(String label, Exception e) {
-            super("Error instantiating the " + label + " device", e);
+        public DeviceInstantiationException(String message) {
+            super(message);
+        }
+
+        public DeviceInstantiationException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 

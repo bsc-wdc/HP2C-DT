@@ -58,6 +58,12 @@
             <artifactId>compss-api</artifactId>
             <version>${compss.version}</version>
         </dependency>
+        <dependency>
+            <groupId>es.bsc.hp2c</groupId>
+            <artifactId>common</artifactId>
+            <version>0.1</version>
+            <scope>compile</scope>
+        </dependency>
         <!-- JSON -->
         <dependency>
             <groupId>org.json</groupId>
@@ -68,6 +74,12 @@
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
             <version>5.16.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>RELEASE</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     

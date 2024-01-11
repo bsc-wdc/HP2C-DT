@@ -2,9 +2,9 @@
 echo  "Creating AGENTS images"
 
 if [[ "${#}" -lt "1" ]]; then
-    VERSION_TAG="3.2"
+    COMPSS_VERSION="3.2"
 else 
-    VERSION_TAG="${1}"
+    COMPSS_VERSION="${1}"
 fi
   
 
@@ -26,18 +26,18 @@ services:
       context: .
       dockerfile: Dockerfile.agents
       target: agents_manager
-    image: compss/agents_manager:${VERSION_TAG}
+    image: compss/agents_manager:${COMPSS_VERSION}
   compss-agent-java:
     build:
       context: .
       dockerfile: Dockerfile.agents
       target: java_agent
-    image: compss/java_agents:${VERSION_TAG}
+    image: compss/java_agents:${COMPSS_VERSION}
   compss-agent-python:
     build:
       context: .
       dockerfile: Dockerfile.agents
       target: python_agent
-    image: compss/python_agents:${VERSION_TAG}
+    image: compss/python_agents:${COMPSS_VERSION}
 " > ${tmpfile}
 docker-compose -f "${tmpfile}" build

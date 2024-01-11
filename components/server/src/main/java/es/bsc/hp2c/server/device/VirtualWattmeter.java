@@ -1,0 +1,53 @@
+/*
+ *  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+package es.bsc.hp2c.server.device;
+
+import es.bsc.hp2c.common.generic.Wattmeter;
+import es.bsc.hp2c.common.utils.CommUtils;
+import org.json.JSONObject;
+
+/**
+ * Digital Twin Wattmeter.
+ */
+public class VirtualWattmeter extends Wattmeter<Float[]> {
+    /**
+     * Creates a new instance of VirtualWattmeter.
+     *
+     * @param label device label
+     * @param position device position
+     * @param properties JSONObject representing device properties
+     * @param jGlobalProperties JSONObject representing the global properties of the edge
+     * */
+    public VirtualWattmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
+        super(label, position);
+    }
+
+    @Override
+    public void sensed(Float[] values) {
+        super.setValues(sensedValues(values));
+        System.out.println("Device " + getLabel() + " sensed " + values[0] + " W");
+    }
+
+    @Override
+    protected Float[] sensedValues(Float[] input) {
+        return input;
+    }
+
+    @Override
+    public final Float[] decodeValues(byte[] message) {
+        return CommUtils.BytesToFloatArray(message);
+    }
+}

@@ -16,7 +16,7 @@
 
 package es.bsc.hp2c.edge.local;
 
-import es.bsc.hp2c.edge.generic.MsgAlert;
+import es.bsc.hp2c.common.generic.MsgAlert;
 import javax.swing.JOptionPane;
 import org.json.JSONObject;
 
@@ -33,8 +33,7 @@ public class MsgBox extends MsgAlert {
     }
 
     @Override
-    public final void setValues(String message) {
+    public void actuate(String message) {
         JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
     }
-
 }

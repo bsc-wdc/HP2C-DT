@@ -16,41 +16,66 @@
 
 package es.bsc.hp2c.edge.opalrt;
 
-import es.bsc.hp2c.edge.generic.Generator;
-import es.bsc.hp2c.edge.opalrt.OpalReader.OpalSensor;
+import es.bsc.hp2c.common.generic.Generator;
+import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
+import es.bsc.hp2c.edge.opalrt.OpalComm.OpalActuator;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
+
+import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
+
 /**
  * Represent a switch implemented accessible within a local OpalRT.
  */
-public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Float[]> {
+public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Float[]>, OpalActuator<Float[]> {
 
     private int[] indexes;
 
     /*
-     * Creates a new instance of OpalGenerator.
+     * Creates a new instance of opalGenerator when the device is declared in the JSON file. If an Opal device is used by
+     * the edge, OpalComm.init() initializes ports and ips for communications according to the data in jGlobalProperties.
      *
      * @param label device label
      * @param position device position
-     * @param properties JSONObject representing device properties
+     * @param jProperties JSONObject representing device properties
+     * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
-    public OpalGenerator(String label, float[] position, JSONObject properties) {
+    public OpalGenerator(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
-        JSONArray jIndexes = properties.getJSONArray("indexes");
+        JSONArray jIndexes = jProperties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
+        if (this.indexes.length != 2){
+            throw new IllegalArgumentException("Generator indexes must be 2: 1 for voltageSetpoint and 1 " +
+                    "for powerSetpoint");
+        }
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerDevice(this);
-    }
 
+        String commType = jProperties.getString("comm-type");
+        OpalComm.registerSensor(this, commType);
+        OpalComm.registerActuator(this);
+        OpalComm.init(jGlobalProperties);
+    }
 
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        System.out.println("Device " + getLabel() + " voltage set point is " + values[0] + " V");
+        System.out.println("Device " + getLabel() + " voltage set point is " + this.voltageSetpoint[0] + " V");
+        System.out.println("Device " + getLabel() + " power set point is " + this.powerSetpoint[0] + " V");
+    }
+
+    @Override
+    public void actuate(Float[] values) throws IOException {
+        Float[] rawValues = actuateValues(values);
+        OpalComm.commitActuation(this, rawValues);
+    }
+
+    protected Float[] actuateValues(Float[] values){
+        return values;
     }
 
     @Override
@@ -64,9 +89,8 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     }
 
     @Override
-    public void setValues(Float[] value) {
-        this.voltageSetpoint = new Float[]{value[0]};
+    public final Float[] decodeValues(byte[] message) {
+        return BytesToFloatArray(message);
     }
-
 }
 

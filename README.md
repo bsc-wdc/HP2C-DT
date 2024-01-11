@@ -19,6 +19,14 @@ In our application, we use edge nodes responsible for collecting, processing, an
 ### Setup and communications
 To configure an edge node, we use JSON files (refer to the "deployments" directory for examples). In this section, we will explain how to create them. An edge setup file will consist of three sections, as described below:
 
+#### Global Properties
+This section contains global properties of the edge node, such as its "label" and its connection ports ("comms"). In "comms," the user should provide three objects:
+1. "udp": these ports and IP will be used for receiving UDP sensors data from the network.
+2. "tcp-sensors": these ports and IP will be used for receiving TCP sensors data from the network.
+3. "tcp-actuators": these ports will be used for sending data to the network (the edge will be writing through this port). The deployment script will automatically retrieve the local IP, so there is no need to specify an IP manually.
+
+Within these objects, the user must declare a pair port-list of devices. At the moment, the list of devices will remain unused, and we will only check the key provided. These ports must be unique for every node.
+
 #### Devices
 The "devices" section will contain each device within the edge. Each device has the following attributes:
 1. "label": the name of the device, which must be unique within this edge.
@@ -30,16 +38,9 @@ The "devices" section will contain each device within the edge. Each device has 
 A function is a method that can read from one or more sensors and actuate over one or more actuators. Within the "functions" section, the user must specify the following:
 1. "label": a unique name for the function.
 2. "lang": the language in which it was implemented (Java or Python).
-3. "method_name": the path to the method's implementation (e.g., es.bsc.hp2c.<SUBPACKAGE>.<CLASS>).
+3. "method-name": the path to the method's implementation (e.g., es.bsc.hp2c.<SUBPACKAGE>.<CLASS>).
 4. "parameters": the user must define lists of "sensors", "actuators", and additional parameters called "others" that are needed by the function.
-5. "trigger": the event that triggers the execution of the function. As for "type", it can be "onFrequency" (executed with a periodicity specified in "parameters") and "onRead" (executed after every read of the devices declared as sensors). Additionally, the user should provide a "method_name" (path to the implementation of those triggers).
-
-#### Global Properties
-This section contains global properties of the edge node, such as its "label" and its connection ports ("comms"). In "comms," the user should provide two objects:
-1. "udp": UDP ports will be used for receiving data from the network (the edge will be listening through this port).
-2. "tcp": TCP ports will be used for sending data to the network (the edge will be writing in this port).
-
-Within these objects, the user must declare a pair port-list of devices. It is planned to allow introducing more than one pair, so that the user can choose which devices works with which ports. At the moment, the list of devices will remain unused, and we will only check the key provided. These ports must be unique for every node.
+5. "trigger": the event that triggers the execution of the function. As for "type", it can be "onFrequency" (executed with a periodicity specified in "parameters") and "onRead" (executed after every read of the devices declared as sensors). Additionally, the user should provide a "method-name" (path to the implementation of those triggers).
 
 ### Deployment
 To run the application, we provide a `testbed` example using Docker containers named 'hp2c_' plus the label specified in 'global-properties'. In this case, each edge node is a different COMPSs agent with ports starting in 4610 and ending with 1 (REST port) and 2 (COMM port). We use the host network for communications with these containers. 

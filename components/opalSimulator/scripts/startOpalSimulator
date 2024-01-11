@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Verify I am in the right folder and move one level down otherwise
+if [ ! -d "src" ]; then
+    cd ..
+fi
+
+export ARGS=`echo "$@"`
+
+# Compile and run
+mvn clean package
+mvn exec:java -Dexec.mainClass="es.bsc.hp2c.opalSimulator.OpalSimulator" -Dexec.args="$ARGS"
+
+

@@ -13,7 +13,9 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.edge.types;
+package es.bsc.hp2c.common.types;
+
+import java.io.IOException;
 
 /**
  * Class interacting with the real network element.
@@ -22,13 +24,6 @@ package es.bsc.hp2c.edge.types;
  */
 public interface Actuator<V> {
 
-    /**
-     * Sets the status of the actuator.
-     *
-     * @param value value to be set on the actuator
-     *
-     * @throws Exception there was some problem while performing the action
-     */
-    public void setValues(V value) throws Exception;
+    public void actuate(V values) throws IOException;
 
 }

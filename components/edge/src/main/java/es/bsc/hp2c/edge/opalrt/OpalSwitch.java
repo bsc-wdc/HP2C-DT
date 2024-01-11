@@ -16,48 +16,75 @@
 
 package es.bsc.hp2c.edge.opalrt;
 
-import es.bsc.hp2c.edge.generic.Switch;
-import es.bsc.hp2c.edge.opalrt.OpalReader.OpalSensor;
+import es.bsc.hp2c.common.generic.Switch;
+import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
+import es.bsc.hp2c.edge.opalrt.OpalComm.OpalActuator;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
+
 /**
  * Represent a switch implemented accessible within a local OpalRT.
  */
-public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.State[]> {
+public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.State[]>, OpalActuator<Switch.State[]> {
 
     private int[] indexes;
 
     /*
-     * Creates a new instance of OpalSwitch.
+     * Creates a new instance of OpalSwitch when the device is declared in the JSON file. If an Opal device is used by
+     * the edge, OpalComm.init() initializes ports and ips for communications according to the data in jGlobalProperties.
      *
      * @param label device label
      * @param position device position
-     * @param properties JSONObject representing device properties
-     */
-    public OpalSwitch(String label, float[] position, JSONObject properties) {
-        super(label, position, properties.getJSONArray("indexes").length());
-        JSONArray jIndexes = properties.getJSONArray("indexes");
+     * @param jProperties JSONObject representing device properties
+     * @param jGlobalProperties JSONObject representing the global properties of the edge
+     * */
+    public OpalSwitch(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
+        super(label, position, jProperties.getJSONArray("indexes").length());
+        JSONArray jIndexes = jProperties.getJSONArray("indexes");
+        if (jIndexes.length() != 1 && jIndexes.length() != 3){
+            throw new IllegalArgumentException("The switch must have either one or three indexes.");
+        }
         this.indexes = new int[jIndexes.length()];
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerDevice(this);
+
+        String commType = jProperties.getString("comm-type");
+        OpalComm.registerSensor(this, commType);
+        OpalComm.registerActuator(this);
+        OpalComm.init(jGlobalProperties);
     }
 
     @Override
     public void sensed(Float[] values) {
-        // setValue(sensedValues(values));
-        if (this.indexes.length > 1){
-            System.out.println(this.getLabel() + " states are: ");
-            for(int i = 0; i < this.states.length; ++i){
-                System.out.println("Switch " + i + " " + this.states[i]);
+        setValues(sensedValues(values));
+        System.out.println(getLabel() + " states are: ");
+        for(int i = 0; i < this.states.length; ++i){
+            System.out.println("Switch " + i + " " + this.states[i]);
+        }
+    }
+
+    @Override
+    public void actuate(State[] values) throws IOException {
+        Float[] rawValues = actuateValues(values);
+        OpalComm.commitActuation(this, rawValues);
+    }
+
+    protected Float[] actuateValues(State[] values){
+        Float[] outputValues = new Float[values.length];
+        for (int i = 0; i < values.length; ++i){
+            if (values[i] == State.ON){
+                outputValues[i] = 1.0f;
+            }
+            else {
+                outputValues[i] = 0.0f;
             }
         }
-        else{
-            System.out.println(this.getLabel() + " state is " + this.states[0]);
-        }
+        return outputValues;
     }
 
     @Override
@@ -66,7 +93,7 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     }
 
     @Override
-    protected State[] sensedValues(float[] input) {
+    protected State[] sensedValues(Float[] input) {
         State[] states = new State[input.length];
         // check if the number of input values equals the number of phases
         if (input.length != this.indexes.length) {
@@ -81,7 +108,6 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     @Override
     public void setValues(State[] values) {
         this.states = values;
-
         if (this.indexes.length > 1){
             System.out.println("New switch states has been set: ");
             System.out.println("New states are: ");
@@ -95,4 +121,8 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
         }
     }
 
+    @Override
+    public final Float[] decodeValues(byte[] message) {
+        return BytesToFloatArray(message);
+    }
 }

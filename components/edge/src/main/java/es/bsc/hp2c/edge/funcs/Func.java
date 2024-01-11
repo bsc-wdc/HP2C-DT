@@ -15,9 +15,9 @@
  */
 package es.bsc.hp2c.edge.funcs;
 
-import es.bsc.hp2c.edge.types.Actuator;
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
+import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -27,6 +27,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import static es.bsc.hp2c.common.types.Device.formatLabel;
 
 /**
  * Represents a user-declared function. The function constructor always receives
@@ -64,7 +66,7 @@ public abstract class Func implements Runnable {
             String funcLabel)
             throws FunctionInstantiationException {
 
-        String driver = jFunc.optString("method_name", "");
+        String driver = jFunc.optString("method-name", "");
         JSONObject parameters = jFunc.getJSONObject("parameters");
         JSONArray jSensors = parameters.getJSONArray("sensors");
         JSONArray jActuators = parameters.getJSONArray("actuators");
@@ -72,23 +74,29 @@ public abstract class Func implements Runnable {
         ArrayList<Sensor> sensors = new ArrayList<>();
         for (int i = 0; i < jSensors.length(); i++) {
             String label = jSensors.getString(i);
+            label = formatLabel(label);
             Device d = devices.get(label);
             if (d.isSensitive()) {
                 sensors.add((Sensor<?,?>) d);
             } else {
                 throw new FunctionInstantiationException(
-                        "Function " + funcLabel + "cannot be instantiated because " + label + " is not a sensor");
+                        "Function " + funcLabel + " cannot be instantiated because " + label + " is not a sensor");
             }
         }
         ArrayList<Actuator<?>> actuators = new ArrayList<>();
         for (int i = 0; i < jActuators.length(); i++) {
             String label = jActuators.getString(i);
+            label = formatLabel(label);
             Device d = devices.get(label);
+            if (d == null){
+                throw new FunctionInstantiationException(
+                        "Function " + funcLabel + " cannot be instantiated because " + label + " was not found");
+            }
             if (d.isActionable()) {
                 actuators.add((Actuator<?>) d);
             } else {
                 throw new FunctionInstantiationException(
-                        "Function " + funcLabel + "cannot be instantiated because " + label + " is not an actuator");
+                        "Function " + funcLabel + " cannot be instantiated because " + label + " is not an actuator");
             }
         }
 
@@ -104,7 +112,7 @@ public abstract class Func implements Runnable {
             return action;
 
         } catch (ClassNotFoundException e) {
-            throw new FunctionInstantiationException("Class " + driver + " not found. ", e);
+            throw new FunctionInstantiationException("Error finding the driver " + driver, e);
         } catch (NoSuchMethodException | SecurityException e) {
             throw new FunctionInstantiationException("Error finding the constructor for " + driver, e);
         } catch (Exception e) {
@@ -141,6 +149,7 @@ public abstract class Func implements Runnable {
 
             case "onRead":
                 String triggerSensorName = triggerParams.getString(0);
+                triggerSensorName = formatLabel(triggerSensorName);
                 Sensor<?,?> triggerSensor = (Sensor<?,?>) devices.get(triggerSensorName);
                 triggerSensor.addOnReadFunction(action);
                 break;

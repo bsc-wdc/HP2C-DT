@@ -15,11 +15,13 @@
  */
 package es.bsc.hp2c.edge.opalrt;
 
-import es.bsc.hp2c.edge.generic.Wattmeter;
-import es.bsc.hp2c.edge.opalrt.OpalReader.OpalSensor;
+import es.bsc.hp2c.common.generic.Wattmeter;
+import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 
 /**
  * Voltmeter simulated on an Opal-RT.
@@ -29,20 +31,28 @@ public class OpalWattmeter extends Wattmeter<Float[]> implements OpalSensor<Floa
     private int[] indexes;
 
     /*
-     * Creates a new instance of OpalWattmeter.
+     * Creates a new instance of OpalWattmeter when the device is declared in the JSON file. If an Opal device is used by
+     * the edge, OpalComm.init() initializes ports and ips for communications according to the data in jGlobalProperties.
      *
      * @param label device label
      * @param position device position
-     * @param properties JSONObject representing device properties
+     * @param jProperties JSONObject representing device properties
+     * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
-    public OpalWattmeter(String label, float[] position, JSONObject properties) {
+    public OpalWattmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
-        JSONArray jIndexes = properties.getJSONArray("indexes");
+        JSONArray jIndexes = jProperties.getJSONArray("indexes");
+        if (jIndexes.length() != 1){
+            throw new IllegalArgumentException("The wattmeter must have one index.");
+        }
         this.indexes = new int[jIndexes.length()];
         for (int i = 0; i < jIndexes.length(); ++i) {
             this.indexes[i] = (jIndexes.getInt(i));
         }
-        OpalReader.registerDevice(this);
+
+        String commType = jProperties.getString("comm-type");
+        OpalComm.registerSensor(this, commType);
+        OpalComm.init(jGlobalProperties);
     }
 
     @Override
@@ -58,7 +68,13 @@ public class OpalWattmeter extends Wattmeter<Float[]> implements OpalSensor<Floa
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        System.out.println("Device " + getLabel() + " sensed " + values[0] + " W");
+        for (Float value : values){
+            System.out.println("Device " + getLabel() + " sensed " + value + " W");
+        }
     }
 
+    @Override
+    public final Float[] decodeValues(byte[] message) {
+        return BytesToFloatArray(message);
+    }
 }

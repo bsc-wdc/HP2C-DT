@@ -13,10 +13,10 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.edge.generic;
+package es.bsc.hp2c.common.generic;
 
-import es.bsc.hp2c.edge.types.Actuator;
-import es.bsc.hp2c.edge.types.Device;
+import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Device;
 
 /**
  * This class interacts with a switch of the electrical network.
@@ -36,5 +36,8 @@ public abstract class MsgAlert extends Device implements Actuator<String> {
     public final boolean isSensitive() {
         return false;
     }
+
+    @Override
+    public abstract void actuate(String values);
 
 }

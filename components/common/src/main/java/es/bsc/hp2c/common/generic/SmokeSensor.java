@@ -14,15 +14,16 @@
  *   limitations under the License.
  */
 
-package es.bsc.hp2c.edge.generic;
+package es.bsc.hp2c.common.generic;
 
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
+import es.bsc.hp2c.common.utils.CommUtils;
 
 /**
  * Represents a smoke sensor belonging to the network.
  */
-public abstract class SmokeSensor<T> extends Device implements Sensor<T, SmokeSensor.Smoke> {
+public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSensor.Smoke> {
 
     public static enum Smoke {
         NO_SMOKE,
@@ -42,6 +43,19 @@ public abstract class SmokeSensor<T> extends Device implements Sensor<T, SmokeSe
         return this.status;
     }
 
+    public abstract Smoke sensedValues(R value);
+
+    @Override
+    public final byte[] encodeValues() {
+        Smoke state = this.getCurrentValues();
+        Float[] values = new Float[1];
+        values[0] = (float) ((state == Smoke.SMOKE) ? 1.0 : 0.0);
+        return CommUtils.FloatArrayToBytes(values);
+    }
+
+    @Override
+    public abstract R decodeValues(byte[] message);
+
     @Override
     public boolean isActionable() {
         return false;
@@ -53,5 +67,10 @@ public abstract class SmokeSensor<T> extends Device implements Sensor<T, SmokeSe
     }
 
     @Override
-    public abstract void sensed(T value);
+    public abstract void sensed(R value);
+
+    @Override
+    public void sensed(byte[] messageBytes) {
+        sensed(decodeValues(messageBytes));
+    }
 }

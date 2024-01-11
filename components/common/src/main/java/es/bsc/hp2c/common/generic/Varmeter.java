@@ -1,40 +1,50 @@
 /*
  *  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
- * 
+ *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
- * 
+ *
  *       http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  *   Unless required by applicable law or agreed to in writing, software
  *   distributed under the License is distributed on an "AS IS" BASIS,
  *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.edge.generic;
+
+package es.bsc.hp2c.common.generic;
 
 import java.util.ArrayList;
 
-import es.bsc.hp2c.edge.types.Device;
-import es.bsc.hp2c.edge.types.Sensor;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
+import es.bsc.hp2c.common.utils.CommUtils;
 
 /**
- * Sensor measuring the voltage of the network. It has only one property representing devices current voltage
+ * Sensor measuring the reactive power of the network. It has a property (values) measured in VAR (volt-ampere reactive)
  */
-public abstract class Voltmeter<T> extends Device implements Sensor<T, Float[]> {
+public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
 
     private Float[] values = { 0.0f };
     private ArrayList<Runnable> onReadFunctions;
 
+    @Override
+    public abstract void sensed(R values);
+
+    @Override
+    public void sensed(byte[] messageBytes) {
+        sensed(decodeValues(messageBytes));
+    }
+
     /**
-     * Creates a new instance of voltmeter;
+     * Creates a new instance of varmeter;
      *
      * @param label device label
      * @param position device position
      */
-    protected Voltmeter(String label, float[] position) {
+    protected Varmeter(String label, float[] position) {
         super(label, position);
         this.onReadFunctions = new ArrayList<>();
     }
@@ -57,16 +67,13 @@ public abstract class Voltmeter<T> extends Device implements Sensor<T, Float[]> 
         }
     }
 
-    @Override
-    public abstract void sensed(T value);
-
     /**
      * Converts the sensed input to a known value;
      *
      * @param input input value sensed
      * @return corresponding known value
      */
-    protected abstract Float[] sensedValues(Float[] input);
+    protected abstract Float[] sensedValues(R input);
 
     @Override
     public final Float[] getCurrentValues() {
@@ -76,6 +83,15 @@ public abstract class Voltmeter<T> extends Device implements Sensor<T, Float[]> 
     protected void setValues(Float[] values) {
         this.values = values;
     }
+
+    @Override
+    public final byte[] encodeValues() {
+        Float[] values = this.getCurrentValues();
+        return CommUtils.FloatArrayToBytes(values);
+    }
+
+    @Override
+    public abstract R decodeValues(byte[] message);
 
     @Override
     public final boolean isActionable() {

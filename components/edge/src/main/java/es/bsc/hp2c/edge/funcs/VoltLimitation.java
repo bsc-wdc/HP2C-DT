@@ -1,9 +1,9 @@
 package es.bsc.hp2c.edge.funcs;
 
-import es.bsc.hp2c.edge.generic.Switch;
-import es.bsc.hp2c.edge.generic.Voltmeter;
-import es.bsc.hp2c.edge.types.Actuator;
-import es.bsc.hp2c.edge.types.Sensor;
+import es.bsc.hp2c.common.generic.Switch;
+import es.bsc.hp2c.common.generic.Voltmeter;
+import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Sensor;
 
 import java.util.ArrayList;
 
@@ -55,13 +55,13 @@ public class VoltLimitation extends Func {
         Float[] voltage = this.voltmeter.getCurrentValues();
         if (voltage[0] > this.threshold) {
             System.out.println("Voltage limit exceeded. Turning actuators off...");
-
             try {
                 Switch.State[] states = sw.getCurrentValues();
+                Switch.State[] values = {Switch.State.OFF, Switch.State.ON, Switch.State.ON};
                 states[0] = Switch.State.OFF;
-                sw.setValues(states);
+                sw.actuate(values);
             } catch (Exception e) {
-                System.err.println("Error while setting switch OFF.");
+                System.err.println("Error while setting switch OFF: " + e.getMessage());
             }
         }
     }
