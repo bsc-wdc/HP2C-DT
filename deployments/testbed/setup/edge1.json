@@ -82,18 +82,6 @@
             }
         },
         {
-            "label": "Switch Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalSwitch",
-            "driver-dt": "es.bsc.hp2c.server.device.VirtualSwitch",
-            "position": {
-                "x":0,
-                "y":0
-            },
-            "properties": {
-                "indexes": [6,7,8]
-            }
-        },
-        {
             "label": "Generator Gen1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalGenerator",
             "driver-dt": "es.bsc.hp2c.server.device.VirtualGenerator",

@@ -197,6 +197,42 @@ public class OpalComm {
         return jGlobProp.getJSONObject("comms");
     }
 
+
+    private static void startTCPServer() {
+        Thread TCPSensorsThread = new Thread(() -> {
+            while(true){
+                // Initialize UDP server socket to read measurements
+                InetAddress serverAddress = null;
+                Socket clientSocket = null;
+                try {
+                    serverAddress = InetAddress.getByName(tcpIP);
+                    tcpSocket = new ServerSocket(tcpPORT,0, serverAddress);
+                    tcpSocket.setReuseAddress(true);
+                    System.out.println("\nTCP Server running on port: " + tcpPORT + "\n");
+                    clientSocket = tcpSocket.accept();
+                    processTCPConnection(clientSocket);
+                } catch (IOException e) {
+                    System.err.println("Error starting TCP server: " + e.getMessage());
+                    throw new RuntimeException(e);
+                } finally {
+                    try {
+                        if (clientSocket != null && !clientSocket.isClosed()) {
+                            clientSocket.close();
+                            tcpSocket.close();
+                            Thread.sleep(1000);
+                        }
+                    } catch (IOException ex) {
+                        System.err.println("Error closing client socket: " + ex.getMessage());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        });
+        TCPSensorsThread.setName("TCPSensorsThread");
+        TCPSensorsThread.start();
+    }
+
     /*
      * This method is in charge of reading the values of the TCP sensors from Opal. To do so, we check start of message
      * with a readInt() that checks the expected length (number of incoming floats) of the message, then get the buffer
@@ -210,64 +246,48 @@ public class OpalComm {
      * they are subtracted nIndexesUDP=2 to convert them to [0, 1, 2] and correctly map the TCP message.
      *
      * */
-    private static void startTCPServer() {
-        Thread TCPSensorsThread = new Thread(() -> {
-            // Initialize UDP server socket to read measurements
-            InetAddress serverAddress = null;
-            Socket clientSocket = null;
-            try {
-                serverAddress = InetAddress.getByName(tcpIP);
-                tcpSocket = new ServerSocket(tcpPORT,0, serverAddress);
-                System.out.println("\nTCP Server running on port: " + tcpPORT + "\n");
-                clientSocket = tcpSocket.accept();
-            } catch (IOException e) {
-                System.err.println("Error starting TCP server: " + e.getMessage());
-                throw new RuntimeException(e);
-            }
-            try {
-                while (true) {
-                    // Print time each iteration
-                    LocalTime currentTime = LocalTime.now();
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-                    String formattedTime = currentTime.format(formatter);
-                    System.out.println("Current time: " + formattedTime);
+    private static void processTCPConnection(Socket clientSocket) {
+        try {
+            while (true) {
+                // Print time each iteration
+                LocalTime currentTime = LocalTime.now();
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+                String formattedTime = currentTime.format(formatter);
+                System.out.println("Current time: " + formattedTime);
 
-                    DataInputStream inputStream = new DataInputStream(clientSocket.getInputStream());
-                    int messageLength = inputStream.readInt();
+                DataInputStream inputStream = new DataInputStream(clientSocket.getInputStream());
+                int messageLength = inputStream.readInt();
 
-                    byte[] buffer = new byte[messageLength * Float.BYTES];
-                    inputStream.readFully(buffer);
+                byte[] buffer = new byte[messageLength * Float.BYTES];
+                inputStream.readFully(buffer);
 
-                    char endChar = inputStream.readChar();
-                    if (endChar != '\n') {
-                        throw new IOException("End character not found.");
-                    }
-
-                    ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
-                    Float[] messageValues = new Float[messageLength];
-                    for (int i = 0; i < messageLength; i++) {
-                        messageValues[i] = byteBuffer.getFloat();
-                    }
-
-                    synchronized (tcpSensorsList) {
-                        for (OpalSensor<?> sensor : tcpSensorsList) {
-                            int[] indexes = sensor.getIndexes();
-                            Float[] sensedValues = new Float[indexes.length];
-                            for (int j = 0; j < indexes.length; ++j) {
-                                sensedValues[j] = messageValues[indexes[j]];
-                            }
-                            sensor.sensed(sensedValues);
-                            sensor.onRead();
-                        }
-                    }
-                    System.out.println(); // Add empty line at the end of each measurement
+                char endChar = inputStream.readChar();
+                if (endChar != '\n') {
+                    throw new IOException("End character not found.");
                 }
-            } catch (IOException e){
-                System.err.println("Error reading messages though TCP: " + e.getMessage());
+
+                ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
+                Float[] messageValues = new Float[messageLength];
+                for (int i = 0; i < messageLength; i++) {
+                    messageValues[i] = byteBuffer.getFloat();
+                }
+
+                synchronized (tcpSensorsList) {
+                    for (OpalSensor<?> sensor : tcpSensorsList) {
+                        int[] indexes = sensor.getIndexes();
+                        Float[] sensedValues = new Float[indexes.length];
+                        for (int j = 0; j < indexes.length; ++j) {
+                            sensedValues[j] = messageValues[indexes[j]];
+                        }
+                        sensor.sensed(sensedValues);
+                        sensor.onRead();
+                    }
+                }
+                System.out.println(); // Add empty line at the end of each measurement
             }
-        });
-        TCPSensorsThread.setName("TCPSensorsThread");
-        TCPSensorsThread.start();
+        } catch (IOException e){
+            System.err.println("Error reading messages though TCP: " + e.getMessage());
+        }
     }
 
     private static void startUDPServer() {
