@@ -20,18 +20,22 @@ public class OpalComm {
 
     private static final List<OpalSensor<?>> udpSensorsList = new ArrayList<>();
     private static final List<OpalSensor<?>> tcpSensorsList = new ArrayList<>();
-    private static final List<OpalActuator<?>> actuators = new ArrayList<>();
+    private static final List<OpalActuator<?>> actuatorsList = new ArrayList<>();
     private static int maxUdpIndexesLength = 25;
     private static int udpPORT;
     private static int tcpPORT;
+    private static int actuationPORT;
     private static String udpIP;
     private static String tcpIP;
+    private static String actuationIP;
     private static DatagramSocket udpSocket;
     private static ServerSocket tcpSocket;
-    private static Socket actuateSocket;
+    private static Socket actuationSocket;
     private static boolean useTCPActuators = false;
     private static boolean initialCall = true;
     private static boolean loadedDevices = false;
+    private static boolean connectedOnce = false;
+    private static HashMap<OpalActuator<?>, Float[]> missedValues = new HashMap<>();
 
     /*
     * This method receives the global properties of the edge and, if it is the first call (first declared device),
@@ -53,8 +57,8 @@ public class OpalComm {
             try {
                 waitForDevicesLoaded();
 
-                synchronized (actuators) {
-                    verifyIndexesActuators(actuators);
+                synchronized (actuatorsList) {
+                    verifyIndexesActuators(actuatorsList);
                 }
                 synchronized (udpSensorsList) {
                     verifyIndexesSensors(udpSensorsList);
@@ -105,7 +109,9 @@ public class OpalComm {
             JSONObject jTcpActuators = jTCP.getJSONObject("actuators");
             int portActuate = getPort(jTcpActuators);
             Object ipObject = jTcpActuators.get("ip");
-            setActuateSocket(ipObject, portActuate);
+            new Thread(() -> {
+                setActuateSocket(ipObject, portActuate);
+            }).start();
         } else{
             System.out.println("In order to enable actuations, 'actuators' must be declared within 'opal-tcp' section");
         }
@@ -217,7 +223,6 @@ public class OpalComm {
                 } finally {
                     try {
                         if (clientSocket != null && !clientSocket.isClosed()) {
-                            clientSocket.close();
                             tcpSocket.close();
                             Thread.sleep(1000);
                         }
@@ -336,7 +341,6 @@ public class OpalComm {
                             sensor.sensed(sensedValues);
                             sensor.onRead();
                         }
-
                     }
                     System.out.println(); // Add empty line at the end of each measurement
                 } catch (Exception e) {
@@ -348,54 +352,147 @@ public class OpalComm {
         UDPSensorsThread.start();
     }
 
-    public static void commitActuation(OpalActuator<?> actuator, Float[] values) throws IOException {
+    public static void commitActuation(OpalActuator<?> actuator, Float[] values) {
         if (useTCPActuators){
-            // count the number of floats to be sended
-            int nIndexes = 0;
-            List<String> labels = new ArrayList<>();
-            for (OpalActuator<?> opalActuator : actuators) {
-                int nIndexesDevice = opalActuator.getIndexes().length;
-                labels.add(((Device) opalActuator).getLabel());
-                nIndexes += nIndexesDevice;
-            }
-            for (OpalSensor<?> opalSensor : tcpSensorsList) {
-                if (!(labels.contains(((Device) opalSensor).getLabel()))) {
-                    int nIndexesDevice = opalSensor.getIndexes().length;
+            try{
+                // count the number of floats to be sended
+                int nIndexes = 0;
+                List<String> labels = new ArrayList<>();
+                for (OpalActuator<?> opalActuator : actuatorsList) {
+                    int nIndexesDevice = opalActuator.getIndexes().length;
+                    labels.add(((Device) opalActuator).getLabel());
                     nIndexes += nIndexesDevice;
                 }
-            }
-            ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
-
-            // Scale actuators indexes (ignore udp sensors)
-            int[] indexesLocal = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
-
-            // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
-            for (int i = 0; i < nIndexes; ++i){
-                // Check if current index is in indexes
-                boolean found = false;
-                int index = 0; // index in values
-                for (int j : indexesLocal) {
-                    if (j == i) {
-                        found = true;
-                        break;
+                for (OpalSensor<?> opalSensor : tcpSensorsList) {
+                    if (!(labels.contains(((Device) opalSensor).getLabel()))) {
+                        int nIndexesDevice = opalSensor.getIndexes().length;
+                        nIndexes += nIndexesDevice;
                     }
-                    index += 1;
                 }
-                if (found){ byteBuffer.putFloat(values[index]); }
-                else { byteBuffer.putFloat(Float.NEGATIVE_INFINITY); }
-            }
+                ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
 
-            DataOutputStream outputStream = new DataOutputStream(actuateSocket.getOutputStream());
-            byte[] buffer = byteBuffer.array();
-            outputStream.write(buffer);
-            System.out.println("Packet sent with pairs value/index: ");
-            for (int i = 0; i < values.length; ++i){
-                System.out.print(values[i]);
-                System.out.print("/" + indexesLocal[i]);
-                System.out.println("");
+                // Scale actuators indexes (ignore udp sensors)
+                int[] indexesLocal = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
+
+                // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
+                for (int i = 0; i < nIndexes; ++i){
+                    // Check if current index is in indexes
+                    boolean found = false;
+                    int index = 0; // index in values
+                    for (int j : indexesLocal) {
+                        if (j == i) {
+                            found = true;
+                            break;
+                        }
+                        index += 1;
+                    }
+                    if (found){ byteBuffer.putFloat(values[index]); }
+                    else { byteBuffer.putFloat(Float.NEGATIVE_INFINITY); }
+                }
+
+                DataOutputStream outputStream = new DataOutputStream(actuationSocket.getOutputStream());
+                byte[] buffer = byteBuffer.array();
+                outputStream.write(buffer);
+                System.out.println("Packet sent with pairs value/index: ");
+                for (int i = 0; i < values.length; ++i){
+                    System.out.print(values[i]);
+                    System.out.print("/" + indexesLocal[i]);
+                    System.out.println("");
+                }
+            } catch (IOException e){
+                System.err.println("Socket exception: " + e.getMessage());
+                synchronized (actuationSocket){
+                    try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }
+                }
+                synchronized (missedValues){
+                    if (missedValues.containsKey(actuator)){
+                        Float[] previousValues = missedValues.get(actuator);
+                        int index = 0;
+                        for(Float value : values){
+                            if (value != Float.NEGATIVE_INFINITY){ previousValues[index] = value; }
+                            index += 1;
+                        }
+                        missedValues.put(actuator, previousValues);
+                        System.out.print("MissedValues updated:");
+                        Set<OpalActuator<?>> aux = missedValues.keySet();
+                        for (OpalActuator<?> ac : aux){
+                            System.out.println("    Actuator " + ((Device) ac).getLabel() + ":");
+                            for (Float value : missedValues.get(ac)){
+                                System.out.println("        " + value);
+                            }
+                        }
+                    }
+                    else{ missedValues.put(actuator, values); }
+                }
+                setActuateSocket(actuationIP, actuationPORT);
             }
         }
     }
+
+    /*
+     * The method will try to connect every IP declared within setup file
+     *
+     * @param ipObject IP or list of IPs
+     * @param port destination port
+     * */
+    public static void setActuateSocket(Object ipObject, int port) {
+        ArrayList<String> ipList = new ArrayList<>();
+        if (ipObject instanceof String){
+            String ip = (String) ipObject;
+            ipList.add(ip);
+        }
+        else{
+            JSONArray ipArray = (JSONArray) ipObject;
+            for (Object element : ipArray){
+                if (element instanceof String){
+                    ipList.add((String) element);
+                }
+            }
+        }
+        connectActuationSocket(port, ipList);
+        while(!connectedOnce) {
+            connectActuationSocket(port, ipList);
+            try { Thread.sleep(5000); } catch(InterruptedException e){ throw new RuntimeException(e); }
+        }
+    }
+
+    private static void connectActuationSocket(int port, ArrayList<String> ipList) {
+        for (String ip : ipList) {
+            actuationSocket = new Socket();
+            char firstChar = ip.charAt(0);
+            if (firstChar == '$') {
+                String env = ip.substring(1);
+                ip = System.getenv(env);
+                if (ip == null) { System.err.println("Environment variable " + env + " was not found"); continue; }
+            }
+            try {
+                actuationSocket.connect(new InetSocketAddress(ip, port), 1000);
+                actuationIP = ip;
+                actuationPORT = port;
+                //actuateSocket = new Socket(ip, port);
+                System.out.println("Connected to server " + ip + " through port " + port);
+                if (!connectedOnce) {
+                    connectedOnce = true;
+                    new Timer().scheduleAtFixedRate(new connectionTester(), 0, 5000); // send empty message every 2 seconds to test the connection
+                }
+                synchronized (missedValues){
+                    Set<OpalActuator<?>> keys = missedValues.keySet();
+                    for (OpalActuator<?> actuator : keys){
+                        Float[] values = missedValues.get(actuator);
+                        if(Arrays.stream(values).anyMatch(element -> element != Double.NEGATIVE_INFINITY)){
+                            commitActuation(actuator, values);
+                        }
+                    }
+                    missedValues = new HashMap<>();
+                }
+                break;
+            } catch (IOException e) {
+                System.err.println("Failed to connect to server " + ip + " through port " + port + ": " +
+                        e.getMessage());
+            }
+        }
+    }
+
 
     /**
      * Register device into the list of sensors.
@@ -416,8 +513,8 @@ public class OpalComm {
     }
 
     public static void registerActuator(OpalActuator<?> actuator) {
-        synchronized (actuators) {
-            actuators.add(actuator);
+        synchronized (actuatorsList) {
+            actuatorsList.add(actuator);
         }
     }
 
@@ -438,54 +535,46 @@ public class OpalComm {
         }
     }
 
-    /*
-    * The method will try to connect every IP declared within setup file
-    *
-    * @param ipObject IP or list of IPs
-    * @param port destination port
-    * */
-    public static void setActuateSocket(Object ipObject, int port){
-        ArrayList<String> ipList = new ArrayList<>();
-        if (ipObject instanceof String){
-            String ip = (String) ipObject;
-            ipList.add(ip);
-        }
-        else{
-            JSONArray ipArray = (JSONArray) ipObject;
-            for (Object element : ipArray){
-                if (element instanceof String){
-                    ipList.add((String) element);
-                }
-            }
-        }
-        
-        for (String ip : ipList){
-            actuateSocket = new Socket();
-            char firstChar = ip.charAt(0);
-            if (firstChar == '$'){
-                String env = ip.substring(1);
-                ip = System.getenv(env);
-                if (ip == null){
-                    System.err.println("Environment variable " + env + " was not found");
-                }
-            }
-            try {
-                actuateSocket.connect(new InetSocketAddress(ip, port), 1000);
-                //actuateSocket = new Socket(ip, port);
-                System.out.println("Connected to server " + ip + " through port " + port);
-                break;
-            } catch (Exception e) {
-                System.err.println("Failed to connect to server " + ip + " through port " + port + ": " +
-                        e.getMessage());
-            }
-        }
-    }
-
     protected interface OpalSensor<V> extends Sensor<Float[], V> {
         int[] getIndexes();
     }
 
     protected interface OpalActuator<V> extends Actuator<V> {
         int[] getIndexes();
+    }
+
+    private static class connectionTester extends TimerTask {
+        public void run(){
+            try{
+                // count the number of floats to be sended
+                int nIndexes = 0;
+                List<String> labels = new ArrayList<>();
+                for (OpalActuator<?> opalActuator : actuatorsList) {
+                    int nIndexesDevice = opalActuator.getIndexes().length;
+                    labels.add(((Device) opalActuator).getLabel());
+                    nIndexes += nIndexesDevice;
+                }
+                for (OpalSensor<?> opalSensor : tcpSensorsList) {
+                    if (!(labels.contains(((Device) opalSensor).getLabel()))) {
+                        int nIndexesDevice = opalSensor.getIndexes().length;
+                        nIndexes += nIndexesDevice;
+                    }
+                }
+                ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
+                // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
+                for (int i = 0; i < nIndexes; ++i){
+                    byteBuffer.putFloat(Float.NEGATIVE_INFINITY);
+                }
+                DataOutputStream outputStream = new DataOutputStream(actuationSocket.getOutputStream());
+                byte[] buffer = byteBuffer.array();
+                outputStream.write(buffer);
+            } catch (IOException e){
+                System.err.println("Socket is disconnected: " + e.getMessage());
+                synchronized (actuationSocket){
+                    try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }
+                }
+                setActuateSocket(actuationIP, actuationPORT);
+            }
+        }
     }
 }

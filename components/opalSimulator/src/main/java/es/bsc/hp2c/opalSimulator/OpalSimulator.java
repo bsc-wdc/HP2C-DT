@@ -51,6 +51,34 @@ public class OpalSimulator {
             devices.put(i, edgeI);
         }
 
+        startActuatorsServer(nEdges);
+        startTCPSensors(nEdges);
+        startUDPSensors(nEdges);
+
+    }
+
+    private static void startUDPSensors(int nEdges) {
+        for (int i = 0; i < nEdges; ++i){
+            int finalI = i;
+            new Thread(() -> {
+                int udpPort = BASE_UDP_PORT + (finalI * 1000);
+                System.out.println("Starting UDP communication in port " + udpPort + " ip " + SERVER_ADDRESS);
+                startUDPClient(udpPort, (udpPort / 1000) % 10);
+            }).start();
+        }
+    }
+
+    private static void startTCPSensors(int nEdges) {
+        for (int i = 0; i < nEdges; ++i){
+            int tcpPort = BASE_TCP_SENSORS_PORT + (i * 1000);
+            new Thread(() -> {
+                System.out.println("Starting TCP communication in port " + tcpPort + " ip " + SERVER_ADDRESS);
+                startTCPClient(tcpPort, (tcpPort / 1000) % 10);
+            }).start();
+        }
+    }
+
+    private static void startActuatorsServer(int nEdges) {
         for (int i = 0; i < nEdges; ++i){
             int port = BASE_TCP_ACTUATORS_PORT + (i * 1000);
             new Thread(() -> {
@@ -67,28 +95,8 @@ public class OpalSimulator {
                 }
             }).start();
         }
-
         while (runClient < nEdges){
-            Thread.sleep(1000);
-        }
-        Thread.sleep(3000);
-
-        for (int i = 0; i < nEdges; ++i){
-            int tcpPort = BASE_TCP_SENSORS_PORT + (i * 1000);
-            new Thread(() -> {
-                System.out.println("Starting TCP communication in port " + tcpPort + " ip " + SERVER_ADDRESS);
-                startTCPClient(tcpPort, (tcpPort / 1000) % 10);
-            }).start();
-        }
-
-        Thread.sleep(5000);
-        for (int i = 0; i < nEdges; ++i){
-            int finalI = i;
-            new Thread(() -> {
-                int udpPort = BASE_UDP_PORT + (finalI * 1000);
-                System.out.println("Starting UDP communication in port " + udpPort + " ip " + SERVER_ADDRESS);
-                startUDPClient(udpPort, (udpPort / 1000) % 10);
-            }).start();
+            try { Thread.sleep(1000); } catch (InterruptedException e) { throw new RuntimeException(e); }
         }
     }
 
@@ -112,7 +120,10 @@ public class OpalSimulator {
                 int index = 0;
                 while (byteBuffer.remaining() > 0) {
                     Float[] aux = devices.get(edgeNumber);
-                    aux[index] = byteBuffer.getFloat();
+                    Float newFloat = byteBuffer.getFloat();
+                    if (newFloat != Float.NEGATIVE_INFINITY){
+                        aux[index] = newFloat;
+                    }
                     devices.put(edgeNumber, aux);
                     index += 1;
                 }

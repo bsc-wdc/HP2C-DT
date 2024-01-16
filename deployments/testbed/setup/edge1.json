@@ -16,7 +16,7 @@
                     "port": "11002"
                 },
                 "actuators": {
-                    "ip": "$LOCAL_IP",
+                    "ip": ["$LOCAL_IP", "localhost"],
                     "port": "31002"
                 }
             }
