@@ -209,12 +209,9 @@ public class OpalComm {
                     try {
                         if (clientSocket != null && !clientSocket.isClosed()) {
                             tcpSocket.close();
-                            Thread.sleep(1000);
                         }
                     } catch (IOException ex) {
                         System.err.println("Error closing client socket: " + ex.getMessage());
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
                     }
                 }
             }
