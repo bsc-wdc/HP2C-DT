@@ -56,16 +56,9 @@ public class OpalComm {
         Thread verifyIndexes = new Thread(() -> {
             try {
                 waitForDevicesLoaded();
-
-                synchronized (actuatorsList) {
-                    verifyIndexesActuators(actuatorsList);
-                }
-                synchronized (udpSensorsList) {
-                    verifyIndexesSensors(udpSensorsList);
-                }
-                synchronized (tcpSensorsList) {
-                    verifyIndexesSensors(tcpSensorsList);
-                }
+                verifyIndexesActuators(actuatorsList);
+                verifyIndexesSensors(udpSensorsList);
+                verifyIndexesSensors(tcpSensorsList);
             } catch (Device.DeviceInstantiationException e) {
                 System.err.println(e.getMessage());
             }
@@ -82,14 +75,6 @@ public class OpalComm {
                     Thread.currentThread().interrupt();
                 }
             }
-            notifyDevicesLoaded();
-        }
-    }
-
-    private static void notifyDevicesLoaded() {
-        synchronized (OpalComm.class) {
-            loadedDevices = true;
-            OpalComm.class.notifyAll();
         }
     }
 
