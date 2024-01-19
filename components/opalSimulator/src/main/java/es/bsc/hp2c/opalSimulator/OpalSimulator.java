@@ -51,7 +51,7 @@ public class OpalSimulator {
             devices.put(i, edgeI);
         }
 
-        startActuatorsServer(nEdges);
+        //startActuatorsServer(nEdges);
         startTCPSensors(nEdges);
         startUDPSensors(nEdges);
 

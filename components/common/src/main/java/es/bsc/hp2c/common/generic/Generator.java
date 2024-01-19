@@ -96,8 +96,8 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     protected void setValues(Float[] values) {
         if (values.length >= this.voltageSetpoint.length + this.powerSetpoint.length) {
             System.arraycopy(values, 0, this.voltageSetpoint, 0, this.voltageSetpoint.length);
-
             System.arraycopy(values, this.voltageSetpoint.length, this.powerSetpoint, 0, this.powerSetpoint.length);
+            this.setLastUpdate();
         } else {
             System.err.println("Values length is not enough to assign to voltageSetpoint and powerSetpoint.");
         }

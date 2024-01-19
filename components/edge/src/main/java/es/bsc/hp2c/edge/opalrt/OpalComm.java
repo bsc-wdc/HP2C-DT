@@ -201,6 +201,7 @@ public class OpalComm {
                     tcpSocket.setReuseAddress(true);
                     System.out.println("\nTCP Server running on port: " + tcpPORT + "\n");
                     clientSocket = tcpSocket.accept();
+                    setAvailableSensors(tcpSensorsList, true);
                     processTCPConnection(clientSocket);
                 } catch (IOException e) {
                     System.err.println("Error starting TCP server: " + e.getMessage());
@@ -209,6 +210,7 @@ public class OpalComm {
                     try {
                         if (clientSocket != null && !clientSocket.isClosed()) {
                             tcpSocket.close();
+                            setAvailableSensors(tcpSensorsList, false);
                         }
                     } catch (IOException ex) {
                         System.err.println("Error closing client socket: " + ex.getMessage());
@@ -387,24 +389,24 @@ public class OpalComm {
                     try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }
                 }
                 synchronized (missedValues){
+                    Float[] previousValues = values;
                     if (missedValues.containsKey(actuator)){
-                        Float[] previousValues = missedValues.get(actuator);
+                        previousValues = missedValues.get(actuator);
                         int index = 0;
                         for(Float value : values){
                             if (value != Float.NEGATIVE_INFINITY){ previousValues[index] = value; }
                             index += 1;
                         }
-                        missedValues.put(actuator, previousValues);
-                        System.out.print("MissedValues updated:");
-                        Set<OpalActuator<?>> aux = missedValues.keySet();
-                        for (OpalActuator<?> ac : aux){
-                            System.out.println("    Actuator " + ((Device) ac).getLabel() + ":");
-                            for (Float value : missedValues.get(ac)){
-                                System.out.println("        " + value);
-                            }
+                    }
+                    missedValues.put(actuator, previousValues);
+                    System.out.println("MissedValues updated:");
+                    Set<OpalActuator<?>> aux = missedValues.keySet();
+                    for (OpalActuator<?> ac : aux){
+                        System.out.println("    Actuator " + ((Device) ac).getLabel() + ":");
+                        for (Float value : missedValues.get(ac)){
+                            System.out.println("        " + value);
                         }
                     }
-                    else{ missedValues.put(actuator, values); }
                 }
                 setActuateSocket(actuationIP, actuationPORT);
             }
@@ -449,6 +451,8 @@ public class OpalComm {
             }
             try {
                 actuationSocket.connect(new InetSocketAddress(ip, port), 1000);
+
+                setAvailableActuators(actuatorsList, true);
                 actuationIP = ip;
                 actuationPORT = port;
                 //actuateSocket = new Socket(ip, port);
@@ -476,6 +480,15 @@ public class OpalComm {
     }
 
 
+    public static  void setAvailableSensors(List<OpalSensor<?>> sensors, boolean b){
+        for(OpalSensor<?> sensor : sensors){ ((Device) sensor).setSensorAvailable(b); }
+    }
+
+    public static  void setAvailableActuators(List<OpalActuator<?>> actuators, boolean b){
+        for(OpalActuator<?> actuator : actuators){ ((Device) actuator).setActuatorAvailable(b); }
+    }
+
+
     /**
      * Register device into the list of sensors.
      *
@@ -486,6 +499,7 @@ public class OpalComm {
             synchronized (udpSensorsList) {
                 udpSensorsList.add(sensor);
             }
+            ((Device) sensor).setMaxTimeWithoutUpdate(10000);
         }
         if (commType.equals("opal-tcp")){
             synchronized (tcpSensorsList) {
@@ -551,10 +565,11 @@ public class OpalComm {
                 byte[] buffer = byteBuffer.array();
                 outputStream.write(buffer);
             } catch (IOException e){
-                System.err.println("Socket is disconnected: " + e.getMessage());
+                setAvailableActuators(actuatorsList, false);
                 synchronized (actuationSocket){
                     try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }
                 }
+                System.err.println("Actuation socket is closed: " + e.getMessage());
                 setActuateSocket(actuationIP, actuationPORT);
             }
         }

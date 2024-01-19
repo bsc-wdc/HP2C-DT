@@ -52,17 +52,24 @@ public class VoltLimitation extends Func {
 
     @Override
     public void run() {
-        Float[] voltage = this.voltmeter.getCurrentValues();
-        if (voltage[0] > this.threshold) {
-            System.out.println("Voltage limit exceeded. Turning actuators off...");
-            try {
-                Switch.State[] states = sw.getCurrentValues();
-                Switch.State[] values = {Switch.State.OFF, Switch.State.ON, Switch.State.ON};
-                states[0] = Switch.State.OFF;
-                sw.actuate(values);
-            } catch (Exception e) {
-                System.err.println("Error while setting switch OFF: " + e.getMessage());
+        if (voltmeter.isSensorAvailable()){
+            Float[] voltage = this.voltmeter.getCurrentValues();
+            if (voltage[0] > this.threshold) {
+                System.out.println("Voltage limit exceeded. Turning actuators off...");
+                try {
+                    Switch.State[] states = sw.getCurrentValues();
+                    Switch.State[] values = {Switch.State.OFF, Switch.State.ON, Switch.State.ON};
+                    states[0] = Switch.State.OFF;
+                    if (!sw.isActuatorAvailable()){ System.err.println("Switch is not available"); }
+                    sw.actuate(values);
+                } catch (Exception e) {
+                    System.err.println("Error while setting switch OFF: " + e.getMessage());
+                }
             }
+        }
+        else{
+            System.err.print("Error in function VoltLimitation: ");
+            System.err.println("Voltmeter is not available");
         }
     }
 }

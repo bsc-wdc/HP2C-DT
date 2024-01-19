@@ -95,13 +95,9 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     protected abstract Float[] actuateValues(State[] values);
 
     @Override
-    public final State[] getCurrentValues() {
-        return this.states;
-    }
+    public final State[] getCurrentValues() { return this.states; }
 
-    protected void setValues(State[] values) {
-        this.states = values;
-    }
+    protected void setValues(State[] values) { this.states = values; this.setLastUpdate(); }
     
     @Override
     public final byte[] encodeValues() {

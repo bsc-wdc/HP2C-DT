@@ -54,5 +54,12 @@ public class CalcPower extends Func {
         Float[] current = this.ammeter.getCurrentValues();
         System.out.println("Calculating power: ");
         System.out.println("    Power is: " + voltage[0] * current[0] + " W");
+        boolean voltmeterIsAvailable = voltmeter.isSensorAvailable();
+        boolean ammeterIsAvailable = ammeter.isSensorAvailable();
+        if (!voltmeterIsAvailable || !ammeterIsAvailable){
+            System.err.println("Error in function CalcPower: ");
+            if (!voltmeterIsAvailable){ System.err.println("Voltmeter is not available"); }
+            if (!ammeterIsAvailable){ System.err.println("Ammeter is not available"); }
+        }
     }
 }

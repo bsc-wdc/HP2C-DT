@@ -45,9 +45,7 @@ public abstract class Voltmeter<R> extends Device implements Sensor<R, Float[]> 
      *
      * @param action runnable implementing the action
      */
-    public void addOnReadFunction(Runnable action) {
-        this.onReadFunctions.add(action);
-    }
+    public void addOnReadFunction(Runnable action) { this.onReadFunctions.add(action); }
 
     /**
      * Calls actions to be performed in case of a new read
@@ -62,9 +60,7 @@ public abstract class Voltmeter<R> extends Device implements Sensor<R, Float[]> 
     public abstract void sensed(R value);
 
     @Override
-    public void sensed(byte[] messageBytes) {
-        sensed(decodeValues(messageBytes));
-    }
+    public void sensed(byte[] messageBytes) { sensed(decodeValues(messageBytes)); }
 
     /**
      * Converts the sensed input to a known value;
@@ -75,13 +71,9 @@ public abstract class Voltmeter<R> extends Device implements Sensor<R, Float[]> 
     protected abstract Float[] sensedValues(R input);
 
     @Override
-    public final Float[] getCurrentValues() {
-        return this.values;
-    }
+    public final Float[] getCurrentValues() { return this.values; }
 
-    protected void setValues(Float[] values) {
-        this.values = values;
-    }
+    protected void setValues(Float[] values) { this.values = values; this.setLastUpdate(); }
 
     @Override
     public final byte[] encodeValues() {

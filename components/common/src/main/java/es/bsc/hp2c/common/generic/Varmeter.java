@@ -76,13 +76,9 @@ public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
     protected abstract Float[] sensedValues(R input);
 
     @Override
-    public final Float[] getCurrentValues() {
-        return this.values;
-    }
+    public final Float[] getCurrentValues() { return this.values; }
 
-    protected void setValues(Float[] values) {
-        this.values = values;
-    }
+    protected void setValues(Float[] values) { this.values = values; this.setLastUpdate(); }
 
     @Override
     public final byte[] encodeValues() {
