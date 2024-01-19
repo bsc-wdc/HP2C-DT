@@ -56,9 +56,9 @@ public class OpalComm {
         Thread verifyIndexes = new Thread(() -> {
             try {
                 waitForDevicesLoaded();
-                verifyIndexesActuators(actuatorsList);
-                verifyIndexesSensors(udpSensorsList);
-                verifyIndexesSensors(tcpSensorsList);
+                verifyIndexes(actuatorsList);
+                verifyIndexes(udpSensorsList);
+                verifyIndexes(tcpSensorsList);
             } catch (Device.DeviceInstantiationException e) {
                 System.err.println(e.getMessage());
             }
@@ -117,41 +117,14 @@ public class OpalComm {
     }
 
     /**
-     * Verifies indexes within a list of OpalActuators
+     * Verifies indexes within a list of OpalDevices
      *
      * @param devices Devices involved
      * @throws Device.DeviceInstantiationException
      */
-    public static void verifyIndexesActuators(List<OpalActuator<?>> devices) throws Device.DeviceInstantiationException {
+    public static <T extends OpalDevice> void verifyIndexes(List<T> devices) throws Device.DeviceInstantiationException {
         HashSet<Integer> indexesSet = new HashSet<>();
-        for (OpalActuator<?> device : devices) {
-            int[] indexes = device.getIndexes();
-            // Check for repeated indices
-            for (int index : indexes) {
-                if (!indexesSet.add(index)) {
-                    throw new Device.DeviceInstantiationException("Repeated index found: " + index);
-                }
-            }
-        }
-        // Check if indices are consecutive
-        int minIndex = indexesSet.stream().mapToInt(Integer::intValue).min().orElse(-1);
-        int maxIndex = indexesSet.stream().mapToInt(Integer::intValue).max().orElse(-1);
-        for (int i = minIndex; i <= maxIndex; i++) {
-            if (!indexesSet.contains(i)) {
-                throw new Device.DeviceInstantiationException("Missing index found: " + i);
-            }
-        }
-    }
-
-    /**
-     * Verifies indexes within a list of OpalSensors
-     *
-     * @param devices Devices involved
-     * @throws Device.DeviceInstantiationException
-     */
-    public static void verifyIndexesSensors(List<OpalSensor<?>> devices) throws Device.DeviceInstantiationException {
-        HashSet<Integer> indexesSet = new HashSet<>();
-        for (OpalSensor<?> device : devices) {
+        for (T device : devices) {
             int[] indexes = device.getIndexes();
             // Check for repeated indices
             for (int index : indexes) {
@@ -339,20 +312,7 @@ public class OpalComm {
     public static void commitActuation(OpalActuator<?> actuator, Float[] values) {
         if (useTCPActuators){
             try{
-                // count the number of floats to be sended
-                int nIndexes = 0;
-                List<String> labels = new ArrayList<>();
-                for (OpalActuator<?> opalActuator : actuatorsList) {
-                    int nIndexesDevice = opalActuator.getIndexes().length;
-                    labels.add(((Device) opalActuator).getLabel());
-                    nIndexes += nIndexesDevice;
-                }
-                for (OpalSensor<?> opalSensor : tcpSensorsList) {
-                    if (!(labels.contains(((Device) opalSensor).getLabel()))) {
-                        int nIndexesDevice = opalSensor.getIndexes().length;
-                        nIndexes += nIndexesDevice;
-                    }
-                }
+                int nIndexes = getnIndexes();
                 ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
 
                 // Scale actuators indexes (ignore udp sensors)
@@ -414,6 +374,26 @@ public class OpalComm {
     }
 
     /*
+    * Count the number of floats to be sended
+    * */
+    private static int getnIndexes() {
+        int nIndexes = 0;
+        List<String> labels = new ArrayList<>();
+        for (OpalActuator<?> opalActuator : actuatorsList) {
+            int nIndexesDevice = opalActuator.getIndexes().length;
+            labels.add(((Device) opalActuator).getLabel());
+            nIndexes += nIndexesDevice;
+        }
+        for (OpalSensor<?> opalSensor : tcpSensorsList) {
+            if (!(labels.contains(((Device) opalSensor).getLabel()))) {
+                int nIndexesDevice = opalSensor.getIndexes().length;
+                nIndexes += nIndexesDevice;
+            }
+        }
+        return nIndexes;
+    }
+
+    /*
      * The method will try to connect every IP declared within setup file
      *
      * @param ipObject IP or list of IPs
@@ -459,7 +439,8 @@ public class OpalComm {
                 System.out.println("Connected to server " + ip + " through port " + port);
                 if (!connectedOnce) {
                     connectedOnce = true;
-                    new Timer().scheduleAtFixedRate(new connectionTester(), 0, 5000); // send empty message every 2 seconds to test the connection
+                    // send empty message every 2 seconds to test the connection
+                    new Timer().scheduleAtFixedRate(new connectionTester(), 0, 5000);
                 }
                 synchronized (missedValues){
                     Set<OpalActuator<?>> keys = missedValues.keySet();
@@ -531,11 +512,15 @@ public class OpalComm {
         }
     }
 
-    protected interface OpalSensor<V> extends Sensor<Float[], V> {
+    protected interface OpalDevice<V>{
         int[] getIndexes();
     }
 
-    protected interface OpalActuator<V> extends Actuator<V> {
+    protected interface OpalSensor<V> extends Sensor<Float[], V>, OpalDevice<V> {
+        int[] getIndexes();
+    }
+
+    protected interface OpalActuator<V> extends Actuator<V>, OpalDevice<V> {
         int[] getIndexes();
     }
 
@@ -543,19 +528,7 @@ public class OpalComm {
         public void run(){
             try{
                 // count the number of floats to be sended
-                int nIndexes = 0;
-                List<String> labels = new ArrayList<>();
-                for (OpalActuator<?> opalActuator : actuatorsList) {
-                    int nIndexesDevice = opalActuator.getIndexes().length;
-                    labels.add(((Device) opalActuator).getLabel());
-                    nIndexes += nIndexesDevice;
-                }
-                for (OpalSensor<?> opalSensor : tcpSensorsList) {
-                    if (!(labels.contains(((Device) opalSensor).getLabel()))) {
-                        int nIndexesDevice = opalSensor.getIndexes().length;
-                        nIndexes += nIndexesDevice;
-                    }
-                }
+                int nIndexes = getnIndexes();
                 ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
                 // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
                 for (int i = 0; i < nIndexes; ++i){
