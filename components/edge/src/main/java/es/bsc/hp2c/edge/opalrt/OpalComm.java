@@ -52,9 +52,11 @@ public class OpalComm {
         startTCPServer();
     }
 
+
     static {
         Thread verifyIndexes = new Thread(() -> {
             try {
+                //wait for every device to be loaded before verifying indexes
                 waitForDevicesLoaded();
                 verifyIndexes(actuatorsList);
                 verifyIndexes(udpSensorsList);
@@ -66,17 +68,15 @@ public class OpalComm {
         verifyIndexes.start();
     }
 
+
     private static void waitForDevicesLoaded() {
         synchronized (OpalComm.class) {
             while (!loadedDevices) {
-                try {
-                    OpalComm.class.wait();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+                try { OpalComm.class.wait(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
         }
     }
+
 
     /**
      * Set up UDP and TCP communications
@@ -116,6 +116,7 @@ public class OpalComm {
         setTcpPort(portTcpSensors);
     }
 
+
     /**
      * Verifies indexes within a list of OpalDevices
      *
@@ -143,37 +144,38 @@ public class OpalComm {
         }
     }
 
-    /**
-     * Parse device's UDP port from JSON
-     *
-     * @param jProtocol JSON object (UDP section or TCP section)
-     * @return port
-     */
+
     private static int getPort(JSONObject jProtocol) {
         return jProtocol.getInt("port");
     }
 
+
     private static String getIp(JSONObject jProtocol) {
         return jProtocol.getString("ip");
     }
+
 
     private static JSONObject getjComms(JSONObject jGlobProp) {
         return jGlobProp.getJSONObject("comms");
     }
 
 
+    /*
+    * Starts and handles TCP Server for receiving TCP Sensors data.
+    * */
     private static void startTCPServer() {
         Thread TCPSensorsThread = new Thread(() -> {
             while(true){
-                // Initialize UDP server socket to read measurements
+                // Initialize TCP server socket to read measurements
                 InetAddress serverAddress = null;
                 Socket clientSocket = null;
                 try {
                     serverAddress = InetAddress.getByName(tcpIP);
                     tcpSocket = new ServerSocket(tcpPORT,0, serverAddress);
-                    tcpSocket.setReuseAddress(true);
+                    tcpSocket.setReuseAddress(true); //clean tcpSocket ip and port when socket is closed
                     System.out.println("\nTCP Server running on port: " + tcpPORT + "\n");
                     clientSocket = tcpSocket.accept();
+                    //when a connection is established, set every TCP sensor as available
                     setAvailableSensors(tcpSensorsList, true);
                     processTCPConnection(clientSocket);
                 } catch (IOException e) {
@@ -183,6 +185,7 @@ public class OpalComm {
                     try {
                         if (clientSocket != null && !clientSocket.isClosed()) {
                             tcpSocket.close();
+                            //when a connection fails, set every TCP sensor as not available
                             setAvailableSensors(tcpSensorsList, false);
                         }
                     } catch (IOException ex) {
@@ -195,19 +198,12 @@ public class OpalComm {
         TCPSensorsThread.start();
     }
 
+
     /*
-     * This method is in charge of reading the values of the TCP sensors from Opal. To do so, we check start of message
-     * with a readInt() that checks the expected length (number of incoming floats) of the message, then get the buffer
-     * with that messageLength, and lastly the end of line (EoL) character, otherwise throwing an error. For example, a
-     * TCP message could be of the form: "3, Switch[0], Switch[1], Switch[2], "\n", where "3" is the number of floats
-     * and "\n" is the EoL character.
-     *
-     * We also use an attribute called udpSensors to know the number of udp indexes that we need to substract from these
-     * tcp sensors in order to start reading from index 0. For example, we have two single-phase udp sensors. udpSensors
-     * will take value 2, and therefore, nIndexesUDP will be 2. If the Switch indexes are [2, 3, 4] in the setup file,
-     * they are subtracted nIndexesUDP=2 to convert them to [0, 1, 2] and correctly map the TCP message.
-     *
-     * */
+     * Read values of the TCP sensors from Opal. Check start of message with a readInt() that checks the expected length
+     * (number of incoming floats) of the message, then get the buffer with that messageLength, and lastly the end of
+     * line (EoL) character, otherwise throwing an error.
+     */
     private static void processTCPConnection(Socket clientSocket) {
         try {
             while (true) {
@@ -229,12 +225,14 @@ public class OpalComm {
                 }
 
                 ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
+                //convert bytebuffer to Float array (readable values)
                 Float[] messageValues = new Float[messageLength];
                 for (int i = 0; i < messageLength; i++) {
                     messageValues[i] = byteBuffer.getFloat();
                 }
 
                 synchronized (tcpSensorsList) {
+                    //distribute values to their respective sensors
                     for (OpalSensor<?> sensor : tcpSensorsList) {
                         int[] indexes = sensor.getIndexes();
                         Float[] sensedValues = new Float[indexes.length];
@@ -252,6 +250,10 @@ public class OpalComm {
         }
     }
 
+
+    /*
+     * Starts and handles UDP Server for receiving UDP Sensors data.
+     * */
     private static void startUDPServer() {
         Thread UDPSensorsThread = new Thread(() -> {
             // Initialize UDP server socket to read measurements
@@ -282,6 +284,7 @@ public class OpalComm {
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                     udpSocket.receive(packet);
                     ByteBuffer byteBuffer = ByteBuffer.wrap(packet.getData());
+                    //convert bytebuffer to Float array (readable values)
                     Float[] messageValues = new Float[maxUdpIndexesLength];
                     for (int i = 0; i < messageValues.length; i++) {
                         float receivedValue = byteBuffer.getFloat();
@@ -289,6 +292,7 @@ public class OpalComm {
                     }
 
                     synchronized (udpSensorsList) {
+                        //distribute values to their respective sensors
                         for (OpalSensor<?> sensor : udpSensorsList){
                             int[] indexes = sensor.getIndexes();
                             Float[] sensedValues = new Float[indexes.length];
@@ -309,13 +313,18 @@ public class OpalComm {
         UDPSensorsThread.start();
     }
 
+
+    /*
+     * Commit values for the involved actuator
+     * @param actuator involved actuator
+     * @param values committable values
+     * */
     public static void commitActuation(OpalActuator<?> actuator, Float[] values) {
         if (useTCPActuators){
             try{
                 int nIndexes = getnIndexes();
                 ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
 
-                // Scale actuators indexes (ignore udp sensors)
                 int[] indexesLocal = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
 
                 // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
@@ -345,10 +354,12 @@ public class OpalComm {
                 }
             } catch (IOException e){
                 System.err.println("Socket exception: " + e.getMessage());
+                //if the actuation misses, close the socket
                 synchronized (actuationSocket){
                     try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }
                 }
                 synchronized (missedValues){
+                    //Store and update values in missedValues; they will be sent when a connection is established.
                     Float[] previousValues = values;
                     if (missedValues.containsKey(actuator)){
                         previousValues = missedValues.get(actuator);
@@ -368,13 +379,15 @@ public class OpalComm {
                         }
                     }
                 }
+                //retry connexion
                 setActuateSocket(actuationIP, actuationPORT);
             }
         }
     }
 
+
     /*
-    * Count the number of floats to be sended
+    * Count the number of floats to be sent
     * */
     private static int getnIndexes() {
         int nIndexes = 0;
@@ -392,6 +405,7 @@ public class OpalComm {
         }
         return nIndexes;
     }
+
 
     /*
      * The method will try to connect every IP declared within setup file
@@ -420,6 +434,7 @@ public class OpalComm {
         }
     }
 
+
     private static void connectActuationSocket(int port, ArrayList<String> ipList) {
         for (String ip : ipList) {
             actuationSocket = new Socket();
@@ -431,7 +446,7 @@ public class OpalComm {
             }
             try {
                 actuationSocket.connect(new InetSocketAddress(ip, port), 1000);
-
+                //when a connection is established, set every actuator as available
                 setAvailableActuators(actuatorsList, true);
                 actuationIP = ip;
                 actuationPORT = port;
@@ -439,7 +454,7 @@ public class OpalComm {
                 System.out.println("Connected to server " + ip + " through port " + port);
                 if (!connectedOnce) {
                     connectedOnce = true;
-                    // send empty message every 2 seconds to test the connection
+                    //send empty message every 2 seconds to test the connection
                     new Timer().scheduleAtFixedRate(new connectionTester(), 0, 5000);
                 }
                 synchronized (missedValues){
@@ -465,6 +480,7 @@ public class OpalComm {
         for(OpalSensor<?> sensor : sensors){ ((Device) sensor).setSensorAvailable(b); }
     }
 
+
     public static  void setAvailableActuators(List<OpalActuator<?>> actuators, boolean b){
         for(OpalActuator<?> actuator : actuators){ ((Device) actuator).setActuatorAvailable(b); }
     }
@@ -489,21 +505,28 @@ public class OpalComm {
         }
     }
 
+
     public static void registerActuator(OpalActuator<?> actuator) {
         synchronized (actuatorsList) {
             actuatorsList.add(actuator);
         }
     }
 
+
     public static void setUdpPort(int port) { udpPORT = port; }
+
 
     public static void setTcpPort(int port) { tcpPORT = port; }
 
+
     public static void setUdpIp(String udpIp) { udpIP = udpIp; }
+
 
     public static void setTcpIp(String tcpIp) { tcpIP = tcpIp; }
 
+
     public static void setUseTCPActuators(boolean b) { useTCPActuators = b; }
+
 
     public static void setLoadedDevices(boolean b) {
         synchronized (OpalComm.class){
@@ -512,22 +535,29 @@ public class OpalComm {
         }
     }
 
+
     protected interface OpalDevice<V>{
         int[] getIndexes();
     }
+
 
     protected interface OpalSensor<V> extends Sensor<Float[], V>, OpalDevice<V> {
         int[] getIndexes();
     }
 
+
     protected interface OpalActuator<V> extends Actuator<V>, OpalDevice<V> {
         int[] getIndexes();
     }
 
+
+    /*
+    * Tests the connection periodically by sending an empty message. If the connection is not established, it will retry
+    */
     private static class connectionTester extends TimerTask {
         public void run(){
             try{
-                // count the number of floats to be sended
+                // count the number of floats to be sent
                 int nIndexes = getnIndexes();
                 ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
                 // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
@@ -538,6 +568,7 @@ public class OpalComm {
                 byte[] buffer = byteBuffer.array();
                 outputStream.write(buffer);
             } catch (IOException e){
+                //when a connection fails, set every actuator as not available
                 setAvailableActuators(actuatorsList, false);
                 synchronized (actuationSocket){
                     try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }

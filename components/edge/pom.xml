@@ -86,7 +86,7 @@
     
     <!-- BUILD SETTINGS -->
     <build>
-        <finalName>common</finalName>
+        <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
