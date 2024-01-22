@@ -27,8 +27,6 @@ RUN mvn clean package
 
 FROM openjdk:8-jdk-alpine
 COPY --from=builder /app/server/target/*.jar /app/server.jar
-COPY --from=builder /app/common/target/*.jar /app/common.jar
-COPY --from=builder /root/.m2/repository/com/rabbitmq/amqp-client/5.16.0/amqp-client-5.16.0.jar /app/rabbitmq.jar
 
 # Specify the command to start the application using the desired main class
 CMD ["java", "-cp", "/app/server.jar", "es.bsc.hp2c.HP2CServer", "/data/"]
