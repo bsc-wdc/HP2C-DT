@@ -57,7 +57,7 @@ public class CalcPower extends Func {
         boolean voltmeterIsAvailable = voltmeter.isSensorAvailable();
         boolean ammeterIsAvailable = ammeter.isSensorAvailable();
         if (!voltmeterIsAvailable || !ammeterIsAvailable){
-            System.err.println("Error in function CalcPower: ");
+            System.err.println("Warning in function CalcPower: ");
             if (!voltmeterIsAvailable){ System.err.println("Voltmeter is not available"); }
             if (!ammeterIsAvailable){ System.err.println("Ammeter is not available"); }
         }

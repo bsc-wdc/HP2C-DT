@@ -78,7 +78,10 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
     @Override
     public final Float[] getCurrentValues() { return this.values; }
 
-    protected void setValues(Float[] values) { this.values = values; this.setLastUpdate(); }
+    protected void setValues(Float[] values) {
+        this.values = values;
+        this.setLastUpdate();
+    }
 
     @Override
     public final byte[] encodeValues() {
