@@ -319,15 +319,14 @@ public class OpalComm {
                 }
             }
         }
-        connectActuationSocket(port, ipList);
-        while(!connectedOnce) {
-            connectActuationSocket(port, ipList);
+        while(connectedOnce) {
+            initActuationSocket(port, ipList);
             try { Thread.sleep(5000); } catch(InterruptedException e){ throw new RuntimeException(e); }
         }
     }
 
 
-    private static void connectActuationSocket(int port, ArrayList<String> ipList) {
+    private static void initActuationSocket(int port, ArrayList<String> ipList) {
         for (String ip : ipList) {
             actuationSocket = new Socket();
             char firstChar = ip.charAt(0);
@@ -342,27 +341,35 @@ public class OpalComm {
                 setAvailableActuators(actuatorsList, true);
                 actuationIP = ip;
                 actuationPORT = port;
-                //actuateSocket = new Socket(ip, port);
                 System.out.println("Connected to server " + ip + " through port " + port);
-                if (!connectedOnce) {
-                    connectedOnce = true;
-                    //send empty message every 2 seconds to test the connection
-                    new Timer().scheduleAtFixedRate(new connectionTester(), 0, 5000);
-                }
-                synchronized (missedValues){
-                    for (OpalActuator<?> actuator : missedValues.keySet()){
-                        Float[] values = missedValues.get(actuator);
-                        if(Arrays.stream(values).anyMatch(element -> element != Double.NEGATIVE_INFINITY)){
-                            commitActuation(actuator, values);
-                        }
-                    }
-                    missedValues = new HashMap<>();
-                }
+                connectedOnce = true;
+                //send empty message every 2 seconds to test the connection
+                new Timer().scheduleAtFixedRate(new connectionTester(), 0, 5000);
                 break;
             } catch (IOException e) {
                 System.err.println("Failed to connect to server " + ip + " through port " + port + ": " +
                         e.getMessage());
             }
+        }
+    }
+
+
+    public static void retryConnectionActuation(){
+        try {
+            actuationSocket.connect(new InetSocketAddress(actuationIP, actuationPORT), 1000);
+            setAvailableActuators(actuatorsList, true);
+        } catch (IOException e) {
+            System.err.println("Failed to connect to server " + actuationIP + " through port " + actuationPORT + ": " +
+                    e.getMessage());
+        }
+        synchronized (missedValues){
+            for (OpalActuator<?> actuator : missedValues.keySet()){
+                Float[] values = missedValues.get(actuator);
+                if(Arrays.stream(values).anyMatch(element -> element != Double.NEGATIVE_INFINITY)){
+                    commitActuation(actuator, values);
+                }
+            }
+            missedValues = new HashMap<>();
         }
     }
 
@@ -418,7 +425,7 @@ public class OpalComm {
                 }
             }
             //retry connexion
-            setActuateSocket(actuationIP, actuationPORT);
+            retryConnectionActuation();
         }
     }
 
@@ -472,7 +479,7 @@ public class OpalComm {
                     try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }
                 }
                 System.err.println("Actuation socket is closed: " + e.getMessage());
-                setActuateSocket(actuationIP, actuationPORT);
+                retryConnectionActuation(); //retry connexion
             }
         }
     }
