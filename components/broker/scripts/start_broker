@@ -1,8 +1,23 @@
 #!/bin/bash
 
 # Create network with subnet to deploy containers in a specific IP
-docker network create --subnet=192.168.1.0/24 hp2c-brokers
+docker network create --subnet=10.0.0.0/24 hp2c-brokers
 
 # Deploy RabbitMQ containers
-docker run -d --rm --name hp2c_broker --hostname hp2c_broker --net hp2c-brokers --ip 192.168.1.100 -p 8081:15672 hp2c/broker:latest
-docker run -d --rm --name hp2c_broker_edge1 --hostname hp2c_broker_edge1 --net hp2c-brokers --ip 192.168.1.200 -p 8082:15672 hp2c/broker:latest
+docker run -d --rm \
+    --name hp2c_broker_server \
+    --hostname hp2c_broker_server \
+    --net hp2c-brokers --ip 10.0.0.100 \
+    -p 8081:15672 \
+    hp2c/broker:latest
+docker run -d --rm \
+    --name hp2c_broker_1 \
+    --hostname hp2c_broker_1 \
+    --net hp2c-brokers --ip 10.0.0.101 \
+    -p 8082:15672 \
+    hp2c/broker:latest
+
+# End sequence
+docker wait hp2c_broker_server
+docker wait hp2c_broker_1
+docker network remove hp2c-brokers
