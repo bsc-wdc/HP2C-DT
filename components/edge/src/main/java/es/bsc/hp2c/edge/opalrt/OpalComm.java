@@ -355,6 +355,11 @@ public class OpalComm {
 
 
     public static void retryConnectionActuation(){
+        synchronized(actuatorsList){
+            for (OpalActuator<?> a : actuatorsList){
+                if (((Device) a).isActuatorAvailable()){ return; }
+            }
+        }
         try {
             actuationSocket.connect(new InetSocketAddress(actuationIP, actuationPORT), 1000);
             setAvailableActuators(actuatorsList, true);
@@ -530,7 +535,9 @@ public class OpalComm {
 
 
     public static  void setAvailableActuators(List<OpalActuator<?>> actuators, boolean b){
-        for(OpalActuator<?> actuator : actuators){ ((Device) actuator).setActuatorAvailable(b); }
+        synchronized(actuatorsList){
+            for(OpalActuator<?> actuator : actuatorsList){ ((Device) actuator).setActuatorAvailable(b); }
+        }
     }
 
 
