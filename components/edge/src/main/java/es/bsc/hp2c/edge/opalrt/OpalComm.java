@@ -319,7 +319,7 @@ public class OpalComm {
                 }
             }
         }
-        while(connectedOnce) {
+        while(!connectedOnce) {
             initActuationSocket(port, ipList);
             try { Thread.sleep(5000); } catch(InterruptedException e){ throw new RuntimeException(e); }
         }
@@ -358,18 +358,18 @@ public class OpalComm {
         try {
             actuationSocket.connect(new InetSocketAddress(actuationIP, actuationPORT), 1000);
             setAvailableActuators(actuatorsList, true);
+            synchronized (missedValues){
+                for (OpalActuator<?> actuator : missedValues.keySet()){
+                    Float[] values = missedValues.get(actuator);
+                    if(Arrays.stream(values).anyMatch(element -> element != Double.NEGATIVE_INFINITY)){
+                        commitActuation(actuator, values);
+                    }
+                }
+                missedValues = new HashMap<>();
+            }
         } catch (IOException e) {
             System.err.println("Failed to connect to server " + actuationIP + " through port " + actuationPORT + ": " +
                     e.getMessage());
-        }
-        synchronized (missedValues){
-            for (OpalActuator<?> actuator : missedValues.keySet()){
-                Float[] values = missedValues.get(actuator);
-                if(Arrays.stream(values).anyMatch(element -> element != Double.NEGATIVE_INFINITY)){
-                    commitActuation(actuator, values);
-                }
-            }
-            missedValues = new HashMap<>();
         }
     }
 
@@ -406,16 +406,20 @@ public class OpalComm {
             }
             synchronized (missedValues){
                 //Store and update values in missedValues; they will be sent when a connection is established.
-                Float[] previousValues = values;
-                if (missedValues.containsKey(actuator)){
-                    previousValues = missedValues.get(actuator);
+                Float[] valuesToUpdate;
+                if (missedValues.containsKey(actuator)) {
+                    valuesToUpdate = missedValues.get(actuator);
                     int index = 0;
-                    for(Float value : values){
-                        if (value != Float.NEGATIVE_INFINITY){ previousValues[index] = value; }
+                    for (Float value : values) {
+                        if (value != Float.NEGATIVE_INFINITY) {
+                            valuesToUpdate[index] = value;
+                        }
                         index += 1;
                     }
+                } else {
+                    valuesToUpdate = values;
                 }
-                missedValues.put(actuator, previousValues);
+                missedValues.put(actuator, valuesToUpdate);
                 System.out.println("MissedValues updated:");
                 for (OpalActuator<?> ac : missedValues.keySet()){
                     System.out.println("    Actuator " + ((Device) ac).getLabel() + ":");
@@ -485,17 +489,17 @@ public class OpalComm {
     }
 
 
-    protected interface OpalDevice<V>{
+    protected interface OpalDevice{
         int[] getIndexes();
     }
 
 
-    protected interface OpalSensor<V> extends Sensor<Float[], V>, OpalDevice<V> {
+    protected interface OpalSensor<V> extends Sensor<Float[], V>, OpalDevice {
         int[] getIndexes();
     }
 
 
-    protected interface OpalActuator<V> extends Actuator<V>, OpalDevice<V> {
+    protected interface OpalActuator<V> extends Actuator<V>, OpalDevice {
         int[] getIndexes();
     }
 
