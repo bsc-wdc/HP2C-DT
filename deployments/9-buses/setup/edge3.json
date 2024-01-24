@@ -2,21 +2,22 @@
     "global-properties":{
         "label": "edge3",
         "comms":{
-            "udp": {
-                "ip": "0.0.0.0",
-                "ports": {
-                    "23002": []
+            "opal-udp": {
+                "protocol": "udp",
+                "sensors": {
+                    "ip": "0.0.0.0",
+                    "port": "23002"
                 }
             },
-            "tcp-sensors": {
-                "ip": "0.0.0.0",
-                "ports": {
-                    "13002": []
-                }
-            },
-            "tcp-actuators": {
-                "ports": {
-                    "33002": []
+            "opal-tcp": {
+                "protocol": "tcp",
+                "sensors": {
+                    "ip": "0.0.0.0",
+                    "port": "13002"
+                },
+                "actuators": {
+                    "ip": ["$LOCAL_IP", "localhost"],
+                    "port": "33002"
                 }
             }
         },
@@ -42,38 +43,17 @@
 
     "devices": [
         {
-            "label": "Voltmeter Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
-            "position": {
-                "x":20,
-                "y":40
-            },
-            "properties": {
-                "indexes": [0]
-            }
-        },
-        {
-            "label": "Wattmeter Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalWattmeter",
-            "position": {
-                "x":20,
-                "y":40
-            },
-
-            "properties": {
-                "indexes": [1]
-            }
-        },
-        {
-            "label": "Three-Phase Ammeter Gen1",
+            "label": "Ammeter Gen1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalAmmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualAmmeter",
             "position": {
                 "x":20,
                 "y":40
             },
 
             "properties": {
-                "indexes": [2,3,4]
+                "comm-type": "opal-udp",
+                "indexes": [0]
             }
         },
         {
@@ -84,7 +64,34 @@
                 "y":0
             },
             "properties": {
-                "indexes": [5,6,7]
+                "comm-type": "opal-tcp",
+                "indexes": [0,1,2]
+            }
+        },
+        {
+            "label": "Voltmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualVoltmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+            "properties": {
+                "comm-type": "opal-udp",
+                "indexes": [1]
+            }
+        },
+        {
+            "label": "Generator Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalGenerator",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualGenerator",
+            "position": {
+                "x":0,
+                "y":0
+            },
+            "properties": {
+                "comm-type": "opal-tcp",
+                "indexes": [3,4]
             }
         }
     ],
@@ -96,7 +103,7 @@
             "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
             "parameters": {
                 "sensors": ["Voltmeter Gen1"],
-                "actuators": ["Switch Gen1"],
+                "actuators": ["Three-Phase Switch Gen1"],
                 "other": [200]
             },
             "trigger": {
@@ -105,6 +112,21 @@
                 "parameters": ["Voltmeter Gen1"]
             }
 
+        },
+        {
+            "label": "CalcPower",
+            "lang": "Python",
+            "method-name": "es.bsc.hp2c.edge.funcs.CalcPower",
+            "parameters": {
+                "sensors": ["Voltmeter Gen1", "Ammeter Gen1"],
+                "actuators": [],
+                "other": []
+            },
+            "trigger": {
+                "type": "onFrequency",
+                "method-name": "es.bsc.hp2c.edge.HP2Cedge.onFrequency",
+                "parameters": [10]
+            }
         }
     ]
 }
