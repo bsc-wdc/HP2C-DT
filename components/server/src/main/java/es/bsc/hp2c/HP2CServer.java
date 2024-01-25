@@ -101,15 +101,9 @@ public class HP2CServer implements AutoCloseable {
             String edgeName = getEdgeName(senderRoutingKey);
             String deviceName = getDeviceName(senderRoutingKey);
             // Check existence of pair edge-device
-            if (deviceMap.containsKey(edgeName)){
-                if (!deviceMap.get(edgeName).containsKey(deviceName)) {
-                    System.err.println("Edge " + edgeName + ", Device " + deviceName
-                            + ": message received but device not listed as " + edgeName + " digital twin devices.");
-                    return;
-                }
-            } else {
+            if (!isInMap(edgeName, deviceName, deviceMap)) {
                 System.err.println("Edge " + edgeName + ", Device " + deviceName
-                        + ": message received but " + edgeName + " is not listed as digital twin edge.");
+                        + ": message received but device not listed as " + edgeName + " digital twin devices.");
                 return;
             }
             // Sense to the corresponding sensor
@@ -178,6 +172,20 @@ public class HP2CServer implements AutoCloseable {
 
         // Close when application terminates.
         Runtime.getRuntime().addShutdownHook(new Thread(influxDB::close));
+    }
+
+    /**
+     * Check if the combination "edgeName" and "deviceName" is in the given nested HashMap
+     */
+    public static boolean isInMap(String edgeName, String deviceName, Map<String, Map<String, Device>> map) {
+        if (map.containsKey(edgeName)){
+            if (!map.get(edgeName).containsKey(deviceName)) {;
+                return false;
+            }
+        } else {
+            return false;
+        }
+        return true;
     }
 
     /*
