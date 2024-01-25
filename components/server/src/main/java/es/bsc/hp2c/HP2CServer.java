@@ -6,6 +6,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
+import es.bsc.hp2c.server.UI.SimpleUI;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
@@ -40,12 +41,15 @@ public class HP2CServer implements AutoCloseable {
         // Init RabbitMQ
         System.out.println("Connecting to AMQP broker at host IP " + hostIp + "...");
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(hostIp);
+        factory.setHost("10.0.0.101");
         connection = factory.newConnection();
         channel = connection.createChannel();
         System.out.println("AMQP Connection successful");
         // Init InfluxDB
         initDB(hostIp, dbPort);
+        // Start UI
+        SimpleUI ui = new SimpleUI(deviceMap);
+        ui.start();
     }
 
     public static void main(String[] args) throws FileNotFoundException {
