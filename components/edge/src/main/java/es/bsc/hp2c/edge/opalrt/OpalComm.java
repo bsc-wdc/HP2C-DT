@@ -474,7 +474,7 @@ public class OpalComm {
                 // count the number of floats to be sent
                 int nIndexes = getnIndexes();
                 ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
-                // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
+                // Assign a dummy -Inf value as a testing message
                 for (int i = 0; i < nIndexes; ++i){
                     byteBuffer.putFloat(Float.NEGATIVE_INFINITY);
                 }
@@ -482,7 +482,7 @@ public class OpalComm {
                 byte[] buffer = byteBuffer.array();
                 outputStream.write(buffer);
             } catch (IOException e){
-                //when a connection fails, set every actuator as not available
+                // when a connection fails, set every actuator as not available
                 setAvailableActuators(actuatorsList, false);
                 synchronized (actuationSocket){
                     try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }

@@ -109,7 +109,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>common</finalName>
+                            <finalName>${project.artifactId}</finalName>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
