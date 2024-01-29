@@ -59,6 +59,7 @@
         {
             "label": "Three-Phase Switch Gen1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalSwitch",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualSwitch",
             "position": {
                 "x":0,
                 "y":0
