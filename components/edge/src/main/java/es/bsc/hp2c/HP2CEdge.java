@@ -123,27 +123,50 @@ public class HP2CEdge {
             throw new IllegalArgumentException(
                     "Parameter 'label' is missing from the 'global-properties' block or not set in the setup file.");
         }
-        JSONObject jGlobalFuncs = jGlobProp.getJSONObject("funcs");
-        // Loop all-sensors functions that apply to all sensors available
-        JSONArray jAllSensorFuncs = jGlobalFuncs.getJSONArray("all-sensors");
-        for (Object jo: jAllSensorFuncs) {
+        JSONArray jGlobalFuncs = jGlobProp.getJSONArray("funcs");
+        for (Object jo: jGlobalFuncs) {
+            // Initialize function
             JSONObject jGlobalFunc = (JSONObject) jo;
             String funcLabel = jGlobalFunc.optString("label");
-            if (funcLabel.equals("AMQPPublish") && !amqpOn) {
+            if (funcLabel.toLowerCase().contains("amqp") && !amqpOn) {
+                System.err.println(
+                        "AMQP " + funcLabel + " global functions declared but AMQP server is not connected. " +
+                        "Skipping " + funcLabel + "...");
                 continue;
             }
-            // Skip device if not a sensor
+            // Deploy function for each device building its custom jGlobalFunc
             for (Device device: devices.values()) {
-                if (!device.isSensitive()) {
+                ArrayList<String> deviceList = new ArrayList<>();
+                switch (funcLabel) {
+                    case "AMQPPublish":
+                        // Conditions to skip device
+                        if (!device.isSensitive()) {
+                            continue;
+                        }
+                        // Create ArrayList of a single device and set it to the JSONObject
+                        deviceList.add(device.getLabel());
+                        jGlobalFunc.getJSONObject("parameters").put("sensors", deviceList);
+                        // Do same modification to triggers in JSON
+                        jGlobalFunc.getJSONObject("trigger").put("parameters", deviceList);
+                        break;
+                    case "AMQPConsume":
+                        // Conditions to skip device
+                        if (!device.isActionable()) {
+                            continue;
+                        }
+                        // Create ArrayList of a single device and set it to the JSONObject
+                        deviceList.add(device.getLabel());
+                        jGlobalFunc.getJSONObject("parameters").put("actuators", deviceList);
+                        // No triggers used for actuators, function triggers on start
+                        // jGlobalFunc.getJSONObject("trigger").put("parameters", actuatorList);
+                        break;
+                    default:
+                        continue;
+                }
+                // Perform Func initialization for each device
+                if (deviceList.isEmpty()) {
                     continue;
                 }
-                // Create ArrayList of a single sensor and set it to the JSONObject
-                ArrayList<String> sensorList = new ArrayList<>();
-                sensorList.add(device.getLabel());
-                jGlobalFunc.getJSONObject("parameters").put("sensors", sensorList);
-                // Do same modification to triggers in JSON
-                jGlobalFunc.getJSONObject("trigger").put("parameters", sensorList);
-                // Perform Func initialization
                 try {
                     Runnable action = Func.functionParseJSON(jGlobalFunc, devices, funcLabel);
                     Func.setupTrigger(jGlobalFunc, devices, action);

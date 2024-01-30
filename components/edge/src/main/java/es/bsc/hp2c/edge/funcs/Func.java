@@ -154,6 +154,10 @@ public abstract class Func implements Runnable {
                 triggerSensor.addOnReadFunction(action);
                 break;
 
+            case "onStart":
+                action.run();
+                break;
+
             default:
                 System.out.print("Wrong trigger: " + triggerType + " defined on the setup file");
         }
