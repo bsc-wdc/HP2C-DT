@@ -310,8 +310,7 @@ public class OpalComm {
         if (ipObject instanceof String){
             String ip = (String) ipObject;
             ipList.add(ip);
-        }
-        else{
+        } else{
             JSONArray ipArray = (JSONArray) ipObject;
             for (Object element : ipArray){
                 if (element instanceof String){
@@ -361,6 +360,7 @@ public class OpalComm {
             }
         }
         try {
+            actuationSocket = new Socket();
             actuationSocket.connect(new InetSocketAddress(actuationIP, actuationPORT), 1000);
             setAvailableActuators(actuatorsList, true);
             synchronized (missedValues){
