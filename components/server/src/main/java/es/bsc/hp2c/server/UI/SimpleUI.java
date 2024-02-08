@@ -1,14 +1,14 @@
 package es.bsc.hp2c.server.UI;
 
-import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.generic.Switch.State;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Scanner;
 
 import static es.bsc.hp2c.HP2CServer.isInMap;
+import static es.bsc.hp2c.server.device.VirtualComm.virtualActuate;
 
 public class SimpleUI implements Runnable {
     private boolean isRunning = false;
@@ -34,7 +34,6 @@ public class SimpleUI implements Runnable {
     public void run() {
         // Create a Scanner object to read input from the user
         Scanner scanner = new Scanner(System.in);
-
         while (isRunning) {
             // Prompt for user input
             System.out.print("Enter a command: ");
@@ -46,7 +45,6 @@ public class SimpleUI implements Runnable {
                 System.err.println("Error: " + e.getMessage());
             }
         }
-
         // Close the Scanner
         scanner.close();
     }
@@ -102,7 +100,6 @@ public class SimpleUI implements Runnable {
                 System.out.println("Group: " + groupKey);
                 for (Map.Entry<String, Device> innerEntry : innerMap.entrySet()) {
                     String deviceKey = innerEntry.getKey();
-                    Device device = innerEntry.getValue();
                     System.out.println("  Device: " + deviceKey);
                 }
             }
@@ -114,13 +111,8 @@ public class SimpleUI implements Runnable {
              states[i] = i > 0.5 ? State.ON : State.OFF;
         }
         // Actuate
-        Actuator actuator = (Actuator) deviceMap.get(edgeName).get(actuatorName);
-        try {
-            actuator.actuate(states);
-        } catch (IOException e) {
-            System.err.println("Actuator " + actuatorName + " failed.");
-            throw new RuntimeException(e);
-        }
+        VirtualActuator actuator = (VirtualActuator) deviceMap.get(edgeName).get(actuatorName);
+        virtualActuate(actuator, edgeName, states);
     }
 }
 

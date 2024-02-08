@@ -73,7 +73,7 @@ public class AmqpConsume extends Func {
         // Declare callback to respond to commands
         System.out.println(" [x] Awaiting requests");
         DeliverCallback callback = (consumerTag, delivery) -> {
-            // Parse message. For instance: routingKey = "edge.edge1.voltmeter1"
+            // Parse message. For instance: routingKey = "edge.edge1.actuators.voltmeter1"
             byte[] message = delivery.getBody();
             long timestampMillis = delivery.getProperties().getTimestamp().getTime();
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();

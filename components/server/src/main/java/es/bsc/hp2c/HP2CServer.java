@@ -30,7 +30,7 @@ import static es.bsc.hp2c.common.utils.FileUtils.readEdgeLabel;
  */
 public class HP2CServer implements AutoCloseable {
     private final Connection connection;
-    private Channel channel;
+    private static Channel channel;
     private InfluxDB influxDB;
     private final String EXCHANGE_NAME = "measurements";
     private final long dbPort = 8086;
@@ -41,7 +41,7 @@ public class HP2CServer implements AutoCloseable {
         // Init RabbitMQ
         System.out.println("Connecting to AMQP broker at host IP " + hostIp + "...");
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("10.0.0.101");
+        factory.setHost(hostIp);
         connection = factory.newConnection();
         channel = connection.createChannel();
         System.out.println("AMQP Connection successful");
@@ -205,6 +205,10 @@ public class HP2CServer implements AutoCloseable {
     public String getDeviceName(String routingKey){
         String[] routingKeyParts = routingKey.split("\\.");
         return routingKeyParts[2];
+    }
+
+    public static Channel getChannel() {
+        return channel;
     }
 
     @Override

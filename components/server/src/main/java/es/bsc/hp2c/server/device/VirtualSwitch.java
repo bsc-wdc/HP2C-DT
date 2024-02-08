@@ -17,6 +17,8 @@
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Switch;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
@@ -26,7 +28,7 @@ import java.io.IOException;
 /**
  * Digital twin Switch.
  */
-public class VirtualSwitch extends Switch<Float[]> {
+public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Switch.State[]>, VirtualActuator<Switch.State[]> {
     /**
      * Creates a new instance of VirtualSwitch.
      *
@@ -79,7 +81,8 @@ public class VirtualSwitch extends Switch<Float[]> {
     }
 
     @Override
-    protected Float[] actuateValues(State[] values) {
+    public Float[] actuateValues(State[] values) { 
+        // TODO: modified from protected to public. Check if it is correct after generalizing use of State
         return new Float[0];
     }
 
