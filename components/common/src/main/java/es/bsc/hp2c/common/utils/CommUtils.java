@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 public final class CommUtils {
     private CommUtils(){}
 
+    /** Covert a Float array into a byte array. */
     public static byte[] FloatArrayToBytes(Float[] values) {
         int nFloat = values.length;
         ByteBuffer byteBuffer = ByteBuffer.allocate(nFloat * Float.BYTES);
@@ -17,6 +18,7 @@ public final class CommUtils {
         return byteBuffer.array();
     }
 
+    /** Covert a byte array into a Float array . */
     public static Float[] BytesToFloatArray(byte[] messageBytes) {
         ByteBuffer byteBuffer = ByteBuffer.wrap(messageBytes);
         int nFloat = messageBytes.length / Float.BYTES;
@@ -25,5 +27,17 @@ public final class CommUtils {
             messageValues[i] = byteBuffer.getFloat();
         }
         return messageValues;
+    }
+
+    /** Return a comma-separated String with every element of the input array. */
+    public static <T> String printableArray(T[] array) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < array.length; i++) {
+            result.append(array[i].toString());
+            if (i < array.length - 1) {
+                result.append(", ");
+            }
+        }
+        return result.toString();
     }
 }
