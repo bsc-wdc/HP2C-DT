@@ -17,13 +17,14 @@
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Varmeter;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 /**
  * Digital twin Varmeter.
  */
-public class VirtualVarmeter extends Varmeter<Float[]> {
+public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<Float[]> {
     /**
      * Creates a new instance of VirtualVarmeter.
      *

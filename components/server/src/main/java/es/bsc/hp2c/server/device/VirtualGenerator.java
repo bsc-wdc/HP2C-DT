@@ -17,6 +17,9 @@
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Generator;
+import es.bsc.hp2c.common.generic.Switch;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
@@ -25,7 +28,7 @@ import java.io.IOException;
 /**
  * Digital twin Generator.
  */
-public class VirtualGenerator extends Generator<Float[]> {
+public class VirtualGenerator extends Generator<Float[]> implements VirtualSensor<Float[]>, VirtualActuator<Float[]> {
     /**
      * Creates a new instance of VirtualGenerator.
      *
@@ -53,12 +56,14 @@ public class VirtualGenerator extends Generator<Float[]> {
 
     }
 
-    /**
-     * Preprocess a raw measurement.
-     */
     @Override
     protected Float[] sensedValues(Float[] input) {
         return input;
+    }
+
+    @Override
+    public Float[] actuateValues(Float[] values){
+        return values;
     }
 
     @Override

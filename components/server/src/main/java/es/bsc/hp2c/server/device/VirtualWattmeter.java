@@ -16,13 +16,14 @@
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Wattmeter;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 /**
  * Digital Twin Wattmeter.
  */
-public class VirtualWattmeter extends Wattmeter<Float[]> {
+public class VirtualWattmeter extends Wattmeter<Float[]> implements VirtualSensor<Float[]> {
     /**
      * Creates a new instance of VirtualWattmeter.
      *

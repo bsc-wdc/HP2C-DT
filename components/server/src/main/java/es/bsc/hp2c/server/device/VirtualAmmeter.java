@@ -17,13 +17,14 @@
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Ammeter;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 /**
  * Digital Twin Ammeter.
  */
-public class VirtualAmmeter extends Ammeter<Float[]> {
+public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Float[]> {
     /**
     * Creates a new instance of VirtualAmmeter.
     *

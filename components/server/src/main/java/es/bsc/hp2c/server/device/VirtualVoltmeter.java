@@ -17,13 +17,14 @@
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Voltmeter;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 /**
  * Digital twin Voltmeter.
  */
-public class VirtualVoltmeter extends Voltmeter<Float[]> {
+public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSensor<Float[]> {
     /**
      * Creates a new instance of VirtualVoltmeter.
      *
