@@ -19,7 +19,7 @@ import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
  *      edge.<EDGE_ID>.actuators.<DEVICE_ID>
  */
 public class AmqpConsume extends Func {
-    private final Actuator<?> actuator;
+    private final Actuator actuator;
     private final String edgeName;
     private final String actuatorLabel;
     private static String EXCHANGE_NAME;
@@ -71,7 +71,7 @@ public class AmqpConsume extends Func {
         }
 
         // Declare callback to respond to commands
-        System.out.println(" [x] Awaiting requests");
+        System.out.println(" [x] Awaiting requests for queue " + routingKey + " at exchange " + EXCHANGE_NAME);
         DeliverCallback callback = (consumerTag, delivery) -> {
             // Parse message. For instance: routingKey = "edge.edge1.actuators.voltmeter1"
             byte[] message = delivery.getBody();
@@ -79,8 +79,10 @@ public class AmqpConsume extends Func {
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
             String[] routingKeyParts = senderRoutingKey.split("\\.");
             System.out.println("ACTUATOR " + actuatorLabel + " RECEIVED VALUES " + message);
-            // TODO: actuator.actuate(message);
-            };
+            actuator.actuate(actuator.decodeValues(message));
+        };
+
+        // Start consuming messages
         try {
             channel.basicConsume(queueName, true, callback, consumerTag -> { });
         } catch (IOException e) {

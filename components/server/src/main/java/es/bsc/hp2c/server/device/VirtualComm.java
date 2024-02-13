@@ -11,6 +11,8 @@ import es.bsc.hp2c.HP2CServer;
 
 import java.io.IOException;
 
+import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
+
 public class VirtualComm {
     private static String EXCHANGE_NAME_ACTUATORS = "measurements";
     private static String baseTopic = "edge";
@@ -35,9 +37,8 @@ public class VirtualComm {
     public static void virtualActuate(VirtualActuator actuator, String edgeName, State[] values) {
         // Set up actuator
         String actuatorLabel = ((Device) actuator).getLabel();
-        Float[] rawValues = actuator.actuateValues(values);
-        System.out.println("Encoding values: " + rawValues);
-        byte[] message = actuator.encodeValues();
+        System.out.println("VirtualComm.virtualActuate: Received values: " + printableArray(values));
+        byte[] message = actuator.encodeValues(values);
         // Prepare communications
         Channel channel = HP2CServer.getChannel();
         String routingKey = baseTopic + "." + edgeName + "." + intermediateTopic + "." + actuatorLabel;
