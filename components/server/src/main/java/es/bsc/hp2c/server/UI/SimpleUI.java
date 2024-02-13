@@ -108,7 +108,7 @@ public class SimpleUI implements Runnable {
         // Parse into State[] (TODO: only works for Switch)
         State[] states = new State[rawValues.length];
         for (int i = 0; i < rawValues.length; i++) {
-             states[i] = i > 0.5 ? State.ON : State.OFF;
+             states[i] = rawValues[i] > 0.5 ? State.ON : State.OFF;
         }
         // Actuate
         VirtualActuator actuator = (VirtualActuator) deviceMap.get(edgeName).get(actuatorName);
