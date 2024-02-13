@@ -50,7 +50,7 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
 
     @Override
     public void sensed(byte[] messageBytes) {
-        sensed(decodeValues(messageBytes));
+        sensed(decodeValuesRaw(messageBytes));
     }
 
     @Override
@@ -109,7 +109,12 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     }
 
     @Override
-    public abstract R decodeValues(byte[] message);
+    public final byte[] encodeValues(Float[] values) {
+        return CommUtils.FloatArrayToBytes(values);
+    }
+
+    @Override
+    public abstract R decodeValuesRaw(byte[] message);
 
 
     @Override

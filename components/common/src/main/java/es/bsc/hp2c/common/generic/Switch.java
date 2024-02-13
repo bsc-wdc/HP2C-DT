@@ -59,7 +59,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
 
     @Override
     public void sensed(byte[] messageBytes) {
-        sensed(decodeValues(messageBytes));
+        sensed(decodeValuesRaw(messageBytes));
     }
 
     @Override
@@ -108,9 +108,17 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
         Float[] values = actuateValues(state);
         return CommUtils.FloatArrayToBytes(values);
     }
+    @Override
+    public final byte[] encodeValues(State[] values) {
+        Float[] rawValues = actuateValues(values);
+        return CommUtils.FloatArrayToBytes(rawValues);
+    }
 
     @Override
-    public abstract R decodeValues(byte[] message);
+    public abstract R decodeValuesRaw(byte[] message);
+
+    @Override
+    public abstract State[] decodeValues(byte[] message);
 
     @Override
     public boolean isActionable() {

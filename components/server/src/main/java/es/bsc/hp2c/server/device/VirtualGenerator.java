@@ -62,6 +62,10 @@ public class VirtualGenerator extends Generator<Float[]> {
     }
 
     @Override
+    public final Float[] decodeValuesRaw(byte[] message) {
+        return CommUtils.BytesToFloatArray(message);
+    }
+    @Override
     public final Float[] decodeValues(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
     }

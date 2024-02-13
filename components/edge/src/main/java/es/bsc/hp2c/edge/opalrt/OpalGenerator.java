@@ -89,6 +89,11 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     }
 
     @Override
+    public final Float[] decodeValuesRaw(byte[] message) {
+        return BytesToFloatArray(message);
+    }
+
+    @Override
     public final Float[] decodeValues(byte[] message) {
         return BytesToFloatArray(message);
     }

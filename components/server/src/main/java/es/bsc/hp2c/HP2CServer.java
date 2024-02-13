@@ -114,7 +114,7 @@ public class HP2CServer implements AutoCloseable {
             Sensor<?, ?> sensor = (Sensor<?, ?>) deviceMap.get(edgeName).get(deviceName);
             sensor.sensed(message);
             // Write entry in database
-            writeDB((Float[]) sensor.decodeValues(message), timestampMillis, edgeName, deviceName);
+            writeDB((Float[]) sensor.decodeValuesRaw(message), timestampMillis, edgeName, deviceName);
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });
     }

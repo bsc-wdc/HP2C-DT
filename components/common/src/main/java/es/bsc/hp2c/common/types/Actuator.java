@@ -26,4 +26,18 @@ public interface Actuator<V> {
 
     public void actuate(V values) throws IOException;
 
+    /**
+     * Decode values from bytes format.
+     *
+     * @param messageBytes Message encoded as an array of bytes.
+     * @return Actual values in the actuator data type.
+     */
+    public V decodeValues(byte[] messageBytes);
+
+    /**
+     * Encode values to bytes
+     * @param values Actual values in the actuator data type.
+     * @return Message encoded as an array of bytes
+     */
+    public byte[] encodeValues(V values);
 }

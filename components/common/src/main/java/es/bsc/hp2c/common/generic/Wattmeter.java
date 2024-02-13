@@ -34,7 +34,7 @@ public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> 
     public abstract void sensed(R values);
 
     @Override
-    public void sensed(byte[] messageBytes) { sensed(decodeValues(messageBytes)); }
+    public void sensed(byte[] messageBytes) { sensed(decodeValuesRaw(messageBytes)); }
 
     /**
      * Creates a new instance of wattmeter;
@@ -86,7 +86,7 @@ public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> 
     }
 
     @Override
-    public abstract R decodeValues(byte[] message);
+    public abstract R decodeValuesRaw(byte[] message);
 
     @Override
     public final boolean isActionable() {

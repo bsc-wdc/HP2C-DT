@@ -34,4 +34,8 @@ public class Console extends MsgAlert {
     public void actuate(String message) {
         System.out.println(message);
     }
+
+    @Override
+    public String decodeValues(byte[] messageBytes) { return null; }
+
 }

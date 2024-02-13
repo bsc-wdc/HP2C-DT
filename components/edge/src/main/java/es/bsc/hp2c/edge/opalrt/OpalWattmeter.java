@@ -74,7 +74,7 @@ public class OpalWattmeter extends Wattmeter<Float[]> implements OpalSensor<Floa
     }
 
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesRaw(byte[] message) {
         return BytesToFloatArray(message);
     }
 }

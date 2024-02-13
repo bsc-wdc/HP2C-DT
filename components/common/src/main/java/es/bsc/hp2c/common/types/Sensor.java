@@ -72,5 +72,5 @@ public interface Sensor<R, V> {
      * @param messageBytes contains the values of the sensor.
      * @return The actual values in the corresponding data type.
      */
-    public R decodeValues(byte[] messageBytes);
+    public R decodeValuesRaw(byte[] messageBytes);
 }

@@ -47,7 +47,7 @@ public class VirtualWattmeter extends Wattmeter<Float[]> {
     }
 
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesRaw(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
     }
 }

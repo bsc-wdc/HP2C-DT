@@ -36,4 +36,7 @@ public class MsgBox extends MsgAlert {
     public void actuate(String message) {
         JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
     }
+
+    @Override
+    public String decodeValues(byte[] messageBytes) { return null; }
 }

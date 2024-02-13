@@ -94,7 +94,12 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     }
 
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesRaw(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
+    }
+
+    @Override
+    public final State[] decodeValues(byte[] message) {
+        return sensedValues(CommUtils.BytesToFloatArray(message));
     }
 }

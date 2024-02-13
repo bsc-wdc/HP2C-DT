@@ -74,7 +74,7 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     }
 
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesRaw(byte[] message) {
         return BytesToFloatArray(message);
     }
 
