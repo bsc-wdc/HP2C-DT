@@ -81,9 +81,17 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     }
 
     @Override
-    public Float[] actuateValues(State[] values) { 
-        // TODO: modified from protected to public. Check if it is correct after generalizing use of State
-        return new Float[0];
+    public Float[] actuateValues(State[] values) {
+        Float[] outputValues = new Float[values.length];
+        for (int i = 0; i < values.length; ++i){
+            if (values[i] == State.ON){
+                outputValues[i] = 1.0f;
+            }
+            else {
+                outputValues[i] = 0.0f;
+            }
+        }
+        return outputValues;
     }
 
     /**
