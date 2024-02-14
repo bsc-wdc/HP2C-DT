@@ -11,6 +11,7 @@ import es.bsc.hp2c.HP2CServer;
 
 import java.io.IOException;
 
+import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 
 public class VirtualComm {
@@ -34,15 +35,50 @@ public class VirtualComm {
         byte[] encodeValues();
     }
 
-    public static void virtualActuate(VirtualActuator actuator, String edgeName, State[] values) {
-        // Set up actuator
-        String actuatorLabel = ((Device) actuator).getLabel();
-        System.out.println("VirtualComm.virtualActuate: Received values: " + printableArray(values));
-        byte[] message = actuator.encodeValues(values);
+    public static void virtualActuate(VirtualActuator actuator, String edgeName, String[] rawValues) {
+        // Parse user input into Float or String (Switch.State)
+        Boolean isNumber = null;  // Non-primitive Boolean to get null by default
+        Object[] values = new Object[rawValues.length];
+        for (int i = 0; i < rawValues.length; i++) {
+            if (isNumeric(rawValues[i])){
+                if (isNumber != null && !isNumber) {
+                    throw new IllegalArgumentException("Mixed numeric and non-numeric types in actuation values.");
+                }
+                values[i] = Float.parseFloat(rawValues[i]);
+                isNumber = true;
+            } else {
+                if (isNumber != null && isNumber) {
+                    throw new IllegalArgumentException("Mixed numeric and non-numeric types in actuation values.");
+                }
+                values[i] = State.valueOf(rawValues[i]);
+                isNumber = false;
+            }
+        }
+
+        // Get the corresponding value actuator data type (previously Object)
+        if (isNumber) {
+            Float[] floatValues = new Float[values.length];
+            for (int i = 0; i < values.length; i++) {
+                floatValues[i] = (Float) values[i];
+            }
+            values = floatValues;
+        } else {
+            State[] stateValues = new State[values.length];
+            for (int i = 0; i < values.length; i++) {
+                stateValues[i] = (State) values[i];
+            }
+            values = stateValues;
+        }
+
         // Prepare communications
+        String actuatorLabel = ((Device) actuator).getLabel();
+        System.out.println("VirtualComm.virtualActuate: Sending actuation to "
+                + edgeName + "." + actuatorLabel + ": " + printableArray(values));
+        byte[] message = actuator.encodeValues(values);
         Channel channel = HP2CServer.getChannel();
         String routingKey = baseTopic + "." + edgeName + "." + intermediateTopic + "." + actuatorLabel;
-        System.out.println("Using routingKey " + routingKey);
+        System.out.println("VirtualComm.virtualActuate: Using routingKey " + routingKey);
+
         // Publish message
         try {
             channel.basicPublish(EXCHANGE_NAME_ACTUATORS, routingKey, null, message);

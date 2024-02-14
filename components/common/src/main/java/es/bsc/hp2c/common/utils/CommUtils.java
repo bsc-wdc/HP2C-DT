@@ -40,4 +40,10 @@ public final class CommUtils {
         }
         return result.toString();
     }
+
+    /** Check if a string represents a numeric value. */
+    public static boolean isNumeric(String str) {
+        // Match a number with optional negative sign '-' and decimal point.
+        return str.matches("-?\\d+(\\.\\d+)?");
+    }
 }

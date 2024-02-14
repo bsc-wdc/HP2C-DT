@@ -1,7 +1,6 @@
 package es.bsc.hp2c.server.UI;
 
 import es.bsc.hp2c.common.types.Device;
-import es.bsc.hp2c.common.generic.Switch.State;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 
 import java.util.Map;
@@ -12,7 +11,7 @@ import static es.bsc.hp2c.server.device.VirtualComm.virtualActuate;
 
 public class SimpleUI implements Runnable {
     private boolean isRunning = false;
-    private Map<String, Map<String, Device>> deviceMap;
+    private final Map<String, Map<String, Device>> deviceMap;
 
     public SimpleUI(Map<String, Map<String, Device>> deviceMap) {
         this.deviceMap = deviceMap;
@@ -36,7 +35,7 @@ public class SimpleUI implements Runnable {
         Scanner scanner = new Scanner(System.in);
         while (isRunning) {
             // Prompt for user input
-            System.out.print("Enter a command: ");
+            System.out.println("Enter a command: ");
             String userInput = scanner.nextLine();
             // Process the user input
             try {
@@ -58,28 +57,25 @@ public class SimpleUI implements Runnable {
         }
     }
 
+    /** Process user's CLI whitespace-separated input. First word is the command name. */
     private void processInput(String input) {
         String[] tokens = input.split("\\s+");
         String action = tokens[0];
         switch (action) {
             case "actuate":
-                System.out.println("Performing Action 1...");
+                // For instance: "actuate edge1 ThreePhaseSwitchGen1 ON ON ON"
+                System.out.println("Launching actuation...");
                 if (tokens.length < 4) {
-                    throw new IllegalArgumentException("'actuate' needs 3 input arguments: edge, actuator and value");
+                    throw new IllegalArgumentException(
+                            "'actuate' needs at least 3 input arguments: edge, actuator and value");
                 }
                 // Extract values from the array
                 String edgeName = tokens[1];
                 String actuatorName = tokens[2];
-                // Use the remaining as elements of the float array
-                Float[] values = new Float[tokens.length - 3];
-                for(int i = 3; i < tokens.length; i++){
-                    values[i - 3] = Float.parseFloat(tokens[i]);
-                }
+                // Use the remaining elements for values
+                String[] values = new String[tokens.length - 3];
+                System.arraycopy(tokens, 3, values, 0, tokens.length - 3);
                 actuateAction(edgeName, actuatorName, values);
-                break;
-            case "action2":
-                System.out.println("Performing Action 2...");
-                // Perform Action 2 logic here
                 break;
             case "stop":
                 stop();
@@ -89,8 +85,8 @@ public class SimpleUI implements Runnable {
             }
         }
 
-    private void actuateAction(String edgeName, String actuatorName, Float[] rawValues) {
-        // Check input
+    private void actuateAction(String edgeName, String actuatorName, String[] rawValues) {
+        // Check input validity
         if (!isInMap(edgeName, actuatorName, deviceMap)) {
             System.err.println("Edge " + edgeName + ", Device " + actuatorName + " not listed.");
             System.out.println("Options are:");
@@ -105,14 +101,9 @@ public class SimpleUI implements Runnable {
             }
             return;
         }
-        // Parse into State[] (TODO: only works for Switch)
-        State[] states = new State[rawValues.length];
-        for (int i = 0; i < rawValues.length; i++) {
-             states[i] = rawValues[i] > 0.5 ? State.ON : State.OFF;
-        }
         // Actuate
-        VirtualActuator actuator = (VirtualActuator) deviceMap.get(edgeName).get(actuatorName);
-        virtualActuate(actuator, edgeName, states);
+        VirtualActuator<?> actuator = (VirtualActuator<?>) deviceMap.get(edgeName).get(actuatorName);
+        virtualActuate(actuator, edgeName, rawValues);
     }
 }
 
