@@ -23,6 +23,7 @@ public class SimpleUI implements Runnable {
             isRunning = true;
             // Create and start a new thread for user input
             Thread UIThread = new Thread(this);
+            UIThread.setName("CLI-thread");
             UIThread.start();
         } else {
             System.err.println("SimpleUI is already running.");
@@ -63,19 +64,7 @@ public class SimpleUI implements Runnable {
         String action = tokens[0];
         switch (action) {
             case "actuate":
-                // For instance: "actuate edge1 ThreePhaseSwitchGen1 ON ON ON"
-                System.out.println("Launching actuation...");
-                if (tokens.length < 4) {
-                    throw new IllegalArgumentException(
-                            "'actuate' needs at least 3 input arguments: edge, actuator and value");
-                }
-                // Extract values from the array
-                String edgeName = tokens[1];
-                String actuatorName = tokens[2];
-                // Use the remaining elements for values
-                String[] values = new String[tokens.length - 3];
-                System.arraycopy(tokens, 3, values, 0, tokens.length - 3);
-                actuateAction(edgeName, actuatorName, values);
+                actuateAction(tokens);
                 break;
             case "stop":
                 stop();
@@ -85,7 +74,24 @@ public class SimpleUI implements Runnable {
             }
         }
 
-    private void actuateAction(String edgeName, String actuatorName, String[] rawValues) {
+    /**
+     * Parse user input and call virtualActuate.
+     * For instance: "actuate edge1 ThreePhaseSwitchGen1 ON OFF ON"
+     *               "actuate edge1 GeneratorGen1 0.5 0.75"
+     */
+    private void actuateAction(String[] tokens) {
+        // Parse input prompt
+        System.out.println("Launching actuation...");
+        if (tokens.length < 4) {
+            throw new IllegalArgumentException(
+                    "'actuate' needs at least 3 input arguments: edge, actuator and value");
+        }
+        String edgeName = tokens[1];
+        String actuatorName = tokens[2];
+        // Use the remaining elements for values
+        String[] rawValues = new String[tokens.length - 3];
+        System.arraycopy(tokens, 3, rawValues, 0, tokens.length - 3);
+
         // Check input validity
         if (!isInMap(edgeName, actuatorName, deviceMap)) {
             System.err.println("Edge " + edgeName + ", Device " + actuatorName + " not listed.");
@@ -101,6 +107,7 @@ public class SimpleUI implements Runnable {
             }
             return;
         }
+
         // Actuate
         VirtualActuator<?> actuator = (VirtualActuator<?>) deviceMap.get(edgeName).get(actuatorName);
         virtualActuate(actuator, edgeName, rawValues);
