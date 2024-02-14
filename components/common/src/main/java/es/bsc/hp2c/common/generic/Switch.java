@@ -50,7 +50,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
         this.onReadFunctions = new ArrayList<>();
         this.states = new State[size];
         for (int i = 0; i < size; ++i){
-            this.states[i] = State.ON;
+            this.states[i] = null;
         }
     }
 

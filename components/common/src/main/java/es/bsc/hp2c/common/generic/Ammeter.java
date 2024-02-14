@@ -27,7 +27,7 @@ import es.bsc.hp2c.common.utils.CommUtils;
  */
 public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
 
-    private Float[] values = { 0.0f };
+    private Float[] values = null;
     private ArrayList<Runnable> onReadFunctions;
 
     /**

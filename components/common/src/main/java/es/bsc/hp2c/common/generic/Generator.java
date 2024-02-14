@@ -29,8 +29,8 @@ import es.bsc.hp2c.common.utils.CommUtils;
  */
 public abstract class Generator<R> extends Device implements Sensor<R, Float[]>, Actuator<Float[]> {
 
-    protected Float[] voltageSetpoint = { 0.0f };
-    protected Float[] powerSetpoint = { 0.0f };
+    protected Float[] voltageSetpoint = null;
+    protected Float[] powerSetpoint = null;
 
     private ArrayList<Runnable> onReadFunctions;
 
@@ -84,22 +84,21 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
 
     @Override
     public final Float[] getCurrentValues() {
-        int totalLength = this.voltageSetpoint.length + this.powerSetpoint.length;
-        Float[] combinedValues = new Float[totalLength];
-
-        System.arraycopy(this.voltageSetpoint, 0, combinedValues, 0, this.voltageSetpoint.length);
-        System.arraycopy(this.powerSetpoint, 0, combinedValues, this.voltageSetpoint.length, this.powerSetpoint.length);
-
+        Float[] combinedValues = new Float[2];
+        if (voltageSetpoint == null || powerSetpoint == null) return null;
+        combinedValues[0] = this.voltageSetpoint[0];
+        combinedValues[1] = this.powerSetpoint[0];
         return combinedValues;
     }
 
     protected void setValues(Float[] values) {
-        if (values.length >= this.voltageSetpoint.length + this.powerSetpoint.length) {
-            System.arraycopy(values, 0, this.voltageSetpoint, 0, this.voltageSetpoint.length);
-            System.arraycopy(values, this.voltageSetpoint.length, this.powerSetpoint, 0, this.powerSetpoint.length);
-            this.setLastUpdate();
+        if (values.length == 2) {
+            voltageSetpoint = new Float[1];
+            powerSetpoint = new Float[1];
+            voltageSetpoint[0] = values[0];
+            powerSetpoint[0] = values[1];
         } else {
-            System.err.println("Values length is not enough to assign to voltageSetpoint and powerSetpoint.");
+            System.err.println("Values length must be 2 (voltageSetpoint and powerSetpoint)");
         }
     }
 

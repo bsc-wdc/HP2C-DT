@@ -30,7 +30,7 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
         SMOKE
     }
 
-    private Smoke status = Smoke.NO_SMOKE;
+    private Smoke status = null;
 
     protected SmokeSensor(String label, float[] position) {
         super(label, position);
