@@ -51,26 +51,23 @@ public class OpalComm {
     public static void init(JSONObject jGlobalProperties) {
         if (!initialCall){ return; }
         initialCall = false;
-        // Set up udp and tcp connections
-        setupComms(jGlobalProperties);
-        startUDPServer();
-        startTCPServer();
-    }
-
-
-    static {
-        Thread verifyIndexes = new Thread(() -> {
+        Thread initSetup = new Thread(() -> {
             try {
                 //wait for every device to be loaded before verifying indexes
                 waitForDevicesLoaded();
                 verifyIndexes(actuatorsList);
                 verifyIndexes(udpSensorsList);
                 verifyIndexes(tcpSensorsList);
+
+                // Set up udp and tcp connections
+                setupComms(jGlobalProperties);
+                startUDPServer();
+                startTCPServer();
             } catch (Device.DeviceInstantiationException e) {
                 System.err.println(e.getMessage());
             }
         });
-        verifyIndexes.start();
+        initSetup.start();
     }
 
 
