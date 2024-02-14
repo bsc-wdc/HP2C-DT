@@ -102,19 +102,19 @@ public class HP2CServer implements AutoCloseable {
             byte[] message = delivery.getBody();
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
             long timestampMillis = delivery.getProperties().getTimestamp().getTime();
-            String edgeName = getEdgeName(senderRoutingKey);
+            String edgeLabel = getEdgeLabel(senderRoutingKey);
             String deviceName = getDeviceName(senderRoutingKey);
             // Check existence of pair edge-device
-            if (!isInMap(edgeName, deviceName, deviceMap)) {
-                System.err.println("Edge " + edgeName + ", Device " + deviceName
-                        + ": message received but device not listed as " + edgeName + " digital twin devices.");
+            if (!isInMap(edgeLabel, deviceName, deviceMap)) {
+                System.err.println("Edge " + edgeLabel + ", Device " + deviceName
+                        + ": message received but device not listed as " + edgeLabel + " digital twin devices.");
                 return;
             }
             // Sense to the corresponding sensor
-            Sensor<?, ?> sensor = (Sensor<?, ?>) deviceMap.get(edgeName).get(deviceName);
+            Sensor<?, ?> sensor = (Sensor<?, ?>) deviceMap.get(edgeLabel).get(deviceName);
             sensor.sensed(message);
             // Write entry in database
-            writeDB((Float[]) sensor.decodeValuesRaw(message), timestampMillis, edgeName, deviceName);
+            writeDB((Float[]) sensor.decodeValuesRaw(message), timestampMillis, edgeLabel, deviceName);
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });
     }
@@ -125,17 +125,17 @@ public class HP2CServer implements AutoCloseable {
      * (time series) and the third field (DEVICE_ID) as the `tag` value.
      * @param values Message of a measurements as an integer format.
      * @param timestamp Message timestamp in long integer format.
-     * @param edgeName Name of the Influx measurement (series) where we
+     * @param edgeLabel Name of the Influx measurement (series) where we
      *                 will write. Typically, the name of the edge node.
      * @param deviceName Name of the Influx tag where we will write. Typically,
      *                   the name of the device.
      */
-    private void writeDB(Float[] values, long timestamp, String edgeName, String deviceName) {
+    private void writeDB(Float[] values, long timestamp, String edgeLabel, String deviceName) {
         for (int i = 0; i < values.length; i++) {
             String tagName = deviceName + "Sensor" + i;
-            System.out.println(" [ ] Writing DB with '" + edgeName + "." +
+            System.out.println(" [ ] Writing DB with '" + edgeLabel + "." +
                     deviceName + "':'" + values[i] + "'");
-            influxDB.write(Point.measurement(edgeName)
+            influxDB.write(Point.measurement(edgeLabel)
                     .time(timestamp, TimeUnit.MILLISECONDS)
                     .tag("device", tagName)
                     .addField("value", values[i])
@@ -179,11 +179,11 @@ public class HP2CServer implements AutoCloseable {
     }
 
     /**
-     * Check if the combination "edgeName" and "deviceName" is in the given nested HashMap
+     * Check if the combination "edgeLabel" and "deviceName" is in the given nested HashMap
      */
-    public static boolean isInMap(String edgeName, String deviceName, Map<String, Map<String, Device>> map) {
-        if (map.containsKey(edgeName)){
-            if (!map.get(edgeName).containsKey(deviceName)) {;
+    public static boolean isInMap(String edgeLabel, String deviceName, Map<String, Map<String, Device>> map) {
+        if (map.containsKey(edgeLabel)){
+            if (!map.get(edgeLabel).containsKey(deviceName)) {;
                 return false;
             }
         } else {
@@ -195,7 +195,7 @@ public class HP2CServer implements AutoCloseable {
     /*
      * Parse device name from the routing key in deliverer's message.
      */
-    public String getEdgeName(String routingKey){
+    public String getEdgeLabel(String routingKey){
         String[] routingKeyParts = routingKey.split("\\.");
         return routingKeyParts[1];
     }

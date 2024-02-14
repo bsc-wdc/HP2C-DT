@@ -86,15 +86,15 @@ public class CLI implements Runnable {
             throw new IllegalArgumentException(
                     "'actuate' needs at least 3 input arguments: edge, actuator and value");
         }
-        String edgeName = tokens[1];
+        String edgeLabel = tokens[1];
         String actuatorName = tokens[2];
         // Use the remaining elements for values
         String[] rawValues = new String[tokens.length - 3];
         System.arraycopy(tokens, 3, rawValues, 0, tokens.length - 3);
 
         // Check input validity
-        if (!isInMap(edgeName, actuatorName, deviceMap)) {
-            System.err.println("Edge " + edgeName + ", Device " + actuatorName + " not listed.");
+        if (!isInMap(edgeLabel, actuatorName, deviceMap)) {
+            System.err.println("Edge " + edgeLabel + ", Device " + actuatorName + " not listed.");
             System.out.println("Options are:");
             for (Map.Entry<String, Map<String, Device>> entry : deviceMap.entrySet()) {
                 String groupKey = entry.getKey();
@@ -109,8 +109,8 @@ public class CLI implements Runnable {
         }
 
         // Actuate
-        VirtualActuator<?> actuator = (VirtualActuator<?>) deviceMap.get(edgeName).get(actuatorName);
-        virtualActuate(actuator, edgeName, rawValues);
+        VirtualActuator<?> actuator = (VirtualActuator<?>) deviceMap.get(edgeLabel).get(actuatorName);
+        virtualActuate(actuator, edgeLabel, rawValues);
     }
 }
 

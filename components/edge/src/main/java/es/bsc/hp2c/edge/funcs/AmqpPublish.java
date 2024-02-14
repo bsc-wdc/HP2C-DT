@@ -48,10 +48,10 @@ public class AmqpPublish extends Func {
         String sensorLabel = ((Device) sensor).getLabel();
 
         // Initialize AMQP communication
-        String edgeId = getEdgeLabel();
+        String edgeLabel = getEdgeLabel();
         channel = HP2CEdge.getChannel();
         EXCHANGE_NAME = HP2CEdge.getExchangeName();
-        routingKey = baseTopic + "." + edgeId + "." + sensorLabel;
+        routingKey = baseTopic + "." + edgeLabel + "." + sensorLabel;
     }
 
     @Override

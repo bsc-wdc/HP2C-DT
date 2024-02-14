@@ -20,7 +20,7 @@ import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
  */
 public class AmqpConsume extends Func {
     private final Actuator actuator;
-    private final String edgeName;
+    private final String edgeLabel;
     private final String actuatorLabel;
     private static String EXCHANGE_NAME;
     private final String routingKey;
@@ -49,12 +49,12 @@ public class AmqpConsume extends Func {
         actuatorLabel = ((Device) actuator).getLabel();
 
         // Initialize AMQP communication
-        edgeName = getEdgeLabel();
+        edgeLabel = getEdgeLabel();
         channel = HP2CEdge.getChannel();
         EXCHANGE_NAME = HP2CEdge.getExchangeName();
         String baseTopic = "edge";
         String intermediateTopic = "actuators";
-        routingKey = baseTopic + "." + edgeName + "." + intermediateTopic + "." + actuatorLabel;
+        routingKey = baseTopic + "." + edgeLabel + "." + intermediateTopic + "." + actuatorLabel;
     }
 
     @Override
@@ -66,7 +66,7 @@ public class AmqpConsume extends Func {
             channel.queueBind(queueName, EXCHANGE_NAME, routingKey);
         } catch (IOException e) {
             System.err.println("Error declaring RabbitMQ consumer queue" +
-                    " for edge " + edgeName + " and actuator " + actuatorLabel);
+                    " for edge " + edgeLabel + " and actuator " + actuatorLabel);
             throw new RuntimeException(e);
         }
 
@@ -87,7 +87,7 @@ public class AmqpConsume extends Func {
             channel.basicConsume(queueName, true, callback, consumerTag -> { });
         } catch (IOException e) {
             System.err.println("Error consuming AMQP message" +
-                    " for edge " + edgeName + " and actuator " + actuatorLabel);
+                    " for edge " + edgeLabel + " and actuator " + actuatorLabel);
             throw new RuntimeException(e);
         }
     }

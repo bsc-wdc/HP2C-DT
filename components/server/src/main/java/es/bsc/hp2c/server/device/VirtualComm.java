@@ -35,7 +35,7 @@ public class VirtualComm {
         byte[] encodeValues();
     }
 
-    public static void virtualActuate(VirtualActuator actuator, String edgeName, String[] rawValues) {
+    public static void virtualActuate(VirtualActuator actuator, String edgeLabel, String[] rawValues) {
         // Parse user input into Float or String (Switch.State)
         Boolean isNumber = null;  // Non-primitive Boolean to get null by default
         Object[] values = new Object[rawValues.length];
@@ -73,10 +73,10 @@ public class VirtualComm {
         // Prepare communications
         String actuatorLabel = ((Device) actuator).getLabel();
         System.out.println("VirtualComm.virtualActuate: Sending actuation to "
-                + edgeName + "." + actuatorLabel + ": " + printableArray(values));
+                + edgeLabel + "." + actuatorLabel + ": " + printableArray(values));
         byte[] message = actuator.encodeValues(values);
         Channel channel = HP2CServer.getChannel();
-        String routingKey = baseTopic + "." + edgeName + "." + intermediateTopic + "." + actuatorLabel;
+        String routingKey = baseTopic + "." + edgeLabel + "." + intermediateTopic + "." + actuatorLabel;
         System.out.println("VirtualComm.virtualActuate: Using routingKey " + routingKey);
 
         // Publish message
