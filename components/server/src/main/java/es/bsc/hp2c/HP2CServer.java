@@ -6,7 +6,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
-import es.bsc.hp2c.server.UI.SimpleUI;
+import es.bsc.hp2c.server.UI.CLI;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
@@ -48,8 +48,8 @@ public class HP2CServer implements AutoCloseable {
         // Init InfluxDB
         initDB(hostIp, dbPort);
         // Start UI
-        SimpleUI ui = new SimpleUI(deviceMap);
-        ui.start();
+        CLI cli = new CLI(deviceMap);
+        cli.start();
     }
 
     public static void main(String[] args) throws FileNotFoundException {

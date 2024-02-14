@@ -9,24 +9,24 @@ import java.util.Scanner;
 import static es.bsc.hp2c.HP2CServer.isInMap;
 import static es.bsc.hp2c.server.device.VirtualComm.virtualActuate;
 
-public class SimpleUI implements Runnable {
+public class CLI implements Runnable {
     private boolean isRunning = false;
     private final Map<String, Map<String, Device>> deviceMap;
 
-    public SimpleUI(Map<String, Map<String, Device>> deviceMap) {
+    public CLI(Map<String, Map<String, Device>> deviceMap) {
         this.deviceMap = deviceMap;
     }
 
     public void start() {
         if (!isRunning) {
-            System.out.println("SimpleUI started.");
+            System.out.println("CLI started.");
             isRunning = true;
             // Create and start a new thread for user input
             Thread UIThread = new Thread(this);
             UIThread.setName("CLI-thread");
             UIThread.start();
         } else {
-            System.err.println("SimpleUI is already running.");
+            System.err.println("CLI is already running.");
         }
     }
 
@@ -52,9 +52,9 @@ public class SimpleUI implements Runnable {
     public void stop() {
         if (isRunning) {
             isRunning = false;
-            System.out.println("SimpleUI stopping...");
+            System.out.println("CLI stopping...");
         } else {
-            System.out.println("SimpleUI is not running.");
+            System.out.println("CLI is not running.");
         }
     }
 
