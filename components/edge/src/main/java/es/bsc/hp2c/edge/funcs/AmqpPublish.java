@@ -19,7 +19,6 @@ import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
  *      edge.<EDGE_ID>.<DEVICE_ID>
  */
 public class AmqpPublish extends Func {
-    private static String baseTopic = "edge";
     private final Sensor<?, ?> sensor;
     private final Channel channel;
     private final String EXCHANGE_NAME;
@@ -51,7 +50,9 @@ public class AmqpPublish extends Func {
         String edgeLabel = getEdgeLabel();
         channel = HP2CEdge.getChannel();
         EXCHANGE_NAME = HP2CEdge.getExchangeName();
-        routingKey = baseTopic + "." + edgeLabel + "." + sensorLabel;
+        String intermediateTopic = "sensors";
+        String baseTopic = "edge";
+        routingKey = baseTopic + "." + edgeLabel+ "." + intermediateTopic + "." + sensorLabel;
     }
 
     @Override

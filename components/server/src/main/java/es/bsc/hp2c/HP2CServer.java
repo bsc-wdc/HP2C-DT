@@ -92,7 +92,7 @@ public class HP2CServer implements AutoCloseable {
      */
     private void startListener() throws IOException {
         channel.exchangeDeclare(EXCHANGE_NAME, "topic");
-        String routingKey = "edge.#";
+        String routingKey = "edge.*.sensors.*";
         String queueName = channel.queueDeclare().getQueue();
         channel.queueBind(queueName, EXCHANGE_NAME, routingKey);
 
@@ -207,7 +207,7 @@ public class HP2CServer implements AutoCloseable {
      */
     public String getDeviceName(String routingKey){
         String[] routingKeyParts = routingKey.split("\\.");
-        return routingKeyParts[2];
+        return routingKeyParts[3];
     }
 
     public static Channel getChannel() {
