@@ -24,6 +24,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import static es.bsc.hp2c.server.device.VirtualComm.virtualActuate;
+
 
 /**
  * Digital twin Switch.
@@ -59,7 +61,12 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
 
     @Override
     public void actuate(State[] values) throws IOException {
+        // TODO: call this from the other actuate
+    }
 
+    @Override
+    public void actuate(String[] stringValues) throws IOException{
+        virtualActuate(this, edgeLabel, stringValues);
     }
 
     /**

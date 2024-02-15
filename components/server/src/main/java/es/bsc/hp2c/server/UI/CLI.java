@@ -3,12 +3,12 @@ package es.bsc.hp2c.server.UI;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Scanner;
 
 import static es.bsc.hp2c.HP2CServer.isInMap;
 import static es.bsc.hp2c.HP2CServer.setVerbose;
-import static es.bsc.hp2c.server.device.VirtualComm.virtualActuate;
 
 public class CLI implements Runnable {
     private boolean isRunning = false;
@@ -42,7 +42,7 @@ public class CLI implements Runnable {
             // Process the user input
             try {
                 processInput(userInput);
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | IOException e) {
                 System.err.println("Error: " + e.getMessage());
             }
         }
@@ -60,7 +60,7 @@ public class CLI implements Runnable {
     }
 
     /** Process user's CLI whitespace-separated input. First word is the command name. */
-    private void processInput(String input) {
+    private void processInput(String input) throws IOException {
         String[] tokens = input.split("\\s+");
         String action = tokens[0];
         switch (action) {
@@ -86,7 +86,7 @@ public class CLI implements Runnable {
      * For instance: "actuate edge1 ThreePhaseSwitchGen1 ON OFF ON"
      *               "actuate edge1 GeneratorGen1 0.5 0.75"
      */
-    private void actuateAction(String[] tokens) {
+    private void actuateAction(String[] tokens) throws IOException {
         // Parse input prompt
         System.out.println("Launching actuation...");
         if (tokens.length < 4) {
@@ -96,8 +96,8 @@ public class CLI implements Runnable {
         String edgeLabel = tokens[1];
         String actuatorName = tokens[2];
         // Use the remaining elements for values
-        String[] rawValues = new String[tokens.length - 3];
-        System.arraycopy(tokens, 3, rawValues, 0, tokens.length - 3);
+        String[] stringValues = new String[tokens.length - 3];
+        System.arraycopy(tokens, 3, stringValues, 0, tokens.length - 3);
 
         // Check input validity
         if (!isInMap(edgeLabel, actuatorName, deviceMap)) {
@@ -117,7 +117,7 @@ public class CLI implements Runnable {
 
         // Actuate
         VirtualActuator<?> actuator = (VirtualActuator<?>) deviceMap.get(edgeLabel).get(actuatorName);
-        virtualActuate(actuator, edgeLabel, rawValues);
+        actuator.actuate(stringValues);
     }
 }
 

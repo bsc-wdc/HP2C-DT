@@ -33,6 +33,7 @@ public class VirtualComm {
     }
     protected interface VirtualSensor<V> extends Sensor<Float[], V>, VirtualDevice {}
     public interface VirtualActuator<V> extends Actuator<V>, VirtualDevice {
+        void actuate(String[] stringValues) throws IOException;
         Float[] actuateValues(V value);
         byte[] encodeValues();
     }
