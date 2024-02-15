@@ -24,6 +24,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 import static es.bsc.hp2c.server.device.VirtualComm.virtualActuate;
 
 
@@ -61,12 +62,23 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
 
     @Override
     public void actuate(State[] values) throws IOException {
-        // TODO: call this from the other actuate
+        byte[] byteValues = encodeValues(values);
+        virtualActuate(this, edgeLabel, byteValues);
     }
 
     @Override
     public void actuate(String[] stringValues) throws IOException{
-        virtualActuate(this, edgeLabel, stringValues);
+        State[] values = new State[stringValues.length];
+        for (int i = 0; i < stringValues.length; i++) {
+            if (isState(stringValues[i])) {
+                values[i] = State.valueOf(stringValues[i]);
+            } else{
+                System.err.println("Options are: " + printableArray(State.values()));
+                throw new IOException("Values passed to Switch " +
+                        "(" + edgeLabel + "." + getLabel() + ") must be of type State.");
+            }
+        }
+        actuate(values);
     }
 
     /**

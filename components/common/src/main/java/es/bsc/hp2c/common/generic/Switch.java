@@ -54,6 +54,16 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
         }
     }
 
+    /** Check if a String can be parsed into one of the enum states */
+    protected boolean isState(String str) {
+        for (State state : State.values()) {
+            if (state.name().equals(str)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public abstract void sensed(R values);
 

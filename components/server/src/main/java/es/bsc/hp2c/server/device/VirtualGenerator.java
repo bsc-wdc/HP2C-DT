@@ -17,7 +17,6 @@
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Generator;
-import es.bsc.hp2c.common.generic.Switch;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
@@ -25,6 +24,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
 import static es.bsc.hp2c.server.device.VirtualComm.virtualActuate;
 
 /**
@@ -56,13 +56,23 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     }
 
     @Override
-    public void actuate(Float[] value) throws IOException {
-        // TODO: call this from the other actuate
+    public void actuate(Float[] values) throws IOException {
+        byte[] byteValues = encodeValues(values);
+        virtualActuate(this, edgeLabel, byteValues);
     }
 
     @Override
     public void actuate(String[] stringValues) throws IOException {
-        virtualActuate(this, edgeLabel, stringValues);
+        Float[] values = new Float[stringValues.length];
+        for (int i = 0; i < stringValues.length; i++) {
+            if (isNumeric(stringValues[i])){
+                values[i] = Float.parseFloat(stringValues[i]);
+            } else {
+                throw new IOException("Values passed to Generator " +
+                        "(" + edgeLabel + "." + getLabel() + ") must be numeric.");
+            }
+        }
+        actuate(values);
     }
 
     @Override
