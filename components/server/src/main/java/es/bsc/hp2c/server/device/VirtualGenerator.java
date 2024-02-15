@@ -29,6 +29,8 @@ import java.io.IOException;
  * Digital twin Generator.
  */
 public class VirtualGenerator extends Generator<Float[]> implements VirtualSensor<Float[]>, VirtualActuator<Float[]> {
+    private String edgeLabel;
+
     /**
      * Creates a new instance of VirtualGenerator.
      *
@@ -39,6 +41,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
      * */
     public VirtualGenerator(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
+        this.edgeLabel = jGlobalProperties.getString("label");
     }
 
     /**
@@ -72,6 +75,11 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     @Override
     public final Float[] decodeValues(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
+    }
+
+    @Override
+    public String getEdgeLabel() {
+        return this.edgeLabel;
     }
 }
 

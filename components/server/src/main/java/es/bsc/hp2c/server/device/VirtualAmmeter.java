@@ -25,6 +25,8 @@ import org.json.JSONObject;
  * Digital Twin Ammeter.
  */
 public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Float[]> {
+    private String edgeLabel;
+
     /**
     * Creates a new instance of VirtualAmmeter.
     *
@@ -35,6 +37,7 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     * */
     public VirtualAmmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
+        this.edgeLabel = jGlobalProperties.getString("label");
     }
 
     /**
@@ -57,5 +60,10 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     @Override
     public final Float[] decodeValuesRaw(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
+    }
+
+    @Override
+    public String getEdgeLabel() {
+        return this.edgeLabel;
     }
 }

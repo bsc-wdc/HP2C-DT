@@ -25,6 +25,8 @@ import org.json.JSONObject;
  * Digital twin Varmeter.
  */
 public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<Float[]> {
+    private String edgeLabel;
+
     /**
      * Creates a new instance of VirtualVarmeter.
      *
@@ -35,6 +37,7 @@ public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<
      */
     public VirtualVarmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
+        this.edgeLabel = jGlobalProperties.getString("label");
     }
 
     @Override
@@ -50,5 +53,10 @@ public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<
     @Override
     public final Float[] decodeValuesRaw(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
+    }
+
+    @Override
+    public String getEdgeLabel() {
+        return this.edgeLabel;
     }
 }

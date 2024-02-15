@@ -29,6 +29,8 @@ import java.io.IOException;
  * Digital twin Switch.
  */
 public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Switch.State[]>, VirtualActuator<Switch.State[]> {
+    private String edgeLabel;
+
     /**
      * Creates a new instance of VirtualSwitch.
      *
@@ -39,6 +41,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
      */
     public VirtualSwitch(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position, properties.getJSONArray("indexes").length());
+        this.edgeLabel = jGlobalProperties.getString("label");
     }
 
     /**
@@ -104,5 +107,10 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     @Override
     public final State[] decodeValues(byte[] message) {
         return sensedValues(CommUtils.BytesToFloatArray(message));
+    }
+
+    @Override
+    public String getEdgeLabel() {
+        return this.edgeLabel;
     }
 }
