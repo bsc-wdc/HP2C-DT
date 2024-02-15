@@ -44,9 +44,6 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        for (Float value : values) {
-            System.out.println("Device " + getLabel() + " sensed " + value + " A");
-        }
     }
 
     /**

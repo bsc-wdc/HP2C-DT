@@ -48,15 +48,10 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     @Override
     public void sensed(Float[] values) {
         Float[] sensedValues = new Float[values.length];
-        for(int i = 0; i < values.length; i++){
+        for (int i = 0; i < values.length; i++){
             sensedValues[i] = values[i];
-            System.out.println("Switch " + i + " " + this.states[i]);
         }
-        try {
-            setValues(sensedValues(sensedValues));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        setValues(sensedValues(sensedValues));
     }
 
     @Override

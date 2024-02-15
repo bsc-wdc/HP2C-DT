@@ -48,7 +48,6 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        System.out.println("Device " + getLabel() + " voltage set point is " + values[0] + " V");
     }
 
     @Override

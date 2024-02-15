@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 import static es.bsc.hp2c.HP2CServer.isInMap;
+import static es.bsc.hp2c.HP2CServer.setVerbose;
 import static es.bsc.hp2c.server.device.VirtualComm.virtualActuate;
 
 public class CLI implements Runnable {
@@ -65,6 +66,12 @@ public class CLI implements Runnable {
         switch (action) {
             case "actuate":
                 actuateAction(tokens);
+                break;
+            case "silence":
+                setVerbose(false);
+                break;
+            case "verbose":
+                setVerbose(true);
                 break;
             case "stop":
                 stop();

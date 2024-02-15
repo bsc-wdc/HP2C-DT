@@ -40,7 +40,6 @@ public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        System.out.println("Device " + getLabel() + " sensed " + values[0] + " VAR");
     }
 
     @Override

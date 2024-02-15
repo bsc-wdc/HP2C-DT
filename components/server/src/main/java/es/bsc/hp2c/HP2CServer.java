@@ -36,6 +36,7 @@ public class HP2CServer implements AutoCloseable {
     private final long dbPort = 8086;
     private final String username = "root", password = "root";
     private static Map<String, Map<String, Device>> deviceMap = new HashMap<>();
+    private static boolean verbose = true;
 
     public HP2CServer(String hostIp) throws IOException, TimeoutException {
         // Init RabbitMQ
@@ -133,8 +134,10 @@ public class HP2CServer implements AutoCloseable {
     private void writeDB(Float[] values, long timestamp, String edgeLabel, String deviceName) {
         for (int i = 0; i < values.length; i++) {
             String tagName = deviceName + "Sensor" + i;
-            System.out.println(" [ ] Writing DB with '" + edgeLabel + "." +
-                    deviceName + "':'" + values[i] + "'");
+            if (verbose) {
+                System.out.println(" [ ] Writing DB with '" + edgeLabel + "." +
+                        deviceName + "':'" + values[i] + "'");
+            }
             influxDB.write(Point.measurement(edgeLabel)
                     .time(timestamp, TimeUnit.MILLISECONDS)
                     .tag("device", tagName)
@@ -209,6 +212,10 @@ public class HP2CServer implements AutoCloseable {
 
     public static Channel getChannel() {
         return channel;
+    }
+
+    public static void setVerbose(boolean verbose) {
+        HP2CServer.verbose = verbose;
     }
 
     @Override

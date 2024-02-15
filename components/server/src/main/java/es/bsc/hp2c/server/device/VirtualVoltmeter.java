@@ -44,9 +44,6 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSenso
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        for (Float value: values) {
-            System.out.println("Device " + getLabel() + " sensed " + value + " V");
-        }
     }
 
     /**
