@@ -75,6 +75,11 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     @Override
     public abstract void actuate(State[] values) throws IOException;
 
+    @Override
+    public void actuate(byte[] byteValues) throws IOException {
+        actuate(decodeValues(byteValues));
+    }
+
     /**
      * Adds a runnable to devices "onRead" functions;
      *

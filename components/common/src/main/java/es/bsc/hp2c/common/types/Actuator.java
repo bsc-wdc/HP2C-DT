@@ -25,6 +25,7 @@ import java.io.IOException;
 public interface Actuator<V> {
 
     public void actuate(V values) throws IOException;
+    public void actuate(byte[] byteValues) throws IOException;
 
     /**
      * Decode values from bytes format.

@@ -20,6 +20,8 @@ import es.bsc.hp2c.common.generic.MsgAlert;
 import javax.swing.JOptionPane;
 import org.json.JSONObject;
 
+import java.io.IOException;
+
 /**
  *
  */
@@ -36,6 +38,9 @@ public class MsgBox extends MsgAlert {
     public void actuate(String message) {
         JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
     }
+
+    @Override
+    public void actuate(byte[] byteValues) throws IOException { }
 
     @Override
     public String decodeValues(byte[] messageBytes) { return null; }

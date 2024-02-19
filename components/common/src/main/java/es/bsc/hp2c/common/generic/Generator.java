@@ -56,6 +56,11 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     @Override
     public abstract void actuate(Float[] value) throws IOException;
 
+    @Override
+    public void actuate(byte[] byteValues) throws IOException {
+        actuate(decodeValues(byteValues));
+    }
+
     /**
      * Adds a runnable to devices "onRead" functions;
      *
