@@ -65,11 +65,13 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     public void actuate(String[] stringValues) throws IOException {
         Float[] values = new Float[stringValues.length];
         for (int i = 0; i < stringValues.length; i++) {
-            if (isNumeric(stringValues[i])){
+            if (stringValues[i].toLowerCase().equals("null") || stringValues[i].toLowerCase().equals("none")) {
+                values[i] = Float.NEGATIVE_INFINITY;
+            } else if (isNumeric(stringValues[i])){
                 values[i] = Float.parseFloat(stringValues[i]);
             } else {
                 throw new IOException("Values passed to Generator " +
-                        "(" + edgeLabel + "." + getLabel() + ") must be numeric.");
+                        "(" + edgeLabel + "." + getLabel() + ") must be numeric or null/none.");
             }
         }
         actuate(values);
