@@ -33,7 +33,7 @@ public class VirtualComm {
         byte[] encodeValues();
     }
 
-    public static void virtualActuate(VirtualActuator actuator, String edgeLabel, byte[] message) {
+    public static void virtualActuate(VirtualActuator actuator, String edgeLabel, byte[] message) throws IOException {
         // Prepare communications
         String actuatorLabel = ((Device) actuator).getLabel();
         Channel channel = HP2CServer.getChannel();
@@ -41,11 +41,6 @@ public class VirtualComm {
         System.out.println("VirtualComm.virtualActuate: Sending actuation to " + edgeLabel + "." + actuatorLabel);
         System.out.println("VirtualComm.virtualActuate: Using routingKey " + routingKey);
         // Publish message
-        try {
-            channel.basicPublish(EXCHANGE_NAME_ACTUATORS, routingKey, null, message);
-        } catch (IOException e) {
-            System.err.println("IOException during AMQP publishing");
-            throw new RuntimeException(e);
-        }
+        channel.basicPublish(EXCHANGE_NAME_ACTUATORS, routingKey, null, message);
     }
 }
