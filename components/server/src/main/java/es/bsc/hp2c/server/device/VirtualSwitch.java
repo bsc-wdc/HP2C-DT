@@ -71,11 +71,11 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
         State[] values = new State[stringValues.length];
         for (int i = 0; i < stringValues.length; i++) {
             if (isState(stringValues[i])) {
-                values[i] = State.valueOf(stringValues[i]);
+                values[i] = State.valueOf(stringValues[i].toUpperCase());
             } else{
-                System.err.println("Options are: " + printableArray(State.values()));
                 throw new IOException("Values passed to Switch " +
-                        "(" + edgeLabel + "." + getLabel() + ") must be of type State.");
+                        "(" + edgeLabel + "." + getLabel() + ") must be of type State.\n" +
+                        "Options are: " + printableArray(State.values()));
             }
         }
         actuate(values);
@@ -100,12 +100,15 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     @Override
     public Float[] actuateValues(State[] values) {
         Float[] outputValues = new Float[values.length];
-        for (int i = 0; i < values.length; ++i){
+        for (int i = 0; i < values.length; ++i) {
             if (values[i] == State.ON){
                 outputValues[i] = 1.0f;
-            }
-            else {
+            } else if (values[i] == State.OFF) {
                 outputValues[i] = 0.0f;
+            } else if (values[i] == State.NULL) {
+                outputValues[i] = Float.NEGATIVE_INFINITY;
+            } else {
+                throw new UnsupportedOperationException("State " + values[i] + " not implemented.");
             }
         }
         return outputValues;

@@ -31,7 +31,8 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
 
     public enum State {
         ON,
-        OFF
+        OFF,
+        NULL
     }
 
     protected State[] states;
@@ -57,7 +58,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     /** Check if a String can be parsed into one of the enum states */
     protected boolean isState(String str) {
         for (State state : State.values()) {
-            if (state.name().equals(str)) {
+            if (state.name().equals(str.toUpperCase())) {
                 return true;
             }
         }

@@ -82,12 +82,15 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
 
     protected Float[] actuateValues(State[] values){
         Float[] outputValues = new Float[values.length];
-        for (int i = 0; i < values.length; ++i){
+        for (int i = 0; i < values.length; ++i) {
             if (values[i] == State.ON){
                 outputValues[i] = 1.0f;
-            }
-            else {
+            } else if (values[i] == State.OFF) {
                 outputValues[i] = 0.0f;
+            } else if (values[i] == State.NULL) {
+                outputValues[i] = Float.NEGATIVE_INFINITY;
+            } else {
+                throw new UnsupportedOperationException("State " + values[i] + " not implemented.");
             }
         }
         return outputValues;
@@ -101,12 +104,14 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     @Override
     protected State[] sensedValues(Float[] input) {
         State[] states = new State[input.length];
-        // check if the number of input values equals the number of phases
-        if (input.length != this.indexes.length) {
-            throw new IllegalArgumentException("Input length must be equal to switch's size");
-        }
         for (int i = 0; i < input.length; ++i) {
-            states[i] = input[i] > 0.5f ? State.ON : State.OFF;
+            if (input[i] == Float.NEGATIVE_INFINITY) {
+                states[i] = State.NULL;
+            } else if (input[i] > 0.5f) {
+                states[i] = State.ON;
+            } else {
+                states[i] = State.OFF;
+            }
         }
         return states;
     }
