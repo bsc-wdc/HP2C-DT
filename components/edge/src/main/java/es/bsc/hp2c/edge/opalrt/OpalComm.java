@@ -381,16 +381,20 @@ public class OpalComm {
      * @param actuator involved actuator
      * @param values committable values
      * */
-    public static void commitActuation(OpalActuator<?> actuator, Float[] values) {
+    public static void commitActuation(OpalActuator<?> actuator, Float[] values) throws IOException {
         if (!useTCPActuators){ return; }
         try{
             // count the number of floats to be sent
             int nIndexes = getnIndexes();
             ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
-
             // obtain indexes of the actuator and put the proper values in bytebuffer
             int[] indexesLocal = getIndexesLocal(actuator, values, nIndexes, byteBuffer);
-
+            // check data integrity
+            if (values.length != indexesLocal.length) {
+                throw new IllegalArgumentException("OpalComm.commitActuation: Wrong input length " +
+                        "(actual: " + values.length + ", expected: " + indexesLocal.length + ").");
+            }
+            // send actuation message
             DataOutputStream outputStream = new DataOutputStream(actuationSocket.getOutputStream());
             byte[] buffer = byteBuffer.array();
             outputStream.write(buffer);
@@ -402,12 +406,12 @@ public class OpalComm {
             }
         } catch (IOException e){
             System.err.println("Socket exception: " + e.getMessage());
-            //if the actuation misses, close the socket
+            // if the actuation misses, close the socket
             synchronized (actuationSocket){
                 try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }
             }
             synchronized (missedValues){
-                //Store and update values in missedValues; they will be sent when a connection is established.
+                // Store and update values in missedValues; they will be sent when a connection is established.
                 Float[] valuesToUpdate;
                 if (missedValues.containsKey(actuator)) {
                     valuesToUpdate = missedValues.get(actuator);
@@ -430,8 +434,10 @@ public class OpalComm {
                     }
                 }
             }
-            //retry connexion
+            // Retry connection
             retryConnectionActuation();
+        } catch (IllegalArgumentException e){
+            throw new IOException(e);
         }
     }
 

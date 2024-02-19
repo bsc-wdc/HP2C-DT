@@ -70,6 +70,12 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
 
     @Override
     public void actuate(State[] values) throws IOException {
+        // Check length of input values
+        if (values.length != this.indexes.length) {
+            throw new IOException("OpalSwitch.actuate: Wrong input length " +
+                    "(actual: " + values.length + ", expected: " + this.indexes.length + ").");
+        }
+        // Actuate
         Float[] rawValues = actuateValues(values);
         OpalComm.commitActuation(this, rawValues);
     }

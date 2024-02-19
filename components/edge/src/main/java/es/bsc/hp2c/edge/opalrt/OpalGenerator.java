@@ -70,6 +70,12 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
 
     @Override
     public void actuate(Float[] values) throws IOException {
+        // Check length of input values
+        if (values.length != this.indexes.length) {
+            throw new IOException("OpalGenerator.actuate: Wrong input length " +
+                    "(actual: " + values.length + ", expected: " + this.indexes.length + ").");
+        }
+        // Actuate
         Float[] rawValues = actuateValues(values);
         OpalComm.commitActuation(this, rawValues);
     }
