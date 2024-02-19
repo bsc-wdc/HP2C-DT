@@ -1,0 +1,6 @@
+<h1>Values for Sensor {{ sensor.name }} in Edge {{ sensor.edge.name }}</h1>
+<ul>
+    {% for value in values %}
+        <li>{{ value.value }} at {{ value.timestamp }}</li>
+    {% endfor %}
+</ul>
