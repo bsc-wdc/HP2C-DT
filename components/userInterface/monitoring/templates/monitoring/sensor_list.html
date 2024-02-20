@@ -1,6 +1,0 @@
-<h1>Sensors in Edge {{ edge.name }}</h1>
-<ul>
-    {% for sensor in sensors %}
-        <li><a href="{% url 'monitoring:sensor_values' sensor.id %}">{{ sensor.name }}</a></li>
-    {% endfor %}
-</ul>

@@ -1,1 +1,17 @@
-<iframe src="http://localhost:3000/d-solo/bb7d6150-0f89-471f-9589-129837044889/hp2c-dt?panelId=1&orgId=1&theme=light" width="450" height="200" frameborder="0"></iframe>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edge List</title>
+</head>
+<body>
+    <h1>List of Edges</h1>
+    <ul>
+        {% for edge in edges %}
+            <li><a href="{% url 'monitoring:device_list' deployment_name=deployment_name edge_name=edge.name %}">
+                {{ edge.name }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

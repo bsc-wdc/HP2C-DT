@@ -3,7 +3,15 @@ from . import views
 
 app_name = "monitoring"
 urlpatterns = [
-    path("edges/", views.edge_list, name="edge_list"),
-    path("sensors/<int:edge_id>/", views.sensor_list, name="sensor_list"),
-    path("sensor_values/<int:sensor_id>/", views.sensor_values, name="sensor_values"),
+    path("deployments/", views.deployment_list, name="deployment_list"),
+
+    path("deployments/<str:deployment_name>/", views.edge_list,
+         name="edge_list"),
+
+    path("deployments/<str:deployment_name>/<str:edge_name>/",
+         views.device_list, name="device_list"),
+
+    path(
+        "deployments/<str:deployment_name>/<str:edge_name>/<str:device_name>/",
+        views.display_panel, name="display_panel"),
 ]

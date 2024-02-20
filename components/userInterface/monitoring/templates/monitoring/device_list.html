@@ -1,0 +1,6 @@
+<h1>Devices in Edge {{ edge.name }}</h1>
+<ul>
+    {% for device in devices %}
+        <li><a href="{% url 'monitoring:display_panel' deployment_name=deployment_name edge_name=edge.name device_name=device.name %}">{{ device.name }}</a></li>
+    {% endfor %}
+</ul>
