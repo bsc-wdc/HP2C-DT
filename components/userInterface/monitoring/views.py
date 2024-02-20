@@ -14,7 +14,7 @@ def deployment_list(request):
 
 
 def get_panel_link(edge_name, device_name):
-    return "http://localhost:3000/d-solo/bb7d6150-0f89-471f-9589-129837044889/hp2c-dt?orgId=1&theme=light&panelId=1"
+    return ""
 
 
 def create_deployments():
