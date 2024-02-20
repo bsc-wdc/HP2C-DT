@@ -65,7 +65,9 @@ public class HP2CServer implements AutoCloseable {
             hostIp = "0.0.0.0";
         }
         File[] setupFiles = setupDir.listFiles();
-        assert setupFiles != null;
+        if (setupFiles == null) {
+            throw new FileNotFoundException("No setup files found in " + setupDir);
+        }
 
         // Fill in edge-devices map
         for (File setupFile: setupFiles) {

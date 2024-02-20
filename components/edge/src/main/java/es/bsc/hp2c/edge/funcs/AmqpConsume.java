@@ -78,7 +78,7 @@ public class AmqpConsume extends Func {
             long timestampMillis = delivery.getProperties().getTimestamp().getTime();
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
             String[] routingKeyParts = senderRoutingKey.split("\\.");
-            System.out.println("Actuator " + actuatorLabel + " received command.");
+            System.out.println("Actuator " + actuatorLabel + " received a command.");
             try {
                 actuator.actuate(message);
             } catch (IOException e) {

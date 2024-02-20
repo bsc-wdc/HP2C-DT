@@ -25,6 +25,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
+import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 
 /**
  * Represent a switch implemented accessible within a local OpalRT.
@@ -62,10 +63,7 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     @Override
     public void sensed(Float[] values) {
         setValues(sensedValues(values));
-        System.out.println(getLabel() + " states are: ");
-        for(int i = 0; i < this.states.length; ++i){
-            System.out.println("Switch " + i + " " + this.states[i]);
-        }
+        System.out.println(getLabel() + " states are: " + printableArray(this.states));
     }
 
     @Override
@@ -119,17 +117,6 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     @Override
     public void setValues(State[] values) {
         this.states = values;
-        if (this.indexes.length > 1){
-            System.out.println("New switch states has been set: ");
-            System.out.println("New states are: ");
-            for(int i = 0; i < this.states.length; ++i){
-                System.out.println("Switch " + i + " " + this.states[i]);
-            }
-        }
-        else{
-            System.out.println("New switch state has been set: ");
-            System.out.println("New state is " + this.states[0]);
-        }
     }
 
     @Override
