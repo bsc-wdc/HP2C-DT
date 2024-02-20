@@ -33,12 +33,12 @@ public interface Actuator<V> {
      * @param messageBytes Message encoded as an array of bytes.
      * @return Actual values in the actuator data type.
      */
-    public V decodeValues(byte[] messageBytes);
+    public V decodeValuesActuator(byte[] messageBytes);
 
     /**
      * Encode values to bytes
      * @param values Actual values in the actuator data type.
      * @return Message encoded as an array of bytes
      */
-    public byte[] encodeValues(V values);
+    public byte[] encodeValuesActuator(V values);
 }

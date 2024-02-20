@@ -50,7 +50,7 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
 
     @Override
     public void sensed(byte[] messageBytes) {
-        sensed(decodeValuesRaw(messageBytes));
+        sensed(decodeValuesSensor(messageBytes));
     }
 
     @Override
@@ -58,7 +58,7 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
 
     @Override
     public void actuate(byte[] byteValues) throws IOException {
-        actuate(decodeValues(byteValues));
+        actuate(decodeValuesActuator(byteValues));
     }
 
     /**
@@ -88,7 +88,7 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     protected abstract Float[] sensedValues(R input);
 
     /** Converts human-readable action into actionable raw value */
-    protected abstract Float[] actuateValues(Float[] values);
+    protected abstract Float[] actuatedValues(Float[] values);
 
     @Override
     public final Float[] getCurrentValues() {
@@ -111,20 +111,20 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     }
 
     @Override
-    public final byte[] encodeValues() {
+    public final byte[] encodeValuesSensor() {
         Float[] values = this.getCurrentValues();
-        Float[] rawValues = actuateValues(values);
+        Float[] rawValues = actuatedValues(values);
         return CommUtils.FloatArrayToBytes(rawValues);
     }
 
     @Override
-    public final byte[] encodeValues(Float[] values) {
-        Float[] rawValues = actuateValues(values);
+    public final byte[] encodeValuesActuator(Float[] values) {
+        Float[] rawValues = actuatedValues(values);
         return CommUtils.FloatArrayToBytes(rawValues);
     }
 
     @Override
-    public abstract R decodeValuesRaw(byte[] message);
+    public abstract R decodeValuesSensor(byte[] message);
 
 
     @Override

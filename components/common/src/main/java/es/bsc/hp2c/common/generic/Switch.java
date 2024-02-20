@@ -70,7 +70,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
 
     @Override
     public void sensed(byte[] messageBytes) {
-        sensed(decodeValuesRaw(messageBytes));
+        sensed(decodeValuesSensor(messageBytes));
     }
 
     @Override
@@ -78,7 +78,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
 
     @Override
     public void actuate(byte[] byteValues) throws IOException {
-        actuate(decodeValues(byteValues));
+        actuate(decodeValuesActuator(byteValues));
     }
 
     /**
@@ -109,7 +109,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     protected abstract State[] sensedValues(R input);
 
     /** Converts human-readable action into actionable raw value */
-    protected abstract Float[] actuateValues(State[] values);
+    protected abstract Float[] actuatedValues(State[] values);
 
     @Override
     public final State[] getCurrentValues() { return this.states; }
@@ -120,22 +120,22 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     }
     
     @Override
-    public final byte[] encodeValues() {
+    public final byte[] encodeValuesSensor() {
         State[] state = this.getCurrentValues();
-        Float[] values = actuateValues(state);
+        Float[] values = actuatedValues(state);
         return CommUtils.FloatArrayToBytes(values);
     }
     @Override
-    public final byte[] encodeValues(State[] values) {
-        Float[] rawValues = actuateValues(values);
+    public final byte[] encodeValuesActuator(State[] values) {
+        Float[] rawValues = actuatedValues(values);
         return CommUtils.FloatArrayToBytes(rawValues);
     }
 
     @Override
-    public abstract R decodeValuesRaw(byte[] message);
+    public abstract R decodeValuesSensor(byte[] message);
 
     @Override
-    public abstract State[] decodeValues(byte[] message);
+    public abstract State[] decodeValuesActuator(byte[] message);
 
     @Override
     public boolean isActionable() {

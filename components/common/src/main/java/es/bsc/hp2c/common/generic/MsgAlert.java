@@ -41,7 +41,7 @@ public abstract class MsgAlert extends Device implements Actuator<String> {
     public abstract void actuate(String values);
 
     @Override
-    public final byte[] encodeValues(String values) {
+    public final byte[] encodeValuesActuator(String values) {
         return new byte[0];
     }
 }

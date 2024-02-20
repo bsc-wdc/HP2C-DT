@@ -41,6 +41,6 @@ public class Console extends MsgAlert {
     public void actuate(byte[] byteValues) throws IOException { }
 
     @Override
-    public String decodeValues(byte[] messageBytes) { return null; }
+    public String decodeValuesActuator(byte[] messageBytes) { return null; }
 
 }

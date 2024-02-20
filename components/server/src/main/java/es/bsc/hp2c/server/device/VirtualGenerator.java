@@ -57,7 +57,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
 
     @Override
     public void actuate(Float[] values) throws IOException {
-        byte[] byteValues = encodeValues(values);
+        byte[] byteValues = encodeValuesActuator(values);
         virtualActuate(this, edgeLabel, byteValues);
     }
 
@@ -83,16 +83,16 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     }
 
     @Override
-    public Float[] actuateValues(Float[] values){
+    public Float[] actuatedValues(Float[] values){
         return values;
     }
 
     @Override
-    public final Float[] decodeValuesRaw(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
     }
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesActuator(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
     }
 

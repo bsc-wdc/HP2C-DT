@@ -74,7 +74,7 @@ public class OpalVarmeter extends Varmeter<Float[]> implements OpalSensor<Float[
     }
 
     @Override
-    public final Float[] decodeValuesRaw(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return BytesToFloatArray(message);
     }
 }

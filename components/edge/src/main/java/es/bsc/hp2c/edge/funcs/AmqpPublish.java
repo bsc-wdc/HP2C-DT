@@ -57,7 +57,7 @@ public class AmqpPublish extends Func {
 
     @Override
     public void run() {
-        byte[] message = this.sensor.encodeValues();
+        byte[] message = this.sensor.encodeValuesSensor();
         try {
             channel.basicPublish(EXCHANGE_NAME, routingKey, null, message);
         } catch (IOException e) {

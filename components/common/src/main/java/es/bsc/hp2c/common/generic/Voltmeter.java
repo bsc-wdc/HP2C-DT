@@ -60,7 +60,7 @@ public abstract class Voltmeter<R> extends Device implements Sensor<R, Float[]> 
     public abstract void sensed(R value);
 
     @Override
-    public void sensed(byte[] messageBytes) { sensed(decodeValuesRaw(messageBytes)); }
+    public void sensed(byte[] messageBytes) { sensed(decodeValuesSensor(messageBytes)); }
 
     /**
      * Converts the sensed input to a human-readable value
@@ -79,13 +79,13 @@ public abstract class Voltmeter<R> extends Device implements Sensor<R, Float[]> 
     }
 
     @Override
-    public final byte[] encodeValues() {
+    public final byte[] encodeValuesSensor() {
         Float[] values = this.getCurrentValues();
         return CommUtils.FloatArrayToBytes(values);
     }
 
     @Override
-    public abstract R decodeValuesRaw(byte[] message);
+    public abstract R decodeValuesSensor(byte[] message);
 
     @Override
     public final boolean isActionable() {

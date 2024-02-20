@@ -50,7 +50,7 @@ public class VirtualWattmeter extends Wattmeter<Float[]> implements VirtualSenso
     }
 
     @Override
-    public final Float[] decodeValuesRaw(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
     }
 

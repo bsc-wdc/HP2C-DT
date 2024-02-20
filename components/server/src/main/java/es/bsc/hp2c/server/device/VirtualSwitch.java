@@ -62,7 +62,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
 
     @Override
     public void actuate(State[] values) throws IOException {
-        byte[] byteValues = encodeValues(values);
+        byte[] byteValues = encodeValuesActuator(values);
         virtualActuate(this, edgeLabel, byteValues);
     }
 
@@ -98,7 +98,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     }
 
     @Override
-    public Float[] actuateValues(State[] values) {
+    public Float[] actuatedValues(State[] values) {
         Float[] outputValues = new Float[values.length];
         for (int i = 0; i < values.length; ++i) {
             if (values[i] == State.ON){
@@ -122,12 +122,12 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     }
 
     @Override
-    public final Float[] decodeValuesRaw(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
     }
 
     @Override
-    public final State[] decodeValues(byte[] message) {
+    public final State[] decodeValuesActuator(byte[] message) {
         return sensedValues(CommUtils.BytesToFloatArray(message));
     }
 

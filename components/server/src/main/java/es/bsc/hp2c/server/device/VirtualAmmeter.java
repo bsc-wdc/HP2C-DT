@@ -58,7 +58,7 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     }
 
     @Override
-    public final Float[] decodeValuesRaw(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
     }
 

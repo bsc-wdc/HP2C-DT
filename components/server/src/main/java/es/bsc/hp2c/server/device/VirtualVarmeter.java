@@ -51,7 +51,7 @@ public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<
     }
 
     @Override
-    public final Float[] decodeValuesRaw(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
     }
 

@@ -76,11 +76,11 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
                     "(actual: " + values.length + ", expected: " + this.indexes.length + ").");
         }
         // Actuate
-        Float[] rawValues = actuateValues(values);
+        Float[] rawValues = actuatedValues(values);
         OpalComm.commitActuation(this, rawValues);
     }
 
-    protected Float[] actuateValues(Float[] values){
+    protected Float[] actuatedValues(Float[] values){
         return values;
     }
 
@@ -95,12 +95,12 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     }
 
     @Override
-    public final Float[] decodeValuesRaw(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return BytesToFloatArray(message);
     }
 
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesActuator(byte[] message) {
         return BytesToFloatArray(message);
     }
 }

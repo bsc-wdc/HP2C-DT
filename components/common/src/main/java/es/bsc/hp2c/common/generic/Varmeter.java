@@ -35,7 +35,7 @@ public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
 
     @Override
     public void sensed(byte[] messageBytes) {
-        sensed(decodeValuesRaw(messageBytes));
+        sensed(decodeValuesSensor(messageBytes));
     }
 
     /**
@@ -84,13 +84,13 @@ public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
     }
 
     @Override
-    public final byte[] encodeValues() {
+    public final byte[] encodeValuesSensor() {
         Float[] values = this.getCurrentValues();
         return CommUtils.FloatArrayToBytes(values);
     }
 
     @Override
-    public abstract R decodeValuesRaw(byte[] message);
+    public abstract R decodeValuesSensor(byte[] message);
 
     @Override
     public final boolean isActionable() {
