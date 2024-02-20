@@ -87,6 +87,9 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
      */
     protected abstract Float[] sensedValues(R input);
 
+    /** Converts human-readable action into actionable raw value */
+    protected abstract Float[] actuateValues(Float[] values);
+
     @Override
     public final Float[] getCurrentValues() {
         Float[] combinedValues = new Float[2];
@@ -110,12 +113,14 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     @Override
     public final byte[] encodeValues() {
         Float[] values = this.getCurrentValues();
-        return CommUtils.FloatArrayToBytes(values);
+        Float[] rawValues = actuateValues(values);
+        return CommUtils.FloatArrayToBytes(rawValues);
     }
 
     @Override
     public final byte[] encodeValues(Float[] values) {
-        return CommUtils.FloatArrayToBytes(values);
+        Float[] rawValues = actuateValues(values);
+        return CommUtils.FloatArrayToBytes(rawValues);
     }
 
     @Override
