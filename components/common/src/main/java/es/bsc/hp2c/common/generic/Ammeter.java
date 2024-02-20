@@ -68,10 +68,10 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
     }
 
     /**
-     * Converts the sensed input to a known value;
+     * Converts the sensed input to a human-readable value
      * 
      * @param input input value sensed
-     * @return corresponding known value
+     * @return human-readable value
      */
     protected abstract Float[] sensedValues(R input);
 

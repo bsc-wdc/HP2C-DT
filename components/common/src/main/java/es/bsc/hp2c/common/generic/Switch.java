@@ -101,13 +101,14 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     }
 
     /**
-     * Converts the sensed input to a known value;
+     * Converts the sensed input to a human-readable value
      *
      * @param input input value sensed
-     * @return corresponding known value
+     * @return human-readable value
      */
     protected abstract State[] sensedValues(R input);
 
+    /** Converts human-readable action into actionable raw value */
     protected abstract Float[] actuateValues(State[] values);
 
     @Override

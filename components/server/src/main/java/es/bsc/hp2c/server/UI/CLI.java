@@ -43,7 +43,7 @@ public class CLI implements Runnable {
             try {
                 processInput(userInput);
             } catch (IllegalArgumentException | IOException e) {
-                System.err.println("Error: " + e.getMessage());
+                System.err.println("CLI error: " + e.getMessage());
             }
         }
         // Close the Scanner
