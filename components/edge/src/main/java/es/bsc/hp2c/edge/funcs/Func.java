@@ -15,10 +15,14 @@
  */
 package es.bsc.hp2c.edge.funcs;
 
+import es.bsc.hp2c.HP2CEdge;
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Map;
@@ -27,6 +31,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import static es.bsc.hp2c.common.types.Device.formatLabel;
 
@@ -49,6 +54,92 @@ public abstract class Func implements Runnable {
 
         public FunctionInstantiationException(String message, Throwable cause) {
             super(message, cause);
+        }
+    }
+
+    /**
+     * Parse functions from JSON and, for each one, parse and check its triggers.
+     *
+     * @param setupFile String containing JSON file.
+     * @param devices   map of the devices within the edge.
+     */
+    public static void loadFunctions(String setupFile, Map<String, Device> devices) throws FileNotFoundException {
+        InputStream is = new FileInputStream(setupFile);
+
+        JSONTokener tokener = new JSONTokener(is);
+        JSONObject object = new JSONObject(tokener);
+
+        // Load specific functions
+        try {
+            JSONArray funcs = object.getJSONArray("funcs");
+            for (Object jo : funcs) {
+                JSONObject jFunc = (JSONObject) jo;
+                String funcLabel = jFunc.optString("label", "");
+                // Perform Func initialization
+                try {
+                    Runnable action = functionParseJSON(jFunc, devices, funcLabel);
+                    setupTrigger(jFunc, devices, action);
+                } catch (FunctionInstantiationException e) {
+                    System.err.println("Error loading function. " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Warning: Specific funcs might not be available in setup: " + e.getMessage());
+        }
+
+        // Load generic functions
+        JSONObject jGlobProp = object.getJSONObject("global-properties");
+        JSONArray jGlobalFuncs = jGlobProp.getJSONArray("funcs");
+        for (Object jo: jGlobalFuncs) {
+            // Initialize function
+            JSONObject jGlobalFunc = (JSONObject) jo;
+            String funcLabel = jGlobalFunc.optString("label");
+            if (funcLabel.toLowerCase().contains("amqp") && !HP2CEdge.isAmqpOn()) {
+                System.err.println(
+                        "AMQP " + funcLabel + " global functions declared but AMQP server is not connected. " +
+                        "Skipping " + funcLabel + "...");
+                continue;
+            }
+            // Deploy function for each device building its custom jGlobalFunc
+            for (Device device: devices.values()) {
+                ArrayList<String> deviceList = new ArrayList<>();
+                switch (funcLabel) {
+                    case "AMQPPublish":
+                        // Conditions to skip device
+                        if (!device.isSensitive()) {
+                            continue;
+                        }
+                        // Create ArrayList of a single device and set it to the JSONObject
+                        deviceList.add(device.getLabel());
+                        jGlobalFunc.getJSONObject("parameters").put("sensors", deviceList);
+                        // Do same modification to triggers in JSON
+                        jGlobalFunc.getJSONObject("trigger").put("parameters", deviceList);
+                        break;
+                    case "AMQPConsume":
+                        // Conditions to skip device
+                        if (!device.isActionable()) {
+                            continue;
+                        }
+                        // Create ArrayList of a single device and set it to the JSONObject
+                        deviceList.add(device.getLabel());
+                        jGlobalFunc.getJSONObject("parameters").put("actuators", deviceList);
+                        // No triggers used for actuators, function triggers on start
+                        // jGlobalFunc.getJSONObject("trigger").put("parameters", actuatorList);
+                        break;
+                    default:
+                        continue;
+                }
+                // Perform Func initialization for each device
+                if (deviceList.isEmpty()) {
+                    continue;
+                }
+                try {
+                    Runnable action = functionParseJSON(jGlobalFunc, devices, funcLabel);
+                    setupTrigger(jGlobalFunc, devices, action);
+                } catch (FunctionInstantiationException e) {
+                    System.err.println("Error initializing general function: " + e.getMessage());
+                }
+            }
         }
     }
 
