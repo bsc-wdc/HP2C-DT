@@ -1,0 +1,2 @@
+#!/bin/bash
+docker run -it --rm --name hp2c_broker -p 5672:5672 -p 15672:15672 hp2c/broker:latest
