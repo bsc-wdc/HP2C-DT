@@ -4,6 +4,7 @@ import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -99,24 +100,30 @@ public class CLI implements Runnable {
         String[] stringValues = new String[tokens.length - 3];
         System.arraycopy(tokens, 3, stringValues, 0, tokens.length - 3);
 
-        // Check input validity
+        // Check if the provided device name exists
         if (!isInMap(edgeLabel, actuatorName, deviceMap)) {
-            System.err.println("Edge " + edgeLabel + ", Device " + actuatorName + " not listed.");
-            System.out.println("Options are:");
-            for (Map.Entry<String, Map<String, Device>> entry : deviceMap.entrySet()) {
+            System.err.println("Options are:");
+            for (HashMap.Entry<String, Map<String, Device>> entry : deviceMap.entrySet()) {
                 String groupKey = entry.getKey();
                 Map<String, Device> innerMap = entry.getValue();
-                System.out.println("Group: " + groupKey);
-                for (Map.Entry<String, Device> innerEntry : innerMap.entrySet()) {
+                System.err.println("Group: " + groupKey);
+                for (HashMap.Entry<String, Device> innerEntry : innerMap.entrySet()) {
                     String deviceKey = innerEntry.getKey();
-                    System.out.println("  Device: " + deviceKey);
+                    if (innerMap.get(deviceKey).isActionable()) {
+                        System.err.println("  Actuator: " + deviceKey);
+                    }
                 }
             }
-            return;
+            throw new IOException("Edge " + edgeLabel + ", Device " + actuatorName + " not listed.");
+        }
+        // Check if the provided device is an actuator
+        Device device = deviceMap.get(edgeLabel).get(actuatorName);
+        if (!device.isActionable()) {
+            throw new IOException("Device " + actuatorName + " is not an actuator.");
         }
 
         // Actuate
-        VirtualActuator<?> actuator = (VirtualActuator<?>) deviceMap.get(edgeLabel).get(actuatorName);
+        VirtualActuator<?> actuator = (VirtualActuator<?>) device;
         actuator.actuate(stringValues);
     }
 }
