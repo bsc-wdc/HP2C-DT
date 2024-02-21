@@ -18,6 +18,7 @@ package es.bsc.hp2c;
 import es.bsc.hp2c.edge.opalrt.OpalComm;
 import es.bsc.hp2c.common.types.Device;
 import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
+import static es.bsc.hp2c.common.utils.FileUtils.readEdgeLabel;
 
 import es.bsc.hp2c.edge.funcs.Func;
 import es.bsc.hp2c.edge.funcs.Func.FunctionInstantiationException;
@@ -66,6 +67,7 @@ public class HP2CEdge {
         setUpMessaging(localIP);
 
         // Load devices and functions
+        edgeLabel = readEdgeLabel(setupFile);
         Map<String, Device> devices = loadDevices(setupFile);
         OpalComm.setLoadedDevices(true);
         loadFunctions(setupFile, devices);
@@ -118,11 +120,6 @@ public class HP2CEdge {
 
         // Load generic functions
         JSONObject jGlobProp = object.getJSONObject("global-properties");
-        edgeLabel = jGlobProp.optString("label");
-        if (edgeLabel.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Parameter 'label' is missing from the 'global-properties' block or not set in the setup file.");
-        }
         JSONArray jGlobalFuncs = jGlobProp.getJSONArray("funcs");
         for (Object jo: jGlobalFuncs) {
             // Initialize function
