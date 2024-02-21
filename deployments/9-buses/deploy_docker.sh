@@ -13,6 +13,7 @@ DEPLOYMENT_PREFIX="hp2c"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 
 # Create a dictionary containg pairs of label-files (JSON files)
+defaults_json="${SCRIPT_DIR}/../defaults/setup/edge_default.json"
 setup_folder=$(realpath "${SCRIPT_DIR}/setup")
 declare -A labels_paths
 declare -A labels_udp_ports
@@ -96,6 +97,7 @@ for label in "${!labels_paths[@]}"; do
         -p "${labels_udp_ports[$label]}:${labels_udp_ports[$label]}/udp" \
         -p "${labels_tcp_sensors_ports[$label]}:${labels_tcp_sensors_ports[$label]}/tcp" \
         -v ${labels_paths[$label]}:/data/setup.json \
+        -v ${defaults_json}:/data/edge_default.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
         -e LOCAL_IP=$ip_address \

@@ -22,8 +22,12 @@ import es.bsc.hp2c.common.types.Sensor;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.File;
 import java.lang.reflect.Constructor;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -88,7 +92,17 @@ public abstract class Func implements Runnable {
         }
 
         // Load generic functions
-        JSONObject jGlobProp = object.getJSONObject("global-properties");
+        // Load generic file
+        String defaultsPath = getDefaultsPath();
+        InputStream iStreamGlobal;
+        try {
+            iStreamGlobal = Files.newInputStream(Paths.get(defaultsPath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        JSONTokener tokenerGlobal = new JSONTokener(iStreamGlobal);
+        JSONObject objectGlobal = new JSONObject(tokenerGlobal);
+        JSONObject jGlobProp = objectGlobal.getJSONObject("global-properties");
         JSONArray jGlobalFuncs = jGlobProp.getJSONArray("funcs");
         for (Object jo: jGlobalFuncs) {
             // Initialize function
@@ -141,6 +155,15 @@ public abstract class Func implements Runnable {
                 }
             }
         }
+    }
+
+    private static String getDefaultsPath() {
+        String defaultsPath = "/data/edge_default.json";
+        File defaultsFile = new File(defaultsPath);
+        if (!defaultsFile.isFile()) {
+            defaultsPath = "../../deployments/defaults/setup/edge_default.json";
+        }
+        return defaultsPath;
     }
 
     /**

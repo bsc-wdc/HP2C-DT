@@ -20,24 +20,6 @@
                     "port": "33002"
                 }
             }
-        },
-        "funcs": {
-            "all-sensors": [
-                {
-                    "label": "AMQPPublish",
-                    "lang": "Java",
-                    "method-name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
-                    "parameters": {
-                        "sensors": ["ALL"],
-                        "actuators": [],
-                        "other": []
-                    },
-                    "trigger": {
-                        "type": "onRead",
-                        "parameters": ["ALL"]
-                    }
-                }
-            ]
         }
     },
 
