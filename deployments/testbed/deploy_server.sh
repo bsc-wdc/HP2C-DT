@@ -50,7 +50,7 @@ wait_containers(){
 
 echo "Deploying container for SERVER"
 docker run \
-    -it -d --rm \  // Server admits CLI interaction
+    -it -d --rm \
     --name ${DEPLOYMENT_PREFIX}_server \
     -v ${setup_folder}:/data/ \
     -e LOCAL_IP=$ip_address \
