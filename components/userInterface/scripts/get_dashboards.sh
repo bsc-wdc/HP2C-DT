@@ -7,9 +7,8 @@ mkdir -p ${ROOT_DIR}/dashboards
 for uid in $(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${GRAFHOST}/api/search | jq '.[].uid' -r); do 
     dashboard_info=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${GRAFHOST}/api/dashboards/uid/$uid)
     title=$(echo $dashboard_info | jq -r '.dashboard.title')
-
-    if echo "$title" | grep -q "HP2CDT - "; then
-        name_of_deployment=$(echo "$title" | awk -F "HP2CDT - " '{print $2}' | tr -d '[:space:]')
+    if echo "$title" | grep -q "hp2cdt - "; then
+        name_of_deployment=$(echo "$title" | awk -F "hp2cdt - " '{print $2}' | tr -d '[:space:]')
     else
         name_of_deployment="$title"
     fi

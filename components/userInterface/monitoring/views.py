@@ -13,11 +13,6 @@ def deployment_list(request):
         {"deployments": deployments})
 
 
-def get_panel_link(deployment_uid, panel_link): #TODO: cambiar testbed
-    return (f"http://localhost:3000/d-solo/{deployment_uid}/"
-            f"hp2cdt-testbed?orgId=1&refresh=5s&theme=light&panelId={panel_link}")
-
-
 def edge_list(request, deployment_name):
     deployment = Deployment.objects.get(name=deployment_name)
     edges = Edge.objects.filter(deployment=deployment)
@@ -41,14 +36,9 @@ def display_panel(request, deployment_name, edge_name, device_name):
     deployment = Deployment.objects.get(name=deployment_name)
     edge = Edge.objects.get(name=edge_name, deployment=deployment)
     device = Device.objects.get(name=device_name, edge=edge)
-    deployment_uid = deployment.uid
-    print("---------------", deployment.name)
-    print("---------------", deployment_uid)
-    panel_id = device.panel_link
-    panel_link = get_panel_link(deployment_uid, panel_id)
     return render(
         request, "monitoring/display_panel.html",
-        {"panel_link": panel_link}
+        {"panel_link": device.panel_link}
     )
 
 
@@ -57,9 +47,8 @@ def create_deployments():
     deployments_dir = "../../deployments"
 
     for deployment_name in os.listdir(deployments_dir):
-        if deployment_name == "defaults" or deployment_name == "9-buses": continue
-
-
+        if deployment_name == "defaults" or deployment_name == "9-buses":
+            continue
         # Directory path where JSON files are located
         dashboard_dir = "scripts/dashboards/"
         # Build the path to the JSON file corresponding to the deployment
@@ -71,29 +60,39 @@ def create_deployments():
 
             # Parse the JSON
             dashboard_data = json.loads(json_data)
-
             deployment, _ = Deployment.objects.get_or_create(
                 name=deployment_name,
-                uid=dashboard_data['dashboard']['uid'])
+                uid=dashboard_data['dashboard']['uid'],
+                dashboard_name=dashboard_data['dashboard']['title'])
             panels = dashboard_data['dashboard']['panels']
-
             # Create instances of Edge and Device
-            for index, panel in enumerate(panels):
-                # Get the name of the edge and the device from the panel title
-                title_parts = panel['title'].split(' - ')
-                edge_name = title_parts[0]
-                device_name = title_parts[1]
-                edge, created = Edge.objects.get_or_create(name=edge_name,
-                                                           deployment=deployment)
-                device, _ = Device.objects.get_or_create(
-                    name=device_name,
-                    edge=edge,
-                    panel_link=index+1
-                )
-                if created:
-                    print(f"Created edge: {edge}")
+            create_edges_devices(deployment, panels)
         else:
             print(f"JSON file not found for deployment: {deployment.name}")
+
+
+def create_edges_devices(deployment, panels):
+    for index, panel in enumerate(panels):
+        # Get the name of the edge and the device from the panel title
+        title_parts = panel['title'].split(' - ')
+        edge_name = title_parts[0]
+        device_name = title_parts[1]
+        edge, created = Edge.objects.get_or_create(name=edge_name,
+                                                   deployment=deployment)
+
+        dashboard_name = deployment.dashboard_name.replace(" ", "")
+        panel_id = index + 1
+        panel_link = (f"http://localhost:3000/d-solo/{deployment.uid}/"
+                      f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
+                      f"&panelId={panel_id}")
+
+        device, _ = Device.objects.get_or_create(
+            name=device_name,
+            edge=edge,
+            panel_link=panel_link
+        )
+        if created:
+            print(f"Created edge: {edge}")
 
 
 """def create_deployments():

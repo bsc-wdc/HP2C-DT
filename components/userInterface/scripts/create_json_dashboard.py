@@ -68,12 +68,12 @@ def generate_panel(edge_name, device):
                     "fillOpacity": 0,
                     "gradientMode": "none",
                     "hideFrom": {"legend": False, "tooltip": False, "viz": False},
-                    "insertNulls": False,
+                    "insertNulls": 180000,
                     "lineInterpolation": "linear",
                     "lineWidth": 1,
                     "pointSize": 5,
                     "scaleDistribution": {"type": "linear"},
-                    "showPoints": "auto",
+                    "showPoints": "always",
                     "spanNulls": False,
                     "stacking": {"group": ref_id, 
                                  "mode": "none"},
@@ -101,7 +101,7 @@ def generate_dashboard_json(deployment_name, edge_device_dict):
             panel = generate_panel(edge_name, device)
             panels.append(panel)
 
-    dashboard_title = f"HP2CDT - {deployment_name}"
+    dashboard_title = f"hp2cdt - {deployment_name}"
     dashboard = {
         "dashboard": {
             "schemaVersion": 39,

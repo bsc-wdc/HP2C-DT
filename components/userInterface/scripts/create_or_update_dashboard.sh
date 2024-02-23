@@ -26,7 +26,6 @@ get_dashboard_uid() {
     echo "$uid_out"
 }
 
-
 # Make a POST request to create or update the dashboard
 response=$(curl -X POST \
   -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
@@ -34,10 +33,8 @@ response=$(curl -X POST \
   -d @"${DASHBOARD_JSON}" \
   -s -w "%{http_code}" \
   "${GRAFANA_URL}/api/dashboards/db")
-
 # Extract the HTTP response status
 http_status=$(echo "$response" | tail -c 4)
-echo "$http_status"
 # If the status is 200 (OK), the dashboard was created or updated successfully
 if [ "$http_status" -eq 200 ]; then
   echo "Dashboard created or update successfully."
