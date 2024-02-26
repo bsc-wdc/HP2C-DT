@@ -4,6 +4,7 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
 setup_folder=$(realpath "${SCRIPT_DIR}/setup")
+config_json="${SCRIPT_DIR}/../../config.json"
 
 if [ $# -eq 1 ]; then
   DOCKER_IMAGE="$1/server:latest"
@@ -53,6 +54,7 @@ docker run \
     -it -d --rm \
     --name ${DEPLOYMENT_PREFIX}_server \
     -v ${setup_folder}:/data/ \
+    -v ${config_json}:/run/secrets/config.json \
     -e LOCAL_IP=$ip_address \
     -e CUSTOM_IP=$custom_ip_address \
     ${DOCKER_IMAGE}

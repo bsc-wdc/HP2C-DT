@@ -163,4 +163,4 @@ dkms.conf
 # Fortran module files
 *.mod
 *.smod
-
+config.json

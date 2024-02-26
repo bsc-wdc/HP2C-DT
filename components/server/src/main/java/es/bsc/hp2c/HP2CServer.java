@@ -12,10 +12,15 @@ import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +39,6 @@ public class HP2CServer {
     private InfluxDB influxDB;
     private final String EXCHANGE_NAME = "measurements";
     private final long dbPort = 8086;
-    private final String username = "root", password = "root";
     private static Map<String, Map<String, Device>> deviceMap = new HashMap<>();
     private static boolean verbose = true;
 
@@ -100,10 +104,13 @@ public class HP2CServer {
     }
 
     /** Initializes the "hp2cdt" InfluxDB database instance. */
-    private void initDB(String ip, long port) {
+    private void initDB(String ip, long port) throws IOException {
         // Create an object to handle the communication with InfluxDB.
         System.out.println("Connecting to InfluxDB at host IP " + ip + ", port " + port + "...");
         String serverURL = "http://" + ip + ":" + port;
+        String[] auth = getAuth();
+        String username = auth[0];
+        String password = auth[1];
         influxDB = InfluxDBFactory.connect(serverURL, username, password);
         System.out.println("InfluxDB Connection successful");
 
@@ -192,6 +199,28 @@ public class HP2CServer {
                     .addField("value", values[i])
                     .build());
         }
+    }
+
+    private String[] getAuth() throws IOException {
+        // Find config file
+        String configPath = "/run/secrets/config.json";
+        File configFile = new File(configPath);
+        if (!configFile.isFile()) {
+            configPath = "../../config.json";
+        }
+        // Parse config file
+        return getAuth(configPath);
+    }
+    private String[] getAuth(String configFile) throws IOException {
+        // Parse JSON file
+        InputStream is = Files.newInputStream(Paths.get(configFile));
+        JSONTokener tokener = new JSONTokener(is);
+        JSONObject jsonObject = new JSONObject(tokener);
+        // Access the parsed values
+        JSONObject databaseObject = jsonObject.getJSONObject("database");
+        String username = databaseObject.getString("username");
+        String password = databaseObject.getString("password");
+        return new String[]{username, password};
     }
 
     /**
