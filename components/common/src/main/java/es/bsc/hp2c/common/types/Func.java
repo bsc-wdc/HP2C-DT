@@ -13,12 +13,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.edge.funcs;
-
-import es.bsc.hp2c.HP2CEdge;
-import es.bsc.hp2c.common.types.Actuator;
-import es.bsc.hp2c.common.types.Device;
-import es.bsc.hp2c.common.types.Sensor;
+package es.bsc.hp2c.common.types;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -84,11 +79,11 @@ public abstract class Func implements Runnable {
         }
     }
 
-    public static void loadGlobalFunctions(String defaultsPath, Map<String, Device> devices) throws IOException {
+    public static void loadGlobalFunctions(String defaultsPath, Map<String, Device> devices, boolean AmqpOn) throws IOException {
         // Load generic file
-        InputStream iStreamGlobal;
-        iStreamGlobal = Files.newInputStream(Paths.get(defaultsPath));
-        JSONTokener tokenerGlobal = new JSONTokener(iStreamGlobal);
+        InputStream is;
+        is = Files.newInputStream(Paths.get(defaultsPath));
+        JSONTokener tokenerGlobal = new JSONTokener(is);
         JSONObject objectGlobal = new JSONObject(tokenerGlobal);
         JSONObject jGlobProp = objectGlobal.getJSONObject("global-properties");
         JSONArray jGlobalFuncs = jGlobProp.getJSONArray("funcs");
@@ -96,7 +91,7 @@ public abstract class Func implements Runnable {
             // Initialize function
             JSONObject jGlobalFunc = (JSONObject) jo;
             String funcLabel = jGlobalFunc.optString("label");
-            if (funcLabel.toLowerCase().contains("amqp") && !HP2CEdge.isAmqpOn()) {
+            if (funcLabel.toLowerCase().contains("amqp") && !AmqpOn) {
                 System.err.println(
                         "AMQP " + funcLabel + " global functions declared but AMQP server is not connected. " +
                         "Skipping " + funcLabel + "...");

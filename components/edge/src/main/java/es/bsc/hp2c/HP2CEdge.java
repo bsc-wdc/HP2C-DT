@@ -20,7 +20,7 @@ import es.bsc.hp2c.common.types.Device;
 import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
 import static es.bsc.hp2c.common.utils.FileUtils.readEdgeLabel;
 
-import es.bsc.hp2c.edge.funcs.Func;
+import es.bsc.hp2c.common.types.Func;
 
 import com.rabbitmq.client.*;
 
@@ -70,7 +70,7 @@ public class HP2CEdge {
         Map<String, Device> devices = loadDevices(setupFile);
         OpalComm.setLoadedDevices(true);
         Func.loadFunctions(setupFile, devices);
-        Func.loadGlobalFunctions(defaultsPath, devices);
+        Func.loadGlobalFunctions(defaultsPath, devices, isAmqpOn());
     }
 
     private static void setUpMessaging(String ip) {

@@ -3,6 +3,7 @@ package es.bsc.hp2c.edge.funcs;
 import es.bsc.hp2c.HP2CEdge;
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Func;
 import es.bsc.hp2c.common.types.Sensor;
 
 import com.rabbitmq.client.Channel;
