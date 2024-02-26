@@ -25,7 +25,6 @@ import es.bsc.hp2c.edge.funcs.Func;
 import com.rabbitmq.client.*;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -46,7 +45,7 @@ public class HP2CEdge {
      * 
      * @param args Setup file.
      */
-    public static void main(String[] args) throws FileNotFoundException{
+    public static void main(String[] args) throws IOException {
         // Get input data
         String setupFile;
         if (args.length == 1) {

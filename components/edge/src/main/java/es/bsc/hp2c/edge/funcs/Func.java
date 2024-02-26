@@ -20,11 +20,8 @@ import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.File;
 import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -67,39 +64,30 @@ public abstract class Func implements Runnable {
      * @param setupFile String containing JSON file.
      * @param devices   map of the devices within the edge.
      */
-    public static void loadFunctions(String setupFile, Map<String, Device> devices) throws FileNotFoundException {
-        InputStream is = new FileInputStream(setupFile);
-
+    public static void loadFunctions(String setupFile, Map<String, Device> devices) throws IOException {
+        // Load setup file
+        InputStream is = Files.newInputStream(Paths.get(setupFile));
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);
-
         // Load specific functions
-        try {
-            JSONArray funcs = object.getJSONArray("funcs");
-            for (Object jo : funcs) {
-                JSONObject jFunc = (JSONObject) jo;
-                String funcLabel = jFunc.optString("label", "");
-                // Perform Func initialization
-                try {
-                    Runnable action = functionParseJSON(jFunc, devices, funcLabel);
-                    setupTrigger(jFunc, devices, action);
-                } catch (FunctionInstantiationException e) {
-                    System.err.println("Error loading function. " + e.getMessage());
-                }
+        JSONArray funcs = object.getJSONArray("funcs");
+        for (Object jo : funcs) {
+            JSONObject jFunc = (JSONObject) jo;
+            String funcLabel = jFunc.optString("label", "");
+            // Perform Func initialization
+            try {
+                Runnable action = functionParseJSON(jFunc, devices, funcLabel);
+                setupTrigger(jFunc, devices, action);
+            } catch (FunctionInstantiationException e) {
+                System.err.println("Error loading function " + funcLabel + ": " + e.getMessage());
             }
-        } catch (Exception e) {
-            System.err.println("Warning: Specific funcs might not be available in setup: " + e.getMessage());
         }
     }
 
-    public static void loadGlobalFunctions(String defaultsPath, Map<String, Device> devices) {
+    public static void loadGlobalFunctions(String defaultsPath, Map<String, Device> devices) throws IOException {
         // Load generic file
         InputStream iStreamGlobal;
-        try {
-            iStreamGlobal = Files.newInputStream(Paths.get(defaultsPath));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        iStreamGlobal = Files.newInputStream(Paths.get(defaultsPath));
         JSONTokener tokenerGlobal = new JSONTokener(iStreamGlobal);
         JSONObject objectGlobal = new JSONObject(tokenerGlobal);
         JSONObject jGlobProp = objectGlobal.getJSONObject("global-properties");
