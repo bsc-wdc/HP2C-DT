@@ -29,7 +29,7 @@ import static es.bsc.hp2c.common.utils.FileUtils.readEdgeLabel;
  * with edge devices via AMQP.
  */
 public class HP2CServer implements AutoCloseable {
-    private final Connection connection;
+    private static Connection connection;
     private static Channel channel;
     private InfluxDB influxDB;
     private final String EXCHANGE_NAME = "measurements";
@@ -38,23 +38,34 @@ public class HP2CServer implements AutoCloseable {
     private static Map<String, Map<String, Device>> deviceMap = new HashMap<>();
     private static boolean verbose = true;
 
+    /**
+     * Constructor of Server instance.
+     * Initializes AMQP, InfluxDB, and CLI connections.
+     * @param hostIp IP of AMQP broker and database. TODO: use custom IPs for each
+     */
     public HP2CServer(String hostIp) throws IOException, TimeoutException {
-        // Init RabbitMQ
-        System.out.println("Connecting to AMQP broker at host IP " + hostIp + "...");
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(hostIp);
-        connection = factory.newConnection();
-        channel = connection.createChannel();
-        System.out.println("AMQP Connection successful");
-        // Init InfluxDB
+        initAmqp(hostIp);
         initDB(hostIp, dbPort);
-        // Start UI
         CLI cli = new CLI(deviceMap);
         cli.start();
     }
 
+    /** Parse setup files for all edge nodes and deploy Server. */
     public static void main(String[] args) throws FileNotFoundException {
         // Load setup files
+        String hostIp = parseSetupFiles(args);
+        // Deploy listener
+        try {
+            HP2CServer server = new HP2CServer(hostIp);
+            server.startListener();
+        } catch (IOException | TimeoutException e) {
+            System.out.println("Server error: " + e.getMessage());
+        }
+    }
+
+    /** Parse edge nodes files and configure the edge-device map. */
+    private static String parseSetupFiles(String[] args) throws FileNotFoundException {
+        // Get IP and setup directory
         String hostIp;
         File setupDir;
         if (args.length == 1) {
@@ -68,7 +79,6 @@ public class HP2CServer implements AutoCloseable {
         if (setupFiles == null) {
             throw new FileNotFoundException("No setup files found in " + setupDir);
         }
-
         // Fill in edge-devices map
         for (File setupFile: setupFiles) {
             String filePath = setupFile.toString();
@@ -76,14 +86,50 @@ public class HP2CServer implements AutoCloseable {
             String edgeLabel = readEdgeLabel(filePath);
             deviceMap.put(edgeLabel, loadDevices(filePath, "driver-dt"));
         }
+        return hostIp;
+    }
 
-        // Deploy listener
-        try {
-            HP2CServer server = new HP2CServer(hostIp);
-            server.startListener();
-        } catch (IOException | TimeoutException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+    /** Initialize AMQP Channel. */
+    private void initAmqp(String hostIp) throws IOException, TimeoutException {
+        System.out.println("Connecting to AMQP broker at host IP " + hostIp + "...");
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost(hostIp);
+        connection = factory.newConnection();
+        channel = connection.createChannel();
+        System.out.println("AMQP Connection successful");
+    }
+
+    /** Initializes the "hp2cdt" InfluxDB database instance. */
+    private void initDB(String ip, long port) {
+        // Create an object to handle the communication with InfluxDB.
+        System.out.println("Connecting to InfluxDB at host IP " + ip + ", port " + port + "...");
+        String serverURL = "http://" + ip + ":" + port;
+        influxDB = InfluxDBFactory.connect(serverURL, username, password);
+        System.out.println("InfluxDB Connection successful");
+
+        // Create a database if it does not already exist
+        String databaseName = "hp2cdt";
+        influxDB.query(new Query("CREATE DATABASE " + databaseName));
+        influxDB.setDatabase(databaseName);
+
+        // Set up retention policy
+        String retentionPolicyName = "one_day_only";
+        influxDB.query(new Query("CREATE RETENTION POLICY " + retentionPolicyName
+                + " ON " + databaseName + " DURATION 1d REPLICATION 1 DEFAULT"));
+        influxDB.setRetentionPolicy(retentionPolicyName);
+
+        // Enable batch writes to get better performance.
+        influxDB.enableBatch(
+                BatchOptions.DEFAULTS
+                        .threadFactory(runnable -> {
+                            Thread thread = new Thread(runnable);
+                            thread.setDaemon(true);
+                            return thread;
+                        })
+        );
+
+        // Close when application terminates.
+        Runtime.getRuntime().addShutdownHook(new Thread(influxDB::close));
     }
 
     /**
@@ -146,41 +192,6 @@ public class HP2CServer implements AutoCloseable {
                     .addField("value", values[i])
                     .build());
         }
-    }
-
-    /**
-     * Initializes the "hp2cdt" InfluxDB database instance.
-     */
-    private void initDB(String ip, long port) {
-        // Create an object to handle the communication with InfluxDB.
-        System.out.println("Connecting to InfluxDB at host IP " + ip + ", port " + port + "...");
-        String serverURL = "http://" + ip + ":" + port;
-        influxDB = InfluxDBFactory.connect(serverURL, username, password);
-        System.out.println("InfluxDB Connection successful");
-
-        // Create a database if it does not already exist
-        String databaseName = "hp2cdt";
-        influxDB.query(new Query("CREATE DATABASE " + databaseName));
-        influxDB.setDatabase(databaseName);
-
-        // Set up retention policy
-        String retentionPolicyName = "one_day_only";
-        influxDB.query(new Query("CREATE RETENTION POLICY " + retentionPolicyName
-                + " ON " + databaseName + " DURATION 1d REPLICATION 1 DEFAULT"));
-        influxDB.setRetentionPolicy(retentionPolicyName);
-
-        // Enable batch writes to get better performance.
-        influxDB.enableBatch(
-            BatchOptions.DEFAULTS
-                .threadFactory(runnable -> {
-                    Thread thread = new Thread(runnable);
-                    thread.setDaemon(true);
-                    return thread;
-                })
-        );
-
-        // Close when application terminates.
-        Runtime.getRuntime().addShutdownHook(new Thread(influxDB::close));
     }
 
     /**
