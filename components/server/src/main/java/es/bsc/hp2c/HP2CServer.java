@@ -28,7 +28,7 @@ import static es.bsc.hp2c.common.utils.FileUtils.readEdgeLabel;
  * Implementation of the server logic interacting with an InfluxDB database and
  * with edge devices via AMQP.
  */
-public class HP2CServer implements AutoCloseable {
+public class HP2CServer {
     private static Connection connection;
     private static Channel channel;
     private InfluxDB influxDB;
@@ -229,10 +229,5 @@ public class HP2CServer implements AutoCloseable {
 
     public static void setVerbose(boolean verbose) {
         HP2CServer.verbose = verbose;
-    }
-
-    @Override
-    public void close() throws IOException {
-        connection.close();
     }
 }
