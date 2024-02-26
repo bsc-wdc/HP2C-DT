@@ -90,10 +90,10 @@ public abstract class Func implements Runnable {
         } catch (Exception e) {
             System.err.println("Warning: Specific funcs might not be available in setup: " + e.getMessage());
         }
+    }
 
-        // Load generic functions
+    public static void loadGlobalFunctions(String defaultsPath, Map<String, Device> devices) {
         // Load generic file
-        String defaultsPath = getDefaultsPath();
         InputStream iStreamGlobal;
         try {
             iStreamGlobal = Files.newInputStream(Paths.get(defaultsPath));
@@ -155,15 +155,6 @@ public abstract class Func implements Runnable {
                 }
             }
         }
-    }
-
-    private static String getDefaultsPath() {
-        String defaultsPath = "/data/edge_default.json";
-        File defaultsFile = new File(defaultsPath);
-        if (!defaultsFile.isFile()) {
-            defaultsPath = "../../deployments/defaults/setup/edge_default.json";
-        }
-        return defaultsPath;
     }
 
     /**

@@ -24,6 +24,7 @@ import es.bsc.hp2c.edge.funcs.Func;
 
 import com.rabbitmq.client.*;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
@@ -53,6 +54,13 @@ public class HP2CEdge {
         } else {
             setupFile = "../../deployments/testbed/setup/edge1.json";
         }
+        // Get defaults file
+        String defaultsPath = "/data/edge_default.json";
+        File defaultsFile = new File(defaultsPath);
+        if (!defaultsFile.isFile()) {
+            defaultsPath = "../../deployments/defaults/setup/edge_default.json";
+        }
+        // Get IP
         String localIP = System.getenv("LOCAL_IP");
 
         // Set up AMQP connections
@@ -63,6 +71,7 @@ public class HP2CEdge {
         Map<String, Device> devices = loadDevices(setupFile);
         OpalComm.setLoadedDevices(true);
         Func.loadFunctions(setupFile, devices);
+        Func.loadGlobalFunctions(defaultsPath, devices);
     }
 
     private static void setUpMessaging(String ip) {
