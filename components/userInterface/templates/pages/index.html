@@ -1,0 +1,73 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Device Panels</title>
+</head>
+<body>
+
+  <div id="device-panels">
+    {% for edge, devices in edgeDevices.items %}
+      <div class="card-header">
+        <h5>{{ edge.name }}</h5>
+      </div>
+      <div class="card-block px-0 py-3">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <tbody>
+              {% for device in devices %}
+              <tr class="device-row" data-panel="{{ device.panel_link }}">
+                <td>{{ device.name }}</td>
+                <td class="panel-cell" style="display: none;">
+                  <iframe class="device-panel" src="" width="900" height="300" frameborder="0"></iframe>
+                </td>
+                <td align="right" >
+                  <a href="{% url 'device_detail' edge_name=edge.name device_name=device.name %}"
+                     class="label theme-bg2 text-white f-12 show-panel-btn">View detail</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <script>
+    var rows = document.getElementsByClassName('device-row');
+    Array.from(rows).forEach(function(row) {
+      row.addEventListener('click', function() {
+        var panelLink = this.dataset.panel;
+        var panelCell = this.querySelector('.panel-cell');
+        if (panelCell) {
+          var panel = panelCell.querySelector('.device-panel');
+          panel.src = panelLink;
+          panelCell.style.display = panelCell.style.display === 'none' ? 'table-cell' : 'none';
+        }
+      });
+    });
+
+    var showPanelBtns = document.getElementsByClassName('show-panel-btn');
+    Array.from(showPanelBtns).forEach(function(btn) {
+      btn.addEventListener('click', function(event) {
+        event.stopPropagation();
+      });
+    });
+  </script>
+
+</body>
+</html>
+{% endblock content %}
+
+
+
+
+
+
