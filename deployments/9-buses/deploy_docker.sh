@@ -6,7 +6,12 @@
 # Loading Constants
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-EDGE_DOCKER_IMAGE="hp2c/edge:latest"
+if [ $# -eq 1 ]; then
+  EDGE_DOCKER_IMAGE="$1/edge:latest"
+else
+  EDGE_DOCKER_IMAGE="hp2c/edge:latest"
+fi
+
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 
 DEPLOYMENT_PREFIX="hp2c"
@@ -23,8 +28,8 @@ sorted_setup_folder=($(ls -v "${setup_folder}"/*.json))
 
 for f in "${sorted_setup_folder[@]}"; do
     label=$(jq -r '.["global-properties"].label' "${f}")
-    udp_port=$(jq -r '.["global-properties"].comms.udp.ports | keys_unsorted[0]' "${f}")
-    tcp_sensors_port=$(jq -r '.["global-properties"]["comms"]["tcp-sensors"].ports | keys_unsorted[0]' "${f}")
+    udp_port=$(jq -r '."global-properties".comms."opal-udp".sensors.port' "${f}")
+    tcp_sensors_port=$(jq -r '."global-properties".comms."opal-tcp".sensors.port' "${f}")
     if [ "$label" != "null" ]; then
         labels_paths["${label}"]="${f}"
         labels_udp_ports["${label}"]="${udp_port}"

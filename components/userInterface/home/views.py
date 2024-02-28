@@ -40,34 +40,35 @@ def tables(request):
   return render(request, "pages/dynamic-tables.html", context)
 
 def create_deployments():
+
     # Get all deployments from the database
-    deployments_dir = "../../../hp2cdt/deployments"
+    deployments_dir = "../../deployments"
 
     for deployment_name in os.listdir(deployments_dir):
-      if deployment_name == "defaults" or deployment_name == "9-buses":
-        continue
-      # Directory path where JSON files are located
-      dashboard_dir = "../../../hp2cdt/components/userInterface/scripts/dashboards/"
-      # Build the path to the JSON file corresponding to the deployment
-      dashboard_file_path = os.path.join(dashboard_dir,
-                                         f"{deployment_name}.json")
-      # Check if the JSON file exists
-      if os.path.exists(dashboard_file_path):
+        if deployment_name == "defaults":
+          continue
+        # Directory path where JSON files are located
+        dashboard_dir = "../../components/userInterface/scripts/dashboards/"
+        # Build the path to the JSON file corresponding to the deployment
+        dashboard_file_path = os.path.join(dashboard_dir,
+                                           f"{deployment_name}.json")
+      
+        # Check if the JSON file exists
+        if os.path.exists(dashboard_file_path):
+            with open(dashboard_file_path, 'r') as f:
+              json_data = f.read()
 
-        with open(dashboard_file_path, 'r') as f:
-          json_data = f.read()
-
-        # Parse the JSON
-        dashboard_data = json.loads(json_data)
-        deployment, _ = Deployment.objects.get_or_create(
-          name=deployment_name,
-          uid=dashboard_data['dashboard']['uid'],
-          dashboard_name=dashboard_data['dashboard']['title'])
-        panels = dashboard_data['dashboard']['panels']
-        # Create instances of Edge and Device
-        create_edges_devices(deployment, panels)
-      else:
-        print(f"JSON file not found for deployment: {deployment_name}")
+            # Parse the JSON
+            dashboard_data = json.loads(json_data)
+            deployment, _ = Deployment.objects.get_or_create(
+              name=deployment_name,
+              uid=dashboard_data['dashboard']['uid'],
+              dashboard_name=dashboard_data['dashboard']['title'])
+            panels = dashboard_data['dashboard']['panels']
+            # Create instances of Edge and Device
+            create_edges_devices(deployment, panels)
+        else:
+          print(f"JSON file not found for deployment: {deployment_name}")
 
 
 def create_edges_devices(deployment, panels):
