@@ -140,7 +140,7 @@ def generate_dashboard_json(deployment_name, edge_device_dict):
         "overwrite": True
     }
 
-    directory = "jsons_dasboards"
+    directory = "jsons_dashboards"
     if not os.path.exists(directory):
         os.makedirs(directory)
 
