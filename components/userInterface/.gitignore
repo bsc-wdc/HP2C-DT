@@ -5,6 +5,9 @@
 __pycache__
 db.sqlite3
 media
+staticfiles/*
+scripts/dashboards/*
+scripts/jsons_dashboards/*
 
 # Backup files # 
 *.bak 
