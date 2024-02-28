@@ -19,6 +19,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 
+import es.bsc.hp2c.HP2CServer.ActuatorValidity;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.server.device.VirtualComm;
 import org.json.JSONArray;
@@ -29,6 +30,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
+import static es.bsc.hp2c.HP2CServer.checkActuator;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 
 /**
@@ -64,26 +66,32 @@ public class RestListener {
             }
 
             // Get request and parse (assume JSON format)
+            String response;
             String requestBody = RestUtils.convertStreamToString(exchange.getRequestBody());
-            RestUtils.RequestData data = RestUtils.parseRequestBody(requestBody);
-            String[] stringValues = data.values;
-            String edgeLabel = data.edgeLabel;
-            String actuatorLabel = data.actuatorLabel;
-
-            // Check if the provided device is an actuator
-            Device device = deviceMap.get(edgeLabel).get(actuatorLabel);
-            if (!device.isActionable()) {
-                throw new IOException("Device " + actuatorLabel + " is not an actuator.");
+            try {
+                RestUtils.RequestData data = RestUtils.parseRequestBody(requestBody);
+                String[] stringValues = data.values;
+                String edgeLabel = data.edgeLabel;
+                String actuatorLabel = data.actuatorLabel;
+                // Check actuator validity (Actuator is actionable and is in map)
+                ActuatorValidity checker = checkActuator(edgeLabel, actuatorLabel);
+                if (checker.isValid()) {
+                    // Actuate
+                    Device device = deviceMap.get(edgeLabel).get(actuatorLabel);
+                    VirtualComm.VirtualActuator<?> actuator = (VirtualComm.VirtualActuator<?>) device;
+                    actuator.actuate(stringValues);
+                    // Send response
+                    response = "Received request to actuate with values: " + printableArray(stringValues)
+                            + ", edge label: " + edgeLabel
+                            + ", actuator label: " + actuatorLabel;
+                } else {
+                    // Get error message
+                    response = checker.getMessage();
+                }
+            } catch (JSONException e) {
+                response = e.getMessage();
             }
 
-            // Actuate
-            VirtualComm.VirtualActuator<?> actuator = (VirtualComm.VirtualActuator<?>) device;
-            actuator.actuate(stringValues);
-
-            // Send response
-            String response = "Received request to actuate with values: " + printableArray(stringValues)
-                    + ", edge label: " + edgeLabel
-                    + ", actuator label: " + actuatorLabel;
             exchange.sendResponseHeaders(200, response.length());
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());

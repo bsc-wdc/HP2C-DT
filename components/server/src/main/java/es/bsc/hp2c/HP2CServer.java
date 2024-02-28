@@ -226,6 +226,51 @@ public class HP2CServer {
         return new String[]{username, password};
     }
 
+    /** Check actuator validity and return a custom error message upon error.*/
+    public static ActuatorValidity checkActuator(String edgeLabel, String actuatorName) {
+        // Check if the provided actuator name exists in the map of edge nodes
+        StringBuilder msg = new StringBuilder();
+        if (!isInMap(edgeLabel, actuatorName, deviceMap)) {
+            msg.append("Edge " + edgeLabel + ", Device " + actuatorName + " not listed.\n");
+            msg.append("Options are:\n");
+            for (HashMap.Entry<String, Map<String, Device>> entry : deviceMap.entrySet()) {
+                String groupKey = entry.getKey();
+                Map<String, Device> innerMap = entry.getValue();
+                msg.append("Group: " + groupKey + "\n");
+                for (HashMap.Entry<String, Device> innerEntry : innerMap.entrySet()) {
+                    String deviceKey = innerEntry.getKey();
+                    if (innerMap.get(deviceKey).isActionable()) {
+                        msg.append("  Actuator: " + deviceKey + "\n");
+                    }
+                }
+            }
+            return new ActuatorValidity(false, msg.toString());
+        }
+        // Check if the provided device is an actuator
+        Device device = deviceMap.get(edgeLabel).get(actuatorName);
+        if (!device.isActionable()) {
+            msg.append("Device " + edgeLabel + "." + actuatorName + " is not an actuator.\n");
+            return new ActuatorValidity(false, msg.toString());
+        }
+        return new ActuatorValidity(true, msg.toString());
+    }
+
+    /** Auxiliary class to use with checkActuator. */
+    public static class ActuatorValidity {
+        boolean isValid;
+        String msg;
+        ActuatorValidity(boolean isValid, String msg) {
+            this.isValid = isValid;
+            this.msg = msg;
+        }
+        public boolean isValid() {
+            return isValid;
+        }
+        public String getMessage() {
+            return msg;
+        }
+    }
+
     /**
      * Check if the combination "edgeLabel" and "deviceName" is in the given nested HashMap
      */
