@@ -7,6 +7,7 @@ import com.rabbitmq.client.DeliverCallback;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.server.UI.CLI;
+import es.bsc.hp2c.server.UI.RestListener;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
@@ -50,6 +51,8 @@ public class HP2CServer {
     public HP2CServer(String hostIp) throws IOException, TimeoutException {
         initAmqp(hostIp);
         initDB(hostIp, dbPort);
+        RestListener restListener = new RestListener(deviceMap);
+        restListener.start();
         CLI cli = new CLI(deviceMap);
         cli.start();
     }

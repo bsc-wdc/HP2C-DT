@@ -49,12 +49,13 @@ wait_containers(){
 # SCRIPT MAIN CODE #
 ####################
 
-echo "Deploying container for SERVER"
+echo "Deploying container for SERVER with REST API listening on port 8080..."
 docker run \
     -it -d --rm \
     --name ${DEPLOYMENT_PREFIX}_server \
     -v ${setup_folder}:/data/ \
     -v ${config_json}:/run/secrets/config.json \
+    -p 8080:8080 \
     -e LOCAL_IP=$ip_address \
     -e CUSTOM_IP=$custom_ip_address \
     ${DOCKER_IMAGE}
