@@ -88,7 +88,7 @@ public class RestListener {
                     // Get error message
                     response = checker.getMessage();
                 }
-            } catch (JSONException e) {
+            } catch (JSONException | IOException e) {
                 response = e.getMessage();
             }
 
