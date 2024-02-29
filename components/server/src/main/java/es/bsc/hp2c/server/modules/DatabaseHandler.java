@@ -13,7 +13,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.server.UI;
+package es.bsc.hp2c.server.modules;
 
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;

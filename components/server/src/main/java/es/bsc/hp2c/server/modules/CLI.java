@@ -13,7 +13,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.server.UI;
+package es.bsc.hp2c.server.modules;
 
 import es.bsc.hp2c.HP2CServer.ActuatorValidity;
 import es.bsc.hp2c.common.types.Device;

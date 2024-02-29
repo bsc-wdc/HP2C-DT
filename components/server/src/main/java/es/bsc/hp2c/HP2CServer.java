@@ -16,10 +16,10 @@
 package es.bsc.hp2c;
 
 import es.bsc.hp2c.common.types.Device;
-import es.bsc.hp2c.server.UI.AmqpManager;
-import es.bsc.hp2c.server.UI.CLI;
-import es.bsc.hp2c.server.UI.DatabaseHandler;
-import es.bsc.hp2c.server.UI.RestListener;
+import es.bsc.hp2c.server.modules.AmqpManager;
+import es.bsc.hp2c.server.modules.CLI;
+import es.bsc.hp2c.server.modules.DatabaseHandler;
+import es.bsc.hp2c.server.modules.RestListener;
 
 import java.io.File;
 import java.io.FileNotFoundException;
