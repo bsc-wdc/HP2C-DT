@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-def generate_panel(edge_name, device):
+def generate_panel_timeseries(edge_name, device):
     targets = []
     for i in range(device[1]):
         cleaned_device_name = device[0].replace(" ", "")
@@ -56,7 +56,7 @@ def generate_panel(edge_name, device):
         },
         "fieldConfig": {
             "defaults": {
-                "color": {"mode": "palette-classic"},
+                "color": {"mode": "thresholds"},
                 "custom": {
                     "axisBorderShow": False,
                     "axisCenteredZero": False,
@@ -91,15 +91,67 @@ def generate_panel(edge_name, device):
         "title": f"{edge_name} - {device[0]}",
         "type": "timeseries"
     }
-
     return panel
+
+
 
 def generate_dashboard_json(deployment_name, edge_device_dict):
     panels = []
     for edge_name, devices in edge_device_dict.items():
         for device in devices:
-            panel = generate_panel(edge_name, device)
-            panels.append(panel)
+            panel_timeseries = generate_panel_timeseries(edge_name, device)
+            panel_table = panel_timeseries.copy()
+            names = []
+            for i in range(len(panel_table["targets"])):
+                if i == 0: names.append("phase " + str(i + 1) + " · Time")
+                names.append("phase " + str(i + 1))
+                panel_table["targets"][i]["refId"] = "Table-" + panel_table["targets"][i]["refId"]
+                q = panel_table["targets"][i]["query"].split()
+                q[1] = "value"
+                panel_table["targets"][i]["query"] = ' '.join(q) 
+
+            panel_table["transformations"] = [
+                {
+                    "id": "concatenate",
+                    "options": {}
+                },
+                {
+                    "id": "filterFieldsByName",
+                    "options": {
+                        "include": {
+                            "names": names
+                        }
+                    }
+                },
+                {
+                    "id": "sortBy",
+                    "options": {
+                        "fields": {},
+                        "sort": [
+                            {
+                            "desc": True,
+                            "field": "phase 1 · Time"
+                            }
+                        ]
+                    }
+                }
+            ]
+            panel_table["type"] = "table"
+            panel_table["title"] = "(Table) " + panel_table["title"]
+            panel_table["options"] = {
+                "cellHeight": "md",
+                "footer": {
+                    "countRows": False,
+                    "fields": "",
+                    "reducer": [
+                    "sum"
+                    ],
+                    "show": False
+                },
+                "showHeader": True
+            }
+            panels.append(panel_table)
+            panels.append(panel_timeseries)
 
     dashboard_title = f"hp2cdt - {deployment_name}"
     dashboard = {
