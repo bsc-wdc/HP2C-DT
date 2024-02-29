@@ -25,7 +25,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
-import static es.bsc.hp2c.server.device.VirtualComm.virtualActuate;
+import static es.bsc.hp2c.server.UI.AmqpManager.virtualActuate;
 
 
 /**
