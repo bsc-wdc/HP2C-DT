@@ -227,7 +227,7 @@ public class OpalSimulator {
             double shift = i * (2 * Math.PI / 3);
             values[i] = (float) Math.sin(angularFrequency * time + shift);
             // Modify voltages (0, 1, 2)
-            if (i < 3) { values[i] *= (float) Math.sqrt(2) * 230; }
+            values[i] *= (float) Math.sqrt(2) * 230;
         }
         return values;
     }

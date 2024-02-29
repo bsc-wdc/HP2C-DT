@@ -56,7 +56,7 @@ def generate_panel_timeseries(edge_name, device):
         },
         "fieldConfig": {
             "defaults": {
-                "color": {"mode": "thresholds"},
+                "color": {"mode": "palette-classic"},
                 "custom": {
                     "axisBorderShow": False,
                     "axisCenteredZero": False,
@@ -167,7 +167,7 @@ def generate_dashboard_json(deployment_name, edge_device_dict):
                 "list": []
             },
             "time": {
-                "from": "now-15m",
+                "from": "now-5m",
                 "to": "now"
             },
             "timepicker": {},

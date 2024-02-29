@@ -9,17 +9,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Device Panels</title>
+  <style>
+    .device-row {
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
 
   <div id="device-panels">
     {% for edge, devices in edgeDevices.items %}
       <div class="card-header">
-        <h5>{{ edge.name }}</h5>
+        <h5>Edge: {{ edge.name }}</h5>
       </div>
       <div class="card-block px-0 py-3">
         <div class="table-responsive">
-          <table class="table table-hover">
+          <table class="table table-hover device-table">
             <tbody>
               {% for device in devices %}
               <tr class="device-row" data-panel="{{ device.timeseries_link }}">
@@ -28,9 +33,11 @@
                   <iframe class="device-panel" src="" width="900" height="300" frameborder="0"></iframe>
                 </td>
                 <td align="right" >
+                  {% if "Switch" in device.name or "Generator" in device.name %}
+                    <a href="" class="label theme-bg text-white f-12 show-panel-btn">Actuate</a>
+                  {% endif %}
                   <a href="{% url 'device_detail' edge_name=edge.name device_name=device.name %}"
                      class="label theme-bg2 text-white f-12 show-panel-btn">View detail</a>
-                </td>
               </tr>
               {% endfor %}
             </tbody>
