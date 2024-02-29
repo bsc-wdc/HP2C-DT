@@ -103,7 +103,12 @@ def generate_dashboard_json(deployment_name, edge_device_dict):
             panel_table = panel_timeseries.copy()
             names = []
             for i in range(len(panel_table["targets"])):
-                if i == 0: names.append("phase " + str(i + 1) + " · Time")
+                if len(panel_table["targets"]) == 1: 
+                    time = "Time"
+                    names.append(time)
+                elif i == 0: 
+                    time = "phase " + str(i + 1) + " · Time"
+                    names.append(time)
                 names.append("phase " + str(i + 1))
                 panel_table["targets"][i]["refId"] = "Table-" + panel_table["targets"][i]["refId"]
                 q = panel_table["targets"][i]["query"].split()
@@ -130,7 +135,7 @@ def generate_dashboard_json(deployment_name, edge_device_dict):
                         "sort": [
                             {
                             "desc": True,
-                            "field": "phase 1 · Time"
+                            "field": time
                             }
                         ]
                     }

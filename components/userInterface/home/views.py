@@ -31,7 +31,10 @@ def device_detail(request, edge_name, device_name):
   deployment = Deployment.objects.get(name="testbed")
   edge = Edge.objects.get(name=edge_name, deployment=deployment)
   device = Device.objects.get(name=device_name, edge=edge)
-  return render(request, "pages/device_detail.html", { "device_name": device_name, "panel_link": device.panel_link } )
+  return render(request, "pages/device_detail.html",
+                { "device_name": device_name,
+                "timeseries_link": device.timeseries_link,
+                "table_link": device.table_link})
 
 def tables(request):
   context = {
@@ -45,7 +48,7 @@ def create_deployments():
     deployments_dir = "../../deployments"
 
     for deployment_name in os.listdir(deployments_dir):
-        if deployment_name == "defaults":
+        if deployment_name == "defaults" or deployment_name == "9-buses":
           continue
         # Directory path where JSON files are located
         dashboard_dir = "../../components/userInterface/scripts/dashboards/"
@@ -74,22 +77,41 @@ def create_deployments():
 def create_edges_devices(deployment, panels):
   for index, panel in enumerate(panels):
     # Get the name of the edge and the device from the panel title
+    print("title ", panel['title'])
     title_parts = panel['title'].split(' - ')
     edge_name = title_parts[0]
     device_name = title_parts[1]
+    is_table = False
+    if "(Table)" in edge_name:
+        is_table = True
+        print("Is table")
+        edge_name = edge_name.split(" ")[1]
+    print("edge name ", edge_name)
     edge, created = Edge.objects.get_or_create(name=edge_name,
                                                deployment=deployment)
 
     dashboard_name = deployment.dashboard_name.replace(" ", "")
-    panel_id = index + 1
-    panel_link = (f"http://localhost:3000/d-solo/{deployment.uid}/"
-                  f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
-                  f"&panelId={panel_id}")
-
     device, _ = Device.objects.get_or_create(
-      name=device_name,
-      edge=edge,
-      panel_link=panel_link
+        name=device_name,
+        edge=edge,
     )
+    if is_table:
+        table_id = index + 1
+        print("Table id" , table_id)
+        table_link = (f"http://localhost:3000/d-solo/{deployment.uid}/"
+                      f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
+                      f"&panelId={table_id}")
+        device.table_link = table_link
+        device.save()
+    else:
+        timeseries_id = index + 1
+        print("Timeseries id ", timeseries_id)
+        timeseries_link = (f"http://localhost:3000/d-solo/{deployment.uid}/"
+                           f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
+                           f"&panelId={timeseries_id}")
+        device.timeseries_link = timeseries_link
+        device.save()
+    print("")
+    print("")
     if created:
       print(f"Created edge: {edge}")

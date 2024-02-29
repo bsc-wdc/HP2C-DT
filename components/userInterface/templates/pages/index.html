@@ -22,7 +22,7 @@
           <table class="table table-hover">
             <tbody>
               {% for device in devices %}
-              <tr class="device-row" data-panel="{{ device.panel_link }}">
+              <tr class="device-row" data-panel="{{ device.timeseries_link }}">
                 <td>{{ device.name }}</td>
                 <td class="panel-cell" style="display: none;">
                   <iframe class="device-panel" src="" width="900" height="300" frameborder="0"></iframe>
