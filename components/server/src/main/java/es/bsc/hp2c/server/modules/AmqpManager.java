@@ -22,6 +22,7 @@ import com.rabbitmq.client.DeliverCallback;
 import es.bsc.hp2c.HP2CServer;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
+import es.bsc.hp2c.common.utils.CommUtils;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 
 import java.io.IOException;
@@ -37,16 +38,25 @@ public class AmqpManager {
     /**
      * Initialize AMQP Channel.
      *
-     * @param ip IP address where the RabbitMQ broker is deployed
+     * @param localIp local IP address where the RabbitMQ broker is deployed
+     *                if IP is not configured in deployment_setup.json
      * @param deviceMap Map of the edge nodes and their devices
      */
-    public AmqpManager(String ip, Map<String, Map<String, Device>> deviceMap, DatabaseHandler db)
+    public AmqpManager(String localIp, Map<String, Map<String, Device>> deviceMap, DatabaseHandler db)
             throws IOException, TimeoutException {
         this.deviceMap = deviceMap;
         this.db = db;
-        System.out.println("Connecting to RabbitMQ broker at host IP " + ip + "...");
+        // Select broker IP
+        String brokerIp = CommUtils.parseRemoteBrokerIp(localIp);
+        // Start connection
+        connect(brokerIp);
+    }
+
+    /** Start AMQP connection with broker. */
+    private static void connect(String setupIp) throws IOException, TimeoutException {
+        System.out.println("Connecting to RabbitMQ broker at host IP " + setupIp + "...");
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(ip);
+        factory.setHost(setupIp);
         Connection connection = factory.newConnection();
         channel = connection.createChannel();
         System.out.println("RabbitMQ Connection successful");

@@ -3,8 +3,9 @@
 # Initialization
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
-setup_folder=$(realpath "${SCRIPT_DIR}/setup")
-config_json="${SCRIPT_DIR}/../../config.json"
+setup_folder=$(realpath "${SCRIPT_DIR}/setup")  # Edge configuration files
+config_json="${SCRIPT_DIR}/../../config.json"  # Authentication configuration
+deployment_json="${SCRIPT_DIR}/deployment_setup.json"  # Deployment configuration (IPs, etc.)
 
 if [ $# -eq 1 ]; then
   DOCKER_IMAGE="$1/server:latest"
@@ -53,7 +54,8 @@ echo "Deploying container for SERVER with REST API listening on port 8080..."
 docker run \
     -it -d --rm \
     --name ${DEPLOYMENT_PREFIX}_server \
-    -v ${setup_folder}:/data/ \
+    -v ${setup_folder}:/data/edge/ \
+    -v ${deployment_json}:/data/deployment_setup.json \
     -v ${config_json}:/run/secrets/config.json \
     -p 8080:8080 \
     -e LOCAL_IP=$ip_address \

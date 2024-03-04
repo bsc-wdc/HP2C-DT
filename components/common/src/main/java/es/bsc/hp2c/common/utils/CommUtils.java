@@ -1,6 +1,14 @@
 package es.bsc.hp2c.common.utils;
 
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Utility class for commonly used methods related to communications
@@ -45,5 +53,31 @@ public final class CommUtils {
     public static boolean isNumeric(String str) {
         // Match a number with optional negative sign '-' and decimal point.
         return str.matches("-?\\d+(\\.\\d+)?");
+    }
+
+    /** Checks if the parsed IP address is valid, otherwise return the default IP. */
+    public static String parseRemoteBrokerIp(String defaultIp) throws IOException {
+        String brokerIp = parseRemoteBrokerIp();
+        if (brokerIp.isEmpty()) {
+            brokerIp = defaultIp;
+        }
+        return brokerIp;
+    }
+
+    /** Look for the AMQP broker IP in the deployment setup file. */
+    public static String parseRemoteBrokerIp() throws IOException {
+        // Check existence of file
+        String deploymentFile = "/data/deployment_setup.json";
+        if (!new File(deploymentFile).isFile()) {
+            deploymentFile = "../../deployments/testbed/deployment_setup.json";
+            if (!new File(deploymentFile).isFile()) {
+                throw new IOException("Could not find 'deployment_setup.json'");
+            }
+        }
+        // Parse JSON file and look for IP address
+        InputStream is = Files.newInputStream(Paths.get(deploymentFile));
+        JSONTokener tokener = new JSONTokener(is);
+        JSONObject object = new JSONObject(tokener);
+        return object.getJSONObject("broker").optString("ip");
     }
 }
