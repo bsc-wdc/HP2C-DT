@@ -15,6 +15,7 @@
  */
 package es.bsc.hp2c;
 
+import es.bsc.hp2c.common.utils.CommUtils;
 import es.bsc.hp2c.edge.opalrt.OpalComm;
 import es.bsc.hp2c.common.types.Device;
 import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
@@ -60,10 +61,11 @@ public class HP2CEdge {
             defaultsPath = "../../deployments/defaults/setup/edge_default.json";
         }
         // Get IP
-        String localIP = System.getenv("LOCAL_IP");
+        String localIp = System.getenv("LOCAL_IP");
+        String brokerIp = CommUtils.parseRemoteBrokerIp(localIp);
 
         // Set up AMQP connections
-        setUpMessaging(localIP);
+        setUpMessaging(brokerIp);
 
         // Load devices and functions
         edgeLabel = readEdgeLabel(setupFile);
