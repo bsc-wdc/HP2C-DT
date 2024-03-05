@@ -54,11 +54,6 @@ In order to test the application, it must be performed:
 ## IoT communications
 The application uses the RabbitMQ Java client for edge devices and a RabbitMQ Docker image for the AMQP broker.
 
-The basics of the communications are as follows:
-- One single exchange called `measurements`
-- Edge devices publish messages to a given routing key with the following structure: `edge.<EDGE_ID>.<DEVICE_ID>`. For instance, if edge1 has two sensors `voltmeter` and `ammeter`, it will publish measurements to `edge.edge1.voltmeter` and `edge.edge1.ammeter`
-- The server's queue is bound to the exchange and any routing key that is a child of `edge` (`edge.#`), e.g., `edge.edge1.voltmeter`.
-
 ### AMQP broker
 The docker container of the broker is based on the RabbitMQ image maintained by the docker community. We add additional setups to the configuration files in `/etc/rabbitmq/conf.d/` according to the [RabbitMQ documentation](https://www.rabbitmq.com/configure.html#config-confd-directory).
 
@@ -67,15 +62,82 @@ To deploy this image, use:
 docker run -it --rm --name hp2c_broker -p 5672:5672 -p 15672:15672 hp2c/broker:latest
 ```
 
-Ports 5672 (main AMQP port) and 15672 (RabbitMQ Management console) are reserved
+Ports 5672 (main AMQP port) and 15672 (RabbitMQ Management console) are reserved.
 
 To diagnose the RabbitMQ server:
 ```shell
 rabbitmq-diagnostics status
 ```
 
-### Additional configuration
+#### Additional configuration
 - Timestamp is added to each message upon publishing using:
 ```
 message_interceptors.incoming.set_header_timestamp.overwrite = false
 ```
+
+### Sensors publishing
+
+The basics of the communications are as follows:
+- One single exchange called `measurements`
+- Edge devices publish messages to a given routing key with the following structure: 
+  ```
+  edge.<EDGE_ID>.sensors.<DEVICE_ID>
+  ```
+  For instance, if edge1 has two sensors `voltmeter` and `ammeter`, it will publish measurements to `edge.edge1.sensors.voltmeter` and `edge.edge1.ammeter`
+- The server's queue is bound to the exchange and any routing key that is a child of `edge` (`edge.#`), e.g., `edge.edge1.sensors.voltmeter`.
+
+### Actuation
+We can send commands to actuators through the REST API of the Server at the endpoint `/actuate`
+
+```bash
+curl -X POST   -H "Content-Type: application/json"   -d '{"values":["off","off","off"],"edgeLabel":"edge1","actuatorLabel":"ThreePhaseSwitchGen1"}'   http://localhost:8080/actuate
+
+curl -X POST   -H "Content-Type: application/json"   -d '{"values":["0.5","0.75"],"edgeLabel":"edge1","actuatorLabel":"GeneratorGen1"}'   http://localhost:8080/actuate
+```
+
+Wrong or malformed commands are gracefully handled and the REST API responds with the right usage.
+
+![actuation](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/actuation.png)
+
+## Database Organization
+
+In the InfluxDB database, `hp2cdt`, each IoT device, labeled as `edge1`, `edge2`, etc., contributes to a *measurement* (a time series in InfluxDB nomenclature) each. To distinguish between devices, a *tag* called `device` is used, and "SensorX" is added to specify each sub-device, even if the sensor has only one sub-sensor. The actual measurements are stored in a float-type *field* named `value`. This setup simplifies the handling and interpretation of data from various IoT sources.
+
+### Database Name: `hp2cdt`
+
+This database contains time series data from IoT devices. Each device is represented by a separate measurement within the database.
+
+### Measurements:
+
+| Measurement Name | Description                            |
+|------------------|----------------------------------------|
+| `edge1`          | Data from Edge Node 1                  |
+| `edge2`          | Data from Edge Node 2                  |
+| ...              | ...                                    |
+
+### Tags:
+
+- **`device`**: Represents the name of each device without spaces, dashes, or underscores. Each device name is followed by the string "SensorX" to denote each subsensor.
+  
+  Example:
+  - `AmmeterGen1Sensor0`
+  - `ThreePhaseSwitchGen1Sensor2`
+
+### Fields:
+
+- **`value`**: Floating-point value representing the actual measurements from each device.
+
+### Example:
+
+| Time                 | Device                | Value |
+|----------------------|-----------------------|-------|
+| 2024-03-05T12:00:00Z | AmmeterGen1Sensor0    | 10.5  |
+| 2024-03-05T12:00:00Z | ThreePhaseSwitchGen1Sensor0 | -20.3  |
+| 2024-03-05T12:00:00Z | ThreePhaseSwitchGen1Sensor1 | 0.1  |
+| 2024-03-05T12:00:00Z | ThreePhaseSwitchGen1Sensor2 | 20.3  |
+| 2024-03-05T12:01:00Z | AmmeterGen1Sensor0    | 11.2  |
+| 2024-03-05T12:01:00Z | ThreePhaseSwitchGen1Sensor0 | 1.0  |
+| 2024-03-05T12:01:00Z | ThreePhaseSwitchGen1Sensor1 | -10.0  |
+| 2024-03-05T12:01:00Z | ThreePhaseSwitchGen1Sensor2 | 15.0  |
+| ...                  | ...                   | ...   |
+
