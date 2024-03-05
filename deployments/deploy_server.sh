@@ -7,11 +7,18 @@ setup_folder=$(realpath "${SCRIPT_DIR}/setup")  # Edge configuration files
 config_json="${SCRIPT_DIR}/../../config.json"  # Authentication configuration
 deployment_json="${SCRIPT_DIR}/deployment_setup.json"  # Deployment configuration (IPs, etc.)
 
-if [ $# -eq 1 ]; then
-  DOCKER_IMAGE="$1/server:latest"
+if [ $# -eq 2 ]; then
+  DEPLOYMENT_NAME=$1
+  DOCKER_IMAGE="$2/server:latest"
+elif [ $# -eq 1 ]; then
+  DEPLOYMENT_NAME=$1
+  DOCKER_IMAGE="hp2c/server:latest"
 else
+  DEPLOYMENT_NAME="testbed"
   DOCKER_IMAGE="hp2c/server:latest"
 fi
+
+setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup")
 
 
 # Get the IPv4 address from wlp or eth interfaces
@@ -33,11 +40,6 @@ on_exit(){
 
     echo "Removing containers"
     docker stop ${DEPLOYMENT_PREFIX}_server
-
-    echo "Removing network"
-    if [ ! "$(docker network inspect ${NETWORK_NAME} 2>/dev/null)" == "[]" ]; then
-        docker network rm ${NETWORK_NAME} 1>/dev/null 2>/dev/null
-    fi
 }
 trap 'on_exit' EXIT
 

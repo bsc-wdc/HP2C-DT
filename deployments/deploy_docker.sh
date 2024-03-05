@@ -3,14 +3,22 @@
 # Run one container for each JSON file. Container's name will be "hp2c_" plus
 # the label specified in global-properties.label.
 
-# Loading Constants
+# Initialization
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+DEPLOYMENT_PREFIX="hp2c"
 
-if [ $# -eq 1 ]; then
-  EDGE_DOCKER_IMAGE="$1/edge:latest"
+if [ $# -eq 2 ]; then
+  DEPLOYMENT_NAME=$1
+  DOCKER_IMAGE="$2/edge:latest"
+elif [ $# -eq 1 ]; then
+  DEPLOYMENT_NAME=$1
+  DOCKER_IMAGE="hp2c/edge:latest"
 else
-  EDGE_DOCKER_IMAGE="hp2c/edge:latest"
+  DEPLOYMENT_NAME="testbed"
+  DOCKER_IMAGE="hp2c/edge:latest"
 fi
+
+setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup")
 
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 
@@ -18,7 +26,8 @@ DEPLOYMENT_PREFIX="hp2c"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 
 # Create a dictionary containg pairs of label-files (JSON files)
-defaults_json="${SCRIPT_DIR}/../defaults/setup/edge_default.json"
+defaults_json="${SCRIPT_DIR}/../defaults/setup/edge_default.json"  # Edge default configuration
+deployment_json="${SCRIPT_DIR}/deployment_setup.json"  # Deployment configuration (IPs, etc.)
 setup_folder=$(realpath "${SCRIPT_DIR}/setup")
 declare -A labels_paths
 declare -A labels_udp_ports
@@ -103,11 +112,12 @@ for label in "${!labels_paths[@]}"; do
         -p "${labels_tcp_sensors_ports[$label]}:${labels_tcp_sensors_ports[$label]}/tcp" \
         -v ${labels_paths[$label]}:/data/setup.json \
         -v ${defaults_json}:/data/edge_default.json \
+        -v ${deployment_json}:/data/deployment_setup.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
         -e LOCAL_IP=$ip_address \
         -e CUSTOM_IP=$custom_ip_address \
-        ${EDGE_DOCKER_IMAGE}
+        ${DOCKER_IMAGE}
     edge_idx=$(( edge_idx + 1 ))
 done
 
