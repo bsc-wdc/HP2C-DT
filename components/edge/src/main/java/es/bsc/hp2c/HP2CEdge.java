@@ -62,7 +62,7 @@ public class HP2CEdge {
         }
         // Get IP
         String localIp = System.getenv("LOCAL_IP");
-        String brokerIp = CommUtils.parseRemoteBrokerIp(localIp);
+        String brokerIp = CommUtils.parseRemoteIp("broker", localIp);
 
         // Set up AMQP connections
         setUpMessaging(brokerIp);

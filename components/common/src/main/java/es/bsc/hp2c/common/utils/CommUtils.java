@@ -56,16 +56,16 @@ public final class CommUtils {
     }
 
     /** Checks if the parsed IP address is valid, otherwise return the default IP. */
-    public static String parseRemoteBrokerIp(String defaultIp) throws IOException {
-        String brokerIp = parseRemoteBrokerIp();
+    public static String parseRemoteIp(String component, String defaultIp) throws IOException {
+        String brokerIp = parseRemoteIp(component);
         if (brokerIp.isEmpty()) {
             brokerIp = defaultIp;
         }
         return brokerIp;
     }
 
-    /** Look for the AMQP broker IP in the deployment setup file. */
-    public static String parseRemoteBrokerIp() throws IOException {
+    /** Look for the IP address of a component (e.g., broker) in the deployment setup file. */
+    public static String parseRemoteIp(String component) throws IOException {
         // Check existence of file
         String deploymentFile = "/data/deployment_setup.json";
         if (!new File(deploymentFile).isFile()) {
@@ -78,6 +78,6 @@ public final class CommUtils {
         InputStream is = Files.newInputStream(Paths.get(deploymentFile));
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);
-        return object.getJSONObject("broker").optString("ip");
+        return object.getJSONObject(component).optString("ip");
     }
 }

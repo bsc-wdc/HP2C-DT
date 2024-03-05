@@ -15,6 +15,7 @@
  */
 package es.bsc.hp2c.server.modules;
 
+import es.bsc.hp2c.common.utils.CommUtils;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
@@ -37,18 +38,21 @@ public class DatabaseHandler {
 
     /**
      * Initializes the "hp2cdt" InfluxDB database instance.
+     * localIp is provided in case the proper IP address is not set up in deployment_setup.json
      *
-     * @param ip IP address of the database deployment
+     * @param localIp local IP (server)
      * @param port Database port number
      */
-    public DatabaseHandler(String ip, long port) throws IOException {
-        // Create an object to handle the communication with InfluxDB.
-        System.out.println("Connecting to InfluxDB at host IP " + ip + ", port " + port + "...");
-        String serverURL = "http://" + ip + ":" + port;
+    public DatabaseHandler(String localIp, long port) throws IOException {
+        // Select database IP
+        String databaseIp = CommUtils.parseRemoteIp("database", localIp);
+        // Create object to handle the communication with InfluxDB.
+        System.out.println("Connecting to InfluxDB at host IP " + databaseIp + ", port " + port + "...");
+        String databaseURL = "http://" + databaseIp + ":" + port;
         String[] auth = getAuth();
         String username = auth[0];
         String password = auth[1];
-        influxDB = InfluxDBFactory.connect(serverURL, username, password);
+        influxDB = InfluxDBFactory.connect(databaseURL, username, password);
         System.out.println("InfluxDB Connection successful");
     }
 

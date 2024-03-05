@@ -47,7 +47,7 @@ public class AmqpManager {
         this.deviceMap = deviceMap;
         this.db = db;
         // Select broker IP
-        String brokerIp = CommUtils.parseRemoteBrokerIp(localIp);
+        String brokerIp = CommUtils.parseRemoteIp("broker", localIp);
         // Start connection
         connect(brokerIp);
     }
