@@ -16,7 +16,8 @@
   </style>
 </head>
 <body>
-
+<h3 class="page-title">Deployment: Testbed</h3>
+<div class="card Recent-Users">
   <div id="device-panels">
     {% for edge, devices in edgeDevices.items %}
       <div class="card-header">
@@ -46,7 +47,7 @@
       </div>
     {% endfor %}
   </div>
-
+</div>
   <script>
     var rows = document.getElementsByClassName('device-row');
     Array.from(rows).forEach(function(row) {
@@ -72,9 +73,4 @@
 </body>
 </html>
 {% endblock content %}
-
-
-
-
-
 

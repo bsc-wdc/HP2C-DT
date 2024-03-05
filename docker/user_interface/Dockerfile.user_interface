@@ -1,0 +1,27 @@
+FROM python:3.10
+
+COPY ./userInterface/ /app/
+
+WORKDIR /app/
+RUN pip install -r requirements.txt
+
+RUN chmod +x /app/scripts/init_dashboard.sh
+
+WORKDIR /app/scripts
+RUN ./init_dashboard.sh /data
+
+WORKDIR /app/
+RUN python3 manage.py migrate --noinput
+RUN python3 manage.py collectstatic --noinput
+CMD ["python", "manage.py", "runserver", "0.0.0.0:80"]
+
+
+
+
+
+
+
+
+
+
+

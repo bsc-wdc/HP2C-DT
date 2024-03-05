@@ -42,20 +42,28 @@ def tables(request):
   }
   return render(request, "pages/dynamic-tables.html", context)
 
-def create_deployments():
 
+def create_deployments():
     # Get all deployments from the database
     deployments_dir = "../../deployments"
+    if os.path.exists(deployments_dir):
+        print("existe el path de deployments")
+        deployments = [d for d in os.listdir(deployments_dir)]
+    else:
+        # Get environment variable (only for docker)
+        deployments = [os.getenv("DEPLOYMENT_NAME")]
 
-    for deployment_name in os.listdir(deployments_dir):
+    for deployment_name in deployments:
         if deployment_name == "defaults" or deployment_name == "9-buses":
           continue
         # Directory path where JSON files are located
         dashboard_dir = "../../components/userInterface/scripts/dashboards/"
+        if not os.path.exists(dashboard_dir):
+            # Path to dashboards in docker
+            dashboard_dir = "/app/scripts/dashboards"
         # Build the path to the JSON file corresponding to the deployment
         dashboard_file_path = os.path.join(dashboard_dir,
                                            f"{deployment_name}.json")
-      
         # Check if the JSON file exists
         if os.path.exists(dashboard_file_path):
             with open(dashboard_file_path, 'r') as f:

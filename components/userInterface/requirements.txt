@@ -5,6 +5,7 @@ str2bool==1.1
 
 # UI 
 django-admin-datta==1.0.10
+requests==2.26.0
 
 # Tooling
 django-dynamic-datatb==1.0.25
@@ -18,3 +19,4 @@ gunicorn==21.2.0
 # DB Layer
 # psycopg2-binary
 # mysqlclient
+influxdb==5.3.1

@@ -207,9 +207,7 @@ def generate_dashboard_json(deployment_name, edge_device_dict):
 
     print(f"Dashboard JSON saved to {filename}")
 
-def get_dict_from_deployment(deployment_name):
-    deployments_dir = "../../../deployments"
-    deployment_dir = os.path.join(deployments_dir, deployment_name, "setup")
+def get_dict_from_deployment(deployment_name, deployment_dir):
     return get_devices(deployment_dir)
 
 def get_devices(deployment_dir):
@@ -230,11 +228,9 @@ def get_devices(deployment_dir):
                 
 
 def main():
-    if len(sys.argv) < 2: 
-        deployment_name = "testbed"
-    else: 
-        deployment_name = sys.argv[1]
-    edges = get_dict_from_deployment(deployment_name)
+    deployment_name = sys.argv[1]
+    deployment_dir = sys.argv[2]
+    edges = get_dict_from_deployment(deployment_name, deployment_dir)
     generate_dashboard_json(deployment_name, edges)
 
 if __name__ == "__main__" :
