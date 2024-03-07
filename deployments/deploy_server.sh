@@ -3,9 +3,6 @@
 # Initialization
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
-setup_folder=$(realpath "${SCRIPT_DIR}/setup")  # Edge configuration files
-config_json="${SCRIPT_DIR}/../../config.json"  # Authentication configuration
-deployment_json="${SCRIPT_DIR}/deployment_setup.json"  # Deployment configuration (IPs, etc.)
 
 if [ $# -eq 2 ]; then
   DEPLOYMENT_NAME=$1
@@ -18,7 +15,13 @@ else
   DOCKER_IMAGE="hp2c/server:latest"
 fi
 
-setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup")
+deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  # Deployment configuration (IPs, etc.)
+setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
+config_json="${SCRIPT_DIR}/../config.json"  # Authentication configuration
+
+echo "deployment_json: ${deployment_json}"
+echo "setup_folder: ${setup_folder}"
+echo "config_json: ${config_json}"
 
 
 # Get the IPv4 address from wlp or eth interfaces
@@ -54,7 +57,7 @@ wait_containers(){
 
 echo "Deploying container for SERVER with REST API listening on port 8080..."
 docker run \
-    -it -d --rm \
+    -it --rm \
     --name ${DEPLOYMENT_PREFIX}_server \
     -v ${setup_folder}:/data/edge/ \
     -v ${deployment_json}:/data/deployment_setup.json \

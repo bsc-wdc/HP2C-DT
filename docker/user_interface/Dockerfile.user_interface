@@ -2,26 +2,13 @@ FROM python:3.10
 
 COPY ./userInterface/ /app/
 
-WORKDIR /app/
-RUN pip install -r requirements.txt
+RUN apt-get update && apt-get install -y jq
 
-RUN chmod +x /app/scripts/init_dashboard.sh
+WORKDIR /app/
+RUN pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /app/scripts
-RUN ./init_dashboard.sh /data
+RUN chmod +x run_user_interface.sh
 
-WORKDIR /app/
-RUN python3 manage.py migrate --noinput
-RUN python3 manage.py collectstatic --noinput
-CMD ["python", "manage.py", "runserver", "0.0.0.0:80"]
-
-
-
-
-
-
-
-
-
-
+CMD ["./run_user_interface.sh"]
 
