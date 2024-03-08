@@ -1,13 +1,11 @@
 #!/bin/bash
 
 #(local)
-if [ -z ${DEPLOYMENT_NAME} ]; then
+if [ -z "${DEPLOYMENT_NAME}" ]; then
     deployment_name="$1"
-    local_ip="localhost"
 #(get enviroment variables declared in deploy_user_interface)
 else
     deployment_name=$DEPLOYMENT_NAME
-    local_ip=$LOCAL_IP
 fi
 
 # Function to extract IP and port from JSON
@@ -36,7 +34,6 @@ grafana_addr=$(get_ip_port "$deployment_setup_file")
 
 # Grafana API URL and key
 GRAFANA_URL="http://${grafana_addr}"
-echo "${GRAFANA_URL}"
 
 if [[ -f ../../../config.json ]]; then
     config_file="../../../config.json"
@@ -52,39 +49,29 @@ GRAFANA_API_KEY=$(jq -r ".grafana.api_key" "$config_file")
 # Path to the dashboard JSON file
 DASHBOARD_JSON="jsons_dashboards/$1_dashboard.json"
 
-get_dashboard_uid() {
-    local title=$DASHBOARD_JSON
-    local uid_out
-    local uid
-    for uid in $(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" "${GRAFANA_URL}/api/search" | jq -r '.[].uid'); do 
-        local dashboard_json
-        dashboard_json=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" "${GRAFANA_URL}/api/dashboards/uid/${uid}")
-        local dashboard_title
-        dashboard_title=$(echo "$dashboard_json" | jq -r '.dashboard.title')
-        if [[ "$dashboard_title" == "$title" ]]; then
-            uid_out="$uid"
-            break
-        fi
-    done
-    echo "$uid_out"
-}
+# Define a list of GRAFANA_URLs
+URLs=("${GRAFANA_URL}")
 
-# Make a POST request to create or update the dashboard
-response=$(curl -X POST \
-  -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
-  -H "Content-Type: application/json" \
-  -d @"${DASHBOARD_JSON}" \
-  -s -w "%{http_code}" \
-  "${GRAFANA_URL}/api/dashboards/db")
-# Extract the HTTP response status
-http_status=$(echo "$response" | tail -c 4)
-# If the status is 200 (OK), the dashboard was created or updated successfully
-if [ "$http_status" -eq 200 ]; then
-  echo "Dashboard created or update successfully."
-  # Extract the name of the existing dashboard from the JSON request
-  dashboard_name=$(jq -r '.dashboard.title' "${DASHBOARD_JSON}")
-  # Extract the UID of the existing dashboard from the search results
-  uid=$(get_dashboard_uid "$dashboard_name")
-else
-  echo "Failed to create or update the dashboard. HTTP Status: $http_status"
+# Check if LOCAL_IP is not empty and add it to the list
+if [ -n "$LOCAL_IP" ]; then
+  URLs+=("http://${LOCAL_IP}:3000")
 fi
+
+# Iterate over the list of URLs and try to make the request
+for url in "${URLs[@]}"; do
+  response=$(curl -X POST \
+    -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
+    -H "Content-Type: application/json" \
+    -d @"${DASHBOARD_JSON}" \
+    -s -w "%{http_code}" \
+    "${url}/api/dashboards/db")
+  # Extract the HTTP response status
+  http_status=$(echo "$response" | tail -c 4)
+  # If the status is 200 (OK), the dashboard was created or updated successfully
+  if [ "$http_status" -eq 200 ]; then
+    echo "Dashboard created or updated successfully using $url."
+    break
+  else
+    echo "Failed to create or update the dashboard using $url. HTTP Status: $http_status"
+  fi
+done

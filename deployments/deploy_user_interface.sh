@@ -26,16 +26,6 @@ if [ -z "$ip_address" ]; then
     ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'eth[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
 fi
 
-if [ ! -f $deployment_json ]; then
-    echo "The JSON file $deployment_json does not exist."
-    exit 1
-fi
-
-# Update the value of grafana.ip with local ip in deployment_setup.json
-jq --arg ip "$ip_address" '.grafana.ip = $ip' "$deployment_json" > "${deployment_json}.tmp" && mv "${deployment_json}.tmp" "$deployment_json"
-
-echo "The JSON file has been updated with the local IP: $deployment_json."
-
 # Auxiliar functions
 on_exit(){
     echo "Clearing deployment"
@@ -61,6 +51,7 @@ docker run \
     -v ${config_json}:/run/secrets/config.json \
     -p 80:80 \
     -e DEPLOYMENT_NAME=${DEPLOYMENT_NAME} \
+    -e LOCAL_IP=${ip_address} \
     ${DOCKER_IMAGE}
 
 echo "Testbed properly deployed"

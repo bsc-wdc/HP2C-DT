@@ -22,5 +22,5 @@ fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-docker build -t ${ORG_NAME}/user_interface:${HP2C_VERSION} --build-arg="COMPSS_VERSION=${COMPSS_VERSION}" -f ${SCRIPT_DIR}/Dockerfile.user_interface ${SCRIPT_DIR}/../../components/
+docker build -t ${ORG_NAME}/user_interface:${HP2C_VERSION} --build-arg="COMPSS_VERSION=${COMPSS_VERSION}" -f ${SCRIPT_DIR}/Dockerfile.user_interface ${SCRIPT_DIR}/../../components/userInterface/
 docker tag ${ORG_NAME}/user_interface:${HP2C_VERSION} ${ORG_NAME}/user_interface:latest

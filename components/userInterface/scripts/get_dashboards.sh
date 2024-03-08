@@ -43,15 +43,25 @@ GRAFANA_API_KEY=$(jq -r ".grafana.api_key" "$config_file")
 
 mkdir -p ${ROOT_DIR}/dashboards
 
-for uid in $(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${GRAFANA_URL}/api/search | jq '.[].uid' -r); do
-    dashboard_info=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${GRAFANA_URL}/api/dashboards/uid/$uid)
-    title=$(echo $dashboard_info | jq -r '.dashboard.title')
-    if echo "$title" | grep -q "hp2cdt - "; then
-        name_of_deployment=$(echo "$title" | awk -F "hp2cdt - " '{print $2}' | tr -d '[:space:]')
-    else
-        name_of_deployment="$title"
-    fi
+# Define a list of GRAFANA_URLs
+URLs=("${GRAFANA_URL}")
 
-    echo "Exporting dashboard with UID: $uid to file: $name_of_deployment.json"
-    echo $dashboard_info | jq . > ${ROOT_DIR}/dashboards/$name_of_deployment.json
+# Check if LOCAL_IP is not empty and add it to the list
+if [ -n "$LOCAL_IP" ]; then
+  URLs+=("http://${LOCAL_IP}:3000")
+fi
+
+for url in "${URLs[@]}"; do
+  for uid in $(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${url}/api/search | jq '.[].uid' -r); do
+      dashboard_info=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${url}/api/dashboards/uid/$uid)
+      title=$(echo $dashboard_info | jq -r '.dashboard.title')
+      if echo "$title" | grep -q "hp2cdt - "; then
+          name_of_deployment=$(echo "$title" | awk -F "hp2cdt - " '{print $2}' | tr -d '[:space:]')
+      else
+          name_of_deployment="$title"
+      fi
+
+      echo "Exporting dashboard with UID: $uid to file: $name_of_deployment.json"
+      echo $dashboard_info | jq . > ${ROOT_DIR}/dashboards/$name_of_deployment.json
+  done
 done
