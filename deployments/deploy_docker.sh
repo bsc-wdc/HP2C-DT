@@ -18,7 +18,6 @@ else
   DOCKER_IMAGE="hp2c/edge:latest"
 fi
 
-setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup")
 
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 
@@ -26,9 +25,10 @@ DEPLOYMENT_PREFIX="hp2c"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 
 # Create a dictionary containg pairs of label-files (JSON files)
-defaults_json="${SCRIPT_DIR}/../defaults/setup/edge_default.json"  # Edge default configuration
-deployment_json="${SCRIPT_DIR}/deployment_setup.json"  # Deployment configuration (IPs, etc.)
-setup_folder=$(realpath "${SCRIPT_DIR}/setup")
+defaults_json="${SCRIPT_DIR}/defaults/setup/edge_default.json"  # Edge default configuration
+deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  # Deployment configuration (IPs, etc.)
+setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup")
+
 declare -A labels_paths
 declare -A labels_udp_ports
 declare -A labels_tcp_sensors_ports
