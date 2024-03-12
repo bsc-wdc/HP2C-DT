@@ -1,5 +1,4 @@
 FROM rabbitmq:3.12-management
 
-COPY 20-main.conf /etc/rabbitmq/conf.d/
 COPY .erlang.cookie /var/lib/rabbitmq/
 RUN chmod 400 /var/lib/rabbitmq/.erlang.cookie
