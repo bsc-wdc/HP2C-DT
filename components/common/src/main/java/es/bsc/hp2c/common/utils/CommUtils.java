@@ -78,6 +78,12 @@ public final class CommUtils {
         InputStream is = Files.newInputStream(Paths.get(deploymentFile));
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);
-        return object.getJSONObject(component).optString("ip");
+        String ip = object.getJSONObject(component).optString("ip");
+        // Do not use 0.0.0.0 or localhost since containers do not work well with them
+        if (ip.equals("0.0.0.0") || ip.equals("localhost") || ip.equals("127.0.0.1")) {
+            return "";
+        } else {
+            return ip;
+        }
     }
 }
