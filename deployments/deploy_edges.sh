@@ -6,22 +6,18 @@
 # Initialization
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
+DEPLOYMENT_NAME="testbed"
 
+if [ $# -ge 1 ]; then
+  DEPLOYMENT_NAME=$1
+fi
 if [ $# -eq 2 ]; then
-  DEPLOYMENT_NAME=$1
-  DOCKER_IMAGE="$2/edge:latest"
-elif [ $# -eq 1 ]; then
-  DEPLOYMENT_NAME=$1
-  DOCKER_IMAGE="hp2c/edge:latest"
-else
-  DEPLOYMENT_NAME="testbed"
-  DOCKER_IMAGE="hp2c/edge:latest"
+  DEPLOYMENT_PREFIX=$2
 fi
 
+DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/edge:latest"
 
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
-
-DEPLOYMENT_PREFIX="hp2c"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 
 # Create a dictionary containg pairs of label-files (JSON files)

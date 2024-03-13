@@ -3,17 +3,14 @@
 # Initialization
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
+DEPLOYMENT_NAME="testbed"
 
-if [ $# -eq 2 ]; then
+if [ $# -ge 1 ]; then
   DEPLOYMENT_NAME=$1
-  DOCKER_IMAGE="$2/server:latest"
-elif [ $# -eq 1 ]; then
-  DEPLOYMENT_NAME=$1
-  DOCKER_IMAGE="hp2c/server:latest"
-else
-  DEPLOYMENT_NAME="testbed"
-  DOCKER_IMAGE="hp2c/server:latest"
+elif [ $# -eq 2 ]; then
+  DEPLOYMENT_PREFIX=$2
 fi
+DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/server:latest"
 
 deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  # Deployment configuration (IPs, etc.)
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
