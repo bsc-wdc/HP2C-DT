@@ -4,12 +4,30 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 broker_config="${SCRIPT_DIR}/../20-main-simple.conf"
 
+# Auxiliar functions
+on_exit(){
+    echo "Clearing deployment"
+    echo "Removing containers"
+    docker stop hp2c_broker
+}
+trap 'on_exit' EXIT
+
+wait_containers(){
+    docker wait hp2c_broker
+}
+
+echo "Deploying container for BROKER (SIMPLE)"
+
 # Run container
 docker run \
-    -it --rm \
+    -d --rm \
     --name hp2c_broker \
     --hostname hp2c_broker \
     -p 5672:5672 \
     -p 15672:15672 \
     -v ${broker_config}:/etc/rabbitmq/conf.d/20-main-simple.conf \
     hp2c/broker:latest
+
+echo "Testbed properly deployed"
+wait_containers
+echo "Ended properly"

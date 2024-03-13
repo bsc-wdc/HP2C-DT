@@ -57,7 +57,7 @@ wait_containers(){
 
 echo "Deploying container for SERVER with REST API listening on port 8080..."
 docker run \
-    -it --rm \
+    -d -it --rm \
     --name ${DEPLOYMENT_PREFIX}_server \
     -v ${setup_folder}:/data/edge/ \
     -v ${deployment_json}:/data/deployment_setup.json \

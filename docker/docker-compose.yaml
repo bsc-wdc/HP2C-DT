@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  broker:
+    container_name: hp2c_broker
+    build:
+      context: ../components/broker
+      dockerfile: ../../docker/broker/Dockerfile.broker
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ../components/broker/20-main-simple.conf:/etc/rabbitmq/conf.d/20-main-simple.conf
+    restart: "no"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /tmp/healthcheck.log -w '%{http_code}' http://localhost:15672"]
+      interval: 3s
+      timeout: 1s
+      retries: 40
+      start_period: 5s
+
+  server:
+    container_name: ${ORG_NAME}_server
+    depends_on:
+      broker:
+        condition: service_healthy
+    build:
+      context: ../components/
+      dockerfile: ../docker/server/Dockerfile.server
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../deployments/${DEPLOYMENT_NAME}/setup:/data/edge/
+      - ../deployments/${DEPLOYMENT_NAME}/deployment_setup.json:/data/deployment_setup.json
+      - ../config.json:/run/secrets/config.json
+    environment:
+      - LOCAL_IP=${LOCAL_IP}
+      - CUSTOM_IP=${CUSTOM_IP}
+    restart: "no"
+    stdin_open: true
+    tty: true
+
+  user_interface:
+    container_name: ${ORG_NAME}_user_interface
+    build:
+      context: ../components/userInterface
+      dockerfile: ../../docker/user_interface/Dockerfile.user_interface
+    ports:
+      - "80:80"
+    volumes:
+      - ../deployments/${DEPLOYMENT_NAME}/setup:/data/edge/
+      - ../deployments/${DEPLOYMENT_NAME}/deployment_setup.json:/data/deployment_setup.json
+      - ../config.json:/run/secrets/config.json
+    environment:
+      - DEPLOYMENT_NAME=${DEPLOYMENT_NAME}
+      - LOCAL_IP=${LOCAL_IP}
+    restart: "no"

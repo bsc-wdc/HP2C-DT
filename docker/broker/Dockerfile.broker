@@ -1,4 +1,6 @@
 FROM rabbitmq:3.12-management
 
+RUN apt update && apt install -y curl
+
 COPY .erlang.cookie /var/lib/rabbitmq/
 RUN chmod 400 /var/lib/rabbitmq/.erlang.cookie
