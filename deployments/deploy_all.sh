@@ -46,7 +46,6 @@ custom_ip_address="172.29.128.1"
 #    echo "Deployment setup directory $DIRECTORY does not exist."
 # fi
 
-echo "DEPLOYMENT NAME"
 export DEPLOYMENT_NAME=$DEPLOYMENT_NAME
 export ORG_NAME=$ORG_NAME
 export HP2C_VERSION=$HP2C_VERSION
@@ -61,4 +60,4 @@ export LOCAL_IP=$ip_address
 
 cd ../docker
 
-docker-compose up --build
+docker compose up --build

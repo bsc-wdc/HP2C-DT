@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   broker:
-    container_name: hp2c_broker
+    container_name: ${ORG_NAME}_broker
     build:
       context: ../components/broker
       dockerfile: ../../docker/broker/Dockerfile.broker
