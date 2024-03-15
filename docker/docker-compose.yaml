@@ -55,3 +55,16 @@ services:
       - DEPLOYMENT_NAME=${DEPLOYMENT_NAME}
       - LOCAL_IP=${LOCAL_IP}
     restart: "no"
+
+  opal_simulator:
+    container_name: ${ORG_NAME}_opal_simulator
+    build:
+      context: ../components/
+      dockerfile: ../docker/opal_simulator/Dockerfile.opal_simulator
+    network_mode: "host"
+    volumes:
+      - ../deployments/${DEPLOYMENT_NAME}/setup:/data/edge/
+    environment:
+      - DEPLOYMENT_NAME=${DEPLOYMENT_NAME}
+      - LOCAL_IP=${LOCAL_IP}
+    restart: "no"

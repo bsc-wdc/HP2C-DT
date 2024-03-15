@@ -19,7 +19,7 @@ import org.json.JSONTokener;
  *
  */
 public class OpalSimulator {
-    private static final String SERVER_ADDRESS = "127.0.0.1";
+    private static String SERVER_ADDRESS = "127.0.0.1";
     private static int BASE_TCP_SENSORS_PORT;
     private static int BASE_TCP_ACTUATORS_PORT;
     private static int runClient = 0;
@@ -38,11 +38,18 @@ public class OpalSimulator {
     * @param args User should input the deployment directory (name of the directory in path "hp2cdt/deployments")
     * */
     public static void main(String[] args) throws InterruptedException, FileNotFoundException {
+        String localIp = System.getenv("LOCAL_IP");
+        if (localIp != null) SERVER_ADDRESS=localIp;
+
         if (args.length > 0){
             parseJSON(args[0], false);
         } else {
-            System.out.println("User must input as argument the deployment directory");
-            parseJSON("testbed", true);
+            String deploymentName = System.getenv("DEPLOYMENT_NAME");
+            if (deploymentName != null) parseJSON(deploymentName, false);
+            else{
+                System.out.println("User must input as argument the deployment directory");
+                parseJSON("testbed", true);
+            }
         }
 
         // while each of the columns represents the indexes within the edge.
@@ -235,9 +242,12 @@ public class OpalSimulator {
 
     public static void parseJSON(String deployment, boolean local) throws FileNotFoundException {
         String deploymentFile = "../../deployments/" + deployment + "/setup/";
-        System.out.println("Path to deployment setup: " + deploymentFile);
         File directory = new File(deploymentFile);
-
+        if (!directory.exists()) {
+            deploymentFile = "/data/edge/";
+            directory = new File(deploymentFile);
+        }
+        System.out.println("Path to deployment setup: " + deploymentFile);
         //get the number of files in the directory and set nEdges. If the execution is local, use only 1 edge
         if (local) { nEdges = 1; }
         else { nEdges = directory.listFiles().length; }
