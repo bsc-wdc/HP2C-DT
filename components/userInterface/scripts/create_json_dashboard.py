@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-def generate_panel_timeseries(edge_name, device):
+def generate_panel_timeseries(edge_name, device, datasource_uid):
     targets = []
     for i in range(device[1]):
         cleaned_device_name = device[0].replace(" ", "")
@@ -13,7 +13,7 @@ def generate_panel_timeseries(edge_name, device):
             "alias": "phase " + str(i + 1),
             "datasource": {
                 "type": "influxdb",
-                "uid": "bed49e87-0f10-4248-beae-2bc1fb6c0c4f"
+                "uid": datasource_uid
             },
             "groupBy": [
                 {
@@ -52,7 +52,7 @@ def generate_panel_timeseries(edge_name, device):
     panel = {
         "datasource": {
             "type": "influxdb",
-            "uid": "bed49e87-0f10-4248-beae-2bc1fb6c0c4f"
+            "uid": datasource_uid
         },
         "fieldConfig": {
             "defaults": {
@@ -95,11 +95,11 @@ def generate_panel_timeseries(edge_name, device):
 
 
 
-def generate_dashboard_json(deployment_name, edge_device_dict):
+def generate_dashboard_json(deployment_name, edge_device_dict, datasource_uid):
     panels = []
     for edge_name, devices in edge_device_dict.items():
         for device in devices:
-            panel_timeseries = generate_panel_timeseries(edge_name, device)
+            panel_timeseries = generate_panel_timeseries(edge_name, device, datasource_uid)
             panel_table = panel_timeseries.copy()
             names = []
             for i in range(len(panel_table["targets"])):
@@ -230,8 +230,9 @@ def get_devices(deployment_dir):
 def main():
     deployment_name = sys.argv[1]
     deployment_dir = sys.argv[2]
+    datasource_uid = sys.argv[3]
     edges = get_dict_from_deployment(deployment_name, deployment_dir)
-    generate_dashboard_json(deployment_name, edges)
+    generate_dashboard_json(deployment_name, edges, datasource_uid)
 
 if __name__ == "__main__" :
     main()

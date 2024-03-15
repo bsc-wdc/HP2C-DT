@@ -62,6 +62,6 @@ for url in "${URLs[@]}"; do
       fi
 
       echo "Exporting dashboard with UID: $uid to file: $name_of_deployment.json"
-      echo $dashboard_info | jq . > ${ROOT_DIR}/dashboards/$name_of_deployment.json
+      echo $dashboard_info | jq . > "${ROOT_DIR}/dashboards/$name_of_deployment.json"
   done
 done
