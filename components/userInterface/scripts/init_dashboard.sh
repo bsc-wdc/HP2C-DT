@@ -5,6 +5,8 @@ usage() {
     exit 1
 }
 
+#################################### INIT #################################
+
 # Default values
 deployment_name="testbed"
 deployment_dir="../../../deployments/testbed/setup"
@@ -78,15 +80,61 @@ if [ -n "$LOCAL_IP" ]; then
   URLs+=("http://${LOCAL_IP}:3000")
 fi
 
+
+############################ GET DATASOURCE UID ######################################
 for url in "${URLs[@]}"; do
   datasource_uid=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${url}/api/datasources | jq -r '.[] | select(.name == "influxdb") | .uid')
 done
 
+
+
+########################### CREATE JSON DASHBOARD ####################################
 # Execute the Python script to create the dashboard JSON
 python3 create_json_dashboard.py ${deployment_name} ${deployment_dir} ${datasource_uid}
 
-# Execute the script to create or update the dashboard
-./create_or_update_dashboard.sh ${deployment_name}
 
-# Execute the script to get the dashboards
-./get_dashboards.sh ${deployment_name}
+
+########################### CREATE OR UPDATE DASHBOARD ###############################
+# Path to the dashboard JSON file
+DASHBOARD_JSON="jsons_dashboards/${deployment_name}_dashboard.json"
+
+# Iterate over the list of URLs and try to make the request
+for url in "${URLs[@]}"; do
+  response=$(curl -X POST \
+    -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
+    -H "Content-Type: application/json" \
+    -d @"${DASHBOARD_JSON}" \
+    -s -w "%{http_code}" \
+    "${url}/api/dashboards/db")
+
+  # Extract the HTTP response status
+  http_status=$(echo "$response" | tail -c 4)
+  # If the status is 200 (OK), the dashboard was created or updated successfully
+  if [ "$http_status" -eq 200 ]; then
+    echo "Dashboard created or updated successfully using $url."
+    break
+  else
+    echo "Failed to create or update the dashboard using $url. HTTP Status: $http_status"
+  fi
+done
+
+
+
+############################## GET DASHBOARDS #########################################
+mkdir -p dashboards
+
+for url in "${URLs[@]}"; do
+  for uid in $(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${url}/api/search | jq '.[].uid' -r); do
+      dashboard_info=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${url}/api/dashboards/uid/$uid)
+      title=$(echo $dashboard_info | jq -r '.dashboard.title')
+      if echo "$title" | grep -q "hp2cdt - "; then
+          name_of_deployment=$(echo "$title" | awk -F "hp2cdt - " '{print $2}' | tr -d '[:space:]')
+      else
+          name_of_deployment="$title"
+      fi
+
+      echo "Exporting dashboard with UID: $uid to file: $name_of_deployment.json"
+      echo $dashboard_info | jq . > "dashboards/$name_of_deployment.json"
+  done
+done
+
