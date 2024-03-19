@@ -82,11 +82,18 @@ fi
 
 
 ############################ GET DATASOURCE UID ######################################
+datasource_uid=""
 for url in "${URLs[@]}"; do
-  datasource_uid=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${url}/api/datasources | jq -r '.[] | select(.name == "influxdb") | .uid')
+  uid=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${url}/api/datasources | jq -r '.[] | select(.name == "influxdb") | .uid')
+  if [ -n "$uid" ]; then
+    datasource_uid=$uid
+  fi
 done
 
-
+if [ -z "$datasource_uid" ]; then
+  echo "Datasource influxdb uid not found"
+  exit 1
+fi
 
 ########################### CREATE JSON DASHBOARD ####################################
 # Execute the Python script to create the dashboard JSON
@@ -99,6 +106,7 @@ python3 create_json_dashboard.py ${deployment_name} ${deployment_dir} ${datasour
 DASHBOARD_JSON="jsons_dashboards/${deployment_name}_dashboard.json"
 
 # Iterate over the list of URLs and try to make the request
+final_url=""
 for url in "${URLs[@]}"; do
   response=$(curl -X POST \
     -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
@@ -111,13 +119,19 @@ for url in "${URLs[@]}"; do
   http_status=$(echo "$response" | tail -c 4)
   # If the status is 200 (OK), the dashboard was created or updated successfully
   if [ "$http_status" -eq 200 ]; then
-    echo "Dashboard created or updated successfully using $url."
+    final_url=$url
     break
   else
-    echo "Failed to create or update the dashboard using $url. HTTP Status: $http_status"
+    echo $http_status
   fi
 done
 
+if [ -n "$final_url" ]; then
+    echo "Dashboard created or updated successfully using ${final_url}."
+else
+  echo "Failed to create or update the dashboard"
+  exit 1
+fi
 
 
 ############################## GET DASHBOARDS #########################################

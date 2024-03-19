@@ -35,10 +35,56 @@
                 </td>
                 <td align="right" >
                   {% if "Switch" in device.name or "Generator" in device.name %}
-                    <a href="" class="label theme-bg text-white f-12 show-panel-btn">Actuate</a>
+                    <div class="btn-group mb-2 mr-2">
+                      <button class="btn btn-warning dropdown-toggle" type="button" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">Actuate</button>
+                      {% if "Generator" in device.name %}
+                        <div class="dropdown-menu">
+                          <input type="email" class="form-control" id="voltage_set_point" aria-describedby="emailHelp"
+                            placeholder="Voltage Set Point">
+                          <input type="email" class="form-control" id="power_set_point" aria-describedby="emailHelp"
+                            placeholder="Power Set Point">
+                          <a class="dropdown-item" href="#!">Send actuation</a>
+                        </div>
+                      {% elif "Switch" in device.name and "Three" in device.name %}
+                        <div class="dropdown-menu">
+                          <div class="dropdown-item">
+                            <select class="form-select" id="option1.3" onchange="toggleOption(this)">
+                              <option value="on">On</option>
+                              <option value="off">Off</option>
+                            </select>
+                          </div>
+                          <div class="dropdown-item">
+                            <select class="form-select" id="option2.3" onchange="toggleOption(this)">
+                              <option value="on">On</option>
+                              <option value="off">Off</option>
+                            </select>
+                          </div>
+                          <div class="dropdown-item">
+                            <select class="form-select" id="option3.3" onchange="toggleOption(this)">
+                              <option value="on">On</option>
+                              <option value="off">Off</option>
+                            </select>
+                          </div>
+                          <a class="dropdown-item" href="#!">Send actuation</a>
+                        </div>
+                      {% else %}
+                        <div class="dropdown-menu">
+                          <div class="dropdown-item">
+                            <select class="form-select" id="option1.1" onchange="toggleOption(this)">
+                              <option value="on">On</option>
+                              <option value="off">Off</option>
+                            </select>
+                          </div>
+                          <a class="dropdown-item" href="#!">Send actuation</a>
+                        </div>
+                      {% endif %}
+                    </div>
                   {% endif %}
-                  <a href="{% url 'device_detail' edge_name=edge.name device_name=device.name %}"
-                     class="label theme-bg2 text-white f-12 show-panel-btn">View detail</a>
+                  <a href="{% url 'device_detail' edge_name=edge.name device_name=device.name %}">
+                    <button type="button" class="btn btn-primary" data-toggle="tooltip">View detail</button>
+                  </a>
+                </td>
               </tr>
               {% endfor %}
             </tbody>
@@ -51,19 +97,30 @@
   <script>
     var rows = document.getElementsByClassName('device-row');
     Array.from(rows).forEach(function(row) {
-      row.addEventListener('click', function() {
-        var panelLink = this.dataset.panel;
-        var panelCell = this.querySelector('.panel-cell');
-        if (panelCell) {
-          var panel = panelCell.querySelector('.device-panel');
-          panel.src = panelLink;
-          panelCell.style.display = panelCell.style.display === 'none' ? 'table-cell' : 'none';
+      row.addEventListener('click', function(event) {
+        var isButton = event.target.tagName === 'BUTTON';
+        var isDropdownItem = event.target.closest('.dropdown-menu');
+        if (!isButton && !isDropdownItem) {
+          var panelLink = this.dataset.panel;
+          var panelCell = this.querySelector('.panel-cell');
+          if (panelCell) {
+            var panel = panelCell.querySelector('.device-panel');
+            panel.src = panelLink;
+            panelCell.style.display = panelCell.style.display === 'none' ? 'table-cell' : 'none';
+          }
         }
       });
     });
 
     var showPanelBtns = document.getElementsByClassName('show-panel-btn');
     Array.from(showPanelBtns).forEach(function(btn) {
+      btn.addEventListener('click', function(event) {
+        event.stopPropagation();
+      });
+    });
+
+    var detailBtns = document.querySelectorAll('.btn-primary');
+    Array.from(detailBtns).forEach(function(btn) {
       btn.addEventListener('click', function(event) {
         event.stopPropagation();
       });
