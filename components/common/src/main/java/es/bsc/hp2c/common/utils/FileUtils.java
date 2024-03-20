@@ -11,11 +11,30 @@ import org.json.JSONTokener;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 public final class FileUtils {
     private FileUtils(){}
+
+    /**
+     * Convert a HashMap to JSONObject.
+     *
+     * @param hashMap The HashMap to be converted to JSON.
+     * @return A JSONObject representing the HashMap data.
+     */
+    public static JSONObject convertHashMapToJson(HashMap<String, Object> hashMap) {
+        JSONObject jsonObject = new JSONObject();
+        for (String key : hashMap.keySet()) {
+            Object value = hashMap.get(key);
+            if (value instanceof HashMap) {
+                value = convertHashMapToJson((HashMap<String, Object>) value);
+            }
+            jsonObject.put(key, value);
+        }
+        return jsonObject;
+    }
 
     /**
      * Read the provided JSON file to return the edge label.

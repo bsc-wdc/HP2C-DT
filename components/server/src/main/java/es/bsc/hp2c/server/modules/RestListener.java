@@ -28,17 +28,19 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.Map;
 
 import static es.bsc.hp2c.HP2CServer.checkActuator;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
+import static es.bsc.hp2c.common.utils.FileUtils.convertHashMapToJson;
 
 /**
  * HTTP Server that listens to REST POST requests.
  */
 public class RestListener {
     private static final int REST_PORT = 8080;
-    private static Map<String, Map<String, Device>> deviceMap = null;
+    private static Map<String, Map<String, Device>> deviceMap;
 
     public RestListener(Map<String, Map<String, Device>> deviceMap) {
         RestListener.deviceMap = deviceMap;
@@ -49,10 +51,41 @@ public class RestListener {
         HttpServer server = HttpServer.create(new InetSocketAddress(REST_PORT), 0);
         // Create a context for actuate REST endpoint
         server.createContext("/actuate", new ActuateHandler());
+        server.createContext("/getDevicesInfo", new GetDevicesInfoHandler());
         // Start the server
         server.start();
         System.out.println("HTTP Server started on port " + REST_PORT);
     }
+
+    static class GetDevicesInfoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String requestMethod = exchange.getRequestMethod();
+            if (!requestMethod.equalsIgnoreCase("GET")) {
+                exchange.sendResponseHeaders(405, 0); // Method Not Allowed
+                return;
+            }
+
+            String response = "";
+            JSONObject jDeviceInfo = new JSONObject();
+
+            try {
+                //response = "Received request to get devices info. ";
+                jDeviceInfo = RestUtils.getInfoFromDeviceMap();
+            } catch (JSONException e) {
+                response = e.getMessage();
+                exchange.sendResponseHeaders(500, 0); // Internal Server Error
+                return;
+            }
+
+            exchange.sendResponseHeaders(200, response.length() + jDeviceInfo.toString().getBytes().length);
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.write(jDeviceInfo.toString().getBytes());
+            os.close();
+        }
+    }
+
 
     /** Handler that implements the logic for received requests. */
     static class ActuateHandler implements HttpHandler {
@@ -110,6 +143,34 @@ public class RestListener {
             }
             reader.close();
             return sb.toString();
+        }
+
+        static JSONObject getInfoFromDeviceMap() {
+            JSONObject jDevicesInfo = new JSONObject();
+            for (HashMap.Entry<String, Map<String, Device>> entry : deviceMap.entrySet()) {
+                String groupKey = entry.getKey();
+                Map<String, Device> innerMap = entry.getValue();
+                JSONObject jEdge = new JSONObject();
+                for (HashMap.Entry<String, Device> innerEntry : innerMap.entrySet()) {
+                    String deviceKey = innerEntry.getKey();
+                    JSONObject jDevice = new JSONObject();
+                    boolean isActionable = false;
+                    Device device = innerMap.get(deviceKey);
+                    if (device.isActionable()) {
+                        VirtualComm.VirtualActuator<?> actuator = (VirtualComm.VirtualActuator<?>) device;
+                        isActionable = true;
+                        boolean isCategoric = actuator.isCategoric();
+                        jDevice.put("isCatecoric", isCategoric);
+                        if (isCategoric) {
+                            jDevice.put("categories", actuator.getCategories());
+                        }
+                    }
+                    jDevice.put("isActionable", isActionable);
+                    jEdge.put(deviceKey, jDevice);
+                }
+                jDevicesInfo.put(groupKey, jEdge);
+            }
+            return jDevicesInfo;
         }
 
         static RequestData parseRequestBody(String requestBody) throws JSONException {
