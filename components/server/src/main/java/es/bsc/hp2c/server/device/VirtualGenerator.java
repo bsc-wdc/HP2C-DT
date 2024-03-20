@@ -23,6 +23,7 @@ import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
 import static es.bsc.hp2c.server.modules.AmqpManager.virtualActuate;
@@ -99,6 +100,16 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     @Override
     public String getEdgeLabel() {
         return this.edgeLabel;
+    }
+
+    @Override
+    public boolean isCategoric() {
+        return false;
+    }
+
+    @Override
+    public ArrayList<String> getCategories() {
+        return null;
     }
 }
 

@@ -23,6 +23,7 @@ import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 import static es.bsc.hp2c.server.modules.AmqpManager.virtualActuate;
@@ -134,5 +135,19 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     @Override
     public String getEdgeLabel() {
         return this.edgeLabel;
+    }
+
+    @Override
+    public boolean isCategoric() {
+        return true;
+    }
+
+    @Override
+    public ArrayList<String> getCategories() {
+        ArrayList<String> categories = new ArrayList<>();
+        for (State state : Switch.State.values()) {
+            categories.add(state.toString());
+        }
+        return categories;
     }
 }
