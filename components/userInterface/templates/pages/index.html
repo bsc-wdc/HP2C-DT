@@ -39,7 +39,7 @@
                       <button class="btn btn-warning dropdown-toggle" type="button" data-toggle="dropdown"
                         aria-haspopup="true" aria-expanded="false">Actuate</button>
                       {% if "Generator" in device.name %}
-                        <div class="dropdown-menu">
+                        <div class="dropdown-menu" onclick="event.stopPropagation()">
                           <input type="email" class="form-control" id="voltage_set_point" aria-describedby="emailHelp"
                             placeholder="Voltage Set Point">
                           <input type="email" class="form-control" id="power_set_point" aria-describedby="emailHelp"
@@ -47,7 +47,7 @@
                           <a class="dropdown-item" href="#!">Send actuation</a>
                         </div>
                       {% elif "Switch" in device.name and "Three" in device.name %}
-                        <div class="dropdown-menu">
+                        <div class="dropdown-menu" onclick="event.stopPropagation()">
                           <div class="dropdown-item">
                             <select class="form-select" id="option1.3" onchange="toggleOption(this)">
                               <option value="on">On</option>
@@ -69,7 +69,7 @@
                           <a class="dropdown-item" href="#!">Send actuation</a>
                         </div>
                       {% else %}
-                        <div class="dropdown-menu">
+                        <div class="dropdown-menu" onclick="event.stopPropagation()">
                           <div class="dropdown-item">
                             <select class="form-select" id="option1.1" onchange="toggleOption(this)">
                               <option value="on">On</option>
