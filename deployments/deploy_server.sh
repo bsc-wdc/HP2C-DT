@@ -7,7 +7,8 @@ DEPLOYMENT_NAME="testbed"
 
 if [ $# -ge 1 ]; then
   DEPLOYMENT_NAME=$1
-elif [ $# -eq 2 ]; then
+fi
+if [ $# -eq 2 ]; then
   DEPLOYMENT_PREFIX=$2
 fi
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/server:latest"
