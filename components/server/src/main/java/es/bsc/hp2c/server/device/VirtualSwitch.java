@@ -34,6 +34,7 @@ import static es.bsc.hp2c.server.modules.AmqpManager.virtualActuate;
  */
 public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Switch.State[]>, VirtualActuator<Switch.State[]> {
     private String edgeLabel;
+    private int size;
 
     /**
      * Creates a new instance of VirtualSwitch.
@@ -46,6 +47,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     public VirtualSwitch(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position, properties.getJSONArray("indexes").length());
         this.edgeLabel = jGlobalProperties.getString("label");
+        this.size = properties.getJSONArray("indexes").length();
     }
 
     /**
@@ -138,7 +140,10 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     }
 
     @Override
-    public boolean isCategoric() {
+    public int getSize() { return this.size; }
+
+    @Override
+    public boolean isCategorical() {
         return true;
     }
 

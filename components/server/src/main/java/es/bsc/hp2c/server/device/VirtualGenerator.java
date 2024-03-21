@@ -33,6 +33,7 @@ import static es.bsc.hp2c.server.modules.AmqpManager.virtualActuate;
  */
 public class VirtualGenerator extends Generator<Float[]> implements VirtualSensor<Float[]>, VirtualActuator<Float[]> {
     private String edgeLabel;
+    private int size;
 
     /**
      * Creates a new instance of VirtualGenerator.
@@ -45,6 +46,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     public VirtualGenerator(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
         this.edgeLabel = jGlobalProperties.getString("label");
+        this.size = 2;
     }
 
     /**
@@ -103,7 +105,10 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     }
 
     @Override
-    public boolean isCategoric() {
+    public int getSize() { return this.size; }
+
+    @Override
+    public boolean isCategorical() {
         return false;
     }
 

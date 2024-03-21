@@ -14,8 +14,9 @@ public class VirtualComm {
     protected interface VirtualSensor<V> extends Sensor<Float[], V>, VirtualDevice {}
     public interface VirtualActuator<V> extends Actuator<V>, VirtualDevice {
         void actuate(String[] stringValues) throws IOException;
-        boolean isCategoric();
+        boolean isCategorical();
         ArrayList<String> getCategories();
+        int getSize();
     }
 
 }

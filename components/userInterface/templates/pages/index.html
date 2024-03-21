@@ -34,50 +34,32 @@
                   <iframe class="device-panel" src="" width="900" height="300" frameborder="0"></iframe>
                 </td>
                 <td align="right" >
-                  {% if "Switch" in device.name or "Generator" in device.name %}
+                  {% if device.is_actionable %}
                     <div class="btn-group mb-2 mr-2">
                       <button class="btn btn-warning dropdown-toggle" type="button" data-toggle="dropdown"
                         aria-haspopup="true" aria-expanded="false">Actuate</button>
-                      {% if "Generator" in device.name %}
-                        <div class="dropdown-menu" onclick="event.stopPropagation()">
-                          <input type="email" class="form-control" id="voltage_set_point" aria-describedby="emailHelp"
-                            placeholder="Voltage Set Point">
-                          <input type="email" class="form-control" id="power_set_point" aria-describedby="emailHelp"
-                            placeholder="Power Set Point">
-                          <a class="dropdown-item" href="#!">Send actuation</a>
-                        </div>
-                      {% elif "Switch" in device.name and "Three" in device.name %}
-                        <div class="dropdown-menu" onclick="event.stopPropagation()">
-                          <div class="dropdown-item">
-                            <select class="form-select" id="option1.3" onchange="toggleOption(this)">
-                              <option value="on">On</option>
-                              <option value="off">Off</option>
-                            </select>
+                      {% if not device.is_categorical %}
+                          <div class="dropdown-menu" onclick="event.stopPropagation()">
+                              {% for _ in ''|center:device.size %}
+                                  <input type="email" class="form-control" id="voltage_set_point" aria-describedby="emailHelp">
+                              {% endfor %}
+                              <a class="dropdown-item" href="#!">Send actuation</a>
                           </div>
-                          <div class="dropdown-item">
-                            <select class="form-select" id="option2.3" onchange="toggleOption(this)">
-                              <option value="on">On</option>
-                              <option value="off">Off</option>
-                            </select>
-                          </div>
-                          <div class="dropdown-item">
-                            <select class="form-select" id="option3.3" onchange="toggleOption(this)">
-                              <option value="on">On</option>
-                              <option value="off">Off</option>
-                            </select>
-                          </div>
-                          <a class="dropdown-item" href="#!">Send actuation</a>
-                        </div>
                       {% else %}
-                        <div class="dropdown-menu" onclick="event.stopPropagation()">
-                          <div class="dropdown-item">
-                            <select class="form-select" id="option1.1" onchange="toggleOption(this)">
-                              <option value="on">On</option>
-                              <option value="off">Off</option>
-                            </select>
+                          <div class="dropdown-menu" onclick="event.stopPropagation()">
+                              {% for _ in ''|center:device.size %}
+                                  <div class="dropdown-item">
+                                      <select class="form-select" id="option1.3" onchange="toggleOption(this)">
+                                          {% for category in device.categories %}
+                                              {% if category != 'NULL' %}
+                                                  <option value="{{ category }}">{{ category }}</option>
+                                              {% endif %}
+                                          {% endfor %}
+                                      </select>
+                                  </div>
+                            {% endfor %}
+                            <a class="dropdown-item" href="#!">Send actuation</a>
                           </div>
-                          <a class="dropdown-item" href="#!">Send actuation</a>
-                        </div>
                       {% endif %}
                     </div>
                   {% endif %}
@@ -130,4 +112,3 @@
 </body>
 </html>
 {% endblock content %}
-
