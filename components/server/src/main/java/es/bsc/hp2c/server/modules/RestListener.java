@@ -160,7 +160,7 @@ public class RestListener {
                         VirtualComm.VirtualActuator<?> actuator = (VirtualComm.VirtualActuator<?>) device;
                         isActionable = true;
                         boolean isCategoric = actuator.isCategoric();
-                        jDevice.put("isCatecoric", isCategoric);
+                        jDevice.put("isCategoric", isCategoric);
                         if (isCategoric) {
                             jDevice.put("categories", actuator.getCategories());
                         }
