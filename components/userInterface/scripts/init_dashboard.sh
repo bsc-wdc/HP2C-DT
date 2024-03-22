@@ -151,26 +151,3 @@ for url in "${URLs[@]}"; do
       echo $dashboard_info | jq . > "dashboards/$name_of_deployment.json"
   done
 done
-
-{% if not device.is_categorical %}
-                          <div class="dropdown-menu" onclick="event.stopPropagation()">
-                              {% for i in range(device.size) %}
-                                  <input type="email" class="form-control" id="voltage_set_point" aria-describedby="emailHelp">
-                              {% endfor %}
-                              <a class="dropdown-item" href="#!">Send actuation</a>
-                          </div>
-                      {% else %}
-                          <div class="dropdown-menu" onclick="event.stopPropagation()">
-                              {% for i in range(device.size) %}
-                                  <div class="dropdown-item">
-                                      <select class="form-select" id="option1.3" onchange="toggleOption(this)">
-                                          {% for category in categories %}
-                                              {% if category != 'NULL' %}
-                                                  <option value="{{ category }}">{{ category }}</option>
-                                              {% endif %}
-                                          {% endfor %}
-                                      </select>
-                                  </div>
-                              {% endfor %}
-                          </div>
-                      {% endif %}
