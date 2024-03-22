@@ -50,6 +50,7 @@
                               {% for _ in ''|center:device.size %}
                                   <div class="dropdown-item">
                                       <select class="form-select" id="option1.3" onchange="toggleOption(this)">
+                                          <option value="NULL"></option>
                                           {% for category in device.categories %}
                                               {% if category != 'NULL' %}
                                                   <option value="{{ category }}">{{ category }}</option>
