@@ -1,0 +1,91 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<html lang="en">
+<body>
+<h3 class="page-title">Deployment dashboard</h3>
+<div class="card Recent-Users">
+  <div id="device-panels">
+    {% for edge, devices in edgeDevices.items %}
+      <div class="card-header">
+        <h5>Edge: {{ edge.name }}</h5>
+      </div>
+      <div class="card-block px-0 py-3">
+        <div class="table-responsive">
+          <table class="table table-hover device-table">
+            <tbody>
+              {% for device, form in forms %}
+              <tr class="device-row" data-panel="{{ device.timeseries_link }}">
+                <td>{{ device.name }}</td>
+                <td class="panel-cell" style="display: none;">
+                  <iframe class="device-panel" src="" width="900" height="300" frameborder="0"></iframe>
+                </td>
+                <td align="right" >
+                  {% if form %}
+                  <a>
+                    <div class="btn-group mb-2 mr-2">
+                      <form method="post" action="{% url 'index' %}">
+                        {% csrf_token %}
+                        {{ form.as_ul }}
+                        <button type="submit" class="btn btn-warning" data-toggle="tooltip">Actuate</button>
+                      </form>
+                    </div>
+                  </a>
+                  {% endif %}
+                  <a href="{% url 'device_detail' edge_name=edge.name device_name=device.name %}">
+                    <button type="button" class="btn btn-primary" data-toggle="tooltip">View detail</button>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+    var rows = document.getElementsByClassName('device-row');
+    Array.from(rows).forEach(function(row) {
+      row.addEventListener('click', function(event) {
+        // Verifica si el clic proviene de un elemento del formulario
+        var isFormElement = event.target.closest('form');
+        if (!isFormElement) {
+          var isButton = event.target.tagName === 'BUTTON';
+          var isDropdownItem = event.target.closest('.dropdown-menu');
+          if (!isButton && !isDropdownItem) {
+            var panelLink = this.dataset.panel;
+            var panelCell = this.querySelector('.panel-cell');
+            if (panelCell) {
+              var panel = panelCell.querySelector('.device-panel');
+              panel.src = panelLink;
+              panelCell.style.display = panelCell.style.display === 'none' ? 'table-cell' : 'none';
+            }
+          }
+        }
+      });
+    });
+
+    var showPanelBtns = document.getElementsByClassName('show-panel-btn');
+    Array.from(showPanelBtns).forEach(function(btn) {
+      btn.addEventListener('click', function(event) {
+        event.stopPropagation();
+      });
+    });
+
+    var detailBtns = document.querySelectorAll('.btn-primary');
+    Array.from(detailBtns).forEach(function(btn) {
+      btn.addEventListener('click', function(event) {
+        event.stopPropagation();
+      });
+    });
+  </script>
+
+</body>
+</html>
+{% endblock content %}

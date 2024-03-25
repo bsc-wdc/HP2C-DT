@@ -1,19 +1,9 @@
 import os
-import json
-import requests
-
-from django.shortcuts import render, redirect
-from admin_datta.forms import RegistrationForm, LoginForm, UserPasswordChangeForm, UserPasswordResetForm, UserSetPasswordForm
-from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetConfirmView, PasswordResetView
-from django.views.generic import CreateView
-from django.contrib.auth import logout
-
-from django.contrib.auth.decorators import login_required
 from requests import RequestException
-
+from django.views.decorators.csrf import csrf_exempt
 from .models import *
 
-
+"""
 def index(request):
   #create_deployments()
   get_deployment()
@@ -30,6 +20,55 @@ def index(request):
     #'products' : Product.objects.all()
   }
   return render(request, "pages/index.html", context)
+"""
+
+
+
+
+from django.shortcuts import render
+from django.http import HttpResponse
+from .forms import CategoricalDeviceForm, NonCategoricalDeviceForm
+import json
+import requests
+
+@csrf_exempt
+def index(request):
+    if request.method == 'POST':
+        form_data = request.POST.dict()
+        device_id = form_data.pop('device_id')
+        device = Device.objects.get(id=device_id)
+
+        values = [form_data[f"phase_{i}"] for i in range(1, device.size + 1)]
+
+        actuation_data = {
+            'values': values,
+            'edgeLabel': device.edge.name,
+            'actuatorLabel': device.name
+        }
+        response = requests.post('http://localhost:8080/actuate', json=actuation_data)
+
+        if response.status_code == 200:
+            return HttpResponse('Actuation sent correctly')
+        else:
+            return HttpResponse('Error while sending actuation', status=response.status_code)
+    else:
+        get_deployment()
+        deployment = Deployment.objects.get(name="testbed")
+        edges = Edge.objects.filter(deployment=deployment)
+        edgeDevices = {}
+        forms = []
+        for edge in edges:
+            devices = Device.objects.filter(edge=edge)
+            edgeDevices[edge] = devices
+            for device in devices:
+                form = None
+                if device.is_actionable and device.is_categorical:
+                    form = CategoricalDeviceForm(device)
+                elif device.is_actionable:
+                    form = NonCategoricalDeviceForm(device)
+                forms.append((device, form))
+
+        return render(request, 'pages/my_template.html', {'edgeDevices': edgeDevices, 'forms': forms})
 
 def get_deployment():
     deployment_name = "testbed"
