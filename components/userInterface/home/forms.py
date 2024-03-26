@@ -8,18 +8,12 @@ class CategoricalDeviceForm(forms.Form):
         self.fields['device_id'] = forms.CharField(widget=forms.HiddenInput(),
                                                    initial=device.id)
         for i in range(1, device.size + 1):
-            self.fields[f'phase_{i}'] = forms.ChoiceField(label=f'Phase {i}',
-                                                          choices=[('',
-                                                                    '---')] + [
-                                                                      (
-                                                                      category,
-                                                                      category)
-                                                                      for
-                                                                      category
-                                                                      in
-                                                                      device.categories
-                                                                      if
-                                                                      category != 'NULL'])
+            self.fields[f'phase_{i}'] = forms.ChoiceField(label=f'Phase {i}:',
+                                                          choices=[('', '---')] + [
+                                                              (category, category)
+                                                              for category in device.categories
+                                                              if category != 'NULL']
+                                                          )
 
 
 class NonCategoricalDeviceForm(forms.Form):

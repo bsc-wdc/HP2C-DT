@@ -5,16 +5,6 @@
 
 {% block content %}
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Device Panels</title>
-  <style>
-    .device-row {
-      width: 100%;
-    }
-  </style>
-</head>
 <body>
 <h3 class="page-title">Deployment dashboard</h3>
 <div class="card Recent-Users">
@@ -27,48 +17,29 @@
         <div class="table-responsive">
           <table class="table table-hover device-table">
             <tbody>
-              {% for device in devices %}
-              <tr class="device-row" data-panel="{{ device.timeseries_link }}">
-                <td>{{ device.name }}</td>
-                <td class="panel-cell" style="display: none;">
-                  <iframe class="device-panel" src="" width="900" height="300" frameborder="0"></iframe>
-                </td>
-                <td align="right" >
-                  {% if device.is_actionable %}
-                    <div class="btn-group mb-2 mr-2">
-                      <button class="btn btn-warning dropdown-toggle" type="button" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">Actuate</button>
-                      {% if not device.is_categorical %}
-                          <div class="dropdown-menu" onclick="event.stopPropagation()">
-                              {% for _ in ''|center:device.size %}
-                                  <input type="email" class="form-control" id="voltage_set_point" aria-describedby="emailHelp">
-                              {% endfor %}
-                              <a class="dropdown-item" href="#!">Send actuation</a>
-                          </div>
-                      {% else %}
-                          <div class="dropdown-menu" onclick="event.stopPropagation()">
-                              {% for _ in ''|center:device.size %}
-                                  <div class="dropdown-item">
-                                      <select class="form-select" id="option1.3" onchange="toggleOption(this)">
-                                          <option value="NULL"></option>
-                                          {% for category in device.categories %}
-                                              {% if category != 'NULL' %}
-                                                  <option value="{{ category }}">{{ category }}</option>
-                                              {% endif %}
-                                          {% endfor %}
-                                      </select>
-                                  </div>
-                            {% endfor %}
-                            <a class="dropdown-item" href="#!">Send actuation</a>
-                          </div>
+              {% for device, form in forms %}
+                {% if device in devices %}
+                  <tr class="device-row" data-panel="{{ device.timeseries_link }}" data-actuator="{{ device.is_actionable }}">
+                    <td>{{ device.name }}</td>
+                    <td class="panel-cell" style="display: none;">
+                      <iframe class="device-panel" src="" width="900" height="300" frameborder="0"></iframe>
+                    </td>
+                    <td align="right">
+                      {% if form %}
+                        <div class="btn-group mb-2 mr-2">
+                          <form method="post" action="{% url 'index' %}" class="actuation-form" style="display: none">
+                            {% csrf_token %}
+                            {{ form.as_ul }}
+                            <button type="submit" class="btn btn-warning" data-toggle="tooltip">Actuate</button>
+                          </form>
+                        </div>
                       {% endif %}
-                    </div>
-                  {% endif %}
-                  <a href="{% url 'device_detail' edge_name=edge.name device_name=device.name %}">
-                    <button type="button" class="btn btn-primary" data-toggle="tooltip">View detail</button>
-                  </a>
-                </td>
-              </tr>
+                      <a href="{% url 'device_detail' edge_name=edge.name device_name=device.name %}">
+                        <button type="button" class="btn btn-primary" data-toggle="tooltip">View detail</button>
+                      </a>
+                    </td>
+                  </tr>
+                {% endif %}
               {% endfor %}
             </tbody>
           </table>
@@ -77,10 +48,16 @@
     {% endfor %}
   </div>
 </div>
-  <script>
+<script>
     var rows = document.getElementsByClassName('device-row');
     Array.from(rows).forEach(function(row) {
       row.addEventListener('click', function(event) {
+        var isActuator = this.dataset.actuator;
+        if (isActuator === 'true') {
+          var actuationForm = this.querySelector('.actuation-form');
+          actuationForm.style.display = actuationForm.style.display === 'none' ? 'block' : 'none';
+        }
+
         var isButton = event.target.tagName === 'BUTTON';
         var isDropdownItem = event.target.closest('.dropdown-menu');
         if (!isButton && !isDropdownItem) {
@@ -95,6 +72,8 @@
       });
     });
 
+
+
     var showPanelBtns = document.getElementsByClassName('show-panel-btn');
     Array.from(showPanelBtns).forEach(function(btn) {
       btn.addEventListener('click', function(event) {
@@ -108,7 +87,7 @@
         event.stopPropagation();
       });
     });
-  </script>
+</script>
 
 </body>
 </html>

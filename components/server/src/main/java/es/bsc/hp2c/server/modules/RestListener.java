@@ -101,6 +101,7 @@ public class RestListener {
             // Get request and parse (assume JSON format)
             String response;
             String requestBody = RestUtils.convertStreamToString(exchange.getRequestBody());
+            int responseCode = 200;
             try {
                 RestUtils.RequestData data = RestUtils.parseRequestBody(requestBody);
                 String[] stringValues = data.values;
@@ -120,12 +121,14 @@ public class RestListener {
                 } else {
                     // Get error message
                     response = checker.getMessage();
+                    responseCode = 400;
                 }
             } catch (JSONException | IOException e) {
                 response = e.getMessage();
+                responseCode = 400;
             }
 
-            exchange.sendResponseHeaders(200, response.length());
+            exchange.sendResponseHeaders(responseCode, response.length());
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
             os.close();
