@@ -117,7 +117,8 @@ def get_deployment():
             deployment, _ = Deployment.objects.get_or_create(
                 name=deployment_name,
                 uid=dashboard_data['dashboard']['uid'],
-                dashboard_name=dashboard_data['dashboard']['title'])
+                dashboard_name=dashboard_data['dashboard']['title'],
+                server_url=f"http://{server_ip}:{server_port}")
             panels = dashboard_data['dashboard']['panels']
             # Create instances of Edge and Device
             get_devices(deployment, panels, devices_info, grafana_url)
@@ -201,7 +202,9 @@ def device_detail(request, edge_name, device_name):
             'edgeLabel': device.edge.name,
             'actuatorLabel': device.name
         }
-        response = requests.post('http://localhost:8080/actuate', json=actuation_data)
+        print(f"{device.edge.deployment.server_url}/actuate")
+        response = requests.post(
+            f"{device.edge.deployment.server_url}/actuate", json=actuation_data)
 
         if response.status_code == 200:
             messages.success(request, response.text)
