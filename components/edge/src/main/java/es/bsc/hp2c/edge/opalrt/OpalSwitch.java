@@ -55,9 +55,11 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
         }
 
         String commType = jProperties.getString("comm-type");
-        OpalComm.registerSensor(this, commType);
-        OpalComm.registerActuator(this);
-        OpalComm.init(jGlobalProperties);
+        if (jGlobalProperties.getBoolean("executeOpalComm")){
+            OpalComm.registerSensor(this, commType);
+            OpalComm.registerActuator(this);
+            OpalComm.init(jGlobalProperties);
+        }
     }
 
     @Override

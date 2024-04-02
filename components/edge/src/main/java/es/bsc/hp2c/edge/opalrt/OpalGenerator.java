@@ -56,9 +56,11 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
         }
 
         String commType = jProperties.getString("comm-type");
-        OpalComm.registerSensor(this, commType);
-        OpalComm.registerActuator(this);
-        OpalComm.init(jGlobalProperties);
+        if (jGlobalProperties.getBoolean("executeOpalComm")) {
+            OpalComm.registerSensor(this, commType);
+            OpalComm.registerActuator(this);
+            OpalComm.init(jGlobalProperties);
+        }
     }
 
     @Override

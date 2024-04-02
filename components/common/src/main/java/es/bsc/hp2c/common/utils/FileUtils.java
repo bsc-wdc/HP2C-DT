@@ -65,16 +65,21 @@ public final class FileUtils {
      * @param setupFile String containing JSON file.
      * @return Map containing all declared devices.
      */
-    public static Map<String, Device> loadDevices(String setupFile) throws FileNotFoundException {
-        return loadDevices(setupFile, "driver");
+    public static Map<String, Device> loadDevices(String setupFile, boolean executeOpalComm) throws FileNotFoundException {
+        return loadDevices(setupFile, "driver", executeOpalComm);
     }
 
-    public static Map<String, Device> loadDevices(String setupFile, String driverType) throws FileNotFoundException {
+    public static Map<String, Device> loadDevices(String setupFile) throws FileNotFoundException {
+        return loadDevices(setupFile, "driver", true);
+    }
+
+    public static Map<String, Device> loadDevices(String setupFile, String driverType, boolean executeOpalComm) throws FileNotFoundException {
         InputStream is = new FileInputStream(setupFile);
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);
         JSONArray jDevices = object.getJSONArray("devices");
         JSONObject jGlobProp = object.getJSONObject("global-properties");
+        jGlobProp.put("executeOpalComm", executeOpalComm);
 
         TreeMap<String, Device> devices = new TreeMap<>();
         for (Object jo : jDevices) {

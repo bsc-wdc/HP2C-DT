@@ -50,9 +50,11 @@ public class OpalWattmeter extends Wattmeter<Float[]> implements OpalSensor<Floa
             this.indexes[i] = (jIndexes.getInt(i));
         }
 
-        String commType = jProperties.getString("comm-type");
-        OpalComm.registerSensor(this, commType);
-        OpalComm.init(jGlobalProperties);
+        if (jGlobalProperties.getBoolean("executeOpalComm")) {
+            String commType = jProperties.getString("comm-type");
+            OpalComm.registerSensor(this, commType);
+            OpalComm.init(jGlobalProperties);
+        }
     }
 
     @Override
