@@ -79,11 +79,11 @@ def get_deployment():
     setup_file = f"../../deployments/{deployment_name}/deployment_setup.json"
     if not os.path.exists(setup_file):
         setup_file = "/data/deployment_setup.json"
-
     if os.path.exists(setup_file):
         with open(setup_file, 'r') as f:
             json_data = f.read()
         # Parse the JSON
+
         setup_data = json.loads(json_data)
         grafana_ip = setup_data["grafana"]["ip"]
         grafana_port = setup_data["grafana"]["port"]
@@ -196,13 +196,13 @@ def device_detail(request, edge_name, device_name):
         device = Device.objects.get(id=device_id)
 
         values = [form_data[f"phase_{i}"] for i in range(1, device.size + 1)]
-
+        values = ['null' if value == '' else value for value in values]
         actuation_data = {
             'values': values,
             'edgeLabel': device.edge.name,
             'actuatorLabel': device.name
         }
-        print(f"{device.edge.deployment.server_url}/actuate")
+
         response = requests.post(
             f"{device.edge.deployment.server_url}/actuate", json=actuation_data)
 
@@ -222,7 +222,8 @@ def device_detail(request, edge_name, device_name):
         form = CategoricalDeviceForm(device)
     elif device.is_actionable:
         form = NonCategoricalDeviceForm(device)
-    print(form)
+
+
     return render(request, "pages/device_detail.html", {
         "device_name": device_name,
         "timeseries_link": device.timeseries_link,
