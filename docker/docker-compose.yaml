@@ -46,7 +46,7 @@ services:
       context: ../components/userInterface
       dockerfile: ../../docker/user_interface/Dockerfile.user_interface
     ports:
-      - "80:80"
+      - "8000:8000"
     volumes:
       - ../deployments/${DEPLOYMENT_NAME}/setup:/data/edge/
       - ../deployments/${DEPLOYMENT_NAME}/deployment_setup.json:/data/deployment_setup.json

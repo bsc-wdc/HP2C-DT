@@ -90,7 +90,7 @@ docker run \
     -v ${setup_folder}:/data/edge \
     -v ${deployment_json}:/data/deployment_setup.json \
     -v ${config_json}:/run/secrets/config.json \
-    -p 80:80 \
+    -p 8000:8000 \
     -e DEPLOYMENT_NAME=${DEPLOYMENT_NAME} \
     -e LOCAL_IP=${ip_address} \
     ${DOCKER_IMAGE}

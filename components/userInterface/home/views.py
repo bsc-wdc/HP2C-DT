@@ -47,7 +47,7 @@ def index(request):
             'edgeLabel': device.edge.name,
             'actuatorLabel': device.name
         }
-        response = requests.post('http://localhost:8080/actuate', json=actuation_data)
+        response = requests.post(f"{device.edge.deployment.server_url}/actuate", json=actuation_data)
 
         if response.status_code == 200:
             return HttpResponse('Actuation sent correctly')
