@@ -58,6 +58,10 @@ fi
 
 # Get Grafana IP and port
 grafana_addr=$(get_ip_port "$deployment_setup_file")
+
+#get database_ip
+database_ip=$(jq -r ".database.ip" "$deployment_setup_file")
+
 # Grafana API URL and key
 GRAFANA_URL="http://${grafana_addr}"
 
@@ -81,14 +85,52 @@ if [ -n "$LOCAL_IP" ]; then
 fi
 
 
+
 ############################ GET DATASOURCE UID ######################################
 datasource_uid=""
 for url in "${URLs[@]}"; do
   uid=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${url}/api/datasources | jq -r '.[] | select(.name == "influxdb") | .uid')
+
   if [ -n "$uid" ]; then
+    URL=$url
     datasource_uid=$uid
+    response=$(curl -X DELETE \
+                -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
+                -H "Content-Type: application/json" \
+                "${URL}/api/datasources/uid/${datasource_uid}")
+    echo "Delete response $response"
   fi
 done
+
+############################ CREATE DATASOURCE #######################################
+INFLUXDB_JSON="{
+  \"name\": \"influxdb\",
+  \"type\": \"influxdb\",
+  \"typeName\": \"InfluxDB\",
+  \"typeLogoUrl\": \"/public/app/plugins/datasource/influxdb/img/influxdb_logo.svg\",
+  \"access\": \"proxy\",
+  \"url\": \"http://${database_ip}:8086\",
+  \"user\": \"server\",
+  \"database\": \"\",
+  \"basicAuth\": false,
+  \"isDefault\": true,
+  \"jsonData\": {
+    \"dbName\": \"hp2cdt\"
+  },
+  \"readOnly\": false
+}"
+
+response=$(curl -X POST \
+    -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
+    -H "Content-Type: application/json" \
+    -d "$(echo "$INFLUXDB_JSON" | jq -c)" \
+    "${URL}/api/datasources")
+echo "Create response $response"
+
+uid=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${URL}/api/datasources | jq -r '.[] | select(.name == "influxdb") | .uid')
+if [ -n "$uid" ]; then
+  datasource_uid=$uid
+fi
 
 if [ -z "$datasource_uid" ]; then
   echo "Datasource influxdb uid not found"
