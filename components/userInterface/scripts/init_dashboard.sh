@@ -90,7 +90,6 @@ fi
 datasource_uid=""
 for url in "${URLs[@]}"; do
   uid=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${url}/api/datasources | jq -r '.[] | select(.name == "influxdb") | .uid')
-
   if [ -n "$uid" ]; then
     URL=$url
     datasource_uid=$uid
@@ -120,17 +119,23 @@ INFLUXDB_JSON="{
   \"readOnly\": false
 }"
 
-response=$(curl -X POST \
-    -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
-    -H "Content-Type: application/json" \
-    -d "$(echo "$INFLUXDB_JSON" | jq -c)" \
-    "${URL}/api/datasources")
-echo "Create response $response"
-
-uid=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${URL}/api/datasources | jq -r '.[] | select(.name == "influxdb") | .uid')
-if [ -n "$uid" ]; then
-  datasource_uid=$uid
+if [ -n "$URL" ]; then
+  URLs=("$URL")
 fi
+
+datasource_uid=""
+for url in "${URLs[@]}"; do
+  response=$(curl -X POST \
+      -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
+      -H "Content-Type: application/json" \
+      -d "$(echo "$INFLUXDB_JSON" | jq -c)" \
+      "${url}/api/datasources")
+
+  uid=$(curl -sk -H "Authorization: Bearer ${GRAFANA_API_KEY}" ${url}/api/datasources | jq -r '.[] | select(.name == "influxdb") | .uid')
+  if [ -n "$uid" ]; then
+    datasource_uid=$uid
+  fi
+done
 
 if [ -z "$datasource_uid" ]; then
   echo "Datasource influxdb uid not found"
