@@ -76,6 +76,9 @@ fi
 
 GRAFANA_API_KEY=$(jq -r ".grafana.api_key" "$config_file")
 
+DATABASE_USERNAME=$(jq -r ".database.username" "$config_file")
+DATABASE_PASSWORD=$(jq -r ".database.password" "$config_file")
+
 # Define a list of GRAFANA_URLs
 URLs=("${GRAFANA_URL}")
 
@@ -109,12 +112,15 @@ INFLUXDB_JSON="{
   \"typeLogoUrl\": \"/public/app/plugins/datasource/influxdb/img/influxdb_logo.svg\",
   \"access\": \"proxy\",
   \"url\": \"http://${database_ip}:8086\",
-  \"user\": \"server\",
+  \"user\": \"${DATABASE_USERNAME}\",
   \"database\": \"\",
   \"basicAuth\": false,
   \"isDefault\": true,
   \"jsonData\": {
     \"dbName\": \"hp2cdt\"
+  },
+  \"secureJsonData\": {
+        \"password\": \"${DATABASE_PASSWORD}\"
   },
   \"readOnly\": false
 }"
