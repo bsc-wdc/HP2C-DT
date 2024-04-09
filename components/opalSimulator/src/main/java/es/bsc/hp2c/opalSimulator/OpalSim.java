@@ -24,7 +24,8 @@ public class OpalSim {
     private static CSVTable csvTable;
     private static int runClient = 0;
     private static long timeStep;
-    private static File logFile;
+    private static ArrayList<File> logFiles = new ArrayList<>();;
+    private static String simulationName;
 
     public static void main(String[] args) throws IOException {
         String localIp = System.getenv("LOCAL_IP");
@@ -34,7 +35,6 @@ public class OpalSim {
         String deploymentFile = "../../deployments/" + deploymentName + "/setup/";
         System.out.println("Using deployment name: " + deploymentName);
 
-        String simulationName;
         if (args.length > 1){
             simulationName = args[1];
             csvTable = new CSVTable("simulations/" + simulationName + ".csv");
@@ -42,7 +42,6 @@ public class OpalSim {
             runSimulation = true;
             System.out.println("Using simulation name: " + simulationName);
             System.out.println("TimeStep: " + timeStep);
-            createLogFile(simulationName);
         }
 
         File setupDirectory = new File(deploymentFile);
@@ -60,6 +59,7 @@ public class OpalSim {
             edge.setDevices(devicesWrapped);
             edges.add(edge);
         }
+        if (runSimulation) createLogFiles(simulationName);
         startActuatorsServer();
         startTCPSensors();
         startUDPSensors();
@@ -336,13 +336,19 @@ public class OpalSim {
     //=======================================
 
     private static void writeLog(Edge edge, ArrayList<Float> message) {
+        File logFile = null;
+        for (File f : logFiles){
+            if (f.getName().contains(edge.getLabel())){
+                logFile = f;
+            }
+        }
+
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd HH:mm:ss");
         String dateTimeString = now.format(formatter);
 
         StringBuilder line = new StringBuilder();
         line.append(dateTimeString).append(",");
-        line.append(edge.getLabel()).append(",");
         for (Float val : message) {
             line.append(val).append(",");
         }
@@ -357,7 +363,7 @@ public class OpalSim {
     }
 
 
-    static void createLogFile(String simulationName) {
+    static void createLogFiles(String simulationName) {
         File logsDirectory = new File("logs");
         if (!logsDirectory.exists()) {
             logsDirectory.mkdirs();
@@ -367,19 +373,42 @@ public class OpalSim {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd_HH-mm-ss");
         String dateTimeString = now.format(formatter);
 
-        String fileName = simulationName + "_" + dateTimeString + ".csv";
+        for (Edge edge : edges){
+            String fileName = simulationName + "_" + dateTimeString + "_" + edge.getLabel() + ".csv";
+            File logFile = new File("logs/" + fileName);
+            try {
+                if (logFile.createNewFile()) {
+                    System.out.println("LogFile: " + logFile.getName());
 
-        logFile = new File("logs/" + fileName);
-        try {
-            if (logFile.createNewFile()) {
-                System.out.println("LogFile: " + logFile.getName());
-            } else {
-                System.out.println("LogFile already exists.");
+                    StringBuilder line = new StringBuilder();
+                    line.append("Time").append(",");
+                    for (DeviceWrapper device : edge.getDevices()){
+                        if (device.getDevice().isActionable()){
+                            int[] indexes = device.getIndexes();
+                            for (int i = 0; i < indexes.length; ++i){
+                                line.append(device.getLabel()).append("Actuator").append(i).append(",");
+                            }
+                        }
+                    }
+                    line.deleteCharAt(line.length() - 1);
+
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, true))) {
+                        writer.write(line.toString());
+                        writer.newLine();
+                    } catch (IOException e) {
+                        System.err.println("Error writing to log file: " + e.getMessage());
+                    }
+                    logFiles.add(logFile);
+                } else {
+                    System.out.println("LogFile already exists.");
+                }
+            } catch (IOException e) {
+                System.out.println("An error occurred while creating the logFile.");
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            System.out.println("An error occurred while creating the logFile.");
-            e.printStackTrace();
         }
+
+
     }
 
 
