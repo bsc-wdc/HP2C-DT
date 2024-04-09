@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import es.bsc.hp2c.common.types.Device;
 import org.json.JSONArray;
@@ -22,6 +24,7 @@ public class OpalSim {
     private static CSVTable csvTable;
     private static int runClient = 0;
     private static long timeStep;
+    private static File logFile;
 
     public static void main(String[] args) throws IOException {
         String localIp = System.getenv("LOCAL_IP");
@@ -38,7 +41,8 @@ public class OpalSim {
             timeStep = Long.parseLong(args[2]);
             runSimulation = true;
             System.out.println("Using simulation name: " + simulationName);
-            System.out.println("TimeStep = " + timeStep);
+            System.out.println("TimeStep: " + timeStep);
+            createLogFile(simulationName);
         }
 
         File setupDirectory = new File(deploymentFile);
@@ -295,8 +299,8 @@ public class OpalSim {
                 ArrayList<Float> message = new ArrayList<>();
                 while (byteBuffer.remaining() > 0) {
                     Float newFloat = byteBuffer.getFloat();
+                    message.add(newFloat);
                     if (newFloat != Float.NEGATIVE_INFINITY){
-                        message.add(newFloat);
                         for (DeviceWrapper actuator : tcpActuators){
                             for (int i = 0; i < actuator.getIndexes().length; ++i){
                                 if (index == actuator.getIndexes()[i]){
@@ -307,9 +311,18 @@ public class OpalSim {
                     }
                     index += 1;
                 }
-                if (!message.isEmpty()) {
+
+                int nInfinity = 0;
+                for (Float f : message){
+                    if (f == Float.NEGATIVE_INFINITY) nInfinity += 1;
+                }
+                if (!(nInfinity == tcpIndexes)) {
                     System.out.println("    Message is: " + message + " for edge " + edge.getLabel());
                     System.out.println("Message Received from " + clientSocket.getInetAddress().getHostAddress());
+
+                    if (runSimulation) {
+                        writeLog(edge, message);
+                    }
                 }
             }
         } catch (IOException e) {
@@ -317,9 +330,58 @@ public class OpalSim {
         }
     }
 
+
     //=======================================
     // UTILS
     //=======================================
+
+    private static void writeLog(Edge edge, ArrayList<Float> message) {
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd HH:mm:ss");
+        String dateTimeString = now.format(formatter);
+
+        StringBuilder line = new StringBuilder();
+        line.append(dateTimeString).append(",");
+        line.append(edge.getLabel()).append(",");
+        for (Float val : message) {
+            line.append(val).append(",");
+        }
+        line.deleteCharAt(line.length() - 1);
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, true))) {
+            writer.write(line.toString());
+            writer.newLine();
+        } catch (IOException e) {
+            System.err.println("Error writing to log file: " + e.getMessage());
+        }
+    }
+
+
+    static void createLogFile(String simulationName) {
+        File logsDirectory = new File("logs");
+        if (!logsDirectory.exists()) {
+            logsDirectory.mkdirs();
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd_HH-mm-ss");
+        String dateTimeString = now.format(formatter);
+
+        String fileName = simulationName + "_" + dateTimeString + ".csv";
+
+        logFile = new File("logs/" + fileName);
+        try {
+            if (logFile.createNewFile()) {
+                System.out.println("LogFile: " + logFile.getName());
+            } else {
+                System.out.println("LogFile already exists.");
+            }
+        } catch (IOException e) {
+            System.out.println("An error occurred while creating the logFile.");
+            e.printStackTrace();
+        }
+    }
+
 
     public static float[] genSineValues(int size) {
         float[] values = new float[size];
