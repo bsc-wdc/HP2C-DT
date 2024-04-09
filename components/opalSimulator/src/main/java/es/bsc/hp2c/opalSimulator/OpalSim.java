@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.opalSimulator.utils.CSVTable;
+import es.bsc.hp2c.opalSimulator.utils.DeviceWrapper;
+import es.bsc.hp2c.opalSimulator.utils.Edge;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -24,7 +27,7 @@ public class OpalSim {
     private static CSVTable csvTable;
     private static int runClient = 0;
     private static long timeStep;
-    private static ArrayList<File> logFiles = new ArrayList<>();;
+    private static ArrayList<File> logFiles = new ArrayList<>();
     private static String simulationName;
 
     public static void main(String[] args) throws IOException {
@@ -35,13 +38,15 @@ public class OpalSim {
         String deploymentFile = "../../deployments/" + deploymentName + "/setup/";
         System.out.println("Using deployment name: " + deploymentName);
 
-        if (args.length > 1){
-            simulationName = args[1];
+        timeStep = Long.parseLong(args[1]);
+        System.out.println("TimeStep: " + timeStep);
+
+        if (args.length > 2){
+            simulationName = args[2];
             csvTable = new CSVTable("simulations/" + simulationName + ".csv");
-            timeStep = Long.parseLong(args[2]);
             runSimulation = true;
             System.out.println("Using simulation name: " + simulationName);
-            System.out.println("TimeStep: " + timeStep);
+
         }
 
         File setupDirectory = new File(deploymentFile);
@@ -54,11 +59,14 @@ public class OpalSim {
             String pathToEdge = deploymentFile + edgeFile;
             Edge edge = initEdgeComms(pathToEdge);
             ArrayList<DeviceWrapper> devicesWrapped = getDevices(pathToEdge);
+
             Map<String, Device> devices = loadDevices(pathToEdge, false);
             devicesWrapped = joinDevices(devicesWrapped, devices);
             edge.setDevices(devicesWrapped);
             edges.add(edge);
+
         }
+
         if (runSimulation) createLogFiles(simulationName);
         startActuatorsServer();
         startTCPSensors();
@@ -497,176 +505,3 @@ public class OpalSim {
 }
 
 
-class Edge {
-    private final String label;
-    private final int tcpSensorsPort;
-    private final int tcpActuatorsPort;
-    private final int udpSensorsPort;
-    private ArrayList<DeviceWrapper> devices;
-
-    public Edge(String label, int tcpSensorsPort, int tcpActuatorsPort, int udpSensorsPort) {
-        this.label = label;
-        this.tcpSensorsPort = tcpSensorsPort;
-        this.tcpActuatorsPort = tcpActuatorsPort;
-        this.udpSensorsPort = udpSensorsPort;
-        this.devices = new ArrayList<>();
-    }
-
-    public String getLabel(){ return label; }
-
-    public int getTcpSensorsPort() {
-        return tcpSensorsPort;
-    }
-
-    public int getTcpActuatorsPort() {
-        return tcpActuatorsPort;
-    }
-
-    public int getUdpSensorsPort() {
-        return udpSensorsPort;
-    }
-
-    public ArrayList<DeviceWrapper> getDevices() {
-        return devices;
-    }
-
-    public void setDevices(ArrayList<DeviceWrapper> devices) {
-        this.devices = devices;
-    }
-
-    public void addDevice(DeviceWrapper device) {
-        devices.add(device);
-    }
-}
-
-class DeviceWrapper {
-    private String label;
-    private String protocol;
-    private int[] indexes;
-    private Device device;
-    private float[] values;
-
-
-    public DeviceWrapper(String label, String protocol, int[] indexes) {
-        this.label = label;
-        this.protocol = protocol;
-        this.indexes = indexes;
-        this.values = new float[indexes.length];
-        Arrays.fill(values, Float.NEGATIVE_INFINITY);
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public void setLabel(String label) {
-        this.label = label;
-    }
-
-    public float[] getValues(){
-        return values;
-    }
-
-    public void setValues(float[] values){
-        this.values = values;
-    }
-
-    public void setValue(float value, int index){
-        this.values[index] = value;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public int[] getIndexes() {
-        return indexes;
-    }
-
-    public void setIndexes(int[] indexes) {
-        this.indexes = indexes;
-    }
-
-    public Device getDevice() {
-        return device;
-    }
-
-    public void setDevice(Device device) {
-        this.device = device;
-    }
-}
-
-class CSVTable {
-    private List<String> edgeNames;
-    private List<String> deviceNames;
-    private List<List<Float>> data;
-
-    public CSVTable(String csvFilePath) {
-        edgeNames = new ArrayList<>();
-        deviceNames = new ArrayList<>();
-        data = new ArrayList<>();
-
-        try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
-            // Read the first line to get edge names
-            String[] edges = br.readLine().split(",");
-            for (int i = 1; i < edges.length; i++) {
-                edgeNames.add(edges[i].replaceAll("\\s", ""));
-            }
-
-            // Read the second line to get device names
-            String[] devices = br.readLine().split(",");
-            for (int i = 1; i < devices.length; i++) {
-                deviceNames.add(devices[i].replaceAll("\\s", ""));
-            }
-
-            // Read remaining lines to populate data
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (line.isEmpty()) {
-                    return;}
-                String[] values = line.split(",", -1);
-                List<Float> rowData = new ArrayList<>();
-                for (int i = 1; i < values.length; i++) {
-                    String val = values[i].replaceAll("\\s", "");
-                    Float value = Float.NEGATIVE_INFINITY;
-                    if (!val.isEmpty()) value = Float.parseFloat(val);
-                    rowData.add(value);
-                }
-                data.add(rowData);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public List<String> getEdgeNames() {
-        return edgeNames;
-    }
-
-    public List<String> getDeviceNames() {
-        return deviceNames;
-    }
-
-    public List<List<Float>> getData() {
-        return data;
-    }
-
-    public List<Float> getRow(int rowIndex) {
-        return data.get(rowIndex);
-    }
-
-    public void printTable() {
-        // Print edge names, device names, and data
-        for (int i = 0; i < edgeNames.size(); i++) {
-            System.out.print(edgeNames.get(i) + "\t" + deviceNames.get(i) + "\t");
-            for (int j = 0; j < data.get(i).size(); j++) {
-                System.out.print(data.get(i).get(j) + "\t");
-            }
-            System.out.println();
-        }
-    }
-}
