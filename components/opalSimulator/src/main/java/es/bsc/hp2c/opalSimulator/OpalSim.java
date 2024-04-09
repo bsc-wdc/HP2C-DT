@@ -21,6 +21,7 @@ public class OpalSim {
     private static boolean runSimulation = false;
     private static CSVTable csvTable;
     private static int runClient = 0;
+    private static long timeStep;
 
     public static void main(String[] args) throws IOException {
         String localIp = System.getenv("LOCAL_IP");
@@ -33,8 +34,8 @@ public class OpalSim {
         String simulationName;
         if (args.length > 1){
             simulationName = args[1];
-            csvTable = new CSVTable("simulations/" + simulationName);
-            float timeStep = Float.parseFloat(args[2]);
+            csvTable = new CSVTable("simulations/" + simulationName + ".csv");
+            timeStep = Long.parseLong(args[2]);
             runSimulation = true;
             System.out.println("Using simulation name: " + simulationName);
             System.out.println("TimeStep = " + timeStep);
@@ -109,8 +110,7 @@ public class OpalSim {
                 udpSocket.send(packet);
                 System.out.println("Sent UDP packet.");
 
-                //TODO: timeStep
-                Thread.sleep(5000);
+                Thread.sleep(timeStep);
                 t += 1;
             }
         } catch (Exception e) {
@@ -185,16 +185,16 @@ public class OpalSim {
                     }
                     for (DeviceWrapper device : tcpSensors){
                         if (device.getDevice().isActionable()){
-                            if (t == 0) {
-                                float[] v = new float[device.getIndexes().length];
-                                for (int i : device.getIndexes()) {
-                                    v[i - device.getIndexes()[0]] = values[i];
-                                }
-                                device.setValues(v);
-                                continue;
-                            }
+                            float[] v = device.getValues();
                             for (int i : device.getIndexes()) {
-                                values[i] = device.getValues()[i - device.getIndexes()[0]];
+                                if (values[i] != Float.NEGATIVE_INFINITY) v[i - device.getIndexes()[0]] = values[i];
+                            }
+                            device.setValues(v);
+
+                            int j = 0;
+                            for (int i : device.getIndexes()) {
+                                values[i] = device.getValues()[j];
+                                j += 1;
                             }
                         }
                     }
@@ -202,8 +202,10 @@ public class OpalSim {
                     values = genSineValues(tcpIndexes);
                     for (DeviceWrapper device : tcpSensors){
                         if (device.getDevice().isActionable()){
+                            int j = 0;
                             for (int i : device.getIndexes()) {
-                                values[i] = device.getValues()[i - device.getIndexes()[0]];
+                                values[i] = device.getValues()[j];
+                                j += 1;
                             }
                         }
                     }
@@ -226,7 +228,7 @@ public class OpalSim {
                     System.err.println("Error sending data through TCP: " + e.getMessage());
                     break;
                 }
-                Thread.sleep(5000); //TODO: Timestep
+                Thread.sleep(timeStep);
                 t += 1;
             }
         } catch (Exception e) {
@@ -287,15 +289,14 @@ public class OpalSim {
                 byte[] buffer = new byte[tcpIndexes * Float.BYTES];
                 dis.readFully(buffer);
 
-
                 ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
 
                 int index = 0;
                 ArrayList<Float> message = new ArrayList<>();
                 while (byteBuffer.remaining() > 0) {
                     Float newFloat = byteBuffer.getFloat();
-                    message.add(newFloat);
                     if (newFloat != Float.NEGATIVE_INFINITY){
+                        message.add(newFloat);
                         for (DeviceWrapper actuator : tcpActuators){
                             for (int i = 0; i < actuator.getIndexes().length; ++i){
                                 if (index == actuator.getIndexes()[i]){
@@ -522,22 +523,27 @@ class CSVTable {
             // Read the first line to get edge names
             String[] edges = br.readLine().split(",");
             for (int i = 1; i < edges.length; i++) {
-                edgeNames.add(edges[i]);
+                edgeNames.add(edges[i].replaceAll("\\s", ""));
             }
 
             // Read the second line to get device names
             String[] devices = br.readLine().split(",");
             for (int i = 1; i < devices.length; i++) {
-                deviceNames.add(devices[i]);
+                deviceNames.add(devices[i].replaceAll("\\s", ""));
             }
 
             // Read remaining lines to populate data
             String line;
             while ((line = br.readLine()) != null) {
-                String[] values = line.split(",");
+                if (line.isEmpty()) {
+                    return;}
+                String[] values = line.split(",", -1);
                 List<Float> rowData = new ArrayList<>();
                 for (int i = 1; i < values.length; i++) {
-                    rowData.add(Float.parseFloat(values[i]));
+                    String val = values[i].replaceAll("\\s", "");
+                    Float value = Float.NEGATIVE_INFINITY;
+                    if (!val.isEmpty()) value = Float.parseFloat(val);
+                    rowData.add(value);
                 }
                 data.add(rowData);
             }

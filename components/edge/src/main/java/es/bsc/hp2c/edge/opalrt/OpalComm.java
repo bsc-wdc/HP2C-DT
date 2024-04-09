@@ -382,7 +382,7 @@ public class OpalComm {
      * @param values committable values
      * */
     public static void commitActuation(OpalActuator<?> actuator, Float[] values) throws IOException {
-        if (!useTCPActuators){ return; }
+        if (!useTCPActuators) return;
         try{
             // count the number of floats to be sent
             int nIndexes = getnIndexes();
@@ -444,6 +444,7 @@ public class OpalComm {
 
     private static int[] getIndexesLocal(OpalActuator<?> actuator, Float[] values, int nIndexes, ByteBuffer byteBuffer) {
         int[] indexesLocal = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
+
         // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
         for (int i = 0; i < nIndexes; ++i){
             // Check if current index is in indexes
