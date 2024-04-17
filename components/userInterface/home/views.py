@@ -69,7 +69,20 @@ def index(request):
                 elif device.is_actionable:
                     form = NonCategoricalDeviceForm(device)
                 forms.append((device, form))
-        return render(request, 'pages/index.html', {'edgeDevices': edgeDevices, 'forms': forms})
+        return render(request, 'pages/index.html', {'edgeDevices': edgeDevices,'forms': forms})
+
+
+def geomap(request):
+    if os.path.exists('static/assets/js/script.js'):
+        path_to_script = 'static/assets/js/script.js'
+    else:
+        path_to_script = '../static/assets/js/script.js'
+
+    with open(path_to_script, 'r') as file:
+        script_content = file.read()
+
+    return render(request, 'pages/geomap.html', {'script_content': script_content})
+
 
 def get_deployment():
     deployment_name = "testbed"
