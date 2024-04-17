@@ -28,8 +28,10 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import static es.bsc.hp2c.HP2CServer.checkActuator;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
@@ -51,11 +53,66 @@ public class RestListener {
         HttpServer server = HttpServer.create(new InetSocketAddress(REST_PORT), 0);
         // Create a context for actuate REST endpoint
         server.createContext("/actuate", new ActuateHandler());
+        server.createContext("/getEdgesInfo", new GetEdgesInfoHandler());
         server.createContext("/getDevicesInfo", new GetDevicesInfoHandler());
         // Start the server
         server.start();
         System.out.println("HTTP Server started on port " + REST_PORT);
     }
+
+
+    static class GetEdgesInfoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String requestMethod = exchange.getRequestMethod();
+            if (!requestMethod.equalsIgnoreCase("GET")) {
+                exchange.sendResponseHeaders(405, 0); // Method Not Allowed
+                return;
+            }
+
+            String response = "";
+            JSONObject jEdgesInfo;
+
+            try {
+                //response = "Received request to get devices info. ";
+                jEdgesInfo = getEdgesPositions();
+            } catch (JSONException e) {
+                response = e.getMessage();
+                exchange.sendResponseHeaders(500, 0); // Internal Server Error
+                return;
+            }
+
+            exchange.sendResponseHeaders(200, response.length() + jEdgesInfo.toString().getBytes().length);
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.write(jEdgesInfo.toString().getBytes());
+            os.close();
+        }
+
+        private JSONObject getEdgesPositions() {
+            JSONObject jEdgesInfo = new JSONObject();
+            for (Map.Entry<String, Map<String, Device>> entry : deviceMap.entrySet()) {
+                String key = entry.getKey();
+
+                Random random = new Random();
+                JSONObject positionObject = new JSONObject();
+                positionObject.put("x", 37.2f + random.nextFloat() * (43.4f - 37.2f));
+                positionObject.put("y", -6.3f + random.nextFloat() * (0.2f + 6.3f));
+
+                ArrayList<String> connexions = new ArrayList<>();
+                for (Map.Entry<String, Map<String, Device>> innerEntry : deviceMap.entrySet()) {
+                    String innerkey = innerEntry.getKey();
+                    if (innerkey != key && random.nextBoolean()) connexions.add(innerkey);
+                }
+                JSONObject edgeDetails = new JSONObject();
+                edgeDetails.put("position", positionObject);
+                edgeDetails.put("connexions", connexions);
+                jEdgesInfo.put(key, edgeDetails);
+            }
+            return jEdgesInfo;
+        }
+    }
+
 
     static class GetDevicesInfoHandler implements HttpHandler {
         @Override

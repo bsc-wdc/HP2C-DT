@@ -37,19 +37,8 @@ d3.json("../../static/maps/spain.json").then(function(world) {
         .attr("class", "boundary")
         .attr("d", path);
 
-    const nodes = [
-        { id: "Barcelona", coordinates: [2.1734, 41.3851] },  
-        { id: "Madrid", coordinates: [-3.7038, 40.4168] },     
-        { id: "Sevilla", coordinates: [-5.9869, 37.3886] },    
-        { id: "Bilbao", coordinates: [-2.9253, 43.263] }      
-    ];
-
-    const links = [
-        { source: "Barcelona", target: "Madrid" },
-        { source: "Madrid", target: "Sevilla" },
-        { source: "Sevilla", target: "Bilbao" },
-        { source: "Bilbao", target: "Barcelona" }
-    ];
+    const nodes = JSON.parse(svg.attr("data-nodes"));
+    const links = JSON.parse(svg.attr("data-links"));
 
     svg.selectAll(".link")
         .data(links)
