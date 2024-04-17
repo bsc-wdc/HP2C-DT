@@ -78,20 +78,18 @@ import os
 import json
 
 def geomap(request):
-
+    deployment_name, grafana_url, server_port, server_url = get_deployment_info()
+    try:
+        response = requests.get(f"{server_url}/getEdgesInfo")
+        edges_info = response.json()
+    except RequestException as e:
+        if "LOCAL_IP" in os.environ:
+            server_ip = os.getenv("LOCAL_IP")
+            server_url = f"http://{server_ip}:{server_port}"
+            response = requests.get(f"{server_url}/getEdgesInfo")
+            edges_info = response.json()
+    nodes, links = generate_nodes_and_links(edges_info)
     
-    nodes = [
-        {"id": "Barcelona", "coordinates": [2.1734, 41.3851]},
-        {"id": "Madrid", "coordinates": [-3.7038, 40.4168]},
-        {"id": "Sevilla", "coordinates": [-5.9869, 37.3886]},
-        {"id": "Bilbao", "coordinates": [-2.9253, 43.263]}
-    ]
-    links = [
-        {"source": "Barcelona", "target": "Madrid"},
-        {"source": "Madrid", "target": "Sevilla"},
-        {"source": "Sevilla", "target": "Bilbao"},
-        {"source": "Bilbao", "target": "Barcelona"}
-    ]
 
     script_content = f"""
     const svg = d3.select("#map-container")

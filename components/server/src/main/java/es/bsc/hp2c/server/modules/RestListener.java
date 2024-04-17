@@ -96,8 +96,8 @@ public class RestListener {
 
                 Random random = new Random();
                 JSONObject positionObject = new JSONObject();
-                positionObject.put("x", 37.2f + random.nextFloat() * (43.4f - 37.2f));
-                positionObject.put("y", -6.3f + random.nextFloat() * (0.2f + 6.3f));
+                positionObject.put("y", 37.2f + random.nextFloat() * (43.4f - 37.2f));
+                positionObject.put("x", -6.3f + random.nextFloat() * (0.2f + 6.3f));
 
                 ArrayList<String> connexions = new ArrayList<>();
                 for (Map.Entry<String, Map<String, Device>> innerEntry : deviceMap.entrySet()) {
