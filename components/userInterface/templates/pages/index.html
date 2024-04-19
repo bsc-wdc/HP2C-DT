@@ -7,45 +7,95 @@
 <html lang="en">
 <body>
 <h3 class="page-title">Deployment dashboard</h3>
-<div class="card Recent-Users">
-  <div id="device-panels">
-    {% for edge, devices in edgeDevices.items %}
-      <div class="card-header">
-        <h5>Edge: {{ edge.name }}</h5>
-      </div>
-      <div class="card-block px-0 py-3">
-        <div class="table-responsive">
-          <table class="table table-hover device-table">
-            <tbody>
-              {% for device, form in forms %}
-                {% if device in devices %}
-                  <tr class="device-row" data-panel="{{ device.timeseries_link }}" data-actuator="{{ device.is_actionable }}">
-                    <td>{{ device.name }}</td>
-                    <td class="panel-cell" style="display: none;">
-                      <iframe class="device-panel" src="" width="900" height="300" frameborder="0"></iframe>
-                    </td>
-                    <td align="right">
-                      {% if form %}
-                        <div class="btn-group mb-2 mr-2">
-                          <form method="post" action="{% url 'index' %}" class="actuation-form" style="display: none">
-                            {% csrf_token %}
-                            {{ form.as_ul }}
-                            <button type="submit" class="btn btn-warning" data-toggle="tooltip">Actuate</button>
-                          </form>
-                        </div>
+
+<div class="col-xl-8 col-md-12 m-b-30">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+      <li class="nav-item">
+        <a class="nav-link active show" id="profile-tab" data-toggle="tab" href="#profile" role="tab"
+           aria-controls="profile" aria-selected="true">View Map</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
+          aria-selected="false">View List</a>
+      </li>
+    </ul>
+    <div class="tab-content" id="myTabContent">
+      <div class="tab-pane fade" id="home" role="tabpanel" aria-labelledby="home-tab">
+        <div id="device-panels">
+          {% for edge, devices in edgeDevices.items %}
+            <div class="card-header">
+              <h5>Edge: {{ edge.name }}</h5>
+            </div>
+            <div class="card-block px-0 py-3">
+              <div class="table-responsive">
+                <table class="table table-hover device-table">
+                  <tbody>
+                    {% for device, form in forms %}
+                      {% if device in devices %}
+                        <tr class="device-row" data-panel="{{ device.timeseries_link }}" data-actuator="{{ device.is_actionable }}">
+                          <td>{{ device.name }}</td>
+                          <td class="panel-cell" style="display: none;">
+                            <iframe class="device-panel" src="" width="900" height="300" frameborder="0"></iframe>
+                          </td>
+                          <td align="right">
+                            {% if form %}
+                              <div class="btn-group mb-2 mr-2">
+                                <form method="post" action="{% url 'index' %}" class="actuation-form" style="display: none">
+                                  {% csrf_token %}
+                                  {{ form.as_ul }}
+                                  <button type="submit" class="btn btn-warning" data-toggle="tooltip">Actuate</button>
+                                </form>
+                              </div>
+                            {% endif %}
+                            <a href="{% url 'device_detail' edge_name=edge.name device_name=device.name %}">
+                              <button type="button" class="btn btn-primary" data-toggle="tooltip">View detail</button>
+                            </a>
+                          </td>
+                        </tr>
                       {% endif %}
-                      <a href="{% url 'device_detail' edge_name=edge.name device_name=device.name %}">
-                        <button type="button" class="btn btn-primary" data-toggle="tooltip">View detail</button>
-                      </a>
-                    </td>
-                  </tr>
-                {% endif %}
-              {% endfor %}
-            </tbody>
-          </table>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          {% endfor %}
         </div>
       </div>
-    {% endfor %}
+      <div class="tab-pane fade active show" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+        <div class="table-responsive">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <script src="{% static 'assets/js/d3.v7.min.js' %}"></script>
+            <script src="{% static 'assets/js/topojson.v3.min.js' %}"></script>
+            <style>
+              .land {
+                fill: rgb(200,230,190);
+                stroke-opacity: 0.6;
+              }
+              .link {
+                stroke: #4967c7;
+                stroke-opacity: 0.6;
+              }
+              .node {
+                fill: rgb(0, 0, 0);
+              }
+              .boundary {
+                fill: none;
+                stroke: white;
+                stroke-width: 0.5;
+              }
+            </style>
+          </head>
+          <body>
+            <svg id="map-container"></svg>
+            <script>
+              {{ script_content|safe }}
+            </script>
+          </body>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <script>

@@ -71,13 +71,16 @@ def index(request):
                 elif device.is_actionable:
                     form = NonCategoricalDeviceForm(device)
                 forms.append((device, form))
-        return render(request, 'pages/index.html', {'edgeDevices': edgeDevices,'forms': forms})
+        script_content = geomap()
+        return render(request, 'pages/index.html',
+                      {'edgeDevices': edgeDevices,'forms': forms, 'script_content': script_content})
 
 
 import os
 import json
 
-def geomap(request):
+
+def geomap():
     deployment_name, grafana_url, server_port, server_url = get_deployment_info()
     try:
         response = requests.get(f"{server_url}/getEdgesInfo")
@@ -89,7 +92,6 @@ def geomap(request):
             response = requests.get(f"{server_url}/getEdgesInfo")
             edges_info = response.json()
     nodes, links = generate_nodes_and_links(edges_info)
-    
 
     script_content = f"""
     const svg = d3.select("#map-container")
@@ -101,7 +103,7 @@ def geomap(request):
 
     const projection = d3.geoNaturalEarth1()
         .scale(5000)
-        .translate([svgWidth/3, svgHeight * 4.3]);
+        .translate([svgWidth/5.5, svgHeight * 4.15]);
 
     const path = d3.geoPath()
         .projection(projection);
@@ -153,8 +155,7 @@ def geomap(request):
             .attr("r", 3);
     }});
     """
-
-    return render(request, 'pages/geomap.html', {'script_content': script_content})
+    return script_content
 
 
 def generate_nodes_and_links(edges_info):
