@@ -234,5 +234,17 @@ def main():
     edges = get_dict_from_deployment(deployment_name, deployment_dir)
     generate_dashboard_json(deployment_name, edges, datasource_uid)
 
+
+def ui_exec(deployment_name, devices_info, datasource_uid):
+    devices_data = json.loads(devices_info)
+    edges = {}
+    for edge, devices_info in devices_data.items():
+        devices = []
+        for device, info in devices_info.items():
+            n_indexes = info["size"]
+            devices.append((device, n_indexes))
+        edges[edge] = devices
+    generate_dashboard_json(deployment_name, edges, datasource_uid)
+
 if __name__ == "__main__" :
     main()

@@ -25,6 +25,7 @@ import org.json.JSONObject;
  */
 public class VirtualWattmeter extends Wattmeter<Float[]> implements VirtualSensor<Float[]> {
     private String edgeLabel;
+    private int size;
 
     /**
      * Creates a new instance of VirtualWattmeter.
@@ -37,6 +38,7 @@ public class VirtualWattmeter extends Wattmeter<Float[]> implements VirtualSenso
     public VirtualWattmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
         this.edgeLabel = jGlobalProperties.getString("label");
+        this.size = properties.getJSONArray("indexes").length();
     }
 
     @Override
@@ -57,5 +59,10 @@ public class VirtualWattmeter extends Wattmeter<Float[]> implements VirtualSenso
     @Override
     public String getEdgeLabel() {
         return this.edgeLabel;
+    }
+
+    @Override
+    public int getSize() {
+        return this.size;
     }
 }

@@ -10,13 +10,12 @@ public class VirtualComm {
 
     protected interface VirtualDevice {
         String getEdgeLabel();
+        int getSize();
     }
-    protected interface VirtualSensor<V> extends Sensor<Float[], V>, VirtualDevice {}
+    public interface VirtualSensor<V> extends Sensor<Float[], V>, VirtualDevice {}
     public interface VirtualActuator<V> extends Actuator<V>, VirtualDevice {
         void actuate(String[] stringValues) throws IOException;
         boolean isCategorical();
         ArrayList<String> getCategories();
-        int getSize();
     }
-
 }

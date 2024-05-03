@@ -226,6 +226,10 @@ public class RestListener {
                             jDevice.put("categories", actuator.getCategories());
                         }
                     }
+                    else{
+                        VirtualComm.VirtualSensor<?> sensor = (VirtualComm.VirtualSensor<?>) device;
+                        jDevice.put("size", sensor.getSize());
+                    }
                     jDevice.put("isActionable", isActionable);
                     jEdge.put(deviceKey, jDevice);
                 }

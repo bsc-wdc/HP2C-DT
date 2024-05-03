@@ -1,32 +1,9 @@
 import os
 from requests import RequestException
 from django.views.decorators.csrf import csrf_exempt
+from scripts.update_dashboards import update_dashboards, get_deployment_info
 from .models import *
 from django.contrib import messages
-
-
-"""
-def index(request):
-  #create_deployments()
-  get_deployment()
-  deployment = Deployment.objects.get(name="testbed")
-  edges = Edge.objects.filter(deployment=deployment)
-  edgeDevices = {}
-  for edge in edges:
-    edgeDevices[edge] = Device.objects.filter(edge=edge)
-    print(edgeDevices[edge], flush=True)
-
-  context = {
-    'segment'  : 'index',
-    "edgeDevices": edgeDevices
-    #'products' : Product.objects.all()
-  }
-  return render(request, "pages/index.html", context)
-"""
-
-
-
-
 from django.shortcuts import render
 from django.http import HttpResponse
 from .forms import CategoricalDeviceForm, NonCategoricalDeviceForm
@@ -54,9 +31,9 @@ def index(request):
         else:
             return HttpResponse('Error while sending actuation', status=response.status_code)
     else:
-        get_deployment()
-        deployment_name = "testbed"
-        if "DEPLOYMENT_NAME" in os.environ: deployment_name = os.getenv("DEPLOYMENT_NAME")
+        devices_info, deployment_name, grafana_url, server_port, server_url = (
+            update_dashboards())
+        get_deployment(devices_info, deployment_name, grafana_url, server_url)
         deployment = Deployment.objects.get(name=deployment_name)
         edges = Edge.objects.filter(deployment=deployment)
         edgeDevices = {}
@@ -71,17 +48,12 @@ def index(request):
                 elif device.is_actionable:
                     form = NonCategoricalDeviceForm(device)
                 forms.append((device, form))
-        script_content = geomap()
+        script_content = geomap(server_port, server_url)
         return render(request, 'pages/index.html',
                       {'edgeDevices': edgeDevices,'forms': forms, 'script_content': script_content})
 
 
-import os
-import json
-
-
-def geomap():
-    deployment_name, grafana_url, server_port, server_url = get_deployment_info()
+def geomap(server_port, server_url):
     try:
         response = requests.get(f"{server_url}/getEdgesInfo")
         edges_info = response.json()
@@ -170,17 +142,7 @@ def generate_nodes_and_links(edges_info):
     return nodes, links
 
 
-def get_deployment():
-    deployment_name, grafana_url, server_port, server_url = get_deployment_info()
-    try:
-        response = requests.get(f"{server_url}/getDevicesInfo")
-        devices_info = response.text
-    except RequestException as e:
-        if "LOCAL_IP" in os.environ:
-            server_ip = os.getenv("LOCAL_IP")
-            server_url = f"http://{server_ip}:{server_port}"
-            response = requests.get(f"{server_url}/getDevicesInfo")
-            devices_info = response.text
+def get_deployment(devices_info, deployment_name, grafana_url, server_url):
 
     # Directory path where JSON files are located
     dashboard_dir = "../../components/userInterface/scripts/dashboards/"
@@ -205,26 +167,6 @@ def get_deployment():
         get_devices(deployment, panels, devices_info, grafana_url)
 
 
-def get_deployment_info():
-    deployment_name = "testbed"
-    if "DEPLOYMENT_NAME" in os.environ:
-        deployment_name = os.getenv("DEPLOYMENT_NAME")
-    setup_file = f"../../deployments/{deployment_name}/deployment_setup.json"
-    if not os.path.exists(setup_file):
-        setup_file = "/data/deployment_setup.json"
-    if os.path.exists(setup_file):
-        with open(setup_file, 'r') as f:
-            json_data = f.read()
-        # Parse the JSON
-
-        setup_data = json.loads(json_data)
-        grafana_ip = setup_data["grafana"]["ip"]
-        grafana_port = setup_data["grafana"]["port"]
-        grafana_url = grafana_ip + ":" + grafana_port
-        server_ip = setup_data["server"]["ip"]
-        server_port = setup_data["server"]["port"]
-        server_url = f"http://{server_ip}:{server_port}"
-    return deployment_name, grafana_url, server_port, server_url
 
 
 def get_devices(deployment_model, panels, devices_info, grafana_url):
@@ -251,18 +193,6 @@ def get_devices(deployment_model, panels, devices_info, grafana_url):
                 else:
                     device_model.is_categorical = False
             device_model.save()
-            print("Device attributes:")
-            print(f"Name: {device_model.name}")
-            print(f"Edge: {device_model.edge}")
-            print(f"Timeseries link: {device_model.timeseries_link}")
-            print(f"Table link: {device_model.table_link}")
-            print(f"Is actionable: {device_model.is_actionable}")
-            print(f"Size: {device_model.size}")
-            print(f"Is categorical: {device_model.is_categorical}")
-            print(f"Categories: {device_model.categories}")
-            print()
-            print()
-
 
 
 def get_panel_links(deployment, edge, device, panels, grafana_url):

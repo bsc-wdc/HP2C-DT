@@ -26,6 +26,7 @@ import org.json.JSONObject;
  */
 public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSensor<Float[]> {
     private String edgeLabel;
+    private int size;
 
     /**
      * Creates a new instance of VirtualVoltmeter.
@@ -38,6 +39,7 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSenso
     public VirtualVoltmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
         this.edgeLabel = jGlobalProperties.getString("label");
+        this.size = properties.getJSONArray("indexes").length();
     }
 
     /**
@@ -65,5 +67,10 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSenso
     @Override
     public String getEdgeLabel() {
         return this.edgeLabel;
+    }
+
+    @Override
+    public int getSize() {
+        return this.size;
     }
 }

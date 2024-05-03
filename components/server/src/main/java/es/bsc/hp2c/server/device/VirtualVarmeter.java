@@ -26,6 +26,7 @@ import org.json.JSONObject;
  */
 public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<Float[]> {
     private String edgeLabel;
+    private int size;
 
     /**
      * Creates a new instance of VirtualVarmeter.
@@ -38,6 +39,7 @@ public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<
     public VirtualVarmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
         this.edgeLabel = jGlobalProperties.getString("label");
+        this.size = properties.getJSONArray("indexes").length();
     }
 
     @Override
@@ -58,5 +60,10 @@ public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<
     @Override
     public String getEdgeLabel() {
         return this.edgeLabel;
+    }
+
+    @Override
+    public int getSize() {
+        return this.size;
     }
 }
