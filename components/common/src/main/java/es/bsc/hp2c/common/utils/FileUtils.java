@@ -10,7 +10,10 @@ import org.json.JSONTokener;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -38,11 +41,12 @@ public final class FileUtils {
 
     /**
      * Read the provided JSON file to return the edge label.
+     *
      * @param setupFile Path of the setup file in String format
      * @return the name of the edge
      */
     public static String readEdgeLabel(String setupFile) {
-        InputStream is = null;
+        InputStream is;
         try {
             is = new FileInputStream(setupFile);
         } catch (FileNotFoundException e) {
@@ -53,10 +57,20 @@ public final class FileUtils {
         JSONObject object = new JSONObject(tokener);
         JSONObject jGlobProp = object.getJSONObject("global-properties");
         String edgeLabel = jGlobProp.optString("label", "");
-        if (edgeLabel.isEmpty()){
+        if (edgeLabel.isEmpty()) {
             throw new JSONException("Malformed JSON. edge label must be specified inside global-properties");
         }
         return edgeLabel;
+    }
+
+    /**
+     * Return a JSON file in the form of a JSONObject instance.
+     */
+    public static JSONObject getJsonObject(String filepath) throws IOException {
+        InputStream is;
+        is = Files.newInputStream(Paths.get(filepath));
+        JSONTokener tokener = new JSONTokener(is);
+        return new JSONObject(tokener);
     }
 
     /**
@@ -65,24 +79,28 @@ public final class FileUtils {
      * @param setupFile String containing JSON file.
      * @return Map containing all declared devices.
      */
-    public static Map<String, Device> loadDevices(String setupFile, boolean executeOpalComm) throws FileNotFoundException {
+
+    public static Map<String, Device> loadDevices(String setupFile, boolean executeOpalComm) throws IOException {
         return loadDevices(setupFile, "driver", executeOpalComm);
     }
 
-    public static Map<String, Device> loadDevices(String setupFile, String driverType) throws FileNotFoundException {
-        return loadDevices(setupFile, driverType, false);
+    public static Map<String, Device> loadDevices(String setupFile, String driverType, boolean executeOpalComm) throws IOException {
+        JSONObject object = getJsonObject(setupFile);
+        return loadDevices(object, driverType, executeOpalComm);
     }
 
-    public static Map<String, Device> loadDevices(String setupFile) throws FileNotFoundException {
+    public static Map<String, Device> loadDevices(String setupFile) throws IOException {
         return loadDevices(setupFile, "driver", true);
     }
 
-    public static Map<String, Device> loadDevices(String setupFile, String driverType, boolean executeOpalComm) throws FileNotFoundException {
-        InputStream is = new FileInputStream(setupFile);
-        JSONTokener tokener = new JSONTokener(is);
-        JSONObject object = new JSONObject(tokener);
-        JSONArray jDevices = object.getJSONArray("devices");
-        JSONObject jGlobProp = object.getJSONObject("global-properties");
+    public static Map<String, Device> loadDevices(String setupFile, String driverType) throws IOException {
+        JSONObject jsonObject = getJsonObject(setupFile);
+        return loadDevices(jsonObject, driverType, false);
+    }
+
+    public static Map<String, Device> loadDevices(JSONObject jsonObject, String driverType, boolean executeOpalComm) {
+        JSONArray jDevices = jsonObject.getJSONArray("devices");
+        JSONObject jGlobProp = jsonObject.getJSONObject("global-properties");
         jGlobProp.put("executeOpalComm", executeOpalComm);
 
         TreeMap<String, Device> devices = new TreeMap<>();

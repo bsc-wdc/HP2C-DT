@@ -18,17 +18,18 @@ package es.bsc.hp2c;
 import es.bsc.hp2c.common.utils.CommUtils;
 import es.bsc.hp2c.edge.opalrt.OpalComm;
 import es.bsc.hp2c.common.types.Device;
-import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
-import static es.bsc.hp2c.common.utils.FileUtils.readEdgeLabel;
 
 import es.bsc.hp2c.common.types.Func;
 
 import com.rabbitmq.client.*;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+
+import static es.bsc.hp2c.common.utils.FileUtils.*;
 
 /**
  * Contains the main method and two additional methods useful for parsing and
@@ -60,15 +61,28 @@ public class HP2CEdge {
         if (!defaultsFile.isFile()) {
             defaultsPath = "../../deployments/defaults/setup/edge_default.json";
         }
-        // Get IP
+        edgeLabel = readEdgeLabel(setupFile);
+
+        // Get IP address
         String localIp = System.getenv("LOCAL_IP");
         String brokerIp = CommUtils.parseRemoteIp("broker", localIp);
 
-        // Set up AMQP connections
+        // Set up AMQP connections TODO: modularize this part into a func or external class?
         setUpMessaging(brokerIp);
+        if (amqpOn) {
+            String hearBeatRoutingKey = "edge" + "." + edgeLabel + "." + "heartbeat";
+            JSONObject jsonEdgeSetup = getJsonObject(setupFile);
+            // Add timestamp and status to the JSON object
+            jsonEdgeSetup.put("timestamp", System.currentTimeMillis());
+            jsonEdgeSetup.put("isAvailable", true);
+            // Convert the string to bytes
+            byte[] message = jsonEdgeSetup.toString().getBytes();
+            // Publish the message to the queue
+            channel.basicPublish(EXCHANGE_NAME, hearBeatRoutingKey, null, message);
+            System.out.println(" [x] Sent JSON message in routing key " + hearBeatRoutingKey + ": '" + jsonEdgeSetup + "'");
+        }
 
         // Load devices and functions
-        edgeLabel = readEdgeLabel(setupFile);
         Map<String, Device> devices = loadDevices(setupFile);
         OpalComm.setLoadedDevices(true);
         Func.loadFunctions(setupFile, devices);
