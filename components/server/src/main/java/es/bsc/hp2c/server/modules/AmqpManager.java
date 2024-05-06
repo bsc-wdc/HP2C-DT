@@ -53,7 +53,7 @@ public class AmqpManager {
     }
 
     /** Start AMQP connection with broker. */
-    private static void connect(String setupIp) throws IOException, TimeoutException {
+    private void connect(String setupIp) throws IOException, TimeoutException {
         System.out.println("Connecting to RabbitMQ broker at host IP " + setupIp + "...");
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(setupIp);
@@ -121,5 +121,13 @@ public class AmqpManager {
     private String getDeviceName(String routingKey){
         String[] routingKeyParts = routingKey.split("\\.");
         return routingKeyParts[3];
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
+
+    public String getExchangeName() {
+        return EXCHANGE_NAME;
     }
 }

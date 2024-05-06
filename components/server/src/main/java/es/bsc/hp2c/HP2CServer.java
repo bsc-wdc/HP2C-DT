@@ -16,10 +16,7 @@
 package es.bsc.hp2c;
 
 import es.bsc.hp2c.common.types.Device;
-import es.bsc.hp2c.server.modules.AmqpManager;
-import es.bsc.hp2c.server.modules.CLI;
-import es.bsc.hp2c.server.modules.DatabaseHandler;
-import es.bsc.hp2c.server.modules.RestListener;
+import es.bsc.hp2c.server.modules.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -36,10 +33,11 @@ import static es.bsc.hp2c.common.utils.FileUtils.readEdgeLabel;
  * with edge devices via AmqpManager.
  */
 public class HP2CServer {
-    private static AmqpManager amqp;
-    public static DatabaseHandler db;
-    public static RestListener restServer;
-    public static CLI cli;
+    private final AmqpManager amqp;
+    public final DatabaseHandler db;
+    public final RestListener restServer;
+    public final CLI cli;
+    private final EdgeHeartbeat heartbeat;
     private final long dbPort = 8086;
     private static final Map<String, Map<String, Device>> deviceMap = new HashMap<>();
     private static boolean verbose = true;
@@ -50,34 +48,48 @@ public class HP2CServer {
      * @param hostIp IP of AmqpManager broker and database. TODO: use custom IPs for each
      */
     public HP2CServer(String hostIp) throws IOException, TimeoutException {
+        // Initialize modules
         db = new DatabaseHandler(hostIp, dbPort);
         amqp = new AmqpManager(hostIp, deviceMap, db);
+        heartbeat = new EdgeHeartbeat(amqp, deviceMap);
         restServer = new RestListener(deviceMap);
         cli = new CLI(deviceMap);
     }
 
     /** Parse setup files for all edge nodes and deploy Server. */
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) {
         // Load setup files
-        String hostIp = parseSetupFiles(args);
+        // String hostIp = parseSetupFiles(args);   // TODO: delete this call
+        String hostIp = getHostIp();
         // Deploy listener
         try {
             HP2CServer server = new HP2CServer(hostIp);
             server.start();
-        } catch (IOException | TimeoutException e) {
+        } catch (IOException | TimeoutException | InterruptedException e) {
             System.out.println("Server error: " + e.getMessage());
         }
     }
 
-    private void start() throws IOException {
+    private void start() throws IOException, InterruptedException {
+        // Start Server modules
+        heartbeat.start();
         db.start();
         amqp.startListener();
         restServer.start();
         cli.start();
     }
 
+    private static String getHostIp() {
+        // Get IP and setup directory
+        String hostIp = System.getenv("LOCAL_IP");
+        if (hostIp == null) {
+            hostIp = "0.0.0.0";
+        }
+        return hostIp;
+    }
+
     /** Parse edge nodes files and configure the edge-device map. */
-    private static String parseSetupFiles(String[] args) throws FileNotFoundException {
+    private static String parseSetupFiles(String[] args) throws IOException {
         // Get IP and setup directory
         String hostIp;
         File setupDir;
