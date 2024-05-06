@@ -16,6 +16,8 @@ fi
 
 if [ $docker -eq 0 ]; then
     cd ..
+    rm -f db.sqlite3
+    python3 manage.py flush --no-input
     python3 manage.py migrate --run-syncdb
     python3 manage.py collectstatic --noinput
     python3 manage.py runserver 0.0.0.0:8000

@@ -14,10 +14,16 @@ def update_dashboards():
     if not os.path.exists(setup_file):
         in_docker = True
         setup_file = "/data/deployment_setup.json"
+
+    setup_data = None
     if os.path.exists(setup_file):
         with open(setup_file, 'r') as f:
             json_data = f.read()
             setup_data = json.loads(json_data)
+
+    if not setup_data:
+        print("Deployment setup not found not found")
+        exit(1)
     if not in_docker:
         os.chdir("scripts")
     grafana_url, server_port, server_url = get_deployment_info(setup_data)
