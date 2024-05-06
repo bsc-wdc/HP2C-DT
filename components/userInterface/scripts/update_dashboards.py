@@ -10,12 +10,17 @@ def update_dashboards():
     deployment_name = "testbed"
     if "DEPLOYMENT_NAME" in os.environ:
         deployment_name = os.getenv("DEPLOYMENT_NAME")
-    setup_file = f"../../../deployments/{deployment_name}/deployment_setup.json"
+    setup_file = f"../../deployments/{deployment_name}/deployment_setup.json"
     if not os.path.exists(setup_file):
         in_docker = True
+        setup_file = "/data/deployment_setup.json"
+    if os.path.exists(setup_file):
+        with open(setup_file, 'r') as f:
+            json_data = f.read()
+            setup_data = json.loads(json_data)
     if not in_docker:
         os.chdir("scripts")
-    deployment_name, grafana_url, server_port, server_url = get_deployment_info()
+    grafana_url, server_port, server_url = get_deployment_info(setup_data)
     try:
         response = requests.get(f"{server_url}/getDevicesInfo")
         devices_info = response.text
@@ -28,30 +33,12 @@ def update_dashboards():
     #################################### INIT #################################
 
     # Function to extract IP and port from JSON
-    def get_ip_port(json_file):
-        with open(json_file, 'r') as f:
-            data = json.load(f)
+    def get_ip_port(data):
         return f"{data['grafana']['ip']}:{data['grafana']['port']}"
 
-    # Check if deployment setup JSON exists
-    deployment_setup_file = f"../../../deployments/{deployment_name}/deployment_setup.json"
-    if not os.path.exists(deployment_setup_file):
-        deployment_setup_file = "/data/deployment_setup.json"
+    grafana_addr = get_ip_port(setup_data)
 
-    if os.path.isfile(deployment_setup_file):
-        pass
-    elif os.path.isfile("/data/deployment_setup.json"):
-        deployment_setup_file = "/data/deployment_setup.json"
-    else:
-        print("Deployment setup JSON not found.")
-        exit(1)
-    # Get Grafana IP and port
-    grafana_addr = get_ip_port(deployment_setup_file)
-
-    # Get database_ip
-    with open(deployment_setup_file, 'r') as f:
-        data = json.load(f)
-    database_ip = data["database"]["ip"]
+    database_ip = setup_data["database"]["ip"]
     # Grafana API URL and key
     GRAFANA_URL = f"http://{grafana_addr}"
 
@@ -88,6 +75,7 @@ def update_dashboards():
                 break
         except RequestException as _:
             print("Error requesting to url: ", url, flush=True)
+
     ############################ CREATE DATASOURCE #######################################
     INFLUXDB_JSON = {
         "name": "influxdb",
@@ -186,23 +174,11 @@ def update_dashboards():
     return devices_info, deployment_name, grafana_url, server_port, server_url
 
 
-def get_deployment_info():
-    deployment_name = "testbed"
-    if "DEPLOYMENT_NAME" in os.environ:
-        deployment_name = os.getenv("DEPLOYMENT_NAME")
-    setup_file = f"../../../deployments/{deployment_name}/deployment_setup.json"
-    if not os.path.exists(setup_file):
-        setup_file = "/data/deployment_setup.json"
-    if os.path.exists(setup_file):
-        with open(setup_file, 'r') as f:
-            json_data = f.read()
-        # Parse the JSON
-
-        setup_data = json.loads(json_data)
-        grafana_ip = setup_data["grafana"]["ip"]
-        grafana_port = setup_data["grafana"]["port"]
-        grafana_url = grafana_ip + ":" + grafana_port
-        server_ip = setup_data["server"]["ip"]
-        server_port = setup_data["server"]["port"]
-        server_url = f"http://{server_ip}:{server_port}"
-    return deployment_name, grafana_url, server_port, server_url
+def get_deployment_info(setup_data):
+    grafana_ip = setup_data["grafana"]["ip"]
+    grafana_port = setup_data["grafana"]["port"]
+    grafana_url = grafana_ip + ":" + grafana_port
+    server_ip = setup_data["server"]["ip"]
+    server_port = setup_data["server"]["port"]
+    server_url = f"http://{server_ip}:{server_port}"
+    return grafana_url, server_port, server_url

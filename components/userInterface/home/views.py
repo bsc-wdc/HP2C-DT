@@ -66,67 +66,117 @@ def geomap(server_port, server_url):
     nodes, links = generate_nodes_and_links(edges_info)
 
     script_content = f"""
-    const svg = d3.select("#map-container")
-        .attr("width", window.innerWidth*2)
-        .attr("height", window.innerHeight);
+        const svg = d3.select("#map-container")
+            .attr("width", window.innerWidth*2)
+            .attr("height", window.innerHeight);
 
-    const svgWidth = +svg.attr("width");
-    const svgHeight = +svg.attr("height");
+        const svgWidth = +svg.attr("width");
+        const svgHeight = +svg.attr("height");
 
-    const projection = d3.geoNaturalEarth1()
-        .scale(5000)
-        .translate([svgWidth/5.5, svgHeight * 4.15]);
+        const projection = d3.geoNaturalEarth1()
+            .scale(5000)
+            .translate([svgWidth/4.25, svgHeight * 4.15]);
 
-    const path = d3.geoPath()
-        .projection(projection);
+        const path = d3.geoPath()
+            .projection(projection);
 
-    const zoom = d3.zoom()
-        .scaleExtent([1, 20])
-        .on("zoom", zoomed);
+        const zoom = d3.zoom()
+            .scaleExtent([1, 20])
+            .on("zoom", zoomed);
 
-    svg.call(zoom);
+        svg.call(zoom);
 
-    function zoomed(event) {{
-        svg.selectAll("path").attr("transform", event.transform);
-        svg.selectAll("line").attr("transform", event.transform);
-        svg.selectAll("circle").attr("transform", event.transform);
-    }}
+        const g = svg.append("g");
 
-    const nodes = {json.dumps(nodes)};
-    const links = {json.dumps(links)};
+        function zoomed(event) {{
+            g.attr("transform", event.transform);
+        }}
 
-    d3.json("../../static/maps/spain.json").then(function(world) {{
-        const geojson = topojson.feature(world, world.objects.autonomous_regions);
+        const nodes = {json.dumps(nodes)};
+        const links = {json.dumps(links)};
 
-        svg.append("path")
-            .datum(geojson)
-            .attr("class", "land")
-            .attr("d", path);
+        d3.json("../../static/maps/spain.json").then(function(world) {{
+            const geojson = topojson.feature(world, world.objects.autonomous_regions);
 
-        svg.append("path")
-            .datum(topojson.mesh(world, world.objects.autonomous_regions, (a, b) => a !== b))
-            .attr("class", "boundary")
-            .attr("d", path);
+            g.append("path")
+                .datum(geojson)
+                .attr("class", "land")
+                .attr("d", path);
 
-        svg.selectAll(".link")
-            .data(links)
-            .enter().append("line")
-            .attr("class", "link")
-            .attr("x1", d => projection(nodes.find(n => n.id === d.source).coordinates)[0])
-            .attr("y1", d => projection(nodes.find(n => n.id === d.source).coordinates)[1])
-            .attr("x2", d => projection(nodes.find(n => n.id === d.target).coordinates)[0])
-            .attr("y2", d => projection(nodes.find(n => n.id === d.target).coordinates)[1])
-            .style("stroke-width", 2);
+            g.append("path")
+                .datum(topojson.mesh(world, world.objects.autonomous_regions, (a, b) => a !== b))
+                .attr("class", "boundary")
+                .attr("d", path);
 
-        svg.selectAll(".node")
-            .data(nodes)
-            .enter().append("circle")
-            .attr("class", "node")
-            .attr("cx", d => projection(d.coordinates)[0])
-            .attr("cy", d => projection(d.coordinates)[1])
-            .attr("r", 3);
-    }});
-    """
+            const linkGroup = g.append("g")
+                .attr("class", "links");
+
+            linkGroup.selectAll(".link")
+                .data(links)
+                .enter().append("line")
+                .attr("class", "link")
+                .attr("x1", d => projection(nodes.find(n => n.id === d.source).coordinates)[0])
+                .attr("y1", d => projection(nodes.find(n => n.id === d.source).coordinates)[1])
+                .attr("x2", d => projection(nodes.find(n => n.id === d.target).coordinates)[0])
+                .attr("y2", d => projection(nodes.find(n => n.id === d.target).coordinates)[1])
+                .style("stroke-width", 2);
+
+            const nodeGroup = g
+                .attr("class", "nodes");
+
+            nodeGroup.selectAll(".node-group")
+                .data(nodes)
+                .enter().append("g")
+                .attr("class", "node-group")
+                .attr("transform", d => `translate(${{projection(d.coordinates)[0]}}, ${{projection(d.coordinates)[1]}})`)
+                .each(function(d) {{
+
+                    const group = d3.select(this);
+
+                    const circle = group.append("circle")
+                        .attr("class", "node")
+                        .attr("r", 3)
+                        .on("click", function() {{
+                            const isOpen = svg.select(".node-click-rect").size() > 0;
+
+                            if (isOpen) {{
+                                svg.select(".node-click-rect").remove();
+                            }} else {{
+                                const clickRect = svg.append("rect")  
+                                    .attr("class", "node-click-rect")
+                                    .attr("x", 40)
+                                    .attr("y", 30)
+                                    .attr("width", 100)
+                                    .attr("height", 100)
+                                    .attr("rx", 5) 
+                                    .attr("ry", 5)
+                                    .style("display", "block");
+                            }}
+
+                            d3.event.stopPropagation(); 
+                    }});
+
+                const rectHeight = 20; 
+                const rect = group.append("rect")
+                    .attr("class", "node-rect")
+                    .attr("x", 5) 
+                    .attr("y", -20) 
+                    .attr("height", rectHeight)
+                    .attr("rx", 5) 
+                    .attr("ry", 5); 
+
+                const text = group.append("text")
+                    .attr("class", "node-label")
+                    .attr("x", 10) 
+                    .attr("y", -5)
+                    .text(d => d.id);
+
+                const textWidth = text.node().getBBox().width;
+                rect.attr("width", textWidth + 10);
+                }});
+        }});
+        """
+
     return script_content
 
 

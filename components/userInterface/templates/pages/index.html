@@ -24,7 +24,7 @@
         <div id="device-panels">
           {% for edge, devices in edgeDevices.items %}
             <div class="card-header">
-              <h5>Edge: {{ edge.name }}</h5>
+              <h5>{{ edge.name }}</h5>
             </div>
             <div class="card-block px-0 py-3">
               <div class="table-responsive">
@@ -80,11 +80,22 @@
               .node {
                 fill: rgb(0, 0, 0);
               }
+              .node-rect {
+                fill: rgba(256, 256, 256, 0.5);
+                stroke: black;
+                stroke-width: 0.5;
+              }
+              .node-click-rect {
+                fill: rgba(256, 256, 256, 0.5);
+                stroke: black;
+                stroke-width: 0.5;
+              }
               .boundary {
                 fill: none;
                 stroke: white;
                 stroke-width: 0.5;
               }
+
             </style>
           </head>
           <body>
