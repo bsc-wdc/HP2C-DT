@@ -27,6 +27,8 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeoutException;
 
 import static es.bsc.hp2c.common.utils.FileUtils.*;
@@ -38,6 +40,7 @@ import static es.bsc.hp2c.common.utils.FileUtils.*;
 public class HP2CEdge {
     private static String edgeLabel;
     private static final String EXCHANGE_NAME = "measurements";
+    private static final long HEARTBEAT_RATE = 10000;
     private static Connection connection;
     private static Channel channel;
     private static boolean amqpOn = true;
@@ -70,16 +73,13 @@ public class HP2CEdge {
         // Set up AMQP connections TODO: modularize this part into a func or external class?
         setUpMessaging(brokerIp);
         if (amqpOn) {
-            String hearBeatRoutingKey = "edge" + "." + edgeLabel + "." + "heartbeat";
-            JSONObject jsonEdgeSetup = getJsonObject(setupFile);
-            // Add timestamp and status to the JSON object
-            jsonEdgeSetup.put("timestamp", System.currentTimeMillis());
-            jsonEdgeSetup.put("isAvailable", true);
-            // Convert the string to bytes
-            byte[] message = jsonEdgeSetup.toString().getBytes();
-            // Publish the message to the queue
-            channel.basicPublish(EXCHANGE_NAME, hearBeatRoutingKey, null, message);
-            System.out.println(" [x] Sent JSON message in routing key " + hearBeatRoutingKey + ": '" + jsonEdgeSetup + "'");
+            String heartbeatThreadName = edgeLabel + "Heartbeat";
+            JSONObject jEdgeSetup = getJsonObject(setupFile);
+            Timer timer = new Timer();
+            Heartbeat heartbeat = new Heartbeat(jEdgeSetup, edgeLabel);
+            Thread thread = new Thread(heartbeat, heartbeatThreadName);
+            timer.scheduleAtFixedRate(heartbeat, 0, HEARTBEAT_RATE);
+            thread.start();
         }
 
         // Load devices and functions
@@ -122,5 +122,32 @@ public class HP2CEdge {
 
     public static boolean isAmqpOn() {
         return amqpOn;
+    }
+
+    /**
+     * TimerTask that sends a periodic heartbeat message to the server.
+     */
+    static class Heartbeat extends TimerTask {
+        private final JSONObject jEdgeSetup;
+        private final String routingKey;
+        public Heartbeat(JSONObject jEdgeSetup, String edgeLabel) {
+            System.out.println("Instantiating heartbeat scheduler for edge " + edgeLabel);
+            this.jEdgeSetup = jEdgeSetup;
+            this.routingKey = "edge" + "." + edgeLabel + "." + "heartbeat";
+        }
+        @Override
+        public void run() {
+            // Add timestamp and status to the JSON object
+            jEdgeSetup.put("timestamp", System.currentTimeMillis());
+            jEdgeSetup.put("isAvailable", true);
+            // Convert the string to bytes
+            byte[] message = jEdgeSetup.toString().getBytes();
+            try {
+                channel.basicPublish(EXCHANGE_NAME, routingKey, null, message);
+            } catch (IOException e) {
+                System.err.println("Exception in " + edgeLabel + " edge heartbeat: " + e.getMessage());
+            }
+            System.out.println(" [Edge] Sent JSON message to routing key " + routingKey + ": '" + jEdgeSetup + "'");
+        }
     }
 }

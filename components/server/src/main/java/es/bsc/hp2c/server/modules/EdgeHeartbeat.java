@@ -36,7 +36,7 @@ public class EdgeHeartbeat {
 
     private static final String QUEUE_NAME = "heartbeats";
     private static final String routingKey = "edge.*.heartbeat";
-    private static final int HEARTBEAT_TIMEOUT = 10000;  // milliseconds
+    private static final int HEARTBEAT_TIMEOUT = 30000;  // milliseconds
     private final Map<String, VirtualEdge> edgeMap;
     private final Channel channel;
 
