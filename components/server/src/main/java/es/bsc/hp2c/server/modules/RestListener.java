@@ -22,6 +22,7 @@ import com.sun.net.httpserver.HttpExchange;
 import es.bsc.hp2c.HP2CServer.ActuatorValidity;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.server.device.VirtualComm;
+import es.bsc.hp2c.server.edge.VirtualEdge;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,17 +36,16 @@ import java.util.Random;
 
 import static es.bsc.hp2c.HP2CServer.checkActuator;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
-import static es.bsc.hp2c.common.utils.FileUtils.convertHashMapToJson;
 
 /**
  * HTTP Server that listens to REST POST requests.
  */
 public class RestListener {
     private static final int REST_PORT = 8080;
-    private static Map<String, Map<String, Device>> deviceMap;
+    private static Map<String, VirtualEdge> edgeMap;
 
-    public RestListener(Map<String, Map<String, Device>> deviceMap) {
-        RestListener.deviceMap = deviceMap;
+    public RestListener(Map<String, VirtualEdge> edgeMap) {
+        RestListener.edgeMap = edgeMap;
     }
 
     public void start() throws IOException {
@@ -128,7 +128,7 @@ public class RestListener {
 
             try {
                 //response = "Received request to get devices info. ";
-                jDeviceInfo = RestUtils.getInfoFromDeviceMap();
+                jDeviceInfo = RestUtils.getInfoFromEdgeMap();
             } catch (JSONException e) {
                 response = e.getMessage();
                 exchange.sendResponseHeaders(500, 0); // Internal Server Error
@@ -168,7 +168,7 @@ public class RestListener {
                 ActuatorValidity checker = checkActuator(edgeLabel, actuatorLabel);
                 if (checker.isValid()) {
                     // Actuate
-                    Device device = deviceMap.get(edgeLabel).get(actuatorLabel);
+                    Device device = edgeMap.get(edgeLabel).getDevice(actuatorLabel);
                     VirtualComm.VirtualActuator<?> actuator = (VirtualComm.VirtualActuator<?>) device;
                     actuator.actuate(stringValues);
                     // Send response
@@ -205,17 +205,16 @@ public class RestListener {
             return sb.toString();
         }
 
-        static JSONObject getInfoFromDeviceMap() {
+        static JSONObject getInfoFromEdgeMap() {
             JSONObject jDevicesInfo = new JSONObject();
-            for (HashMap.Entry<String, Map<String, Device>> entry : deviceMap.entrySet()) {
+            for (HashMap.Entry<String, VirtualEdge> entry : edgeMap.entrySet()) {
                 String groupKey = entry.getKey();
-                Map<String, Device> innerMap = entry.getValue();
+                VirtualEdge edge = entry.getValue();
                 JSONObject jEdge = new JSONObject();
-                for (HashMap.Entry<String, Device> innerEntry : innerMap.entrySet()) {
-                    String deviceKey = innerEntry.getKey();
+                for (String deviceLabel : edge.getDeviceLabels()) {
                     JSONObject jDevice = new JSONObject();
                     boolean isActionable = false;
-                    Device device = innerMap.get(deviceKey);
+                    Device device = edge.getDevice(deviceLabel);
                     if (device.isActionable()) {
                         VirtualComm.VirtualActuator<?> actuator = (VirtualComm.VirtualActuator<?>) device;
                         isActionable = true;
@@ -231,7 +230,7 @@ public class RestListener {
                         jDevice.put("size", sensor.getSize());
                     }
                     jDevice.put("isActionable", isActionable);
-                    jEdge.put(deviceKey, jDevice);
+                    jEdge.put(deviceLabel, jDevice);
                 }
                 jDevicesInfo.put(groupKey, jEdge);
             }

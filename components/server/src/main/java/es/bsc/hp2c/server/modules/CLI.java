@@ -18,6 +18,7 @@ package es.bsc.hp2c.server.modules;
 import es.bsc.hp2c.HP2CServer.ActuatorValidity;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
+import es.bsc.hp2c.server.edge.VirtualEdge;
 
 import java.io.IOException;
 import java.util.Map;
@@ -28,10 +29,10 @@ import static es.bsc.hp2c.HP2CServer.setVerbose;
 
 public class CLI implements Runnable {
     private boolean isRunning = false;
-    private final Map<String, Map<String, Device>> deviceMap;
+    private final Map<String, VirtualEdge> edgeMap;
 
-    public CLI(Map<String, Map<String, Device>> deviceMap) {
-        this.deviceMap = deviceMap;
+    public CLI(Map<String, VirtualEdge> edgeMap) {
+        this.edgeMap = edgeMap;
     }
 
     public void start() {
@@ -123,7 +124,7 @@ public class CLI implements Runnable {
         }
 
         // Actuate
-        Device device = deviceMap.get(edgeLabel).get(actuatorLabel);
+        Device device = edgeMap.get(edgeLabel).getDevice(actuatorLabel);
         VirtualActuator<?> actuator = (VirtualActuator<?>) device;
         actuator.actuate(stringValues);
     }

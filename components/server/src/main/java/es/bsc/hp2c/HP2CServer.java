@@ -16,6 +16,7 @@
 package es.bsc.hp2c;
 
 import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.server.edge.VirtualEdge;
 import es.bsc.hp2c.server.modules.*;
 
 import java.io.File;
@@ -39,7 +40,7 @@ public class HP2CServer {
     public final CLI cli;
     private final EdgeHeartbeat heartbeat;
     private final long dbPort = 8086;
-    private static final Map<String, Map<String, Device>> deviceMap = new HashMap<>();
+    private static final Map<String, VirtualEdge> edgeMap = new HashMap<>();
     private static boolean verbose = true;
 
     /**
@@ -50,10 +51,10 @@ public class HP2CServer {
     public HP2CServer(String hostIp) throws IOException, TimeoutException {
         // Initialize modules
         db = new DatabaseHandler(hostIp, dbPort);
-        amqp = new AmqpManager(hostIp, deviceMap, db);
-        heartbeat = new EdgeHeartbeat(amqp, deviceMap);
-        restServer = new RestListener(deviceMap);
-        cli = new CLI(deviceMap);
+        amqp = new AmqpManager(hostIp, edgeMap, db);
+        heartbeat = new EdgeHeartbeat(amqp, edgeMap);
+        restServer = new RestListener(edgeMap);
+        cli = new CLI(edgeMap);
     }
 
     /** Parse setup files for all edge nodes and deploy Server. */
@@ -109,7 +110,8 @@ public class HP2CServer {
             String filePath = setupFile.toString();
             System.out.println("Loading setup configuration for file " + filePath);
             String edgeLabel = readEdgeLabel(filePath);
-            deviceMap.put(edgeLabel, loadDevices(filePath, "driver-dt"));
+            VirtualEdge edge = new VirtualEdge(loadDevices(filePath, "driver-dt"));
+            edgeMap.put(edgeLabel, edge);
         }
         return hostIp;
     }
@@ -118,24 +120,23 @@ public class HP2CServer {
     public static ActuatorValidity checkActuator(String edgeLabel, String actuatorName) {
         // Check if the provided actuator name exists in the map of edge nodes
         StringBuilder msg = new StringBuilder();
-        if (!isInMap(edgeLabel, actuatorName, deviceMap)) {
+        if (!isInMap(edgeLabel, actuatorName, edgeMap)) {
             msg.append("Edge " + edgeLabel + ", Device " + actuatorName + " not listed.\n");
             msg.append("Options are:\n");
-            for (HashMap.Entry<String, Map<String, Device>> entry : deviceMap.entrySet()) {
+            for (HashMap.Entry<String, VirtualEdge> entry : edgeMap.entrySet()) {
                 String groupKey = entry.getKey();
-                Map<String, Device> innerMap = entry.getValue();
+                VirtualEdge edge = entry.getValue();
                 msg.append("Group: " + groupKey + "\n");
-                for (HashMap.Entry<String, Device> innerEntry : innerMap.entrySet()) {
-                    String deviceKey = innerEntry.getKey();
-                    if (innerMap.get(deviceKey).isActionable()) {
-                        msg.append("  Actuator: " + deviceKey + "\n");
+                for (String deviceLabel : edge.getDeviceLabels()) {
+                    if (edge.getDevice(deviceLabel).isActionable()) {
+                        msg.append("  Actuator: " + deviceLabel + "\n");
                     }
                 }
             }
             return new ActuatorValidity(false, msg.toString());
         }
         // Check if the provided device is an actuator
-        Device device = deviceMap.get(edgeLabel).get(actuatorName);
+        Device device = edgeMap.get(edgeLabel).getDevice(actuatorName);
         if (!device.isActionable()) {
             msg.append("Device " + edgeLabel + "." + actuatorName + " is not an actuator.\n");
             return new ActuatorValidity(false, msg.toString());
@@ -162,15 +163,12 @@ public class HP2CServer {
     /**
      * Check if the combination "edgeLabel" and "deviceName" is in the given nested HashMap
      */
-    public static boolean isInMap(String edgeLabel, String deviceName, Map<String, Map<String, Device>> map) {
-        if (map.containsKey(edgeLabel)){
-            if (!map.get(edgeLabel).containsKey(deviceName)) {;
-                return false;
-            }
+    public static boolean isInMap(String edgeLabel, String deviceName, Map<String, VirtualEdge> edgeMap) {
+        if (edgeMap.containsKey(edgeLabel)){
+            return edgeMap.get(edgeLabel).containsDevice(deviceName);
         } else {
             return false;
         }
-        return true;
     }
 
     public static boolean isVerbose() {

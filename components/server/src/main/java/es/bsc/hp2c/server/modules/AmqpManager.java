@@ -24,6 +24,7 @@ import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
+import es.bsc.hp2c.server.edge.VirtualEdge;
 
 import java.io.IOException;
 import java.util.Map;
@@ -32,7 +33,7 @@ import java.util.concurrent.TimeoutException;
 public class AmqpManager {
     private final DatabaseHandler db;
     private static Channel channel = null;
-    private final Map<String, Map<String, Device>> deviceMap;
+    private final Map<String, VirtualEdge> edgeMap;
     private static final String EXCHANGE_NAME = "measurements";
 
     /**
@@ -40,11 +41,11 @@ public class AmqpManager {
      *
      * @param localIp local IP address where the RabbitMQ broker is deployed
      *                if IP is not configured in deployment_setup.json
-     * @param deviceMap Map of the edge nodes and their devices
+     * @param edgeMap Map of the edge nodes and their devices
      */
-    public AmqpManager(String localIp, Map<String, Map<String, Device>> deviceMap, DatabaseHandler db)
+    public AmqpManager(String localIp, Map<String, VirtualEdge> edgeMap, DatabaseHandler db)
             throws IOException, TimeoutException {
-        this.deviceMap = deviceMap;
+        this.edgeMap = edgeMap;
         this.db = db;
         // Select broker IP
         String brokerIp = CommUtils.parseRemoteIp("broker", localIp);
@@ -84,13 +85,13 @@ public class AmqpManager {
             String edgeLabel = getEdgeLabel(senderRoutingKey);
             String deviceName = getDeviceName(senderRoutingKey);
             // Check existence of pair edge-device
-            if (!HP2CServer.isInMap(edgeLabel, deviceName, deviceMap)) {
+            if (!HP2CServer.isInMap(edgeLabel, deviceName, edgeMap)) {
                 System.err.println("Edge " + edgeLabel + ", Device " + deviceName
                         + ": message received but device not listed as " + edgeLabel + " digital twin devices.");
                 return;
             }
             // Sense to the corresponding sensor
-            Sensor<?, ?> sensor = (Sensor<?, ?>) deviceMap.get(edgeLabel).get(deviceName);
+            Sensor<?, ?> sensor = (Sensor<?, ?>) edgeMap.get(edgeLabel).getDevice(deviceName);
             sensor.sensed(message);
             // Write entry in database
             db.write((Float[]) sensor.decodeValuesSensor(message), timestampMillis, edgeLabel, deviceName);
