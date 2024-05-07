@@ -13,7 +13,6 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Varmeter;
