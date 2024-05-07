@@ -25,16 +25,24 @@ import java.util.Map;
  * It contains a map of devices and other properties such as availability.
  */
 public class VirtualEdge {
+    private final String label;
     private final Map<String, Device> devices;
     private boolean isAvailable;
+    private long lastHeartbeat;
 
-    public VirtualEdge(Map<String, Device> devices) {
+    public VirtualEdge(String label, Map<String, Device> devices, Long currentTime) {
+        this.label = label;
         this.devices = devices;
         this.isAvailable = true;
+        this.lastHeartbeat = currentTime;
     }
 
     public boolean containsDevice(String deviceLabel) {
         return devices.containsKey(deviceLabel);
+    }
+
+    public String getLabel() {
+        return label;
     }
 
     public Device getDevice(String deviceLabel) {
@@ -47,6 +55,14 @@ public class VirtualEdge {
 
     public ArrayList<Device> getDevices() {
         return new ArrayList<>(devices.values());
+    }
+
+    public void setLastHeartbeat(long lastHeartbeat) {
+        this.lastHeartbeat = lastHeartbeat;
+    }
+
+    public long getLastHeartbeat() {
+        return lastHeartbeat;
     }
 
     public boolean isAvailable() {

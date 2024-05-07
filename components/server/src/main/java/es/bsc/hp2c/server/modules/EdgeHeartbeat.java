@@ -21,7 +21,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -40,7 +39,6 @@ public class EdgeHeartbeat {
     private static final int HEARTBEAT_TIMEOUT = 10000;  // milliseconds
     private final Map<String, VirtualEdge> edgeMap;
     private final Channel channel;
-    private final Map<String, Long> lastHeartbeatTimes;
 
     public EdgeHeartbeat(AmqpManager amqp, Map<String, VirtualEdge> edgeMap) throws IOException {
         this.channel = amqp.getChannel();
@@ -48,7 +46,6 @@ public class EdgeHeartbeat {
         this.channel.queueDeclare(QUEUE_NAME, true, false, false, null);
         this.channel.queueBind(QUEUE_NAME, amqp.getExchangeName(), routingKey);
         this.edgeMap = edgeMap;
-        this.lastHeartbeatTimes = new HashMap<>();
     }
 
     /** Start the AMQP listener and checkInactiveEdges threads */
@@ -88,27 +85,34 @@ public class EdgeHeartbeat {
         JSONObject setupJson = new JSONObject(new String(body, StandardCharsets.UTF_8));
 
         // Process the heartbeat message
-        if (!edgeMap.containsKey(edgeLabel)) {
-            // The first time a heartbeat is received we load the devices and store it in the VirtualEdge object
-            VirtualEdge edge = new VirtualEdge(loadDevices(setupJson, "driver-dt"));
+        System.out.println("Received heartbeat for edge '" + edgeLabel + "': " + setupJson);
+        if (edgeMap.containsKey(edgeLabel)) {
+            // Set last heartbeat
+            edgeMap.get(edgeLabel).setLastHeartbeat(System.currentTimeMillis());
+        } else {
+            // First time a heartbeat is received, load devices and store in the VirtualEdge object
+            VirtualEdge edge = new VirtualEdge(
+                    edgeLabel, loadDevices(setupJson, "driver-dt"), System.currentTimeMillis());
             edgeMap.put(edgeLabel, edge);
         }
-        // TODO: else with Update device information?
-
-        // Update last heartbeat time for this edge TODO: Check usage of this map together with edgeMap. Redundancy?
-        System.out.println("Received heartbeat for edge '" + edgeLabel + "': " + setupJson);
-        lastHeartbeatTimes.put(edgeLabel, System.currentTimeMillis());
     }
 
-    /** Periodically verify the heartbeat hash map and update each `isAvailable` property accordingly. */
+    /** Periodically verify the edge heartbeat and update each `isAvailable` property accordingly. */
     private void checkInactiveEdges() {
         long currentTime = System.currentTimeMillis();
-        for (Map.Entry<String, Long> entry : lastHeartbeatTimes.entrySet()) {
-            if (currentTime - entry.getValue() > HEARTBEAT_TIMEOUT) {
-                // Device is not available
-                String edgeLabel = entry.getKey();
-                System.out.println("Edge '" + edgeLabel + "' is inactive.");
-                // TODO: Set isAvailable to false
+        for (VirtualEdge edge : edgeMap.values()) {
+            if (currentTime - edge.getLastHeartbeat() > HEARTBEAT_TIMEOUT) {
+                // Edge not available
+                System.out.println("Edge '" + edge.getLabel() + "' is inactive.");
+                if (edge.isAvailable()) {
+                    edge.setAvailable(false);
+                }
+            } else {
+                // Edge available
+                System.out.println("Edge '" + edge.getLabel() + "' is active.");
+                if (!edge.isAvailable()) {
+                    edge.setAvailable(true);
+                }
             }
         }
     }
