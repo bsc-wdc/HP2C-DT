@@ -40,22 +40,6 @@ services:
     stdin_open: true
     tty: true
 
-  user_interface:
-    container_name: ${ORG_NAME}_user_interface
-    build:
-      context: ../components/userInterface
-      dockerfile: ../../docker/user_interface/Dockerfile.user_interface
-    ports:
-      - "80:80"
-    volumes:
-      - ../deployments/${DEPLOYMENT_NAME}/setup:/data/edge/
-      - ../deployments/${DEPLOYMENT_NAME}/deployment_setup.json:/data/deployment_setup.json
-      - ../config.json:/run/secrets/config.json
-    environment:
-      - DEPLOYMENT_NAME=${DEPLOYMENT_NAME}
-      - LOCAL_IP=${LOCAL_IP}
-    restart: "no"
-
   opal_simulator:
     container_name: ${ORG_NAME}_opal_simulator
     build:
@@ -64,7 +48,10 @@ services:
     network_mode: "host"
     volumes:
       - ../deployments/${DEPLOYMENT_NAME}/setup:/data/edge/
+      - ../components/opalSimulator/simulations:/data/simulations/
     environment:
       - DEPLOYMENT_NAME=${DEPLOYMENT_NAME}
       - LOCAL_IP=${LOCAL_IP}
+      - TIME_STEP=${TIME_STEP}
+      - SIMULATION_NAME=$SIMULATION_NAME
     restart: "no"

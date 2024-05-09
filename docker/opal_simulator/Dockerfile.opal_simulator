@@ -1,3 +1,4 @@
+
 FROM openjdk:8-jdk-alpine as builder
 ARG MAVEN_VERSION=3.9.3
 
@@ -8,14 +9,22 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
   && rm -f /tmp/apache-maven.tar.gz \
   && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
 
-COPY ./opalSimulator/ /app/
-WORKDIR /app
+COPY ./common/ /app/common
+WORKDIR /app/common
+RUN mvn clean install
+  
+COPY ./edge/ /app/edge
+WORKDIR /app/edge
+RUN mvn clean install
+
+COPY ./opalSimulator/ /app/opalSimulator
+WORKDIR /app/opalSimulator
 RUN mvn clean package
 
-RUN wget -O /app/json.jar https://repo1.maven.org/maven2/org/json/json/20210307/json-20210307.jar
+# RUN wget -O /app/json.jar https://repo1.maven.org/maven2/org/json/json/20210307/json-20210307.jar
 
 FROM openjdk:8-jdk-alpine
-COPY --from=builder /app/target/*.jar /app/opalSimulator.jar
-COPY --from=builder /app/json.jar /app/json.jar
+COPY --from=builder /app/opalSimulator/target/opalSimulator.jar /app/opalSimulator.jar
+# COPY --from=builder /app/json.jar /app/json.jar
 
-CMD ["java", "-cp", "/app/opalSimulator.jar:/app/json.jar", "es.bsc.hp2c.opalSimulator.OpalSimulator"]
+CMD ["java", "-cp", "/app/opalSimulator.jar", "es.bsc.hp2c.opalSimulator.OpalSimulator"]

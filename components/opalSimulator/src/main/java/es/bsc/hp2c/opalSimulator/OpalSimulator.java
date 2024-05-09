@@ -3,102 +3,183 @@ package es.bsc.hp2c.opalSimulator;
 import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.opalSimulator.utils.CSVTable;
+import es.bsc.hp2c.opalSimulator.utils.DeviceWrapper;
+import es.bsc.hp2c.opalSimulator.utils.Edge;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-/*
- * Runs nEdges TCP servers in order to receive actuations, nEdges TCP clients to update the values on the edges
- * (just of TCP sensors), and nEdges UDP servers with the aim of sending UDP sensors values. The OpalSimulator also
- * keeps track of the state of every TCP sensor within each edge by maintaining a map where the second digit of the
- * ports serves as the key (unique for each edge), and a Float array represents the corresponding values.
- *
- */
+import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
+
 public class OpalSimulator {
     private static String SERVER_ADDRESS = "127.0.0.1";
-    private static int BASE_TCP_SENSORS_PORT;
-    private static int BASE_TCP_ACTUATORS_PORT;
-    private static int runClient = 0;
-    private static Map<Integer, Float[]> devices = new HashMap<>();
-    private static int BASE_UDP_PORT;
+    private static ArrayList<Edge> edges = new ArrayList<>();
     private static final double frequency = 1.0 / 20.0;
-    private static int[] tcpIndexesPerEdge;
-    private static int[] udpIndexesPerEdge;
-    private static int nEdges;
+    private static boolean runSimulation = false;
+    private static CSVTable csvTable;
+    private static int runClient = 0;
+    private static long timeStep;
+    private static ArrayList<File> logFiles = new ArrayList<>();
+    private static String simulationName = "";
 
-
-    /*
-    * Runs nEdges TCP servers in order to receive actuations, nEdges TCP clients to update the values on the edges
-    * (just of TCP sensors), and nEdges UDP servers with the aim of sending UDP sensors values.
-    *
-    * @param args User should input the deployment directory (name of the directory in path "hp2cdt/deployments")
-    * */
-    public static void main(String[] args) throws InterruptedException, FileNotFoundException {
+    public static void main(String[] args) throws IOException {
         String localIp = System.getenv("LOCAL_IP");
         if (localIp != null) SERVER_ADDRESS=localIp;
+        boolean inDocker = false;
 
-        if (args.length > 0){
-            parseJSON(args[0], false);
+        String deploymentFile;
+        if (args.length > 0) {
+            String deploymentName = args[0];
+            deploymentFile = "../../deployments/" + deploymentName + "/setup/";
         } else {
-            String deploymentName = System.getenv("DEPLOYMENT_NAME");
-            if (deploymentName != null) parseJSON(deploymentName, false);
-            else{
-                System.out.println("User must input as argument the deployment directory");
-                parseJSON("testbed", true);
+            inDocker = true;
+            deploymentFile = "/data/edge/";
+        }
+        File setupDirectory = new File(deploymentFile);
+        if (!setupDirectory.exists()){
+            throw new FileNotFoundException("Setup directory file not found");
+        }
+
+        if(args.length > 1){
+            timeStep = Long.parseLong(args[1]);
+            System.out.println("TimeStep: " + timeStep);
+        } else {
+            String timeStepEnv = System.getenv("TIME_STEP");
+            if (timeStepEnv != null) timeStep = Long.parseLong(timeStepEnv);
+            else timeStep = 1000;
+        }
+
+        if (args.length > 2){
+            simulationName = args[2];
+            runSimulation = true;
+            System.out.println("Using simulation name: " + simulationName);
+        } else {
+            String simulationNameEnv = System.getenv("SIMULATION_NAME");
+            if ((simulationNameEnv) != null && !simulationNameEnv.equals("")){
+                simulationName = simulationNameEnv;
+                runSimulation = true;
             }
         }
+        if (runSimulation) {
+            String simulationPath;
+            if (inDocker){
+                simulationPath = "/data/simulations/" + simulationName + ".csv";
+            }
+            else {
+                simulationPath = "simulations/" + simulationName + ".csv";
+            }
+            System.out.println(simulationPath + "------");
+            File simulationFile = new File(simulationPath);
+            if (simulationFile.exists()) csvTable = new CSVTable(simulationPath);
+            else throw new FileNotFoundException("Simulation csv not found");
+        }
+        System.out.println("Using deployment file: " + deploymentFile);
+        System.out.println("Using timeStep: " + timeStep);
+        System.out.println("Runsimulation: " + runSimulation);
 
-        // while each of the columns represents the indexes within the edge.
-        for (int i = 0; i < nEdges; ++i){
-            Float[] edgeI = new Float[tcpIndexesPerEdge[i]];
-            Arrays.fill(edgeI, Float.NEGATIVE_INFINITY);
-            devices.put(i+1, edgeI);
+        for (String edgeFile : Objects.requireNonNull(setupDirectory.list())){
+            String pathToEdge = deploymentFile + edgeFile;
+            Edge edge = initEdgeComms(pathToEdge);
+            ArrayList<DeviceWrapper> devicesWrapped = getDevices(pathToEdge);
+
+            Map<String, Device> devices = loadDevices(pathToEdge, false);
+            devicesWrapped = joinDevices(devicesWrapped, devices);
+            edge.setDevices(devicesWrapped);
+            edges.add(edge);
+
         }
 
+        if (runSimulation) createLogFiles(simulationName);
         startActuatorsServer();
         startTCPSensors();
         startUDPSensors();
     }
+
 
     //=======================================
     // UDP
     //=======================================
 
     private static void startUDPSensors() {
-        for (int i = 0; i < nEdges; ++i){
-            int finalI = i;
+        for (Edge edge : edges){
             new Thread(() -> {
-                int udpPort = BASE_UDP_PORT + (finalI * 1000);
-                System.out.println("Starting UDP communication in port " + udpPort + " ip " + SERVER_ADDRESS);
-                startUDPClient(udpPort, (udpPort / 1000) % 10);
+                System.out.println("Starting UDP communication in port " + edge.getUdpSensorsPort() + " ip " + SERVER_ADDRESS);
+                startUDPClient(edge);
             }).start();
         }
     }
 
 
-    private static void startUDPClient(int udpPort, int edgeNumber) {
+    private static void startUDPClient(Edge edge) {
         try (DatagramSocket udpSocket = new DatagramSocket()) {
             InetAddress address = InetAddress.getByName(SERVER_ADDRESS);
+            int udpSensorsIndexes = 0;
+            ArrayList <DeviceWrapper> udpSensors = new ArrayList<>();
+            for (DeviceWrapper device : edge.getDevices()){
+                if (Objects.equals(device.getProtocol(), "opal-udp") && device.getDevice().isSensitive()){
+                    udpSensorsIndexes += device.getIndexes().length;
+                    udpSensors.add(device);
+                }
+            }
+
+            int t = 0;
             while (true) {
-                ByteBuffer byteBuffer = ByteBuffer.allocate(udpIndexesPerEdge[edgeNumber-1]* Float.BYTES);
-                float[] values = genSineValues(udpIndexesPerEdge[edgeNumber-1]);
+                ByteBuffer byteBuffer = ByteBuffer.allocate(udpSensorsIndexes * Float.BYTES);
+                float[] values;
+                if (runSimulation){
+                    values = getValuesFromCsv(udpSensors, edge.getLabel(), t, udpSensorsIndexes);
+                    if (values == null){
+                        t = 0;
+                        continue;
+                    }
+                } else {
+                    values = genSineValues(udpSensorsIndexes);
+                }
+
                 for (float value: values) {
-                    // float value = (float) Math.random();
                     byteBuffer.putFloat(value);
                 }
                 byte[] buffer = byteBuffer.array();
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, udpPort);
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, edge.getUdpSensorsPort());
                 udpSocket.send(packet);
                 System.out.println("Sent UDP packet.");
-                Thread.sleep(5000);
+
+                Thread.sleep(timeStep);
+                t += 1;
             }
         } catch (Exception e) {
             System.err.println("Error sending data through UDP.");
         }
+    }
+
+    private static float[] getValuesFromCsv(ArrayList<DeviceWrapper> sensors, String edgeLabel, int t, int nIndexes){
+        if (t >= csvTable.getData().size()) return null;
+
+        float[] values = new float[nIndexes];
+        List<Float> row = csvTable.getRow(t);
+        List<String> edgeNames = csvTable.getEdgeNames();
+        List<String> deviceNames = csvTable.getDeviceNames();
+        for (int i = 0; i < edgeNames.size(); ++i){
+            if (Objects.equals(edgeNames.get(i), edgeLabel)){
+                String subString = deviceNames.get(i).substring(0, deviceNames.get(i).length() - 7);
+                int sensorNumber = Integer.parseInt(deviceNames.get(i).substring(deviceNames.get(i).length() - 1));
+                // get device label without "SensorX" and sensorNumber(X)
+                for (DeviceWrapper sensor : sensors){
+                    if (subString.equals(sensor.getLabel())){
+                        values[sensor.getIndexes()[sensorNumber]] = row.get(i);
+                    }
+                }
+            }
+        }
+        return values;
     }
 
     //=======================================
@@ -106,123 +187,300 @@ public class OpalSimulator {
     //=======================================
 
     private static void startTCPSensors() {
-        for (int i = 0; i < nEdges; ++i){
-            int tcpPort = BASE_TCP_SENSORS_PORT + (i * 1000);
+        for (Edge edge : edges){
             new Thread(() -> {
-                System.out.println("Starting TCP communication in port " + tcpPort + " ip " + SERVER_ADDRESS);
-                startTCPClient(tcpPort, (tcpPort / 1000) % 10);
+                System.out.println("Starting TCP communication in port " + edge.getTcpSensorsPort() + " ip " + SERVER_ADDRESS);
+                startTCPClient(edge);
             }).start();
         }
     }
-
 
     /*
      * This method starts a TCP client to update the value on the corresponding edge. To do so, we check start of message
      * with a readInt() that checks the expected length (number of floats) of the message, then get the buffer with that
      * messageLength, and lastly the end of line (EoL) character.
      * */
-    private static void startTCPClient(int tcpPort, int edgeNumber) {
-        if (devices.get(edgeNumber).length < 1){ return; }
-        try {
-            Socket tcpSocket = new Socket(SERVER_ADDRESS, tcpPort);
-            while (true) {
-                ByteBuffer byteBuffer = ByteBuffer.allocate(devices.get(edgeNumber).length * Float.BYTES + Integer.BYTES + Character.BYTES);
-                float[] values = new float[devices.get(edgeNumber).length];
-                for (int i = 0; i < devices.get(edgeNumber).length; i++) {
-                    Float[] aux = devices.get(edgeNumber);
-                    values[i] = aux[i];
-                }
-                byteBuffer.putInt(devices.get(edgeNumber).length);
-                System.out.println("Length of the message: " + devices.get(edgeNumber).length);
-                for (float value : values) {
-                    byteBuffer.putFloat(value);
-                    System.out.println("Prepared TCP value: " + value);
-                }
-                byteBuffer.putChar('\n');
+    private static void startTCPClient(Edge edge) {
+        if (edge.getDevices().isEmpty()) return;
+        while (true) {
+            Socket tcpSocket = null;
+            DataOutputStream outputStream = null;
+            try {
+                tcpSocket = new Socket(SERVER_ADDRESS, edge.getTcpSensorsPort());
 
-                try {
-                    DataOutputStream outputStream = new DataOutputStream(tcpSocket.getOutputStream());
+                int tcpIndexes = 0;
+                ArrayList<DeviceWrapper> tcpSensors = new ArrayList<>();
+                for (DeviceWrapper device : edge.getDevices()) {
+                    if (Objects.equals(device.getProtocol(), "opal-tcp")) {
+                        tcpIndexes += device.getIndexes().length;
+                        if (device.getDevice().isSensitive()) tcpSensors.add(device);
+                    }
+                }
+
+                int t = 0;
+                while (true) {
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(tcpIndexes * Float.BYTES + Integer.BYTES + Character.BYTES);
+                    float[] values = new float[tcpIndexes];
+
+                    if (runSimulation) {
+                        values = getValuesFromCsv(tcpSensors, edge.getLabel(), t, tcpIndexes);
+                        if (values == null) {
+                            t = 0;
+                            continue;
+                        }
+                        for (DeviceWrapper device : tcpSensors) {
+                            if (device.getDevice().isActionable()) {
+                                float[] v = device.getValues();
+                                for (int i : device.getIndexes()) {
+                                    if (values[i] != Float.NEGATIVE_INFINITY) v[i - device.getIndexes()[0]] = values[i];
+                                }
+                                device.setValues(v);
+
+                                int j = 0;
+                                for (int i : device.getIndexes()) {
+                                    values[i] = device.getValues()[j];
+                                    j += 1;
+                                }
+                            }
+                        }
+                    } else {
+                        values = genSineValues(tcpIndexes);
+                        for (DeviceWrapper device : tcpSensors) {
+                            if (device.getDevice().isActionable()) {
+                                int j = 0;
+                                for (int i : device.getIndexes()) {
+                                    values[i] = device.getValues()[j];
+                                    j += 1;
+                                }
+                            }
+                        }
+                    }
+
+                    byteBuffer.putInt(tcpIndexes);
+                    System.out.println("Length of the message: " + tcpIndexes);
+                    for (float value : values) {
+                        byteBuffer.putFloat(value);
+                        System.out.println("Prepared TCP value: " + value);
+                    }
+                    byteBuffer.putChar('\n');
+
+                    outputStream = new DataOutputStream(tcpSocket.getOutputStream());
                     byte[] buffer = byteBuffer.array();
                     outputStream.write(buffer);
                     System.out.println("Sent TCP packet.\n");
-                } catch (IOException e) {
-                    System.err.println("Error sending data through TCP: " + e.getMessage());
-                    break;
+
+                    Thread.sleep(timeStep);
+                    t += 1;
                 }
-                Thread.sleep(5000);
+            } catch (Exception e) {
+                System.err.println("Error connecting to TCP server: " + e.getMessage());
+                try {
+                    if (outputStream != null) {
+                        outputStream.close();
+                    }
+                    if (tcpSocket != null) {
+                        tcpSocket.close();
+                    }
+                    Thread.sleep(5000);
+                } catch (IOException | InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
-        } catch (Exception e) {
-            System.err.println("Error connecting to TCP server: " + e.getMessage());
         }
     }
+
 
     //=======================================
     // TCP-Actuators
     //=======================================
 
     private static void startActuatorsServer() {
-        for (int i = 0; i < nEdges; ++i){
-            int port = BASE_TCP_ACTUATORS_PORT + (i * 1000);
+        for (Edge edge : edges) {
+            int port = edge.getTcpActuatorsPort();
             new Thread(() -> {
-                try {
-                    ServerSocket server = new ServerSocket(port, 0, InetAddress.getByName("0.0.0.0"));
-                    System.out.println("Server running in port " + port + ". Waiting for client requests...");
-                    Socket clientSocket = null;
-                    clientSocket = server.accept();
-                    runClient += 1;
-                    System.out.println("Accepted connection from: " + clientSocket.getInetAddress().getHostAddress());
-                    handleActuateClient(clientSocket, (port / 1000) % 10);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                ServerSocket server = null;
+                while (true) {
+                    try {
+                        server = new ServerSocket();
+                        server.setReuseAddress(true);
+                        server.bind(new InetSocketAddress("0.0.0.0", port));
+                        System.out.println("Server running in port " + port + ". Waiting for client requests...");
+                        while (true) {
+                            Socket clientSocket = server.accept();
+                            runClient += 1;
+                            System.out.println("Accepted connection from: " + clientSocket.getInetAddress().getHostAddress());
+                            handleActuateClient(clientSocket, edge);
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Error in server thread: " + e.getMessage());
+                        try {
+                            if (server != null && !server.isClosed()) {
+                                server.close();
+                            }
+                        } catch (IOException e1) {
+                            System.err.println("Error closing server socket: " + e1.getMessage());
+                        }
+                        try {
+                            Thread.sleep(2000); // Esperar antes de intentar reconectar
+                        } catch (InterruptedException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    }
                 }
             }).start();
         }
         System.out.println("");
-        System.out.println("Waiting for " + nEdges + " edges to be connected...");
+        System.out.println("Waiting for " + edges.size() + " edges to be connected...");
         System.out.println("");
-        while (runClient < nEdges){
-            try { Thread.sleep(1000); } catch (InterruptedException e) { throw new RuntimeException(e); }
+
+        while (runClient < edges.size()) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
+
+
 
     /*
-    * This method uses a TCP socket to receive actuations and update the corresponding values in "devices" map.
-    *
-    * @param clientSocket Socket through which we will receive the messages.
-    * @param edgeNumber Map key where value must be updated.
-    * */
-    private static void handleActuateClient(Socket clientSocket, int edgeNumber) {
-        try {
-            if (devices.get(edgeNumber).length < 1){ return; }
-            DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
-            while (true) {
-                byte[] buffer = new byte[devices.get(edgeNumber).length * Float.BYTES];
-                dis.readFully(buffer);
+     * This method uses a TCP socket to receive actuations and update the corresponding values in "devices" map.
+     *
+     * @param clientSocket Socket through which we will receive the messages.
+     * @param edge
+     * */
+    private static void handleActuateClient(Socket clientSocket, Edge edge) throws IOException {
+        if (edge.getDevices().isEmpty()) return;
+        ArrayList<DeviceWrapper> tcpActuators = new ArrayList<>();
+        int tcpIndexes = 0;
+        for (DeviceWrapper device : edge.getDevices()) {
+            if (Objects.equals(device.getProtocol(), "opal-tcp")) {
+                tcpIndexes += device.getIndexes().length;
+                if (device.getDevice().isSensitive()) tcpActuators.add(device);
+            }
+        }
+
+        DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
+        while (true) {
+            byte[] buffer = new byte[tcpIndexes * Float.BYTES];
+            dis.readFully(buffer);
+
+            ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
+
+            int index = 0;
+            ArrayList<Float> message = new ArrayList<>();
+            while (byteBuffer.remaining() > 0) {
+                Float newFloat = byteBuffer.getFloat();
+                message.add(newFloat);
+                if (newFloat != Float.NEGATIVE_INFINITY) {
+                    for (DeviceWrapper actuator : tcpActuators) {
+                        for (int i = 0; i < actuator.getIndexes().length; ++i) {
+                            if (index == actuator.getIndexes()[i]) {
+                                actuator.setValue(newFloat, i);
+                            }
+                        }
+                    }
+                }
+                index += 1;
+            }
+
+            int nInfinity = 0;
+            for (Float f : message) {
+                if (f == Float.NEGATIVE_INFINITY) nInfinity += 1;
+            }
+            if (!(nInfinity == tcpIndexes)) {
+                System.out.println("    Message is: " + message + " for edge " + edge.getLabel());
                 System.out.println("Message Received from " + clientSocket.getInetAddress().getHostAddress());
 
-                ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
-
-                int index = 0;
-                while (byteBuffer.remaining() > 0) {
-                    Float[] aux = devices.get(edgeNumber);
-                    Float newFloat = byteBuffer.getFloat();
-                    if (newFloat != Float.NEGATIVE_INFINITY){
-                        aux[index] = newFloat;
-                    }
-                    devices.put(edgeNumber, aux);
-                    index += 1;
+                if (runSimulation) {
+                    writeLog(edge, message);
                 }
-                System.out.println("    Message is: " + Arrays.toString(devices.get(edgeNumber)) +
-                        " for edge " + edgeNumber);
             }
-        } catch (IOException e) {
-            System.err.println("Error handling client: " + e.getMessage());
         }
     }
+
 
     //=======================================
     // UTILS
     //=======================================
+
+    private static void writeLog(Edge edge, ArrayList<Float> message) {
+        File logFile = null;
+        for (File f : logFiles){
+            if (f.getName().contains(edge.getLabel())){
+                logFile = f;
+            }
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd HH:mm:ss");
+        String dateTimeString = now.format(formatter);
+
+        StringBuilder line = new StringBuilder();
+        line.append(dateTimeString).append(",");
+        for (Float val : message) {
+            line.append(val).append(",");
+        }
+        line.deleteCharAt(line.length() - 1);
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, true))) {
+            writer.write(line.toString());
+            writer.newLine();
+        } catch (IOException e) {
+            System.err.println("Error writing to log file: " + e.getMessage());
+        }
+    }
+
+
+    static void createLogFiles(String simulationName) {
+        File logsDirectory = new File("logs");
+        if (!logsDirectory.exists()) {
+            logsDirectory.mkdirs();
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd_HH-mm-ss");
+        String dateTimeString = now.format(formatter);
+
+        for (Edge edge : edges){
+            String fileName = simulationName + "_" + dateTimeString + "_" + edge.getLabel() + ".csv";
+            File logFile = new File("logs/" + fileName);
+            try {
+                if (logFile.createNewFile()) {
+                    System.out.println("LogFile: " + logFile.getName());
+
+                    StringBuilder line = new StringBuilder();
+                    line.append("Time").append(",");
+                    for (DeviceWrapper device : edge.getDevices()){
+                        if (device.getDevice().isActionable()){
+                            int[] indexes = device.getIndexes();
+                            for (int i = 0; i < indexes.length; ++i){
+                                line.append(device.getLabel()).append("Actuator").append(i).append(",");
+                            }
+                        }
+                    }
+                    line.deleteCharAt(line.length() - 1);
+
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, true))) {
+                        writer.write(line.toString());
+                        writer.newLine();
+                    } catch (IOException e) {
+                        System.err.println("Error writing to log file: " + e.getMessage());
+                    }
+                    logFiles.add(logFile);
+                } else {
+                    System.out.println("LogFile already exists.");
+                }
+            } catch (IOException e) {
+                System.out.println("An error occurred while creating the logFile.");
+                e.printStackTrace();
+            }
+        }
+
+
+    }
+
 
     public static float[] genSineValues(int size) {
         float[] values = new float[size];
@@ -240,71 +498,72 @@ public class OpalSimulator {
     }
 
 
-    public static void parseJSON(String deployment, boolean local) throws FileNotFoundException {
-        String deploymentFile = "../../deployments/" + deployment + "/setup/";
-        File directory = new File(deploymentFile);
-        if (!directory.exists()) {
-            deploymentFile = "/data/edge/";
-            directory = new File(deploymentFile);
-        }
-        System.out.println("Path to deployment setup: " + deploymentFile);
-        //get the number of files in the directory and set nEdges. If the execution is local, use only 1 edge
-        if (local) { nEdges = 1; }
-        else { nEdges = directory.listFiles().length; }
+    private static ArrayList<DeviceWrapper> joinDevices(ArrayList<DeviceWrapper> devicesWrapped, Map<String, Device> devices) {
+        for (DeviceWrapper deviceWrapper : devicesWrapped) {
+            String label = deviceWrapper.getLabel();
 
-        tcpIndexesPerEdge = new int[nEdges];
-        udpIndexesPerEdge = new int[nEdges];
-
-        //set up comms base ports from edge1
-        setUpComms(deploymentFile);
-
-        //for every edge in the deployment directory, get the number of TCP and UDP indexes
-        getCommIndexes(deploymentFile);
-    }
-
-
-    private static void getCommIndexes(String deploymentFile) throws FileNotFoundException {
-        for (int i = 1; i <= nEdges; ++i){
-            String setupFile = deploymentFile + "/edge" + i + ".json";
-            InputStream is = new FileInputStream(setupFile);
-            JSONTokener tokener = new JSONTokener(is);
-            JSONObject object = new JSONObject(tokener);
-            JSONArray jDevices = object.getJSONArray("devices");
-            int nIndexesUDP = 0;
-            int nIndexesTCP = 0;
-            for (Object jo : jDevices){
-                JSONObject jDevice = (JSONObject) jo;
-                JSONObject jDProperties = jDevice.getJSONObject("properties");
-                if (jDProperties.getString("comm-type").equals("opal-tcp")){
-                    nIndexesTCP += jDProperties.getJSONArray("indexes").length();
-                } else{
-                    nIndexesUDP += jDProperties.getJSONArray("indexes").length();
-                }
+            if (devices.containsKey(label)) {
+                Device device = devices.get(label);
+                deviceWrapper.setDevice(device);
+            } else {
+                System.out.println("Device not found with label: " + label);
             }
-            udpIndexesPerEdge[i-1] = nIndexesUDP;
-            tcpIndexesPerEdge[i-1] = nIndexesTCP;
         }
+
+        return devicesWrapped;
     }
 
+    private static ArrayList<DeviceWrapper> getDevices(String pathToEdge) throws IOException {
+        ArrayList<DeviceWrapper> devices = new ArrayList<>();
 
-    private static void setUpComms(String deploymentFile) throws FileNotFoundException {
-        String setupFile = deploymentFile + "/edge1.json";
-        InputStream is = new FileInputStream(setupFile);
+        InputStream is = Files.newInputStream(Paths.get(pathToEdge));
         JSONTokener tokener = new JSONTokener(is);
         JSONObject object = new JSONObject(tokener);
-        JSONObject jGlobProp = object.getJSONObject("global-properties");
+        JSONArray jDevices = object.getJSONArray("devices");
+
+        for (Object jo : jDevices){
+            JSONObject jDevice = (JSONObject) jo;
+            JSONObject jDProperties = jDevice.getJSONObject("properties");
+            String label = jDevice.getString("label").replaceAll("[\\s-]", "");
+
+            String protocol = jDProperties.getString("comm-type");
+
+            JSONArray jIndexes = jDProperties.getJSONArray("indexes");
+            int[] indexes = new int[jIndexes.length()];
+            for (int i = 0; i < jIndexes.length(); i++) {
+                indexes[i] = jIndexes.getInt(i);
+            }
+            devices.add(new DeviceWrapper(label, protocol, indexes));
+        }
+        return devices;
+    }
+
+    private static Edge initEdgeComms(String pathToEdge) throws IOException {
+        JSONObject jGlobProp = getJGlobalProperties(pathToEdge);
         JSONObject jComms = jGlobProp.getJSONObject("comms");
+        String label = jGlobProp.getString("label");
 
         JSONObject jUDP = jComms.getJSONObject("opal-udp");
         JSONObject jTCP= jComms.getJSONObject("opal-tcp");
 
         JSONObject jUDPSensors = jUDP.getJSONObject("sensors");
-        BASE_UDP_PORT = jUDPSensors.getInt("port");
+        int udpSensorsPort = jUDPSensors.getInt("port");
 
         JSONObject jTCPSensors = jTCP.getJSONObject("sensors");
-        BASE_TCP_SENSORS_PORT = jTCPSensors.getInt("port");
+        int tcpSensorsPort = jTCPSensors.getInt("port");
 
         JSONObject jTCPActuators = jTCP.getJSONObject("actuators");
-        BASE_TCP_ACTUATORS_PORT = jTCPActuators.getInt("port");
+        int tcpActuatorsPort = jTCPActuators.getInt("port");
+
+        return new Edge(label, tcpSensorsPort, tcpActuatorsPort, udpSensorsPort);
+    }
+
+    private static JSONObject getJGlobalProperties(String pathToEdge) throws IOException {
+        InputStream is = new FileInputStream(pathToEdge);
+        JSONTokener tokener = new JSONTokener(is);
+        JSONObject object = new JSONObject(tokener);
+        return object.getJSONObject("global-properties");
     }
 }
+
+

@@ -24,7 +24,6 @@ COPY ./server/ /app/server/
 WORKDIR /app/server/
 RUN mvn clean package
 
-
 FROM openjdk:8-jdk-alpine
 COPY --from=builder /app/server/target/*.jar /app/server.jar
 
