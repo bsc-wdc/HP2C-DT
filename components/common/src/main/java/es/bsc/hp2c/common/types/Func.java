@@ -16,10 +16,7 @@
 package es.bsc.hp2c.common.types;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -27,9 +24,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import static es.bsc.hp2c.common.types.Device.formatLabel;
+import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 /**
  * Represents a user-declared function. The function constructor always receives
@@ -61,9 +58,7 @@ public abstract class Func implements Runnable {
      */
     public static void loadFunctions(String setupFile, Map<String, Device> devices) throws IOException {
         // Load setup file
-        InputStream is = Files.newInputStream(Paths.get(setupFile));
-        JSONTokener tokener = new JSONTokener(is);
-        JSONObject object = new JSONObject(tokener);
+        JSONObject object = getJsonObject(setupFile);
         // Load specific functions
         JSONArray funcs = object.getJSONArray("funcs");
         for (Object jo : funcs) {
@@ -81,10 +76,7 @@ public abstract class Func implements Runnable {
 
     public static void loadGlobalFunctions(String defaultsPath, Map<String, Device> devices, boolean AmqpOn) throws IOException {
         // Load generic file
-        InputStream is;
-        is = Files.newInputStream(Paths.get(defaultsPath));
-        JSONTokener tokenerGlobal = new JSONTokener(is);
-        JSONObject objectGlobal = new JSONObject(tokenerGlobal);
+        JSONObject objectGlobal = getJsonObject(defaultsPath);
         JSONObject jGlobProp = objectGlobal.getJSONObject("global-properties");
         JSONArray jGlobalFuncs = jGlobProp.getJSONArray("funcs");
         for (Object jo: jGlobalFuncs) {

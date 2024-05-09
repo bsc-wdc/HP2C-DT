@@ -22,16 +22,13 @@ import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
 import static es.bsc.hp2c.HP2CServer.isVerbose;
+import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 public class DatabaseHandler {
     private final InfluxDB influxDB;
@@ -111,9 +108,7 @@ public class DatabaseHandler {
 
     private String[] getAuth(String configFile) throws IOException {
         // Parse JSON file
-        InputStream is = Files.newInputStream(Paths.get(configFile));
-        JSONTokener tokener = new JSONTokener(is);
-        JSONObject jsonObject = new JSONObject(tokener);
+        JSONObject jsonObject = getJsonObject(configFile);
         // Access the parsed values
         JSONObject databaseObject = jsonObject.getJSONObject("database");
         String username = databaseObject.getString("username");

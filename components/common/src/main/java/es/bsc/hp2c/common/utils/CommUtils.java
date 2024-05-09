@@ -1,14 +1,12 @@
 package es.bsc.hp2c.common.utils;
 
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+
+import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 /**
  * Utility class for commonly used methods related to communications
@@ -75,9 +73,7 @@ public final class CommUtils {
             }
         }
         // Parse JSON file and look for IP address
-        InputStream is = Files.newInputStream(Paths.get(deploymentFile));
-        JSONTokener tokener = new JSONTokener(is);
-        JSONObject object = new JSONObject(tokener);
+        JSONObject object = getJsonObject(deploymentFile);
         String ip = object.getJSONObject(component).optString("ip");
         // Do not use 0.0.0.0 or localhost since containers do not work well with them
         if (ip.equals("0.0.0.0") || ip.equals("localhost") || ip.equals("127.0.0.1")) {

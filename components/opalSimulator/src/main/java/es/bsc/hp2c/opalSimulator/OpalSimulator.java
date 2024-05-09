@@ -17,6 +17,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
+
 import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
 
 public class OpalSimulator {
@@ -30,6 +32,13 @@ public class OpalSimulator {
     private static ArrayList<File> logFiles = new ArrayList<>();
     private static String simulationName = "";
 
+
+    /*
+    * Runs nEdges TCP servers in order to receive actuations, nEdges TCP clients to update the values on the edges
+    * (just of TCP sensors), and nEdges UDP servers with the aim of sending UDP sensors values.
+    *
+    * @param args User should input the deployment directory (name of the directory in path "hp2cdt/deployments")
+    * */
     public static void main(String[] args) throws IOException {
         String localIp = System.getenv("LOCAL_IP");
         if (localIp != null) SERVER_ADDRESS=localIp;

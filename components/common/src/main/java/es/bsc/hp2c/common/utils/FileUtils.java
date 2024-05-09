@@ -8,8 +8,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -46,15 +44,13 @@ public final class FileUtils {
      * @return the name of the edge
      */
     public static String readEdgeLabel(String setupFile) {
-        InputStream is;
+        JSONObject object;
         try {
-            is = new FileInputStream(setupFile);
-        } catch (FileNotFoundException e) {
+            object = getJsonObject(setupFile);
+        } catch (IOException e) {
             System.err.println("Error loading file " + setupFile + ": " + e.getMessage());
             throw new RuntimeException(e);
         }
-        JSONTokener tokener = new JSONTokener(is);
-        JSONObject object = new JSONObject(tokener);
         JSONObject jGlobProp = object.getJSONObject("global-properties");
         String edgeLabel = jGlobProp.optString("label", "");
         if (edgeLabel.isEmpty()) {

@@ -8,6 +8,10 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
   && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
   && rm -f /tmp/apache-maven.tar.gz \
   && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
+ 
+COPY ./common/ /app/common
+WORKDIR /app/common
+RUN mvn clean install
 
 COPY ./common/ /app/common
 WORKDIR /app/common
@@ -21,10 +25,8 @@ COPY ./opalSimulator/ /app/opalSimulator
 WORKDIR /app/opalSimulator
 RUN mvn clean package
 
-# RUN wget -O /app/json.jar https://repo1.maven.org/maven2/org/json/json/20210307/json-20210307.jar
 
 FROM openjdk:8-jdk-alpine
 COPY --from=builder /app/opalSimulator/target/opalSimulator.jar /app/opalSimulator.jar
-# COPY --from=builder /app/json.jar /app/json.jar
 
 CMD ["java", "-cp", "/app/opalSimulator.jar", "es.bsc.hp2c.opalSimulator.OpalSimulator"]
