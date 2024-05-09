@@ -492,7 +492,7 @@ public class OpalComm {
                     try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }
                 }
                 System.err.println("Actuation socket is closed: " + e.getMessage());
-                retryConnectionActuation(); //retry connexion
+                retryConnectionActuation();  //retry connection
             }
         }
     }

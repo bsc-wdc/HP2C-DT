@@ -113,7 +113,7 @@ public class VirtualEdge {
             }
             else{
                 VirtualComm.VirtualSensor<?> sensor = (VirtualComm.VirtualSensor<?>) device;
-                // TODO: jDevice.put("size", sensor.getSize());
+                jDevice.put("size", sensor.getSize());
             }
             jDevice.put("isActionable", isActionable);
             jDevicesInfo.put(deviceLabel, jDevice);

@@ -29,10 +29,8 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import static es.bsc.hp2c.HP2CServer.checkActuator;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
@@ -74,42 +72,23 @@ public class RestListener {
             JSONObject jEdgesInfo;
 
             try {
-                //response = "Received request to get devices info. ";
-                jEdgesInfo = getEdgesPositions();
+                // Collect information from all edge nodes
+                jEdgesInfo = new JSONObject();
+                for (VirtualEdge edge : edgeMap.values()) {
+                    jEdgesInfo.put(edge.getLabel(), edge.getEdgeInfo());
+                }
             } catch (JSONException e) {
-                response = e.getMessage();
+                System.err.println("Exception handling JSON object: " + e.getMessage());
                 exchange.sendResponseHeaders(500, 0); // Internal Server Error
                 return;
             }
 
+            System.out.println(" [RestListener] Sending requested EdgesInfo: " + jEdgesInfo);
             exchange.sendResponseHeaders(200, response.length() + jEdgesInfo.toString().getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
             os.write(jEdgesInfo.toString().getBytes());
             os.close();
-        }
-
-        private JSONObject getEdgesPositions() {
-            JSONObject jEdgesInfo = new JSONObject();
-            for (Map.Entry<String, Map<String, Device>> entry : deviceMap.entrySet()) {
-                String key = entry.getKey();
-
-                Random random = new Random();
-                JSONObject positionObject = new JSONObject();
-                positionObject.put("y", 37.2f + random.nextFloat() * (43.4f - 37.2f));
-                positionObject.put("x", -6.3f + random.nextFloat() * (0.2f + 6.3f));
-
-                ArrayList<String> connexions = new ArrayList<>();
-                for (Map.Entry<String, Map<String, Device>> innerEntry : deviceMap.entrySet()) {
-                    String innerkey = innerEntry.getKey();
-                    if (innerkey != key && random.nextBoolean()) connexions.add(innerkey);
-                }
-                JSONObject edgeDetails = new JSONObject();
-                edgeDetails.put("position", positionObject);
-                edgeDetails.put("connexions", connexions);
-                jEdgesInfo.put(key, edgeDetails);
-            }
-            return jEdgesInfo;
         }
     }
 
@@ -124,17 +103,18 @@ public class RestListener {
             }
 
             String response = "";
-            JSONObject jDeviceInfo = new JSONObject();
+            JSONObject jDeviceInfo;
 
             try {
                 //response = "Received request to get devices info. ";
                 jDeviceInfo = RestUtils.getInfoFromEdgeMap();
             } catch (JSONException e) {
-                response = e.getMessage();
+                System.err.println("Exception handling JSON object: " + e.getMessage());
                 exchange.sendResponseHeaders(500, 0); // Internal Server Error
                 return;
             }
 
+            System.out.println(" [RestListener] Sending requested DevicesInfo: " + jDeviceInfo);
             exchange.sendResponseHeaders(200, response.length() + jDeviceInfo.toString().getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
@@ -142,7 +122,6 @@ public class RestListener {
             os.close();
         }
     }
-
 
     /** Handler that implements the logic for received requests. */
     static class ActuateHandler implements HttpHandler {
@@ -210,29 +189,7 @@ public class RestListener {
             for (HashMap.Entry<String, VirtualEdge> entry : edgeMap.entrySet()) {
                 String edgeLabel = entry.getKey();
                 VirtualEdge edge = entry.getValue();
-                JSONObject jEdge = new JSONObject();
-                for (String deviceLabel : edge.getDeviceLabels()) {
-                    JSONObject jDevice = new JSONObject();
-                    boolean isActionable = false;
-                    Device device = edge.getDevice(deviceLabel);
-                    if (device.isActionable()) {
-                        VirtualComm.VirtualActuator<?> actuator = (VirtualComm.VirtualActuator<?>) device;
-                        isActionable = true;
-                        boolean isCategorical = actuator.isCategorical();
-                        jDevice.put("isCategorical", isCategorical);
-                        jDevice.put("size", actuator.getSize());
-                        if (isCategorical) {
-                            jDevice.put("categories", actuator.getCategories());
-                        }
-                    }
-                    else{
-                        VirtualComm.VirtualSensor<?> sensor = (VirtualComm.VirtualSensor<?>) device;
-                        jDevice.put("size", sensor.getSize());
-                    }
-                    jDevice.put("isActionable", isActionable);
-                    jEdge.put(deviceLabel, jDevice);
-                }
-                jDevicesInfo.put(edgeLabel, jEdge);
+                jDevicesInfo.put(edgeLabel, edge.getDevicesInfo());
             }
             return jDevicesInfo;
         }

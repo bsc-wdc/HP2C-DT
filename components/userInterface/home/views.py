@@ -187,7 +187,7 @@ def generate_nodes_and_links(edges_info):
         x = edge_data["position"]["x"]
         y = edge_data["position"]["y"]
         nodes.append({"id": edge_id, "coordinates": [x, y]})
-        for connection in edge_data["connexions"]:
+        for connection in edge_data["connections"]:
             links.append({"source": edge_id, "target": connection})
     return nodes, links
 
