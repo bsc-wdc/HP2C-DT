@@ -135,8 +135,9 @@ public class HP2CEdge {
         @Override
         public void run() {
             // Add timestamp and status to the JSON object
-            jEdgeSetup.put("timestamp", System.currentTimeMillis());
-            jEdgeSetup.put("isAvailable", true);
+            JSONObject jGlobalProps = jEdgeSetup.getJSONObject("global-properties");
+            jGlobalProps.put("heartbeat", System.currentTimeMillis());
+            jGlobalProps.put("available", true);
             // Convert the string to bytes
             byte[] message = jEdgeSetup.toString().getBytes();
             try {
@@ -144,7 +145,7 @@ public class HP2CEdge {
             } catch (IOException e) {
                 System.err.println("Exception in " + edgeLabel + " edge heartbeat: " + e.getMessage());
             }
-            System.out.println(" [Edge] Sent JSON message to routing key " + routingKey + ": '" + jEdgeSetup + "'");
+            System.out.println(" [Heatbeat] Sent JSON message to routing key " + routingKey);
         }
     }
 }

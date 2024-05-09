@@ -123,10 +123,8 @@ public class HP2CServer {
         if (!isInMap(edgeLabel, actuatorName, edgeMap)) {
             msg.append("Edge " + edgeLabel + ", Device " + actuatorName + " not listed.\n");
             msg.append("Options are:\n");
-            for (HashMap.Entry<String, VirtualEdge> entry : edgeMap.entrySet()) {
-                String groupKey = entry.getKey();
-                VirtualEdge edge = entry.getValue();
-                msg.append("Group: " + groupKey + "\n");
+            for (VirtualEdge edge : edgeMap.values()) {
+                msg.append("Group: " + edgeLabel + "\n");
                 for (String deviceLabel : edge.getDeviceLabels()) {
                     if (edge.getDevice(deviceLabel).isActionable()) {
                         msg.append("  Actuator: " + deviceLabel + "\n");

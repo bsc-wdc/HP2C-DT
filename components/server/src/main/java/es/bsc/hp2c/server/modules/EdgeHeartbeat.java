@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
-
 /**
  * Heartbeat handler that starts:
  * - an AMQP listener that reads every "edge.*.heartbeat" message
@@ -63,7 +61,11 @@ public class EdgeHeartbeat {
         Consumer consumer = new DefaultConsumer(channel) {
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
-                processHeartbeatMessage(envelope.getRoutingKey(), body);
+                try {
+                    processHeartbeatMessage(envelope.getRoutingKey(), body);
+                } catch (Exception e) {
+                    System.err.println("Error processing heartbeat message: " + e.getMessage());
+                }
             }
         };
         channel.basicConsume(QUEUE_NAME, true, consumer);
@@ -80,17 +82,18 @@ public class EdgeHeartbeat {
         // Extract edge name from routing key
         String[] routingKeyParts = routingKey.split("\\.");
         String edgeLabel = routingKeyParts[1];
-        JSONObject setupJson = new JSONObject(new String(body, StandardCharsets.UTF_8));
+        JSONObject jEdgeSetup = new JSONObject(new String(body, StandardCharsets.UTF_8));
 
         // Process the heartbeat message
-        System.out.println("Received heartbeat for edge '" + edgeLabel + "': " + setupJson);
+        System.out.println("Received heartbeat for edge '" + edgeLabel + "'");
         if (edgeMap.containsKey(edgeLabel)) {
             // Set last heartbeat
-            edgeMap.get(edgeLabel).setLastHeartbeat(System.currentTimeMillis());
+            long heartbeatTime = jEdgeSetup.getJSONObject("global-properties").getLong("heartbeat");
+            edgeMap.get(edgeLabel).setLastHeartbeat(heartbeatTime);
         } else {
             // First time a heartbeat is received, load devices and store in the VirtualEdge object
-            VirtualEdge edge = new VirtualEdge(
-                    edgeLabel, loadDevices(setupJson, "driver-dt"), System.currentTimeMillis());
+            VirtualEdge edge = new VirtualEdge(jEdgeSetup);
+            System.out.println("Loaded edge '" + edgeLabel + "': " + edge);
             edgeMap.put(edgeLabel, edge);
         }
     }

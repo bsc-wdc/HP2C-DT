@@ -208,7 +208,7 @@ public class RestListener {
         static JSONObject getInfoFromEdgeMap() {
             JSONObject jDevicesInfo = new JSONObject();
             for (HashMap.Entry<String, VirtualEdge> entry : edgeMap.entrySet()) {
-                String groupKey = entry.getKey();
+                String edgeLabel = entry.getKey();
                 VirtualEdge edge = entry.getValue();
                 JSONObject jEdge = new JSONObject();
                 for (String deviceLabel : edge.getDeviceLabels()) {
@@ -232,7 +232,7 @@ public class RestListener {
                     jDevice.put("isActionable", isActionable);
                     jEdge.put(deviceLabel, jDevice);
                 }
-                jDevicesInfo.put(groupKey, jEdge);
+                jDevicesInfo.put(edgeLabel, jEdge);
             }
             return jDevicesInfo;
         }
