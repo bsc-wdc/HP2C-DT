@@ -24,8 +24,8 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import static es.bsc.hp2c.HP2CServer.amqp;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
-import static es.bsc.hp2c.server.modules.AmqpManager.virtualActuate;
 
 
 /**
@@ -65,7 +65,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     @Override
     public void actuate(State[] values) throws IOException {
         byte[] byteValues = encodeValuesActuator(values);
-        virtualActuate(this, edgeLabel, byteValues);
+        amqp.virtualActuate(this, edgeLabel, byteValues);
     }
 
     @Override

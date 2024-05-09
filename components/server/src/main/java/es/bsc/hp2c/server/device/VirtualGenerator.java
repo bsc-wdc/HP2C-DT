@@ -24,8 +24,9 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import static es.bsc.hp2c.HP2CServer.amqp;
 import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
-import static es.bsc.hp2c.server.modules.AmqpManager.virtualActuate;
+
 
 /**
  * Digital twin Generator.
@@ -60,7 +61,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     @Override
     public void actuate(Float[] values) throws IOException {
         byte[] byteValues = encodeValuesActuator(values);
-        virtualActuate(this, edgeLabel, byteValues);
+        amqp.virtualActuate(this, edgeLabel, byteValues);
     }
 
     @Override

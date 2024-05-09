@@ -99,7 +99,7 @@ public class AmqpManager {
         channel.basicConsume(queueName, true, callback, consumerTag -> { });
     }
 
-    public static void virtualActuate(VirtualActuator actuator, String edgeLabel, byte[] message)
+    public void virtualActuate(VirtualActuator actuator, String edgeLabel, byte[] message)
             throws IOException {
         // Prepare communications
         String actuatorLabel = ((Device) actuator).getLabel();

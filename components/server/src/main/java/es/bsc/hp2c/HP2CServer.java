@@ -34,21 +34,33 @@ import static es.bsc.hp2c.common.utils.FileUtils.readEdgeLabel;
  * with edge devices via AmqpManager.
  */
 public class HP2CServer {
-    private final AmqpManager amqp;
-    public final DatabaseHandler db;
-    public final RestListener restServer;
-    public final CLI cli;
-    private final EdgeHeartbeat heartbeat;
-    private final long dbPort = 8086;
+    public static AmqpManager amqp;
+    public static DatabaseHandler db;
+    public static RestListener restServer;
+    public static CLI cli;
+    private static EdgeHeartbeat heartbeat;
+    private static final long dbPort = 8086;
     private static final Map<String, VirtualEdge> edgeMap = new HashMap<>();
     private static boolean verbose = true;
 
+    /** Start and run Server modules. */
+    public static void main(String[] args) {
+        // Load setup files
+        String hostIp = getHostIp();
+        // Deploy listener
+        try {
+            init(hostIp);
+            start();
+        } catch (IOException | TimeoutException | InterruptedException e) {
+            System.err.println("Server error: " + e.getMessage());
+        }
+    }
+
     /**
-     * Constructor of Server instance.
-     * Initializes AmqpManager, InfluxDB, and CLI connections.
-     * @param hostIp IP of AmqpManager broker and database. TODO: use custom IPs for each
+     * Initialize AmqpManager, InfluxDB, and CLI connections.
+     * @param hostIp IP of AmqpManager broker and database. TODO: use custom IPs for each module
      */
-    public HP2CServer(String hostIp) throws IOException, TimeoutException {
+    public static void init(String hostIp) throws IOException, TimeoutException {
         // Initialize modules
         db = new DatabaseHandler(hostIp, dbPort);
         amqp = new AmqpManager(hostIp, edgeMap, db);
@@ -57,21 +69,7 @@ public class HP2CServer {
         cli = new CLI(edgeMap);
     }
 
-    /** Parse setup files for all edge nodes and deploy Server. */
-    public static void main(String[] args) {
-        // Load setup files
-        // String hostIp = parseSetupFiles(args);   // TODO: delete this call
-        String hostIp = getHostIp();
-        // Deploy listener
-        try {
-            HP2CServer server = new HP2CServer(hostIp);
-            server.start();
-        } catch (IOException | TimeoutException | InterruptedException e) {
-            System.out.println("Server error: " + e.getMessage());
-        }
-    }
-
-    private void start() throws IOException, InterruptedException {
+    private static void start() throws IOException, InterruptedException {
         // Start Server modules
         heartbeat.start();
         db.start();
