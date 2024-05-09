@@ -69,6 +69,10 @@ public final class FileUtils {
         return loadDevices(setupFile, "driver", executeOpalComm);
     }
 
+    public static Map<String, Device> loadDevices(String setupFile, String driverType) throws FileNotFoundException {
+        return loadDevices(setupFile, driverType, false);
+    }
+
     public static Map<String, Device> loadDevices(String setupFile) throws FileNotFoundException {
         return loadDevices(setupFile, "driver", true);
     }
