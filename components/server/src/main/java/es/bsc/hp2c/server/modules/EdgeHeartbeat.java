@@ -50,14 +50,12 @@ public class EdgeHeartbeat {
 
     /** Start the AMQP listener and checkInactiveEdges threads */
     public void start() throws IOException {
+        // Start heartbeat listener
         this.startListener();
+        // Start periodic checker of inactive edges (TimerTask with half of the heartbeat timeout interval)
         Timer timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                checkInactiveEdges();
-            }
-        }, 0, HEARTBEAT_TIMEOUT / 2); // Check every half of the heartbeat timeout interval
+        CheckInactiveEdges checkInactiveEdges = new CheckInactiveEdges();
+        timer.scheduleAtFixedRate(checkInactiveEdges, 0, HEARTBEAT_TIMEOUT / 2);
     }
 
     /** Deploy the AMQP consumer thread */
@@ -98,20 +96,23 @@ public class EdgeHeartbeat {
     }
 
     /** Periodically verify the edge heartbeat and update each `isAvailable` property accordingly. */
-    private void checkInactiveEdges() {
-        long currentTime = System.currentTimeMillis();
-        for (VirtualEdge edge : edgeMap.values()) {
-            if (currentTime - edge.getLastHeartbeat() > HEARTBEAT_TIMEOUT) {
-                // Edge not available
-                System.out.println("Edge '" + edge.getLabel() + "' is inactive.");
-                if (edge.isAvailable()) {
-                    edge.setAvailable(false);
-                }
-            } else {
-                // Edge available
-                System.out.println("Edge '" + edge.getLabel() + "' is active.");
-                if (!edge.isAvailable()) {
-                    edge.setAvailable(true);
+    class CheckInactiveEdges extends TimerTask {
+        @Override
+        public void run() {
+            long currentTime = System.currentTimeMillis();
+            for (VirtualEdge edge : edgeMap.values()) {
+                if (currentTime - edge.getLastHeartbeat() > HEARTBEAT_TIMEOUT) {
+                    // Edge not available
+                    System.out.println("Edge '" + edge.getLabel() + "' is inactive.");
+                    if (edge.isAvailable()) {
+                        edge.setAvailable(false);
+                    }
+                } else {
+                    // Edge available
+                    System.out.println("Edge '" + edge.getLabel() + "' is active.");
+                    if (!edge.isAvailable()) {
+                        edge.setAvailable(true);
+                    }
                 }
             }
         }

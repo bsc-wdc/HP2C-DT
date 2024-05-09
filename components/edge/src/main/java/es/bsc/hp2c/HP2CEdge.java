@@ -73,13 +73,10 @@ public class HP2CEdge {
         // Set up AMQP connections TODO: modularize this part into a func or external class?
         setUpMessaging(brokerIp);
         if (amqpOn) {
-            String heartbeatThreadName = edgeLabel + "Heartbeat";
             JSONObject jEdgeSetup = getJsonObject(setupFile);
             Timer timer = new Timer();
             Heartbeat heartbeat = new Heartbeat(jEdgeSetup, edgeLabel);
-            Thread thread = new Thread(heartbeat, heartbeatThreadName);
             timer.scheduleAtFixedRate(heartbeat, 0, HEARTBEAT_RATE);
-            thread.start();
         }
 
         // Load devices and functions
