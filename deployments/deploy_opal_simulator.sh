@@ -35,6 +35,12 @@ done
 
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
 
+if [ ! -d $setup_folder ];then
+  echo"Error: Config file not found in hp2cdt/deployments/${DEPLOYMENT_NAME}/setup."
+  exit 1
+fi
+
+
 # Get the IPv4 address from wlp or eth interfaces
 ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'wlp[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
 

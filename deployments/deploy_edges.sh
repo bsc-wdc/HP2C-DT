@@ -21,9 +21,24 @@ MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 
 # Create a dictionary containg pairs of label-files (JSON files)
-defaults_json="${SCRIPT_DIR}/defaults/setup/edge_default.json"  # Edge default configuration
+defaults_json="${SCRIPT_DIR}/../defaults/setup/edge_default.json"  # Edge default configuration
 deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  # Deployment configuration (IPs, etc.)
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup")
+
+if [ ! -f $defaults_json ]; then
+  echo "Error: edge_default not found in $defaults_json"
+  exit 1
+fi
+
+if [ ! -f "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json" ];then
+  echo "Error: Config file not found in ${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json."
+  exit 1
+fi
+
+if [ ! -d "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup" ];then
+  echo"Error: Setup directory not found in ${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup."
+  exit 1
+fi
 
 declare -A labels_paths
 declare -A labels_udp_ports

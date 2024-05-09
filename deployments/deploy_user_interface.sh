@@ -19,6 +19,21 @@ deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  # Depl
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
 config_json="${SCRIPT_DIR}/../config.json"  # Authentication configuration
 
+if [ ! -f "${SCRIPT_DIR}/../config.json" ]; then
+  echo "Error: Config file not found in ${SCRIPT_DIR}/../config.json."
+  exit 1
+fi
+
+if [ ! -f "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json" ];then
+  echo "Error: Config file not found in ${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json."
+  exit 1
+fi
+
+if [ ! -d "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup" ];then
+  echo"Error: Setup directory not found in ${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup."
+  exit 1
+fi
+
 # Get the IPv4 address from wlp or eth interfaces
 ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'wlp[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
 
