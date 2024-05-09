@@ -72,7 +72,7 @@ public class AmqpConsume extends Func {
         }
 
         // Declare callback to respond to commands
-        System.out.println(" [x] Awaiting requests for queue " + routingKey + " at exchange " + EXCHANGE_NAME);
+        System.out.println(" [AmqpConsume] Awaiting requests for queue " + routingKey + " at exchange " + EXCHANGE_NAME);
         DeliverCallback callback = (consumerTag, delivery) -> {
             // Parse message. For instance: routingKey = "edge.edge1.actuators.voltmeter1"
             byte[] message = delivery.getBody();

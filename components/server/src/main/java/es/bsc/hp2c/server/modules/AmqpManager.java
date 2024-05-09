@@ -75,7 +75,7 @@ public class AmqpManager {
         channel.exchangeDeclare(EXCHANGE_NAME, "topic");
         String queueName = channel.queueDeclare().getQueue();
         channel.queueBind(queueName, EXCHANGE_NAME, routingKey);
-        System.out.println(" [x] Awaiting requests");
+        System.out.println(" [AmqpManager] Awaiting requests");
 
         DeliverCallback callback = (consumerTag, delivery) -> {
             // Parse message. For instance: routingKey = "edge.edge1.sensors.voltmeter1"
