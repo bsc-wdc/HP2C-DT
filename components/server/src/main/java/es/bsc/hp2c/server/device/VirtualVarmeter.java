@@ -24,8 +24,8 @@ import org.json.JSONObject;
  * Digital twin Varmeter.
  */
 public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<Float[]> {
-    private String edgeLabel;
-    private int size;
+    private final String edgeLabel;
+    private final int size;
 
     /**
      * Creates a new instance of VirtualVarmeter.

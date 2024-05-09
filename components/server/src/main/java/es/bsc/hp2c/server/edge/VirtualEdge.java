@@ -59,7 +59,7 @@ public class VirtualEdge {
         // Collect main data
         JSONObject jGlobalProps = jEdgeSetup.getJSONObject("global-properties");
         this.label = jGlobalProps.getString("label");
-        this.devices = loadDevices(jEdgeSetup, "driver-dt");
+        this.devices = loadDevices(jEdgeSetup, "driver-dt", false);
         this.isAvailable = jGlobalProps.getBoolean("available");
         this.lastHeartbeat = jGlobalProps.getLong("heartbeat");
         // Collect edge geospatial data

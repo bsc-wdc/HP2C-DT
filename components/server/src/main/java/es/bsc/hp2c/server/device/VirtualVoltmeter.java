@@ -24,8 +24,8 @@ import org.json.JSONObject;
  * Digital twin Voltmeter.
  */
 public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSensor<Float[]> {
-    private String edgeLabel;
-    private int size;
+    private final String edgeLabel;
+    private final int size;
 
     /**
      * Creates a new instance of VirtualVoltmeter.

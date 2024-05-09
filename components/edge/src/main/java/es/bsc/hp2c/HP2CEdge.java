@@ -70,7 +70,7 @@ public class HP2CEdge {
         String localIp = System.getenv("LOCAL_IP");
         String brokerIp = CommUtils.parseRemoteIp("broker", localIp);
 
-        // Set up AMQP connections TODO: modularize this part into a func or external class?
+        // Set up AMQP messaging
         setUpMessaging(brokerIp);
         if (amqpOn) {
             JSONObject jEdgeSetup = getJsonObject(setupFile);

@@ -32,8 +32,8 @@ import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
  * Digital twin Switch.
  */
 public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Switch.State[]>, VirtualActuator<Switch.State[]> {
-    private String edgeLabel;
-    private int size;
+    private final String edgeLabel;
+    private final int size;
 
     /**
      * Creates a new instance of VirtualSwitch.

@@ -32,8 +32,8 @@ import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
  * Digital twin Generator.
  */
 public class VirtualGenerator extends Generator<Float[]> implements VirtualSensor<Float[]>, VirtualActuator<Float[]> {
-    private String edgeLabel;
-    private int size;
+    private final String edgeLabel;
+    private final int size;
 
     /**
      * Creates a new instance of VirtualGenerator.
@@ -68,7 +68,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     public void actuate(String[] stringValues) throws IOException {
         Float[] values = new Float[stringValues.length];
         for (int i = 0; i < stringValues.length; i++) {
-            if (stringValues[i].toLowerCase().equals("null") || stringValues[i].toLowerCase().equals("none")) {
+            if (stringValues[i].equalsIgnoreCase("null") || stringValues[i].equalsIgnoreCase("none")) {
                 values[i] = Float.NEGATIVE_INFINITY;
             } else if (isNumeric(stringValues[i])){
                 values[i] = Float.parseFloat(stringValues[i]);

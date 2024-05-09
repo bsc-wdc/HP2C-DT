@@ -85,7 +85,7 @@ public class EdgeHeartbeat {
         JSONObject jEdgeSetup = new JSONObject(new String(body, StandardCharsets.UTF_8));
 
         // Process the heartbeat message
-        System.out.println("Received heartbeat for edge '" + edgeLabel + "'");
+        System.out.println(" [processHeartbeatMessage] Received heartbeat for edge '" + edgeLabel + "'");
         if (edgeMap.containsKey(edgeLabel)) {
             // Set last heartbeat
             long heartbeatTime = jEdgeSetup.getJSONObject("global-properties").getLong("heartbeat");
@@ -93,7 +93,7 @@ public class EdgeHeartbeat {
         } else {
             // First time a heartbeat is received, load devices and store in the VirtualEdge object
             VirtualEdge edge = new VirtualEdge(jEdgeSetup);
-            System.out.println("Loaded edge '" + edgeLabel + "': " + edge);
+            System.out.println(" [processHeartbeatMessage] Loaded edge '" + edgeLabel + "': " + edge);
             edgeMap.put(edgeLabel, edge);
         }
     }
@@ -106,13 +106,13 @@ public class EdgeHeartbeat {
             for (VirtualEdge edge : edgeMap.values()) {
                 if (currentTime - edge.getLastHeartbeat() > HEARTBEAT_TIMEOUT) {
                     // Edge not available
-                    System.out.println("Edge '" + edge.getLabel() + "' is inactive.");
+                    System.out.println(" [CheckInactiveEdges] Edge '" + edge.getLabel() + "' is inactive.");
                     if (edge.isAvailable()) {
                         edge.setAvailable(false);
                     }
                 } else {
                     // Edge available
-                    System.out.println("Edge '" + edge.getLabel() + "' is active.");
+                    System.out.println(" [CheckInactiveEdges] Edge '" + edge.getLabel() + "' is active.");
                     if (!edge.isAvailable()) {
                         edge.setAvailable(true);
                     }

@@ -24,8 +24,8 @@ import org.json.JSONObject;
  * Digital Twin Wattmeter.
  */
 public class VirtualWattmeter extends Wattmeter<Float[]> implements VirtualSensor<Float[]> {
-    private String edgeLabel;
-    private int size;
+    private final String edgeLabel;
+    private final int size;
 
     /**
      * Creates a new instance of VirtualWattmeter.
