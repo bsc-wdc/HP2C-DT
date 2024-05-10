@@ -2,7 +2,7 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 DEPLOYMENT_NAME="testbed"
-ORG_NAME="hp2c"
+DEPLOYMENT_PREFIX="hp2c"
 HP2C_VERSION="1.0"
 SIMULATION_NAME=""
 TIME_STEP=1000
@@ -20,8 +20,8 @@ for arg in "$@"; do
         -time_step=*)
             TIME_STEP="${arg#*=}"
             ;;
-        -org_name=*)
-            ORG_NAME="${arg#*=}"
+        -deployment_prefix=*)
+            DEPLOYMENT_PREFIX="${arg#*=}"
             ;;
         -hp2c_version=*)
             HP2C_VERSION="${arg#*=}"
@@ -42,7 +42,7 @@ done
 echo "DEPLOYMENT_NAME=$DEPLOYMENT_NAME"
 echo "SIMULATION_NAME=$SIMULATION_NAME"
 echo "TIME_STEP=$TIME_STEP"
-echo "ORG_NAME=$ORG_NAME"
+echo "DEPLOYMENT_PREFIX=$DEPLOYMENT_PREFIX"
 echo "HP2C_VERSION=$HP2C_VERSION"
 
 if [ ! -f "${SCRIPT_DIR}/../config.json" ]; then
@@ -93,7 +93,7 @@ custom_ip_address="172.29.128.1"
 # fi
 
 export DEPLOYMENT_NAME=$DEPLOYMENT_NAME
-export ORG_NAME=$ORG_NAME
+export DEPLOYMENT_PREFIX=$DEPLOYMENT_PREFIX
 export HP2C_VERSION=$HP2C_VERSION
 export CUSTOM_IP=$custom_ip_address
 export LOCAL_IP=$ip_address

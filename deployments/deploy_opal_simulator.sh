@@ -5,7 +5,6 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
 SIMULATION_NAME=""
 DEPLOYMENT_NAME="testbed"
-DOCKER_IMAGE="hp2c/opal_simulator:1.0"
 TIME_STEP=1000
 
 # Parse command line arguments
@@ -32,6 +31,8 @@ for arg in "$@"; do
     esac
     ((pos++))
 done
+DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/opal_simulator:1.0"
+
 
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
 

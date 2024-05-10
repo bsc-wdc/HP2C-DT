@@ -5,12 +5,27 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
 DEPLOYMENT_NAME="testbed"
 
-if [ $# -ge 1 ]; then
-  DEPLOYMENT_NAME=$1
-fi
-if [ $# -eq 2 ]; then
-  DEPLOYMENT_PREFIX=$2
-fi
+# Parse command line arguments
+pos=1
+for arg in "$@"; do
+    case $arg in
+        -deployment_name=*)
+            DEPLOYMENT_NAME="${arg#*=}"
+            ;;
+        -deployment_prefix=*)
+            DEPLOYMENT_PREFIX="${arg#*=}"
+            ;;
+        *)
+            if [ $pos -eq 1 ]; then
+                DEPLOYMENT_NAME=$1
+            else
+                echo "Error: Unknown option or argument: $arg"
+                exit 1
+            fi
+            ;;
+    esac
+    ((pos++))
+done
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/server:latest"
 
 deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  # Deployment configuration (IPs, etc.)

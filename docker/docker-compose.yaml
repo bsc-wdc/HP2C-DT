@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   broker:
-    container_name: ${ORG_NAME}_broker
+    container_name: ${DEPLOYMENT_PREFIX}_broker
     build:
       context: ../components/broker
       dockerfile: ../../docker/broker/Dockerfile.broker
@@ -20,7 +20,7 @@ services:
       start_period: 5s
 
   server:
-    container_name: ${ORG_NAME}_server
+    container_name: ${DEPLOYMENT_PREFIX}_server
     depends_on:
       broker:
         condition: service_healthy
@@ -41,7 +41,7 @@ services:
     tty: true
 
   user_interface:
-    container_name: ${ORG_NAME}_user_interface
+    container_name: ${DEPLOYMENT_PREFIX}_user_interface
     build:
       context: ../components/userInterface
       dockerfile: ../../docker/user_interface/Dockerfile.user_interface
@@ -57,7 +57,7 @@ services:
     restart: "no"
 
   opal_simulator:
-    container_name: ${ORG_NAME}_opal_simulator
+    container_name: ${DEPLOYMENT_PREFIX}_opal_simulator
     build:
       context: ../components/
       dockerfile: ../docker/opal_simulator/Dockerfile.opal_simulator
