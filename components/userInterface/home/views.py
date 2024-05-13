@@ -12,6 +12,13 @@ import requests
 
 @csrf_exempt
 def index(request):
+    """Render the index page.
+
+    Displays the index page of the application with forms for submitting device data.
+
+    :param request: The HTTP request object.
+    :return: The HTTP response object.
+    """
     if request.method == 'POST':
         form_data = request.POST.dict()
         device_id = form_data.pop('device_id')
@@ -54,6 +61,13 @@ def index(request):
 
 
 def geomap(server_port, server_url):
+    """Generate a script for rendering a geographic map with the edges' main
+    information using D3.js
+
+    :param server_port: The port number of the server.
+    :param server_url: The URL of the server.
+    :return: The JavaScript code for rendering the map.
+    """
     try:
         response = requests.get(f"{server_url}/getEdgesInfo")
         edges_info = response.json()
@@ -181,6 +195,12 @@ def geomap(server_port, server_url):
 
 
 def generate_nodes_and_links(edges_info):
+    """
+    Generates nodes and links data from the provided edges information.
+
+    :param edges_info: Information about the edges.
+    :return: A tuple containing lists of nodes and links.
+    """
     nodes = []
     links = []
     for edge_id, edge_data in edges_info.items():
@@ -193,6 +213,15 @@ def generate_nodes_and_links(edges_info):
 
 
 def get_deployment(devices_info, deployment_name, grafana_url, server_url):
+    """
+    Retrieves deployment information and devices from server, and creates the
+    deployment model.
+
+    :param devices_info: Information about the devices.
+    :param deployment_name: The name of the deployment.
+    :param grafana_url: The URL of Grafana.
+    :param server_url: The URL of the server.
+    """
 
     # Directory path where JSON files are located
     dashboard_dir = "../../components/userInterface/scripts/dashboards/"
@@ -220,6 +249,15 @@ def get_deployment(devices_info, deployment_name, grafana_url, server_url):
 
 
 def get_devices(deployment_model, panels, devices_info, grafana_url):
+    """
+        Retrieves device information from the server and saves it to the
+        database (as models).
+
+        :param deployment_model: The deployment model instance.
+        :param panels: List of panel data.
+        :param devices_info: Information about the devices.
+        :param grafana_url: The URL of Grafana.
+        """
     devices_data = json.loads(devices_info)
     for edge, devices in devices_data.items():
         edge_model, created = Edge.objects.get_or_create(name=edge,
@@ -246,6 +284,15 @@ def get_devices(deployment_model, panels, devices_info, grafana_url):
 
 
 def get_panel_links(deployment, edge, device, panels, grafana_url):
+    """Retrieves links to panels from Grafana API Rest.
+
+    :param deployment: The deployment model instance.
+    :param edge: The name of the edge.
+    :param device: The name of the device.
+    :param panels: List of panel data.
+    :param grafana_url: The URL of Grafana.
+    :return: A tuple containing links to the table and time series panels.
+    """
     dashboard_name = deployment.dashboard_name.replace(" ", "")
     table_link = None
     timeseries_link = None
@@ -273,6 +320,15 @@ def get_panel_links(deployment, edge, device, panels, grafana_url):
 
 @csrf_exempt
 def device_detail(request, edge_name, device_name):
+    """
+    Displays the detail page of a device, including form for submitting device
+    data.
+
+    :param request: The HTTP request object.
+    :param edge_name: The name of the edge.
+    :param device_name: The name of the device.
+    :return: The HTTP response object.
+    """
     if request.method == 'POST':
         form_data = request.POST.dict()
         device_id = form_data.pop('device_id')
@@ -306,7 +362,6 @@ def device_detail(request, edge_name, device_name):
     elif device.is_actionable:
         form = NonCategoricalDeviceForm(device)
 
-
     return render(request, "pages/device_detail.html", {
         "device_name": device_name,
         "timeseries_link": device.timeseries_link,
@@ -317,7 +372,13 @@ def device_detail(request, edge_name, device_name):
 
 
 def tables(request):
-  context = {
+    """
+    Displays the tables page.
+
+    :param request: The HTTP request object.
+    :return: The HTTP response object.
+    """
+    context = {
     'segment': 'tables'
-  }
-  return render(request, "pages/dynamic-tables.html", context)
+    }
+    return render(request, "pages/dynamic-tables.html", context)

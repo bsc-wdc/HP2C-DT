@@ -77,6 +77,8 @@ public class HP2CEdge {
             Timer timer = new Timer();
             Heartbeat heartbeat = new Heartbeat(jEdgeSetup, edgeLabel);
             timer.scheduleAtFixedRate(heartbeat, 0, HEARTBEAT_RATE);
+        } else {
+            System.out.println("Hearbeat could not start. AMQP not available");
         }
 
         // Load devices and functions
@@ -145,7 +147,7 @@ public class HP2CEdge {
             } catch (IOException e) {
                 System.err.println("Exception in " + edgeLabel + " edge heartbeat: " + e.getMessage());
             }
-            System.out.println(" [Heatbeat] Sent JSON message to routing key " + routingKey);
+            System.out.println(" [Heartbeat] Sent JSON message to routing key " + routingKey);
         }
     }
 }

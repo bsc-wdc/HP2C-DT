@@ -35,9 +35,12 @@ public class OpalSimulator {
 
     /*
     * Runs nEdges TCP servers in order to receive actuations, nEdges TCP clients to update the values on the edges
-    * (just of TCP sensors), and nEdges UDP servers with the aim of sending UDP sensors values.
+    * (just TCP sensors), and nEdges UDP servers with the aim of sending UDP sensors values.
     *
-    * @param args User should input the deployment directory (name of the directory in path "hp2cdt/deployments")
+    * @param args User should input the deployment directory (name of the directory in path "hp2cdt/deployments", the
+    * timeStep, and if the user wants to run a simulation, the simulation name (name of the csv
+    * file in "hp2cdt/components/opalSimulator/simulations")
+    *
     * */
     public static void main(String[] args) throws IOException {
         String localIp = System.getenv("LOCAL_IP");
@@ -127,6 +130,11 @@ public class OpalSimulator {
     }
 
 
+    /*
+    * This method starts a UDP Client for a given edge. From the edge we can obtain the devices and its properties, so
+    * that we can know which devices are sensors and generate proper values. WE will get the values from the simulation
+    * in case a simulation was specified.
+    * */
     private static void startUDPClient(Edge edge) {
         try (DatagramSocket udpSocket = new DatagramSocket()) {
             InetAddress address = InetAddress.getByName(SERVER_ADDRESS);
@@ -195,6 +203,7 @@ public class OpalSimulator {
     // TCP-Sensors
     //=======================================
 
+
     private static void startTCPSensors() {
         for (Edge edge : edges){
             new Thread(() -> {
@@ -204,10 +213,11 @@ public class OpalSimulator {
         }
     }
 
+
     /*
-     * This method starts a TCP client to update the value on the corresponding edge. To do so, we check start of message
-     * with a readInt() that checks the expected length (number of floats) of the message, then get the buffer with that
-     * messageLength, and lastly the end of line (EoL) character.
+     * This method starts a TCP Client for a given edge. From the edge we can obtain the devices and its properties, so
+     * that we can know which devices are sensors and generate proper values. WE will get the values from the simulation
+     * in case a simulation was specified.
      * */
     private static void startTCPClient(Edge edge) {
         if (edge.getDevices().isEmpty()) return;
@@ -354,7 +364,7 @@ public class OpalSimulator {
 
 
     /*
-     * This method uses a TCP socket to receive actuations and update the corresponding values in "devices" map.
+     * This method uses a TCP socket to receive actuations and update the corresponding values in each device.
      *
      * @param clientSocket Socket through which we will receive the messages.
      * @param edge
