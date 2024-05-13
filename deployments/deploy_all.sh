@@ -1,4 +1,16 @@
 #!/bin/bash
+usage() {
+    echo "Usage: $0 [-h] [-deployment_name=<name>] [-simulation_name=<name>] [-time_step=<value>] [-deployment_prefix=<prefix>] [-hp2c_version=<version>]" 1>&2
+    echo "Options:" 1>&2
+    echo "  -h: Show usage instructions" 1>&2
+    echo "  -deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2
+    echo "  -simulation_name=<name>: The name of the simulation" 1>&2
+    echo "  -time_step=<value>: The time step value (default: 1000)" 1>&2
+    echo "  -deployment_prefix=<prefix>: The deployment prefix (default: hp2c)" 1>&2
+    echo "  -hp2c_version=<version>: The version of HP2C (default: 1.0)" 1>&2
+    exit 1
+}
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 DEPLOYMENT_NAME="testbed"
@@ -11,6 +23,9 @@ TIME_STEP=1000
 pos=1
 for arg in "$@"; do
     case $arg in
+        -h)
+            usage
+            ;;
         -deployment_name=*)
             DEPLOYMENT_NAME="${arg#*=}"
             ;;
@@ -31,7 +46,7 @@ for arg in "$@"; do
                 DEPLOYMENT_NAME=$1
             else
                 echo "Error: Unknown option or argument: $arg"
-                exit 1
+                usage
             fi
             ;;
     esac

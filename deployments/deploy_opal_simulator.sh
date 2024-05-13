@@ -1,5 +1,15 @@
 #!/bin/bash
 
+usage() {
+    echo "Usage: $0 [-h] [-deployment_name=<name>] [-simulation_name=<name>] [-time_step=<value>]" 1>&2
+    echo "Options:" 1>&2
+    echo "  -h: Show usage instructions" 1>&2
+    echo "  -deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2
+    echo "  -simulation_name=<name>: The name of the simulation" 1>&2
+    echo "  -time_step=<value>: The time step value (default: 1000)" 1>&2
+    exit 1
+}
+
 # Initialization
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
@@ -11,6 +21,9 @@ TIME_STEP=1000
 pos=1
 for arg in "$@"; do
     case $arg in
+        -h)
+            usage
+            ;;
         -deployment_name=*)
             DEPLOYMENT_NAME="${arg#*=}"
             ;;
@@ -25,14 +38,14 @@ for arg in "$@"; do
               DEPLOYMENT_NAME=$1
             else
               echo "Error: Unknown option or argument: $arg"
-              exit 1
+              usage
             fi
             ;;
     esac
     ((pos++))
 done
-DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/opal_simulator:1.0"
 
+DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/opal_simulator:1.0"
 
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
 
