@@ -20,9 +20,15 @@
                     "port": "31002"
                 }
             }
+        },
+        "geo-data": {
+            "position": {
+                "x": 2.1153889,
+                "y": 41.389917
+            },
+            "connections": ["edge2"]
         }
     },
-
     "devices": [
         {
             "label": "Ammeter Gen1",

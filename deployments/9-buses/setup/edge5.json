@@ -20,6 +20,13 @@
                     "port": "35002"
                 }
             }
+        },
+        "geo-data": {
+            "position": {
+                "x": -0.4907,
+                "y": 38.3452
+            },
+            "connections": ["edge6", "edge7"]
         }
     },
 
