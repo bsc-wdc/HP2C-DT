@@ -23,10 +23,10 @@
         },
         "geo-data": {
             "position": {
-                "x": -0.375,
-                "y": 39.4699
+                "x": -3.5986,
+                "y": 37.1773
             },
-            "connections": ["edge3", "edge4"]
+            "connections": ["edge8", "edge9"]
         }
     },
 
