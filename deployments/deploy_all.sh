@@ -65,6 +65,11 @@ if [ ! -f "${SCRIPT_DIR}/../config.json" ]; then
   exit 1
 fi
 
+if [ "$SIMULATION_NAME" != "" ] && [ ! -f "${SCRIPT_DIR}/../components/opalSimulator/simulations/${SIMULATION_NAME}.csv" ]; then
+  echo "Error: Simulation file not found in ${SCRIPT_DIR}/../components/opalSimulator/simulations/${SIMULATION_NAME}.csv."
+  exit 1
+fi
+
 if [ ! -f "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json" ];then
   echo "Error: Config file not found in ${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json."
   exit 1

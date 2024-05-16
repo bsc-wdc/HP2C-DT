@@ -64,7 +64,10 @@ services:
     network_mode: "host"
     volumes:
       - ../deployments/${DEPLOYMENT_NAME}/setup:/data/edge/
+      - ../components/opalSimulator/simulations:/data/simulations
     environment:
       - DEPLOYMENT_NAME=${DEPLOYMENT_NAME}
       - LOCAL_IP=${LOCAL_IP}
+      - SIMULATION_NAME=${SIMULATION_NAME}
+      - TIME_STEP=${TIME_STEP}
     restart: "no"

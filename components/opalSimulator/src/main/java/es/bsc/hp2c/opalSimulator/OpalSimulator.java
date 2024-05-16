@@ -88,7 +88,7 @@ public class OpalSimulator {
             else {
                 simulationPath = "simulations/" + simulationName + ".csv";
             }
-            System.out.println(simulationPath + "------");
+
             File simulationFile = new File(simulationPath);
             if (simulationFile.exists()) csvTable = new CSVTable(simulationPath);
             else throw new FileNotFoundException("Simulation csv not found");
@@ -96,6 +96,9 @@ public class OpalSimulator {
         System.out.println("Using deployment file: " + deploymentFile);
         System.out.println("Using timeStep: " + timeStep);
         System.out.println("Runsimulation: " + runSimulation);
+        if (runSimulation){
+            System.out.println("Using simulation name: " + simulationName);
+        }
 
         for (String edgeFile : Objects.requireNonNull(setupDirectory.list())){
             String pathToEdge = deploymentFile + edgeFile;
