@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeoutException;
 
 import static es.bsc.hp2c.common.utils.FileUtils.*;
 
@@ -43,7 +42,6 @@ public class HP2CEdge {
     private static final long HEARTBEAT_RATE = 10000;
     private static Connection connection;
     private static Channel channel;
-    private static boolean amqpOn = true;
 
     /**
      * Obtain map of devices and load functions.
@@ -71,36 +69,36 @@ public class HP2CEdge {
         String brokerIp = CommUtils.parseRemoteIp("broker", localIp);
 
         // Set up AMQP messaging
-        setUpMessaging(brokerIp);
+        boolean amqpOn = setUpMessaging(brokerIp);
         if (amqpOn) {
             JSONObject jEdgeSetup = getJsonObject(setupFile);
             Timer timer = new Timer();
             Heartbeat heartbeat = new Heartbeat(jEdgeSetup, edgeLabel);
             timer.scheduleAtFixedRate(heartbeat, 0, HEARTBEAT_RATE);
         } else {
-            System.out.println("Hearbeat could not start. AMQP not available");
+            System.out.println("Heartbeat could not start. AMQP not available");
         }
 
         // Load devices and functions
         Map<String, Device> devices = loadDevices(setupFile);
         OpalComm.setLoadedDevices(true);
         Func.loadFunctions(setupFile, devices);
-        Func.loadGlobalFunctions(defaultsPath, devices, isAmqpOn());
+        Func.loadGlobalFunctions(defaultsPath, devices, amqpOn);
     }
 
-    private static void setUpMessaging(String ip) {
+    private static boolean setUpMessaging(String ip) {
+        // Try connecting to a RabbitMQ server until success
+        connection = CommUtils.AmqpConnectAndRetry(ip);
+        // After establishing a connection, set up channel and exchange
         try {
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost(ip);
-            connection = factory.newConnection();
             channel = connection.createChannel();
             channel.exchangeDeclare(EXCHANGE_NAME, "topic");
-            System.out.println("AMQP connection started.");
-        } catch (IOException | TimeoutException e) {
-            amqpOn = false;
-            System.err.println("Error initializing messaging: " + e.getMessage());
-            System.err.println("Continuing without AMQP connection.");
+        } catch (IOException e) {
+            System.err.println("Error setting up RabbitMQ channel and exchange: " + e.getMessage());
+            throw new RuntimeException(e);
         }
+        System.out.println("[setUpMessaging] AMQP connection started.");
+        return true;
     }
 
     public static String getEdgeLabel() {
@@ -119,10 +117,6 @@ public class HP2CEdge {
         return EXCHANGE_NAME;
     }
 
-    public static boolean isAmqpOn() {
-        return amqpOn;
-    }
-
     /**
      * TimerTask that sends a periodic heartbeat message to the server.
      */
@@ -130,7 +124,7 @@ public class HP2CEdge {
         private final JSONObject jEdgeSetup;
         private final String routingKey;
         public Heartbeat(JSONObject jEdgeSetup, String edgeLabel) {
-            System.out.println("Instantiating heartbeat scheduler for edge " + edgeLabel);
+            System.out.println("[Heartbeat] Instantiating heartbeat scheduler for edge " + edgeLabel);
             this.jEdgeSetup = jEdgeSetup;
             this.routingKey = "edge" + "." + edgeLabel + "." + "heartbeat";
         }
@@ -147,7 +141,7 @@ public class HP2CEdge {
             } catch (IOException e) {
                 System.err.println("Exception in " + edgeLabel + " edge heartbeat: " + e.getMessage());
             }
-            System.out.println(" [Heartbeat] Sent JSON message to routing key " + routingKey);
+            System.out.println("[Heartbeat] Sent JSON message to routing key " + routingKey);
         }
     }
 }

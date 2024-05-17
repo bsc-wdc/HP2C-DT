@@ -17,7 +17,6 @@ package es.bsc.hp2c.server.modules;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import es.bsc.hp2c.HP2CServer;
 import es.bsc.hp2c.common.types.Device;
@@ -54,11 +53,9 @@ public class AmqpManager {
     }
 
     /** Start AMQP connection with broker. */
-    private void connect(String setupIp) throws IOException, TimeoutException {
-        System.out.println("Connecting to RabbitMQ broker at host IP " + setupIp + "...");
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(setupIp);
-        Connection connection = factory.newConnection();
+    private void connect(String setupIp) throws IOException {
+        // Try connecting to a RabbitMQ server until success
+        Connection connection = CommUtils.AmqpConnectAndRetry(setupIp);
         channel = connection.createChannel();
         System.out.println("RabbitMQ Connection successful");
     }

@@ -1,10 +1,13 @@
 package es.bsc.hp2c.common.utils;
 
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Connection;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.TimeoutException;
 
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
@@ -81,5 +84,29 @@ public final class CommUtils {
         } else {
             return ip;
         }
+    }
+
+    public static Connection AmqpConnectAndRetry(String ip) {
+        System.out.println("Connecting to RabbitMQ broker at address " + ip + "...");
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost(ip);
+        boolean connected = false;
+        Connection connection = null;
+        while (!connected) {
+            try {
+                connection = factory.newConnection();
+                connected = true;
+            } catch (IOException | TimeoutException e) {
+                System.err.println("Error initializing RabbitMQ Connection to address " + ip + ": "
+                        + e.getMessage() + ". Retrying...");
+                // Retry connection after 5 seconds
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        }
+        return connection;
     }
 }
