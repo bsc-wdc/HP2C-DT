@@ -38,9 +38,11 @@ def index(request):
         else:
             return HttpResponse('Error while sending actuation', status=response.status_code)
     else:
-        devices_info, deployment_name, grafana_url, server_port, server_url = (
+        edges_info, deployment_name, grafana_url, server_port, server_url = (
             update_dashboards())
-        get_deployment(devices_info, deployment_name, grafana_url, server_url)
+        if edges_info is not None:
+            get_deployment(edges_info, deployment_name, grafana_url,
+                           server_url, server_port)
         deployment = Deployment.objects.get(name=deployment_name)
         edges = Edge.objects.filter(deployment=deployment)
         edgeDevices = {}
@@ -69,15 +71,15 @@ def geomap(server_port, server_url):
     :return: The JavaScript code for rendering the map.
     """
     try:
-        response = requests.get(f"{server_url}/getEdgesInfo")
-        edges_info = response.json()
-    except RequestException as e:
+        response = requests.get(f"{server_url}/getGeoInfo")
+        geo_info = response.json()
+    except RequestException as _:
         if "LOCAL_IP" in os.environ:
             server_ip = os.getenv("LOCAL_IP")
             server_url = f"http://{server_ip}:{server_port}"
-            response = requests.get(f"{server_url}/getEdgesInfo")
-            edges_info = response.json()
-    nodes, links = generate_nodes_and_links(edges_info)
+            response = requests.get(f"{server_url}/getGeoInfo")
+            geo_info = response.json()
+    nodes, links = generate_nodes_and_links(geo_info)
 
     script_content = f"""
         const svg = d3.select("#map-container")
@@ -212,15 +214,16 @@ def generate_nodes_and_links(edges_info):
     return nodes, links
 
 
-def get_deployment(devices_info, deployment_name, grafana_url, server_url):
+def get_deployment(edges_info, deployment_name, grafana_url, server_url, server_port):
     """
     Retrieves deployment information and devices from server, and creates the
     deployment model.
 
-    :param devices_info: Information about the devices.
+    :param edges_info: Information about the devices.
     :param deployment_name: The name of the deployment.
     :param grafana_url: The URL of Grafana.
     :param server_url: The URL of the server.
+    :param server_port: Port of the server
     """
 
     # Directory path where JSON files are located
@@ -243,27 +246,31 @@ def get_deployment(devices_info, deployment_name, grafana_url, server_url):
             server_url=server_url)
         panels = dashboard_data['dashboard']['panels']
         # Create instances of Edge and Device
-        get_devices(deployment, panels, devices_info, grafana_url)
+        get_devices(deployment, panels, edges_info, grafana_url)
+        try:
+            response = requests.post(f"{server_url}/setUpdated")
+        except RequestException as _:
+            if "LOCAL_IP" in os.environ:
+                server_ip = os.getenv("LOCAL_IP")
+                server_url = f"http://{server_ip}:{server_port}"
+                response = requests.post(f"{server_url}/setUpdated")
 
 
-
-
-def get_devices(deployment_model, panels, devices_info, grafana_url):
+def get_devices(deployment_model, panels, edges_info, grafana_url):
     """
         Retrieves device information from the server and saves it to the
         database (as models).
 
         :param deployment_model: The deployment model instance.
         :param panels: List of panel data.
-        :param devices_info: Information about the devices.
+        :param edges_info: Information about the devices.
         :param grafana_url: The URL of Grafana.
         """
-    devices_data = json.loads(devices_info)
-    for edge, devices in devices_data.items():
+    edges_data = json.loads(edges_info)
+    for edge, edge_info in edges_data.items():
         edge_model, created = Edge.objects.get_or_create(name=edge,
                                                    deployment=deployment_model)
-
-        for device, attributes in devices.items():
+        for device, attributes in edge_info["info"].items():
             device_model, _ = Device.objects.get_or_create(
                 name=device,
                 edge=edge_model,

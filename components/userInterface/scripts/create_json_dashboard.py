@@ -235,12 +235,12 @@ def main():
     generate_dashboard_json(deployment_name, edges, datasource_uid)
 
 
-def ui_exec(deployment_name, devices_info, datasource_uid):
-    devices_data = json.loads(devices_info)
+def ui_exec(deployment_name, edges_info, datasource_uid):
+    edges_data = json.loads(edges_info)
     edges = {}
-    for edge, devices_info in devices_data.items():
+    for edge, edge_info in edges_data.items():
         devices = []
-        for device, info in devices_info.items():
+        for device, info in edge_info["info"].items():
             n_indexes = info["size"]
             devices.append((device, n_indexes))
         edges[edge] = devices

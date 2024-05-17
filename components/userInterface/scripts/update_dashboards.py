@@ -2,7 +2,13 @@ import os
 import json
 import requests
 from requests import RequestException
+
+from home.models import Edge, Device, Deployment
 from scripts.create_json_dashboard import ui_exec
+
+
+def dashboard_has_changed(server_url):
+    return False
 
 
 def update_dashboards():
@@ -20,24 +26,42 @@ def update_dashboards():
         with open(setup_file, 'r') as f:
             json_data = f.read()
             setup_data = json.loads(json_data)
-
     if not setup_data:
-        print("Deployment setup not found not found")
+        print("Deployment setup not found", flush=True)
         exit(1)
     if not in_docker:
         os.chdir("scripts")
     grafana_url, server_port, server_url = get_deployment_info(setup_data)
+    edges_info = None
     try:
-        response = requests.get(f"{server_url}/getDevicesInfo")
-        devices_info = response.text
-    except RequestException as e:
+        response = requests.get(f"{server_url}/getEdgesInfo")
+        edges_info = response.text
+    except RequestException as _:
         if "LOCAL_IP" in os.environ:
             server_ip = os.getenv("LOCAL_IP")
             server_url = f"http://{server_ip}:{server_port}"
-            response = requests.get(f"{server_url}/getDevicesInfo")
-            devices_info = response.text
-    #################################### INIT #################################
+            response = requests.get(f"{server_url}/getEdgesInfo")
+            edges_info = response.text
 
+    if edges_info is None:
+        print("Server doesn't respond", flush=True)
+        exit(1)
+    # If the method is running for the first time we must update the dashboard.
+    # Otherwise, we will check if the dashboard has changed and, if it didn´t,
+    # we will not update it.
+    initial_execution = os.getenv("INITIAL_EXECUTION")
+    if initial_execution is not None:
+        initial_execution = int(initial_execution)
+        if initial_execution == 0:
+            changed = check_changes(edges_info)
+            if not changed:
+                if not in_docker:
+                    os.chdir("..")
+                return None, deployment_name, grafana_url, server_port, server_url
+        else:
+            os.environ["INITIAL_EXECUTION"] = "0"
+
+    #################################### INIT #################################
     # Function to extract IP and port from JSON
     def get_ip_port(data):
         return f"{data['grafana']['ip']}:{data['grafana']['port']}"
@@ -62,8 +86,10 @@ def update_dashboards():
     LOCAL_IP = os.getenv("LOCAL_IP", None)
     if LOCAL_IP:
         URLs.append(f"http://{LOCAL_IP}:3000")
-    ############################ GET DATASOURCE UID ######################################
+
+    ############################ GET DATASOURCE UID ###########################
     datasource_uid = ""
+
     for url in URLs:
         try:
             response = requests.get(f"{url}/api/datasources", headers={
@@ -82,7 +108,7 @@ def update_dashboards():
         except RequestException as _:
             print("Error requesting to url: ", url, flush=True)
 
-    ############################ CREATE DATASOURCE #######################################
+    ############################ CREATE DATASOURCE ############################
     INFLUXDB_JSON = {
         "name": "influxdb",
         "type": "influxdb",
@@ -120,9 +146,11 @@ def update_dashboards():
     if not datasource_uid:
         print("Datasource influxdb uid not found")
         exit(1)
+
     ########################### CREATE JSON DASHBOARD ####################################
     # Execute the Python script to create the dashboard JSON
-    ui_exec(deployment_name, devices_info, datasource_uid)
+    ui_exec(deployment_name, edges_info, datasource_uid)
+
     ########################### CREATE OR UPDATE DASHBOARD ###############################
     # Path to the dashboard JSON file
     DASHBOARD_JSON = f"jsons_dashboards/{deployment_name}_dashboard.json"
@@ -177,7 +205,25 @@ def update_dashboards():
             print("Error requesting to url: ", url, flush=True)
 
     if not in_docker: os.chdir("..")
-    return devices_info, deployment_name, grafana_url, server_port, server_url
+    return edges_info, deployment_name, grafana_url, server_port, server_url
+
+
+def check_changes(edges_info):
+    changed = False
+    edges_data = json.loads(edges_info)
+
+    for edge, edge_info in edges_data.items():
+        if edge_info["modified"]:
+            changed = True
+            if not edge_info["is_available"]:
+                edge_model = Edge.objects.get(name=edge)
+                edge_model.show = False
+                edge.save()
+                devices_all = Device.objects.filter(edge=edge_model)
+                for device_model in devices_all:
+                    device_model.show = False
+                    device_model.save()
+    return changed
 
 
 def get_deployment_info(setup_data):
