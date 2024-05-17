@@ -37,6 +37,7 @@ public class VirtualEdge {
     private float x;
     private float y;
     private ArrayList<String> connections;
+    private boolean modified;
 
     /**
      * Basic constructor when passing all the essential parameters explicitly.
@@ -71,6 +72,21 @@ public class VirtualEdge {
         for (int i = 0; i < jConnections.length(); i++) {
             this.connections.add(jConnections.getString(i));
         }
+        this.modified = false;
+    }
+
+    public boolean equals(VirtualEdge oldEdge){
+        System.out.println("Current availability: " + this.isAvailable);
+        System.out.println("Old availability: " + oldEdge.isAvailable);
+        System.out.println("New connections: " + this.connections);
+        System.out.println("Old Connection: " + oldEdge.connections);
+        System.out.println("Availability: " + (this.isAvailable == oldEdge.isAvailable()));
+        System.out.println("Devices: " + this.devices.keySet().equals(oldEdge.devices.keySet()));
+        boolean b = this.label.equals(oldEdge.label) && this.devices.keySet().equals(oldEdge.devices.keySet()) &&
+                this.isAvailable == oldEdge.isAvailable() && this.x == oldEdge.x && this.y == oldEdge.y &&
+                this.connections.equals(oldEdge.connections);
+        System.out.println("Rsult: " + b);
+        return b;
     }
 
     public boolean containsDevice(String deviceLabel) {
@@ -80,7 +96,7 @@ public class VirtualEdge {
     /**
      * Returns a JSONObject for its use in REST API messaging.
      */
-    public JSONObject getEdgeInfo() {
+    public JSONObject getEdgeGeoInfo() {
         JSONObject jEdgeInfo = new JSONObject();
         jEdgeInfo.put(
                 "position", new JSONObject()
@@ -135,6 +151,14 @@ public class VirtualEdge {
 
     public ArrayList<Device> getDevices() {
         return new ArrayList<>(devices.values());
+    }
+
+    public void setModified(boolean b){
+        this.modified = b;
+    }
+
+    public boolean getModified(){
+        return this.modified;
     }
 
     public void setLastHeartbeat(long lastHeartbeat) {

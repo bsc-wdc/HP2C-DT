@@ -22,6 +22,7 @@ class Deployment(models.Model):
 class Edge(models.Model):
     name = models.CharField(max_length=100)
     deployment = models.ForeignKey(Deployment, on_delete=models.CASCADE)
+    show = models.BooleanField(default=True)
     def __str__(self):
         return self.name
 
@@ -35,6 +36,7 @@ class Device(models.Model):
     is_categorical = models.BooleanField(default=None, null=True)
     categories_field = models.TextField(default=None, blank=True, null=True)
     size = models.IntegerField(default=None, null=True)
+    show = models.BooleanField(default=True)
 
     def get_categories(self):
         if self.categories_field:

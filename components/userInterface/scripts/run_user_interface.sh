@@ -1,4 +1,5 @@
 #!/bin/bash
+export INITIAL_EXECUTION="1"
 
 deployment_name="testbed"
 
@@ -18,11 +19,19 @@ if [ $docker -eq 0 ]; then
     cd ..
     rm -f db.sqlite3
     python3 manage.py flush --no-input
+    python3 manage.py makemigrations
     python3 manage.py migrate --run-syncdb
     python3 manage.py collectstatic --noinput
     python3 manage.py runserver 0.0.0.0:8000
 else
-    python3 ../manage.py migrate --run-syncdb
+    cd ..
+    ls
+    rm -f db.sqlite3
+    cd scripts || exit
+    python3 ../manage.py makemigrations
+    python3 ../manage.py migrate --run-syncdb --fake 'home' zero
+    python3 ../manage.py migrate 'home'
+    python3 ../manage.py migrate
     python3 ../manage.py collectstatic --noinput
     python3 ../manage.py runserver 0.0.0.0:8000
 fi

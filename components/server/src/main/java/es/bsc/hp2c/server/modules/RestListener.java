@@ -51,11 +51,76 @@ public class RestListener {
         HttpServer server = HttpServer.create(new InetSocketAddress(REST_PORT), 0);
         // Create a context for actuate REST endpoint
         server.createContext("/actuate", new ActuateHandler());
+        server.createContext("/getGeoInfo", new GetGeoInfoHandler());
         server.createContext("/getEdgesInfo", new GetEdgesInfoHandler());
-        server.createContext("/getDevicesInfo", new GetDevicesInfoHandler());
+        server.createContext("/setUpdated", new SetUpdatedHandler());
         // Start the server
         server.start();
         System.out.println("HTTP Server started on port " + REST_PORT);
+    }
+
+
+    static class SetUpdatedHandler implements HttpHandler{
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // Get request method
+            String requestMethod = exchange.getRequestMethod();
+            if (!requestMethod.equalsIgnoreCase("POST")) {
+                exchange.sendResponseHeaders(405, 0); // Method Not Allowed
+                return;
+            }
+
+            String response;
+            int responseCode = 200;
+            try {
+                for (VirtualEdge edge : edgeMap.values()){
+                    edge.setModified(false);
+                }
+                response = "Setting modified to false in every edge";
+            } catch (JSONException e) {
+                response = e.getMessage();
+                responseCode = 400;
+            }
+            System.out.println(" [RestListener] Received request to update edges modify attribute: " + response);
+            exchange.sendResponseHeaders(responseCode, response.length());
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+        }
+    }
+
+
+    static class GetGeoInfoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String requestMethod = exchange.getRequestMethod();
+            if (!requestMethod.equalsIgnoreCase("GET")) {
+                exchange.sendResponseHeaders(405, 0); // Method Not Allowed
+                return;
+            }
+
+            String response = "";
+            JSONObject jGeoInfo;
+
+            try {
+                // Collect information from all edge nodes
+                jGeoInfo = new JSONObject();
+                for (VirtualEdge edge : edgeMap.values()) {
+                    jGeoInfo.put(edge.getLabel(), edge.getEdgeGeoInfo());
+                }
+            } catch (JSONException e) {
+                System.err.println("Exception handling JSON object: " + e.getMessage());
+                exchange.sendResponseHeaders(500, 0); // Internal Server Error
+                return;
+            }
+
+            System.out.println(" [RestListener] Sending requested GeoInfo: " + jGeoInfo);
+            exchange.sendResponseHeaders(200, response.length() + jGeoInfo.toString().getBytes().length);
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.write(jGeoInfo.toString().getBytes());
+            os.close();
+        }
     }
 
 
@@ -72,11 +137,8 @@ public class RestListener {
             JSONObject jEdgesInfo;
 
             try {
-                // Collect information from all edge nodes
-                jEdgesInfo = new JSONObject();
-                for (VirtualEdge edge : edgeMap.values()) {
-                    jEdgesInfo.put(edge.getLabel(), edge.getEdgeInfo());
-                }
+                //response = "Received request to get edges info. ";
+                jEdgesInfo = RestUtils.getInfoFromEdgeMap();
             } catch (JSONException e) {
                 System.err.println("Exception handling JSON object: " + e.getMessage());
                 exchange.sendResponseHeaders(500, 0); // Internal Server Error
@@ -88,37 +150,6 @@ public class RestListener {
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
             os.write(jEdgesInfo.toString().getBytes());
-            os.close();
-        }
-    }
-
-
-    static class GetDevicesInfoHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            String requestMethod = exchange.getRequestMethod();
-            if (!requestMethod.equalsIgnoreCase("GET")) {
-                exchange.sendResponseHeaders(405, 0); // Method Not Allowed
-                return;
-            }
-
-            String response = "";
-            JSONObject jDeviceInfo;
-
-            try {
-                //response = "Received request to get devices info. ";
-                jDeviceInfo = RestUtils.getInfoFromEdgeMap();
-            } catch (JSONException e) {
-                System.err.println("Exception handling JSON object: " + e.getMessage());
-                exchange.sendResponseHeaders(500, 0); // Internal Server Error
-                return;
-            }
-
-            System.out.println(" [RestListener] Sending requested DevicesInfo: " + jDeviceInfo);
-            exchange.sendResponseHeaders(200, response.length() + jDeviceInfo.toString().getBytes().length);
-            OutputStream os = exchange.getResponseBody();
-            os.write(response.getBytes());
-            os.write(jDeviceInfo.toString().getBytes());
             os.close();
         }
     }
@@ -139,7 +170,7 @@ public class RestListener {
             String requestBody = RestUtils.convertStreamToString(exchange.getRequestBody());
             int responseCode = 200;
             try {
-                RestUtils.RequestData data = RestUtils.parseRequestBody(requestBody);
+                RestUtils.RequestData data = RestUtils.parseActuateRequestBody(requestBody);
                 String[] stringValues = data.values;
                 String edgeLabel = data.edgeLabel;
                 String actuatorLabel = data.actuatorLabel;
@@ -185,16 +216,20 @@ public class RestListener {
         }
 
         static JSONObject getInfoFromEdgeMap() {
-            JSONObject jDevicesInfo = new JSONObject();
+            JSONObject jEdgesInfo = new JSONObject();
             for (HashMap.Entry<String, VirtualEdge> entry : edgeMap.entrySet()) {
                 String edgeLabel = entry.getKey();
                 VirtualEdge edge = entry.getValue();
-                jDevicesInfo.put(edgeLabel, edge.getDevicesInfo());
+                JSONObject jEdge = new JSONObject();
+                jEdge.put("is_available", edge.isAvailable());
+                jEdge.put("modified", edge.getModified());
+                jEdge.put("info", edge.getDevicesInfo());
+                jEdgesInfo.put(edgeLabel, jEdge);
             }
-            return jDevicesInfo;
+            return jEdgesInfo;
         }
 
-        static RequestData parseRequestBody(String requestBody) throws JSONException {
+        static RequestData parseActuateRequestBody(String requestBody) throws JSONException {
             JSONObject jsonObject = new JSONObject(requestBody);
 
             JSONArray valuesArray = jsonObject.getJSONArray("values");

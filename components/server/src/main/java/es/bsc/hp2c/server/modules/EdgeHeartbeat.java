@@ -89,7 +89,25 @@ public class EdgeHeartbeat {
         if (edgeMap.containsKey(edgeLabel)) {
             // Set last heartbeat
             long heartbeatTime = jEdgeSetup.getJSONObject("global-properties").getLong("heartbeat");
-            edgeMap.get(edgeLabel).setLastHeartbeat(heartbeatTime);
+            VirtualEdge newEdge = new VirtualEdge(jEdgeSetup);
+            System.out.println("Newwwwww: " + newEdge.isAvailable());
+            VirtualEdge oldEdge = edgeMap.get(edgeLabel);
+            if (!newEdge.equals(oldEdge)){
+                System.out.println("New edge labels:");
+                for (String label : newEdge.getDeviceLabels()){
+                    System.out.println(label);
+                }
+                System.out.println("Old edge labels:");
+                for (String label : oldEdge.getDeviceLabels()){
+                    System.out.println(label);
+                }
+                System.out.println(newEdge.getDeviceLabels().equals(oldEdge.getDeviceLabels()));
+                newEdge.setModified(true);
+                edgeMap.put(edgeLabel, newEdge);
+            }
+            else {
+                edgeMap.get(edgeLabel).setLastHeartbeat(heartbeatTime);
+            }
         } else {
             // First time a heartbeat is received, load devices and store in the VirtualEdge object
             VirtualEdge edge = new VirtualEdge(jEdgeSetup);
@@ -108,12 +126,14 @@ public class EdgeHeartbeat {
                     // Edge not available
                     System.out.println(" [CheckInactiveEdges] Edge '" + edge.getLabel() + "' is inactive.");
                     if (edge.isAvailable()) {
+                        edge.setModified(true);
                         edge.setAvailable(false);
                     }
                 } else {
                     // Edge available
                     System.out.println(" [CheckInactiveEdges] Edge '" + edge.getLabel() + "' is active.");
                     if (!edge.isAvailable()) {
+                        edge.setModified(true);
                         edge.setAvailable(true);
                     }
                 }
