@@ -218,7 +218,7 @@ def check_changes(edges_info):
             if not edge_info["is_available"]:
                 edge_model = Edge.objects.get(name=edge)
                 edge_model.show = False
-                edge.save()
+                edge_model.save()
                 devices_all = Device.objects.filter(edge=edge_model)
                 for device_model in devices_all:
                     device_model.show = False

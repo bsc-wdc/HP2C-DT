@@ -90,18 +90,8 @@ public class EdgeHeartbeat {
             // Set last heartbeat
             long heartbeatTime = jEdgeSetup.getJSONObject("global-properties").getLong("heartbeat");
             VirtualEdge newEdge = new VirtualEdge(jEdgeSetup);
-            System.out.println("Newwwwww: " + newEdge.isAvailable());
             VirtualEdge oldEdge = edgeMap.get(edgeLabel);
             if (!newEdge.equals(oldEdge)){
-                System.out.println("New edge labels:");
-                for (String label : newEdge.getDeviceLabels()){
-                    System.out.println(label);
-                }
-                System.out.println("Old edge labels:");
-                for (String label : oldEdge.getDeviceLabels()){
-                    System.out.println(label);
-                }
-                System.out.println(newEdge.getDeviceLabels().equals(oldEdge.getDeviceLabels()));
                 newEdge.setModified(true);
                 edgeMap.put(edgeLabel, newEdge);
             }
