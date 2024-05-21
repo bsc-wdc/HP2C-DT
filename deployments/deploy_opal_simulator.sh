@@ -78,16 +78,16 @@ wait_containers(){
 # SCRIPT MAIN CODE #
 ####################
 
-echo "Deploying container for USER_INTERFACE"
+echo "Deploying container for OPAL_SIMULATOR"
 docker run \
     -d --rm \
     --name ${DEPLOYMENT_PREFIX}_opal_simulator \
     -v ${setup_folder}:/data/edge \
-    -p 80:80 \
+    --network host \
     -e DEPLOYMENT_NAME=${DEPLOYMENT_NAME} \
     -e LOCAL_IP=${ip_address} \
     -e TIME_STEP=$TIME_STEP \
-    $( [ -n "$SIMULATION_NAME" ] && echo "-e SIMULATION_NAME=${SIMULATION_NAME}" ) \
+    -e SIMULATION_NAME=$SIMULATION_NAME \
     ${DOCKER_IMAGE}
 
 echo "Testbed properly deployed"
