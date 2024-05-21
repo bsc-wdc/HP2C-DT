@@ -72,21 +72,13 @@ public class VirtualEdge {
         for (int i = 0; i < jConnections.length(); i++) {
             this.connections.add(jConnections.getString(i));
         }
-        this.modified = false;
+        this.modified = true;
     }
 
     public boolean equals(VirtualEdge oldEdge){
-        System.out.println("Current availability: " + this.isAvailable);
-        System.out.println("Old availability: " + oldEdge.isAvailable);
-        System.out.println("New connections: " + this.connections);
-        System.out.println("Old Connection: " + oldEdge.connections);
-        System.out.println("Availability: " + (this.isAvailable == oldEdge.isAvailable()));
-        System.out.println("Devices: " + this.devices.keySet().equals(oldEdge.devices.keySet()));
-        boolean b = this.label.equals(oldEdge.label) && this.devices.keySet().equals(oldEdge.devices.keySet()) &&
+        return this.label.equals(oldEdge.label) && this.devices.keySet().equals(oldEdge.devices.keySet()) &&
                 this.isAvailable == oldEdge.isAvailable() && this.x == oldEdge.x && this.y == oldEdge.y &&
                 this.connections.equals(oldEdge.connections);
-        System.out.println("Rsult: " + b);
-        return b;
     }
 
     public boolean containsDevice(String deviceLabel) {
@@ -104,6 +96,7 @@ public class VirtualEdge {
                         .put("y", y)
         );
         jEdgeInfo.put("connections", connections);
+        jEdgeInfo.put("show", isAvailable);
         return jEdgeInfo;
     }
 
