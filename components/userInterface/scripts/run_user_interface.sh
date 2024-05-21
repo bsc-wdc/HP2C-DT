@@ -15,6 +15,7 @@ if [ -f /.dockerenv ]; then
     docker=1
 fi
 
+
 if [ $docker -eq 0 ]; then
     cd ..
     rm -f db.sqlite3
@@ -24,14 +25,7 @@ if [ $docker -eq 0 ]; then
     python3 manage.py collectstatic --noinput
     python3 manage.py runserver 0.0.0.0:8000
 else
-    cd ..
-    ls
-    rm -f db.sqlite3
-    cd scripts || exit
-    python3 ../manage.py makemigrations
-    python3 ../manage.py migrate --run-syncdb --fake 'home' zero
-    python3 ../manage.py migrate 'home'
-    python3 ../manage.py migrate
+    python3 ../manage.py migrate --run-syncdb
     python3 ../manage.py collectstatic --noinput
     python3 ../manage.py runserver 0.0.0.0:8000
 fi
