@@ -80,7 +80,7 @@ public class HP2CEdge {
         }
 
         // Load devices and functions
-        Map<String, Device> devices = loadDevices(setupFile);
+        Map<String, Device> devices = loadDevices(setupFile, "driver", true);
         OpalComm.setLoadedDevices(true);
         Func.loadFunctions(setupFile, devices);
         Func.loadGlobalFunctions(defaultsPath, devices, amqpOn);

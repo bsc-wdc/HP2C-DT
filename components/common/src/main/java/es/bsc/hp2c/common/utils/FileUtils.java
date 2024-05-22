@@ -85,14 +85,6 @@ public final class FileUtils {
         return loadDevices(object, driverType, executeOpalComm);
     }
 
-    public static Map<String, Device> loadDevices(String setupFile) throws IOException {
-        return loadDevices(setupFile, "driver", true);
-    }
-
-    public static Map<String, Device> loadDevices(String setupFile, String driverType) throws IOException {
-        JSONObject jsonObject = getJsonObject(setupFile);
-        return loadDevices(jsonObject, driverType, false);
-    }
 
     public static Map<String, Device> loadDevices(JSONObject jsonObject, String driverType, boolean executeOpalComm) {
         JSONArray jDevices = jsonObject.getJSONArray("devices");

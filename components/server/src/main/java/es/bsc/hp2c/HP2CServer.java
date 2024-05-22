@@ -108,7 +108,7 @@ public class HP2CServer {
             String filePath = setupFile.toString();
             System.out.println("Loading setup configuration for file " + filePath);
             String edgeLabel = readEdgeLabel(filePath);
-            VirtualEdge edge = new VirtualEdge(edgeLabel, loadDevices(filePath, "driver-dt"), 0L);
+            VirtualEdge edge = new VirtualEdge(edgeLabel, loadDevices(filePath, "driver-dt", false), 0L);
             edgeMap.put(edgeLabel, edge);
         }
         return hostIp;
