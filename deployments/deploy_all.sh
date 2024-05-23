@@ -26,19 +26,19 @@ for arg in "$@"; do
         -h)
             usage
             ;;
-        -deployment_name=*)
+        --deployment_name=*)
             DEPLOYMENT_NAME="${arg#*=}"
             ;;
-        -simulation_name=*)
+        --simulation_name=*)
             SIMULATION_NAME="${arg#*=}"
             ;;
-        -time_step=*)
+        --time_step=*)
             TIME_STEP="${arg#*=}"
             ;;
-        -deployment_prefix=*)
+        --deployment_prefix=*)
             DEPLOYMENT_PREFIX="${arg#*=}"
             ;;
-        -hp2c_version=*)
+        --hp2c_version=*)
             HP2C_VERSION="${arg#*=}"
             ;;
         *)

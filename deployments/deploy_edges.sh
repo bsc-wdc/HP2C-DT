@@ -24,10 +24,10 @@ for arg in "$@"; do
         -h)
             usage
             ;;
-        -deployment_name=*)
+        --deployment_name=*)
             DEPLOYMENT_NAME="${arg#*=}"
             ;;
-        -deployment_prefix=*)
+        --deployment_prefix=*)
             DEPLOYMENT_PREFIX="${arg#*=}"
             ;;
         *)

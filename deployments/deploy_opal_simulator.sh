@@ -5,7 +5,7 @@ usage() {
     echo "Options:" 1>&2
     echo "  -h: Show usage instructions" 1>&2
     echo "  -deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2
-    echo "  -simulation_name=<name>: The name of the simulation" 1>&2
+    echo "  -simulation_name=<name>: The name of the simulation without '.csv'" 1>&2
     echo "  -time_step=<value>: The time step value (default: 1000)" 1>&2
     exit 1
 }
@@ -24,13 +24,13 @@ for arg in "$@"; do
         -h)
             usage
             ;;
-        -deployment_name=*)
+        --deployment_name=*)
             DEPLOYMENT_NAME="${arg#*=}"
             ;;
-        -simulation_name=*)
+        --simulation_name=*)
             SIMULATION_NAME="${arg#*=}"
             ;;
-        -time_step=*)
+        --time_step=*)
             TIME_STEP="${arg#*=}"
             ;;
         *)
@@ -51,6 +51,12 @@ setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configu
 
 if [ ! -d $setup_folder ];then
   echo"Error: Config file not found in hp2cdt/deployments/${DEPLOYMENT_NAME}/setup."
+  exit 1
+fi
+
+simulation_file=$(realpath "${SCRIPT_DIR}/../components/opalSimulator/simulations/${SIMULATION_NAME}.csv")
+if [ "$SIMULATION_NAME" != "" ] && [ ! -f ${simulation_file} ]; then
+  echo "Error: Simulation file not found in ${simulation_file}."
   exit 1
 fi
 
@@ -83,6 +89,7 @@ docker run \
     -d --rm \
     --name ${DEPLOYMENT_PREFIX}_opal_simulator \
     -v ${setup_folder}:/data/edge \
+    -v ${SCRIPT_DIR}/../components/opalSimulator/simulations:/data/simulations \
     --network host \
     -e DEPLOYMENT_NAME=${DEPLOYMENT_NAME} \
     -e LOCAL_IP=${ip_address} \
