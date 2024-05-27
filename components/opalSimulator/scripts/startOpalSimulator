@@ -14,7 +14,7 @@ mvn clean install
 cd ../opalSimulator || exit
 
 deploymentName="testbed"
-timeStep="5000"
+timeStep="1000"
 simulationName=""
 
 # Parse command line arguments
