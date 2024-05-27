@@ -135,7 +135,7 @@ public class OpalSimulator {
 
     /*
     * This method starts a UDP Client for a given edge. From the edge we can obtain the devices and its properties, so
-    * that we can know which devices are sensors and generate proper values. WE will get the values from the simulation
+    * that we can know which devices are sensors and generate proper values. We will get the values from the simulation
     * in case a simulation was specified.
     * */
     private static void startUDPClient(Edge edge) {
@@ -219,7 +219,7 @@ public class OpalSimulator {
 
     /*
      * This method starts a TCP Client for a given edge. From the edge we can obtain the devices and its properties, so
-     * that we can know which devices are sensors and generate proper values. WE will get the values from the simulation
+     * that we can know which devices are sensors and generate proper values. We will get the values from the simulation
      * in case a simulation was specified.
      * */
     private static void startTCPClient(Edge edge) {
