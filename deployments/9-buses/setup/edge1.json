@@ -26,7 +26,7 @@
                 "x": 2.1153889,
                 "y": 41.389917
             },
-            "connections": ["edge2"]
+            "connections": ["edge3", "edge7", "edge8"]
         }
     },
     "devices": [

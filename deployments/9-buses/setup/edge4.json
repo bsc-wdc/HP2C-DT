@@ -26,7 +26,7 @@
                 "x": -4.4214,
                 "y": 36.7213
             },
-            "connections": ["edge5", "edge6"]
+            "connections": ["edge2", "edge6"]
         }
     },
 
