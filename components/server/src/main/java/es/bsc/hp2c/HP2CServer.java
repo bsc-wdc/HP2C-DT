@@ -16,6 +16,7 @@
 package es.bsc.hp2c;
 
 import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 import es.bsc.hp2c.server.modules.*;
 
@@ -108,7 +109,12 @@ public class HP2CServer {
             String filePath = setupFile.toString();
             System.out.println("Loading setup configuration for file " + filePath);
             String edgeLabel = readEdgeLabel(filePath);
-            VirtualEdge edge = new VirtualEdge(edgeLabel, loadDevices(filePath, "driver-dt", false), 0L);
+            Map<String, Device> devicesMap = loadDevices(filePath, "driver-dt", false);
+            Map <String, VirtualComm.VirtualDevice> devices = new HashMap<>();
+            for (String d : devicesMap.keySet()){
+                devices.put(d, (VirtualComm.VirtualDevice) devicesMap.get(d));
+            }
+            VirtualEdge edge = new VirtualEdge(edgeLabel, devices, 0L);
             edgeMap.put(edgeLabel, edge);
         }
         return hostIp;
@@ -124,7 +130,8 @@ public class HP2CServer {
             for (VirtualEdge edge : edgeMap.values()) {
                 msg.append("Group: " + edgeLabel + "\n");
                 for (String deviceLabel : edge.getDeviceLabels()) {
-                    if (edge.getDevice(deviceLabel).isActionable()) {
+                    Device d = (Device) edge.getDevice(deviceLabel);
+                    if (d.isActionable()) {
                         msg.append("  Actuator: " + deviceLabel + "\n");
                     }
                 }
@@ -132,7 +139,7 @@ public class HP2CServer {
             return new ActuatorValidity(false, msg.toString());
         }
         // Check if the provided device is an actuator
-        Device device = edgeMap.get(edgeLabel).getDevice(actuatorName);
+        Device device = (Device) edgeMap.get(edgeLabel).getDevice(actuatorName);
         if (!device.isActionable()) {
             msg.append("Device " + edgeLabel + "." + actuatorName + " is not an actuator.\n");
             return new ActuatorValidity(false, msg.toString());

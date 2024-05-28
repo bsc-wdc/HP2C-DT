@@ -26,6 +26,7 @@ import org.json.JSONObject;
 public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSensor<Float[]> {
     private final String edgeLabel;
     private final int size;
+    private boolean availability;
 
     /**
      * Creates a new instance of VirtualVoltmeter.
@@ -71,5 +72,15 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSenso
     @Override
     public int getSize() {
         return this.size;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return availability;
+    }
+
+    @Override
+    public void setAvailability(boolean b){
+        availability = b;
     }
 }

@@ -16,7 +16,9 @@
 package es.bsc.hp2c.server.modules;
 
 import com.rabbitmq.client.*;
+import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.edge.VirtualEdge;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -24,6 +26,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import static java.lang.Boolean.parseBoolean;
 
 /**
  * Heartbeat handler that starts:

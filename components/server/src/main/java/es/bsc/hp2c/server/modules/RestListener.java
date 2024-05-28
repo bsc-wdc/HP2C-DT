@@ -178,7 +178,7 @@ public class RestListener {
                 ActuatorValidity checker = checkActuator(edgeLabel, actuatorLabel);
                 if (checker.isValid()) {
                     // Actuate
-                    Device device = edgeMap.get(edgeLabel).getDevice(actuatorLabel);
+                    VirtualComm.VirtualDevice device = edgeMap.get(edgeLabel).getDevice(actuatorLabel);
                     VirtualComm.VirtualActuator<?> actuator = (VirtualComm.VirtualActuator<?>) device;
                     actuator.actuate(stringValues);
                     // Send response

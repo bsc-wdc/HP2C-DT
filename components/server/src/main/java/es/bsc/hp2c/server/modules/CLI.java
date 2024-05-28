@@ -17,6 +17,7 @@ package es.bsc.hp2c.server.modules;
 
 import es.bsc.hp2c.HP2CServer.ActuatorValidity;
 import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 
@@ -124,7 +125,7 @@ public class CLI implements Runnable {
         }
 
         // Actuate
-        Device device = edgeMap.get(edgeLabel).getDevice(actuatorLabel);
+        VirtualComm.VirtualDevice device = edgeMap.get(edgeLabel).getDevice(actuatorLabel);
         VirtualActuator<?> actuator = (VirtualActuator<?>) device;
         actuator.actuate(stringValues);
     }

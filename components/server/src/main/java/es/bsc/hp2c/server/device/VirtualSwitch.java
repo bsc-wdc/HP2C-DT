@@ -34,6 +34,7 @@ import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Switch.State[]>, VirtualActuator<Switch.State[]> {
     private final String edgeLabel;
     private final int size;
+    private boolean availability;
 
     /**
      * Creates a new instance of VirtualSwitch.
@@ -153,5 +154,15 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
             categories.add(state.toString());
         }
         return categories;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return availability;
+    }
+
+    @Override
+    public void setAvailability(boolean b){
+        availability = b;
     }
 }
