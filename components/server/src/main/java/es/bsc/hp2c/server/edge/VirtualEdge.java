@@ -71,7 +71,7 @@ public class VirtualEdge {
         JSONArray jDevices = jEdgeSetup.getJSONArray("devices");
         for (Object device : jDevices){
             JSONObject jDevice = (JSONObject) device;
-            String deviceLabel = jDevice.getString("label");
+            String deviceLabel = jDevice.getString("label").replace(" ", "").replace("-","");
             boolean availability = jDevice.getBoolean("availability");
             this.setDeviceAvailability(deviceLabel, availability);
         }

@@ -70,6 +70,8 @@ public class HP2CEdge {
         String localIp = System.getenv("LOCAL_IP");
         String brokerIp = CommUtils.parseRemoteIp("broker", localIp);
 
+        devices = loadDevices(setupFile, "driver", true);
+
         // Set up AMQP messaging
         boolean amqpOn = setUpMessaging(brokerIp);
         if (amqpOn) {
@@ -80,9 +82,6 @@ public class HP2CEdge {
         } else {
             System.out.println("Heartbeat could not start. AMQP not available");
         }
-
-        // Load devices and functions
-        devices = loadDevices(setupFile, "driver", true);
         OpalComm.setLoadedDevices(true);
         Func.loadFunctions(setupFile, devices);
         Func.loadGlobalFunctions(defaultsPath, devices, amqpOn);
@@ -139,7 +138,8 @@ public class HP2CEdge {
             for (Object d : jDevices){
                 JSONObject jD = (JSONObject) d;
                 boolean availability = true;
-                Device device = devices.get(jD.optString("label", ""));
+                String deviceLabel = jD.optString("label", "").replace(" ", "").replace("-","");
+                Device device = devices.get(deviceLabel);
                 if (device.isSensitive() && !device.isSensorAvailable()){
                     availability = false;
                 }
