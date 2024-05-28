@@ -26,6 +26,7 @@ import org.json.JSONObject;
 public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Float[]> {
     private final String edgeLabel;
     private final int size;
+    private boolean availability;
 
     /**
     * Creates a new instance of VirtualAmmeter.
@@ -71,5 +72,14 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     @Override
     public int getSize() {
         return this.size;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return availability;
+    }
+    @Override
+    public void setAvailability(boolean b){
+        availability = b;
     }
 }

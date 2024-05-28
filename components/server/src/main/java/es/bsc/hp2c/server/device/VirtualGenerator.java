@@ -35,6 +35,8 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     private final String edgeLabel;
     private final int size;
 
+    private boolean availability;
+
     /**
      * Creates a new instance of VirtualGenerator.
      *
@@ -115,6 +117,16 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     @Override
     public ArrayList<String> getCategories() {
         return null;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return availability;
+    }
+
+    @Override
+    public void setAvailability(boolean b){
+        availability = b;
     }
 }
 
