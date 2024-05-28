@@ -66,6 +66,16 @@ public class VirtualEdge {
         for (String d : devicesMap.keySet()){
             devices.put(d, (VirtualComm.VirtualDevice) devicesMap.get(d));
         }
+
+        // Set devices' availability
+        JSONArray jDevices = jEdgeSetup.getJSONArray("devices");
+        for (Object device : jDevices){
+            JSONObject jDevice = (JSONObject) device;
+            String deviceLabel = jDevice.getString("label");
+            boolean availability = jDevice.getBoolean("availability");
+            this.setDeviceAvailability(deviceLabel, availability);
+        }
+
         this.isAvailable = jGlobalProps.getBoolean("available");
         this.lastHeartbeat = jGlobalProps.getLong("heartbeat");
         // Collect edge geospatial data
