@@ -91,9 +91,19 @@ public class VirtualEdge {
     }
 
     public boolean equals(VirtualEdge oldEdge){
-        return this.label.equals(oldEdge.label) && this.devices.keySet().equals(oldEdge.devices.keySet()) &&
-                this.isAvailable == oldEdge.isAvailable() && this.x == oldEdge.x && this.y == oldEdge.y &&
-                this.connections.equals(oldEdge.connections);
+        boolean sameDevices = true;
+        for (String device : devices.keySet()){
+            if (!this.devices.keySet().equals(oldEdge.devices.keySet())){
+                sameDevices = false;
+                break;
+            }
+            if (this.getDeviceAvailability(device) != oldEdge.getDeviceAvailability(device)){
+                sameDevices = false;
+                break;
+            }
+        }
+        return this.label.equals(oldEdge.label) && sameDevices &&  this.isAvailable == oldEdge.isAvailable() &&
+                this.x == oldEdge.x && this.y == oldEdge.y && this.connections.equals(oldEdge.connections);
     }
 
     public boolean containsDevice(String deviceLabel) {
@@ -125,7 +135,7 @@ public class VirtualEdge {
             String deviceLabel = entry.getKey();
             Device device = (Device) entry.getValue();
             JSONObject jDevice = new JSONObject();
-            jDevice.put("availability", entry.getValue().isAvailable());
+            jDevice.put("is_available", entry.getValue().isAvailable());
             boolean isActionable = false;
             if (device.isActionable()) {
                 VirtualComm.VirtualActuator<?> actuator = (VirtualComm.VirtualActuator<?>) device;
