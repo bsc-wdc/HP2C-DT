@@ -1,12 +1,12 @@
 #!/bin/bash
 
 usage() {
-    echo "Usage: $0 [-h] [-deployment_name=<name>] [-simulation_name=<name>] [-time_step=<value>]" 1>&2
+    echo "Usage: $0 [-h] [--deployment_name=<name>] [--simulation_name=<name>] [--time_step=<value>]" 1>&2
     echo "Options:" 1>&2
     echo "  -h: Show usage instructions" 1>&2
-    echo "  -deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2
-    echo "  -simulation_name=<name>: The name of the simulation without '.csv'" 1>&2
-    echo "  -time_step=<value>: The time step value (default: 1000)" 1>&2
+    echo "  --deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2
+    echo "  --simulation_name=<name>: The name of the simulation without '.csv'" 1>&2
+    echo "  --time_step=<value>: The time step value (default: 1000)" 1>&2
     exit 1
 }
 
