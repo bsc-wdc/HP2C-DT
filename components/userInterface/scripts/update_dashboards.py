@@ -211,18 +211,26 @@ def update_dashboards():
 def check_changes(edges_info):
     changed = False
     edges_data = json.loads(edges_info)
-
     for edge, edge_info in edges_data.items():
         if edge_info["modified"]:
             changed = True
+            """edge_model = Edge.objects.get(name=edge)
             if not edge_info["is_available"]:
-                edge_model = Edge.objects.get(name=edge)
                 edge_model.show = False
                 edge_model.save()
                 devices_all = Device.objects.filter(edge=edge_model)
                 for device_model in devices_all:
                     device_model.show = False
                     device_model.save()
+                continue
+            for device, device_info in edge_info["info"].items():
+                device_model = Device.objects.get(edge=edge_model, name=device)
+                if not device_info["is_available"]:
+                    device_model.show = False
+                else:
+                    device_model.show = True
+                device_model.save()"""
+
     return changed
 
 
