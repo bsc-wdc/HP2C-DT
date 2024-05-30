@@ -1,11 +1,11 @@
 #!/bin/bash
 
 usage() {
-    echo "Usage: $0 [-h] [-deployment_name=<name>] [-deployment_prefix=<prefix>]" 1>&2
+    echo "Usage: $0 [-h] [--deployment_name=<name>] [--deployment_prefix=<prefix>]" 1>&2
     echo "Options:" 1>&2
     echo "  -h: Show usage instructions" 1>&2
-    echo "  -deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2
-    echo "  -deployment_prefix=<prefix>: The deployment prefix (default: hp2c)" 1>&2
+    echo "  --deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2
+    echo "  --deployment_prefix=<prefix>: The deployment prefix (default: hp2c)" 1>&2
     exit 1
 }
 
