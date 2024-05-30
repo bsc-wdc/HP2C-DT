@@ -10,6 +10,22 @@ from .forms import CategoricalDeviceForm, NonCategoricalDeviceForm
 import json
 import requests
 
+def edge_detail(request, edge_name):
+    edge = Edge.objects.get(name=edge_name)
+    edgeDevices = {}
+    forms = []
+    devices = Device.objects.filter(edge=edge)
+    edgeDevices[edge] = devices
+    for device in devices:
+        form = None
+        if device.is_actionable and device.is_categorical:
+            form = CategoricalDeviceForm(device)
+        elif device.is_actionable:
+            form = NonCategoricalDeviceForm(device)
+        forms.append((device, form))
+    return render(request, 'pages/edge_detail.html',
+                  {'edgeDevices': edgeDevices, 'forms': forms})
+
 @csrf_exempt
 def index(request):
     """Render the index page.
@@ -151,26 +167,15 @@ def geomap(server_port, server_url):
 
                         const circle = group.append("circle")
                             .attr("r", 3)
-                            .attr("fill", d => d.show ? "black" : "red")
+                            .attr("fill", d => {{
+                                if (d.show === 0) return "red";
+                                else if (d.show === 1) return "orange";
+                                else return "black";
+                            }})
                             .on("click", function() {{
-                                const isOpen = svg.select(".node-click-rect").size() > 0;
-
-                                if (isOpen) {{
-                                    svg.select(".node-click-rect").remove();
-                                }} else {{
-                                    const clickRect = svg.append("rect")  
-                                        .attr("class", "node-click-rect")
-                                        .attr("x", 40)
-                                        .attr("y", 30)
-                                        .attr("width", 100)
-                                        .attr("height", 100)
-                                        .attr("rx", 5) 
-                                        .attr("ry", 5)
-                                        .style("display", "block");
-                                }}
-
+                                window.location.href = `/${{d.id}}`;   
                                 d3.event.stopPropagation(); 
-                        }});
+                            }});
 
                     const rectHeight = 20; 
                     const rect = group.append("rect")
@@ -189,7 +194,7 @@ def geomap(server_port, server_url):
 
                     const textWidth = text.node().getBBox().width;
                     rect.attr("width", textWidth + 10);
-                    }});
+                }});
             }});
         """
     return script_content
@@ -207,10 +212,19 @@ def generate_nodes_and_links(edges_info):
     for edge_id, edge_data in edges_info.items():
         x = edge_data["position"]["x"]
         y = edge_data["position"]["y"]
-        nodes.append({"id": edge_id, "coordinates": [x, y], "show": edge_data["show"]})
+        edge = Edge.objects.get(name=edge_id)
+        show = 0
+        if edge_data["show"]:
+            show = 2
+            devices = Device.objects.filter(edge=edge)
+            for device in devices:
+                if not device.show:
+                    show = 1
+                    break
+
+        nodes.append({"id": edge_id, "coordinates": [x, y], "show": show})
         for connection in edge_data["connections"]:
             links.append({"source": edge_id, "target": connection})
-        print(nodes)
     return nodes, links
 
 
@@ -268,13 +282,21 @@ def get_devices(deployment_model, panels, edges_info, grafana_url):
         """
     edges_data = json.loads(edges_info)
     for edge, edge_info in edges_data.items():
-        edge_model, created = Edge.objects.get_or_create(name=edge,
-                                                   deployment=deployment_model)
+        edge_available = edge_info["is_available"]
+        edge_model, created = Edge.objects.get_or_create(
+            name=edge,
+            deployment=deployment_model)
+        edge_model.show = edge_available
+        edge_model.save()
+
         for device, attributes in edge_info["info"].items():
+            device_available = attributes["is_available"]
             device_model, _ = Device.objects.get_or_create(
                 name=device,
-                edge=edge_model,
+                edge=edge_model
             )
+            device_model.show = device_available
+            device_model.save()
             table_link, timeseries_link = (
                 get_panel_links(deployment_model, edge, device, panels, grafana_url))
             device_model.table_link = table_link
@@ -359,8 +381,7 @@ def device_detail(request, edge_name, device_name):
         else:
             messages.error(request, f"Http error: {response.status_code}")
 
-    deployment = Deployment.objects.get(name="testbed")
-    edge = Edge.objects.get(name=edge_name, deployment=deployment)
+    edge = Edge.objects.get(name=edge_name)
     device = Device.objects.get(name=device_name, edge=edge)
 
     form = None
