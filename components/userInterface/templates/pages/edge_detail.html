@@ -5,9 +5,21 @@
 
 {% block content %}
 <html lang="en">
+<head>
+  <style>
+    .status-dot {
+      height: 10px;
+      width: 10px;
+      background-color: red;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 10px;
+    }
+  </style>
+</head>
 <body>
 {% for edge, devices in edgeDevices.items %}
-  <h3 class="page-title">{{ edge.name }} detail</h3>
+  <h3 class="page-title">{{ edge.name }} {% if not edge.show %} <span class="status-dot"></span> {% endif %}</h3>
 {% endfor %}
 <div class="col-xl-12 col-md-12 m-b-30">
   <div id="device-panels">
@@ -18,7 +30,7 @@
             {% for device, form in forms %}
               {% if device in devices %}
                 <tr class="device-row" data-panel="{{ device.timeseries_link }}" data-actuator="{{ device.is_actionable }}">
-                  <td>{{ device.name }}</td>
+                  <td>{{ device.name }} {% if not device.show %} <span class="status-dot"></span> {% endif %}</td>
                   <td class="panel-cell" style="display: none;">
                     <iframe class="device-panel" src="" width="900" height="300" frameborder="0"></iframe>
                   </td>
@@ -33,7 +45,11 @@
                       </div>
                     {% endif %}
                     <a href="{% url 'device_detail' edge_name=edge.name device_name=device.name %}">
-                      <button type="button" class="btn btn-primary" data-toggle="tooltip">View detail</button>
+                      {% if device.is_actionable %}
+                        <button type="button" class="btn btn-warning" data-toggle="tooltip">View detail & actuate</button>
+                      {% else %}
+                        <button type="button" class="btn btn-primary" data-toggle="tooltip">View detail</button>
+                      {% endif %}
                     </a>
                   </td>
                 </tr>
@@ -68,8 +84,6 @@
         }
       });
     });
-
-
 
     var showPanelBtns = document.getElementsByClassName('show-panel-btn');
     Array.from(showPanelBtns).forEach(function(btn) {
