@@ -23,7 +23,7 @@ class NonCategoricalDeviceForm(forms.Form):
 
         self.fields['device_id'] = forms.CharField(widget=forms.HiddenInput(),
                                                    initial=device.id)
-        if "Generator" in device.name:
+        if "Generator" == device.type:
             self.fields['phase_1'] = forms.CharField(
                 label='Voltage Setpoint',
                 max_length=100,

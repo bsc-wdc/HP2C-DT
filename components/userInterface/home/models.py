@@ -37,6 +37,7 @@ class Device(models.Model):
     categories_field = models.TextField(default=None, blank=True, null=True)
     size = models.IntegerField(default=None, null=True)
     show = models.BooleanField(default=True)
+    type = models.CharField(max_length=100, default="")
 
     def get_categories(self):
         if self.categories_field:

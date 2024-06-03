@@ -291,11 +291,13 @@ def get_devices(deployment_model, panels, edges_info, grafana_url):
 
         for device, attributes in edge_info["info"].items():
             device_available = attributes["is_available"]
+            device_type = attributes["type"]
             device_model, _ = Device.objects.get_or_create(
                 name=device,
                 edge=edge_model
             )
             device_model.show = device_available
+            device_model.type = device_type
             device_model.save()
             table_link, timeseries_link = (
                 get_panel_links(deployment_model, edge, device, panels, grafana_url))
