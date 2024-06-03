@@ -133,6 +133,23 @@ public abstract class Device {
     }
 
     /**
+     * Returns the type of the device, which we take from the "highest" subclass.
+     *
+     * @return type of the device
+     */
+    public String getType(){
+        Class<?> clazz = this.getClass();
+
+        while (clazz.getSuperclass() != Device.class) {
+            clazz = clazz.getSuperclass();
+        }
+
+        String[] className = clazz.getName().split("\\.");
+
+        return className[className.length - 1];
+    }
+
+    /**
      * Returns whether the component admits running actions on it or not.
      *
      * @return {@literal true} if it admits running actions; otherwise

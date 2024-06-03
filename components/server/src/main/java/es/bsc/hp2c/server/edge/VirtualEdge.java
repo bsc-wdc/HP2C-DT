@@ -136,6 +136,7 @@ public class VirtualEdge {
             Device device = (Device) entry.getValue();
             JSONObject jDevice = new JSONObject();
             jDevice.put("is_available", entry.getValue().isAvailable());
+            jDevice.put("type", ((Device) entry.getValue()).getType());
             boolean isActionable = false;
             if (device.isActionable()) {
                 VirtualComm.VirtualActuator<?> actuator = (VirtualComm.VirtualActuator<?>) device;
