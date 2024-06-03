@@ -391,6 +391,7 @@ def device_detail(request, edge_name, device_name):
         form = NonCategoricalDeviceForm(device)
 
     return render(request, "pages/device_detail.html", {
+        "device": device,
         "device_name": device_name,
         "timeseries_link": device.timeseries_link,
         "table_link": device.table_link,
