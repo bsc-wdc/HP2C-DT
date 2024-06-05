@@ -7,13 +7,13 @@ services:
       context: ../components/broker
       dockerfile: ../../docker/broker/Dockerfile.broker
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "8005:8005"
+      - "8015:8015"
     volumes:
       - ../components/broker/20-main-simple.conf:/etc/rabbitmq/conf.d/20-main-simple.conf
     restart: "no"
     healthcheck:
-      test: ["CMD-SHELL", "curl -s -o /tmp/healthcheck.log -w '%{http_code}' http://localhost:15672"]
+      test: ["CMD-SHELL", "curl -s -o /tmp/healthcheck.log -w '%{http_code}' http://localhost:8015"]
       interval: 3s
       timeout: 1s
       retries: 40
