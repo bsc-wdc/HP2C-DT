@@ -71,6 +71,7 @@ def update_dashboards():
     database_ip = setup_data["database"]["ip"]
     # Grafana API URL and key
     GRAFANA_URL = f"http://{grafana_addr}"
+    GRAFANA_PORT = setup_data['grafana']['port']
 
     config_file = "../../../config.json" if os.path.isfile(
         "../../../config.json") else "/run/secrets/config.json"
@@ -85,12 +86,13 @@ def update_dashboards():
     # Check if LOCAL_IP is not empty and add it to the list
     LOCAL_IP = os.getenv("LOCAL_IP", None)
     if LOCAL_IP:
-        URLs.append(f"http://{LOCAL_IP}:3000")
-
-    ############################ GET DATASOURCE UID ###########################
+        URLs.append(f"http://{LOCAL_IP}:{GRAFANA_PORT}")
+        
+    ############################ GET DATASOURCE UID ######################################
     datasource_uid = ""
 
     for url in URLs:
+        print(f"Trying URL {url} to handle datasource UID...", flush=True)
         try:
             response = requests.get(f"{url}/api/datasources", headers={
                 "Authorization": f"Bearer {GRAFANA_API_KEY}"})
@@ -237,7 +239,7 @@ def check_changes(edges_info):
 def get_deployment_info(setup_data):
     grafana_ip = setup_data["grafana"]["ip"]
     grafana_port = setup_data["grafana"]["port"]
-    grafana_url = grafana_ip + ":" + grafana_port
+    grafana_url = f'{grafana_ip}:{grafana_port}'
     server_ip = setup_data["server"]["ip"]
     server_port = setup_data["server"]["port"]
     server_url = f"http://{server_ip}:{server_port}"
