@@ -25,6 +25,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import static es.bsc.hp2c.HP2CServer.isVerbose;
@@ -40,12 +41,14 @@ public class DatabaseHandler {
      * @param localIp local IP (server)
      * @param port Database port number
      */
-    public DatabaseHandler(String localIp, long port) throws IOException {
+    public DatabaseHandler(String localIp) throws IOException {
         // Select database IP
-        String databaseIp = CommUtils.parseRemoteIp("database", localIp);
+        HashMap<String, Object> connectionMap = CommUtils.parseRemoteIp("database", localIp);
+        String ip = (String) connectionMap.get("ip");
+        int port = (int) connectionMap.get("port");
         // Create object to handle the communication with InfluxDB.
-        System.out.println("Connecting to InfluxDB at host IP " + databaseIp + ", port " + port + "...");
-        String databaseURL = "http://" + databaseIp + ":" + port;
+        String databaseURL = "http://" + ip + ":" + port;
+        System.out.println("Connecting to InfluxDB at host " + databaseURL + "...");
         String[] auth = getAuth();
         String username = auth[0];
         String password = auth[1];

@@ -40,7 +40,6 @@ public class HP2CServer {
     public static RestListener restServer;
     public static CLI cli;
     private static EdgeHeartbeat heartbeat;
-    private static final long dbPort = 8086;
     private static final Map<String, VirtualEdge> edgeMap = new HashMap<>();
     private static boolean verbose = true;
 
@@ -63,7 +62,7 @@ public class HP2CServer {
      */
     public static void init(String hostIp) throws IOException, TimeoutException {
         // Initialize modules
-        db = new DatabaseHandler(hostIp, dbPort);
+        db = new DatabaseHandler(hostIp);
         amqp = new AmqpManager(hostIp, edgeMap, db);
         heartbeat = new EdgeHeartbeat(amqp, edgeMap);
         restServer = new RestListener(edgeMap);

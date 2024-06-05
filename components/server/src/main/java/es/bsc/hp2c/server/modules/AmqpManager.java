@@ -26,6 +26,7 @@ import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -47,15 +48,17 @@ public class AmqpManager {
         this.edgeMap = edgeMap;
         this.db = db;
         // Select broker IP
-        String brokerIp = CommUtils.parseRemoteIp("broker", localIp);
+        HashMap<String, Object> connectionMap = CommUtils.parseRemoteIp("broker", localIp);
         // Start connection
-        connect(brokerIp);
+        String brokerIp = (String) connectionMap.get("ip");
+        int brokerPort = (int) connectionMap.get("port");
+        connect(brokerIp, brokerPort);
     }
 
     /** Start AMQP connection with broker. */
-    private void connect(String setupIp) throws IOException {
+    private void connect(String setupIp, int port) throws IOException {
         // Try connecting to a RabbitMQ server until success
-        Connection connection = CommUtils.AmqpConnectAndRetry(setupIp);
+        Connection connection = CommUtils.AmqpConnectAndRetry(setupIp, port);
         channel = connection.createChannel();
         System.out.println("RabbitMQ Connection successful");
     }

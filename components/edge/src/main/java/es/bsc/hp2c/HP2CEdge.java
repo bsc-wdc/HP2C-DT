@@ -27,6 +27,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -68,12 +69,14 @@ public class HP2CEdge {
 
         // Get IP address
         String localIp = System.getenv("LOCAL_IP");
-        String brokerIp = CommUtils.parseRemoteIp("broker", localIp);
+        HashMap<String, Object> brokerConnections = CommUtils.parseRemoteIp("broker", localIp);
+        String brokerIp = (String) brokerConnections.get("ip");
+        int brokerPort = (int) brokerConnections.get("port");
 
         devices = loadDevices(setupFile, "driver", true);
 
         // Set up AMQP messaging
-        boolean amqpOn = setUpMessaging(brokerIp);
+        boolean amqpOn = setUpMessaging(brokerIp, brokerPort);
         if (amqpOn) {
             JSONObject jEdgeSetup = getJsonObject(setupFile);
             Timer timer = new Timer();
@@ -87,9 +90,9 @@ public class HP2CEdge {
         Func.loadGlobalFunctions(defaultsPath, devices, amqpOn);
     }
 
-    private static boolean setUpMessaging(String ip) {
+    private static boolean setUpMessaging(String ip, int port) {
         // Try connecting to a RabbitMQ server until success
-        connection = CommUtils.AmqpConnectAndRetry(ip);
+        connection = CommUtils.AmqpConnectAndRetry(ip, port);
         // After establishing a connection, set up channel and exchange
         try {
             channel = connection.createChannel();
