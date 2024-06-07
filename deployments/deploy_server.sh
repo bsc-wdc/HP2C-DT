@@ -6,6 +6,10 @@ usage() {
     echo "  -h: Show usage instructions" 1>&2
     echo "  --deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2
     echo "  --deployment_prefix=<prefix>: The deployment prefix (default: hp2c)" 1>&2
+    echo "  --comm=<mode>: The communication mode. If provided, overrides 'deployment_setup.json' 
+                 and uses the corresponding one at the 'defaults/' directory. 
+                 e.g., if '--comm=bsc', it uses the configuration file
+                 'defaults/deployment_setup_bsc.json' (default: None)" 1>&2
     exit 1
 }
 
@@ -13,6 +17,7 @@ usage() {
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
 DEPLOYMENT_NAME="testbed"
+COMM_SETUP=""
 
 # Parse command line arguments
 pos=1
@@ -26,6 +31,9 @@ for arg in "$@"; do
             ;;
         --deployment_prefix=*)
             DEPLOYMENT_PREFIX="${arg#*=}"
+            ;;
+        --comm=*)
+            COMM_SETUP="${arg#*=}"
             ;;
         *)
             if [ $pos -eq 1 ]; then
@@ -41,26 +49,38 @@ done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/server:latest"
 
-deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  # Deployment configuration (IPs, etc.)
+
+# Initialize configuration files and directories
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
 config_json="${SCRIPT_DIR}/../config.json"  # Authentication configuration
 
-echo "deployment_json: ${deployment_json}"
-echo "setup_folder: ${setup_folder}"
-echo "config_json: ${config_json}"
+# Deployment communications configuration (IP addresses and ports)
+if [ -z "$COMM_SETUP" ]; then
+    # If no communication setup is provided, use the one in the corresponding deployment directory
+    deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  
+else
+    # If a communication setup is provided, override the deployment configuration and use the one in the defaults directory
+    deployment_json="${SCRIPT_DIR}/defaults/deployment_setup_${COMM_SETUP}.json"
+fi
 
+echo "Using JSON for deployment communications:   $deployment_json"
+echo "Using setup folder:                         $setup_folder"
+echo "Using defaults JSON for default edge funcs: $defaults_json"
+
+
+# Verify the provided files and directories exist
 if [ ! -f "${SCRIPT_DIR}/../config.json" ]; then
   echo "Error: Config file not found in ${SCRIPT_DIR}/../config.json."
   exit 1
 fi
 
-if [ ! -f "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json" ];then
-  echo "Error: Config file not found in ${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json."
+if [ ! -f "${deployment_json}" ];then
+  echo "Error: Config file not found in ${deployment_json}."
   exit 1
 fi
 
-if [ ! -d "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup" ];then
-  echo"Error: Setup directory not found in ${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup."
+if [ ! -d "${setup_folder}" ];then
+  echo"Error: Setup directory not found in ${setup_folder}."
   exit 1
 fi
 
@@ -76,6 +96,7 @@ custom_ip_address="172.29.128.1"
 
 echo "Local IPv4 Address: $ip_address"
 echo "Custom IP Address: $custom_ip_address"
+echo
 
 
 # Auxiliar functions
