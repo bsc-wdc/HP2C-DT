@@ -16,7 +16,9 @@
 package es.bsc.hp2c.server.modules;
 
 import com.rabbitmq.client.*;
+import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.edge.VirtualEdge;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -24,6 +26,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import static java.lang.Boolean.parseBoolean;
 
 /**
  * Heartbeat handler that starts:
@@ -89,7 +93,15 @@ public class EdgeHeartbeat {
         if (edgeMap.containsKey(edgeLabel)) {
             // Set last heartbeat
             long heartbeatTime = jEdgeSetup.getJSONObject("global-properties").getLong("heartbeat");
-            edgeMap.get(edgeLabel).setLastHeartbeat(heartbeatTime);
+            VirtualEdge newEdge = new VirtualEdge(jEdgeSetup);
+            VirtualEdge oldEdge = edgeMap.get(edgeLabel);
+            if (!newEdge.equals(oldEdge)){
+                newEdge.setModified(true);
+                edgeMap.put(edgeLabel, newEdge);
+            }
+            else {
+                edgeMap.get(edgeLabel).setLastHeartbeat(heartbeatTime);
+            }
         } else {
             // First time a heartbeat is received, load devices and store in the VirtualEdge object
             VirtualEdge edge = new VirtualEdge(jEdgeSetup);
@@ -108,12 +120,14 @@ public class EdgeHeartbeat {
                     // Edge not available
                     System.out.println(" [CheckInactiveEdges] Edge '" + edge.getLabel() + "' is inactive.");
                     if (edge.isAvailable()) {
+                        edge.setModified(true);
                         edge.setAvailable(false);
                     }
                 } else {
                     // Edge available
                     System.out.println(" [CheckInactiveEdges] Edge '" + edge.getLabel() + "' is active.");
                     if (!edge.isAvailable()) {
+                        edge.setModified(true);
                         edge.setAvailable(true);
                     }
                 }

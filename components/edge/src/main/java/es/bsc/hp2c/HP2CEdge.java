@@ -22,6 +22,7 @@ import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Func;
 
 import com.rabbitmq.client.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -42,6 +43,7 @@ public class HP2CEdge {
     private static final long HEARTBEAT_RATE = 10000;
     private static Connection connection;
     private static Channel channel;
+    private static Map<String, Device> devices;
 
     /**
      * Obtain map of devices and load functions.
@@ -68,6 +70,8 @@ public class HP2CEdge {
         String localIp = System.getenv("LOCAL_IP");
         String brokerIp = CommUtils.parseRemoteIp("broker", localIp);
 
+        devices = loadDevices(setupFile, "driver", true);
+
         // Set up AMQP messaging
         boolean amqpOn = setUpMessaging(brokerIp);
         if (amqpOn) {
@@ -78,9 +82,6 @@ public class HP2CEdge {
         } else {
             System.out.println("Heartbeat could not start. AMQP not available");
         }
-
-        // Load devices and functions
-        Map<String, Device> devices = loadDevices(setupFile, "driver", true);
         OpalComm.setLoadedDevices(true);
         Func.loadFunctions(setupFile, devices);
         Func.loadGlobalFunctions(defaultsPath, devices, amqpOn);
@@ -132,8 +133,26 @@ public class HP2CEdge {
         public void run() {
             // Add timestamp and status to the JSON object
             JSONObject jGlobalProps = jEdgeSetup.getJSONObject("global-properties");
+            JSONArray jDevices = jEdgeSetup.getJSONArray("devices");
+            int index = 0;
+            for (Object d : jDevices){
+                JSONObject jD = (JSONObject) d;
+                boolean availability = true;
+                String deviceLabel = jD.optString("label", "").replace(" ", "").replace("-","");
+                Device device = devices.get(deviceLabel);
+                if (device.isSensitive() && !device.isSensorAvailable()){
+                    availability = false;
+                }
+                if (device.isActionable() && !device.isActuatorAvailable()){
+                    availability = false;
+                }
+                jD.put("availability", availability);
+                jDevices.put(index, jD);
+                index += 1;
+            }
             jGlobalProps.put("heartbeat", System.currentTimeMillis());
             jGlobalProps.put("available", true);
+
             // Convert the string to bytes
             byte[] message = jEdgeSetup.toString().getBytes();
             try {

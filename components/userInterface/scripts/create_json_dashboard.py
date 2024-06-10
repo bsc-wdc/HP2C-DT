@@ -4,13 +4,17 @@ import sys
 
 def generate_panel_timeseries(edge_name, device, datasource_uid):
     targets = []
+    generator_values = ["Voltage SetPoint", "Power SetPoint"]
     for i in range(device[1]):
         cleaned_device_name = device[0].replace(" ", "")
         cleaned_device_name = cleaned_device_name.replace("-", "") + "Sensor" + str(i)
         query = f"SELECT * FROM \"{edge_name}\" WHERE device = \'{cleaned_device_name}\'\n"
         ref_id = f"{edge_name}-{cleaned_device_name}"
+        alias = "phase " + str(i + 1)
+        if device[2] == "Generator":
+            alias = generator_values[i]
         target = {
-            "alias": "phase " + str(i + 1),
+            "alias": alias,
             "datasource": {
                 "type": "influxdb",
                 "uid": datasource_uid
@@ -97,19 +101,23 @@ def generate_panel_timeseries(edge_name, device, datasource_uid):
 
 def generate_dashboard_json(deployment_name, edge_device_dict, datasource_uid):
     panels = []
+    generator_values = ["Voltage SetPoint", "Power SetPoint"]
     for edge_name, devices in edge_device_dict.items():
         for device in devices:
             panel_timeseries = generate_panel_timeseries(edge_name, device, datasource_uid)
             panel_table = panel_timeseries.copy()
             names = []
             for i in range(len(panel_table["targets"])):
+                alias = "phase " + str(i + 1)
+                if device[2] == "Generator":
+                    alias = generator_values[i]
                 if len(panel_table["targets"]) == 1: 
                     time = "Time"
                     names.append(time)
                 elif i == 0: 
-                    time = "phase " + str(i + 1) + " · Time"
+                    time = alias + " · Time"
                     names.append(time)
-                names.append("phase " + str(i + 1))
+                names.append(alias)
                 panel_table["targets"][i]["refId"] = "Table-" + panel_table["targets"][i]["refId"]
                 q = panel_table["targets"][i]["query"].split()
                 q[1] = "value"
@@ -139,6 +147,13 @@ def generate_dashboard_json(deployment_name, edge_device_dict, datasource_uid):
                             }
                         ]
                     }
+                },
+                {
+                  "id": "renameByRegex",
+                  "options": {
+                    "regex": ".* · Time",
+                    "renamePattern": "Time"
+                  }
                 }
             ]
             panel_table["type"] = "table"
@@ -235,14 +250,15 @@ def main():
     generate_dashboard_json(deployment_name, edges, datasource_uid)
 
 
-def ui_exec(deployment_name, devices_info, datasource_uid):
-    devices_data = json.loads(devices_info)
+def ui_exec(deployment_name, edges_info, datasource_uid):
+    edges_data = json.loads(edges_info)
     edges = {}
-    for edge, devices_info in devices_data.items():
+    for edge, edge_info in edges_data.items():
         devices = []
-        for device, info in devices_info.items():
+        for device, info in edge_info["info"].items():
             n_indexes = info["size"]
-            devices.append((device, n_indexes))
+            type = info["type"]
+            devices.append((device, n_indexes, type))
         edges[edge] = devices
     generate_dashboard_json(deployment_name, edges, datasource_uid)
 

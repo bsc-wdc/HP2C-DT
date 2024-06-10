@@ -23,8 +23,18 @@ class NonCategoricalDeviceForm(forms.Form):
 
         self.fields['device_id'] = forms.CharField(widget=forms.HiddenInput(),
                                                    initial=device.id)
-        for i in range(1, device.size + 1):
-            self.fields[f'phase_{i}'] = forms.CharField(label=f'Phase {i}',
-                                                        max_length=100,
-                                                        required=False)
+        if "Generator" == device.type:
+            self.fields['phase_1'] = forms.CharField(
+                label='Voltage Setpoint',
+                max_length=100,
+                required=False)
+            self.fields['phase_2'] = forms.CharField(
+                label='Power Setpoint',
+                max_length=100,
+                required=False)
+        else:
+            for i in range(1, device.size + 1):
+                self.fields[f'phase_{i}'] = forms.CharField(label=f'Phase {i}',
+                                                            max_length=100,
+                                                            required=False)
 

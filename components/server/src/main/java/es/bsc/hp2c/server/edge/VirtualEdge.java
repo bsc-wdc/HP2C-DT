@@ -21,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
@@ -31,12 +32,13 @@ import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
  */
 public class VirtualEdge {
     private final String label;
-    private final Map<String, Device> devices;
+    private final Map<String, VirtualComm.VirtualDevice> devices;
     private boolean isAvailable;
     private long lastHeartbeat;
     private float x;
     private float y;
     private ArrayList<String> connections;
+    private boolean modified;
 
     /**
      * Basic constructor when passing all the essential parameters explicitly.
@@ -44,7 +46,7 @@ public class VirtualEdge {
      * @param devices Map of devices
      * @param currentTime Current time in milliseconds
      */
-    public VirtualEdge(String label, Map<String, Device> devices, Long currentTime) {
+    public VirtualEdge(String label, Map<String, VirtualComm.VirtualDevice> devices, Long currentTime) {
         this.label = label;
         this.devices = devices;
         this.isAvailable = true;
@@ -59,7 +61,21 @@ public class VirtualEdge {
         // Collect main data
         JSONObject jGlobalProps = jEdgeSetup.getJSONObject("global-properties");
         this.label = jGlobalProps.getString("label");
-        this.devices = loadDevices(jEdgeSetup, "driver-dt", false);
+        Map<String, Device> devicesMap = loadDevices(jEdgeSetup, "driver-dt", false);
+        devices = new HashMap<>();
+        for (String d : devicesMap.keySet()){
+            devices.put(d, (VirtualComm.VirtualDevice) devicesMap.get(d));
+        }
+
+        // Set devices' availability
+        JSONArray jDevices = jEdgeSetup.getJSONArray("devices");
+        for (Object device : jDevices){
+            JSONObject jDevice = (JSONObject) device;
+            String deviceLabel = jDevice.getString("label").replace(" ", "").replace("-","");
+            boolean availability = jDevice.getBoolean("availability");
+            this.setDeviceAvailability(deviceLabel, availability);
+        }
+
         this.isAvailable = jGlobalProps.getBoolean("available");
         this.lastHeartbeat = jGlobalProps.getLong("heartbeat");
         // Collect edge geospatial data
@@ -71,6 +87,23 @@ public class VirtualEdge {
         for (int i = 0; i < jConnections.length(); i++) {
             this.connections.add(jConnections.getString(i));
         }
+        this.modified = true;
+    }
+
+    public boolean equals(VirtualEdge oldEdge){
+        boolean sameDevices = true;
+        for (String device : devices.keySet()){
+            if (!this.devices.keySet().equals(oldEdge.devices.keySet())){
+                sameDevices = false;
+                break;
+            }
+            if (this.getDeviceAvailability(device) != oldEdge.getDeviceAvailability(device)){
+                sameDevices = false;
+                break;
+            }
+        }
+        return this.label.equals(oldEdge.label) && sameDevices &&  this.isAvailable == oldEdge.isAvailable() &&
+                this.x == oldEdge.x && this.y == oldEdge.y && this.connections.equals(oldEdge.connections);
     }
 
     public boolean containsDevice(String deviceLabel) {
@@ -80,7 +113,7 @@ public class VirtualEdge {
     /**
      * Returns a JSONObject for its use in REST API messaging.
      */
-    public JSONObject getEdgeInfo() {
+    public JSONObject getEdgeGeoInfo() {
         JSONObject jEdgeInfo = new JSONObject();
         jEdgeInfo.put(
                 "position", new JSONObject()
@@ -88,6 +121,7 @@ public class VirtualEdge {
                         .put("y", y)
         );
         jEdgeInfo.put("connections", connections);
+        jEdgeInfo.put("show", isAvailable);
         return jEdgeInfo;
     }
 
@@ -96,10 +130,13 @@ public class VirtualEdge {
      */
     public JSONObject getDevicesInfo() {
         JSONObject jDevicesInfo = new JSONObject();
-        for (Map.Entry<String, Device> entry : devices.entrySet()) {
+
+        for (Map.Entry<String, VirtualComm.VirtualDevice> entry : devices.entrySet()) {
             String deviceLabel = entry.getKey();
-            Device device = entry.getValue();
+            Device device = (Device) entry.getValue();
             JSONObject jDevice = new JSONObject();
+            jDevice.put("is_available", entry.getValue().isAvailable());
+            jDevice.put("type", ((Device) entry.getValue()).getType());
             boolean isActionable = false;
             if (device.isActionable()) {
                 VirtualComm.VirtualActuator<?> actuator = (VirtualComm.VirtualActuator<?>) device;
@@ -121,11 +158,19 @@ public class VirtualEdge {
         return jDevicesInfo;
     }
 
+    public void setDeviceAvailability(String deviceLabel, boolean availability){
+        devices.get(deviceLabel).setAvailability(availability);
+    }
+
+    public boolean getDeviceAvailability(String deviceLabel){
+        return devices.get(deviceLabel).isAvailable();
+    }
+
     public String getLabel() {
         return label;
     }
 
-    public Device getDevice(String deviceLabel) {
+    public VirtualComm.VirtualDevice getDevice(String deviceLabel) {
         return devices.get(deviceLabel);
     }
 
@@ -133,8 +178,16 @@ public class VirtualEdge {
         return new ArrayList<>(devices.keySet());
     }
 
-    public ArrayList<Device> getDevices() {
+    public ArrayList<VirtualComm.VirtualDevice> getDevices() {
         return new ArrayList<>(devices.values());
+    }
+
+    public void setModified(boolean b){
+        this.modified = b;
+    }
+
+    public boolean getModified(){
+        return this.modified;
     }
 
     public void setLastHeartbeat(long lastHeartbeat) {
@@ -153,7 +206,7 @@ public class VirtualEdge {
         isAvailable = available;
     }
 
-    public Map<String, Device> getDeviceMap(){
+    public Map<String, VirtualComm.VirtualDevice> getDeviceMap(){
         return devices;
     }
 

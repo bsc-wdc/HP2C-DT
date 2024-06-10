@@ -7,4 +7,5 @@ urlpatterns = [
   path(''       , views.index, name='index'),
   path('tables/', views.tables, name='tables'),
   path('<str:edge_name>/<str:device_name>', views.device_detail, name='device_detail'),
+  path('<str:edge_name>', views.edge_detail, name='edge_detail'),
 ]
