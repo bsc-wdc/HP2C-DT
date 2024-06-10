@@ -82,13 +82,13 @@ This option is meant for testing purposes, and allows to create and deploy broke
 ./deployments/deploy_server.sh
 [./deployments/deploy_opal_simulator.sh]
 ```
-3. Send data. Recall that the declared indexes for each device represent the positions where the values of each device will be searched, so the socket sent must have at least size max(index) - min(index) + 1. There is an example of a random data server in `components/opalSimulator/scripts`.
 
 
 ## User Interface
 This web application, which can be accessed through {user_interface_ip}:{user_interface_port} in a browser, provides a monitor for the deployment. The main view has two panels:
 ### View Map
 Shows the edges' representation and their connections, with a black dot if the edge is running correctly, a yellow dot if the edge has some unavailable devices, and a red dot if the entire edge is unavailable. If an edge is clicked, the interface will provide a detailed view of the edge.
+
 ![ui-view-map](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/UI-View-Map.png)
 ### View List
 Shows every device in every edge as a list. If the user wants to see the real-time state of a device (Grafana panels), it can be accessed by clicking on it or on the "View detail" button. If the device is an actuator, there will be another button labeled "View detail & actuate". If any component is not available, there will be a red dot next to its name.
