@@ -6,18 +6,18 @@
                 "protocol": "udp",
                 "sensors": {
                     "ip": "0.0.0.0",
-                    "port": "25002"
+                    "port": "10502"
                 }
             },
             "opal-tcp": {
                 "protocol": "tcp",
                 "sensors": {
                     "ip": "0.0.0.0",
-                    "port": "15002"
+                    "port": "20502"
                 },
                 "actuators": {
                     "ip": ["$LOCAL_IP", "localhost"],
-                    "port": "35002"
+                    "port": "30502"
                 }
             }
         },
