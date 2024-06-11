@@ -81,6 +81,7 @@ def update_dashboards():
     GRAFANA_API_KEY = config_data["grafana"]["api_key"]
     DATABASE_USERNAME = config_data["database"]["username"]
     DATABASE_PASSWORD = config_data["database"]["password"]
+    DATABASE_PORT = setup_data['database']['port']
     # Define a list of GRAFANA_URLs
     URLs = [GRAFANA_URL]
     # Check if LOCAL_IP is not empty and add it to the list
@@ -117,7 +118,7 @@ def update_dashboards():
         "typeName": "InfluxDB",
         "typeLogoUrl": "/public/app/plugins/datasource/influxdb/img/influxdb_logo.svg",
         "access": "proxy",
-        "url": f"http://{database_ip}:8086",
+        "url": f"http://{database_ip}:{DATABASE_PORT}",
         "user": DATABASE_USERNAME,
         "database": "",
         "basicAuth": False,

@@ -40,9 +40,10 @@ echo "Using deployment_dir: ${deployment_dir}"
 # Function to extract IP and port from JSON
 get_ip_port() {
     local json_file="$1"
+    local service="$2"
     local ip port
-    ip=$(jq -r ".grafana.ip" "$json_file")
-    port=$(jq -r ".grafana.port" "$json_file")
+    ip=$(jq -r ".${service}.ip" "$json_file")
+    port=$(jq -r ".${service}.port" "$json_file")
     echo "$ip:$port"
 }
 
@@ -56,11 +57,9 @@ else
     exit 1
 fi
 
-# Get Grafana IP and port
-grafana_addr=$(get_ip_port "$deployment_setup_file")
-
-#get database_ip
-database_ip=$(jq -r ".database.ip" "$deployment_setup_file")
+# Get addresses and port
+grafana_addr=$(get_ip_port "$deployment_setup_file" "grafana")
+database_addr=$(get_ip_port "$deployment_setup_file" "database")
 
 # Grafana API URL and key
 GRAFANA_URL="http://${grafana_addr}"
@@ -84,7 +83,8 @@ URLs=("${GRAFANA_URL}")
 
 # Check if LOCAL_IP is not empty and add it to the list
 if [ -n "$LOCAL_IP" ]; then
-  URLs+=("http://${LOCAL_IP}:3000")
+  GRAFANA_PORT=$(jq -r ".$grafana.port" "$deployment_setup_file")
+  URLs+=("http://${LOCAL_IP}:${GRAFANA_PORT}")
 fi
 
 
@@ -111,7 +111,7 @@ INFLUXDB_JSON="{
   \"typeName\": \"InfluxDB\",
   \"typeLogoUrl\": \"/public/app/plugins/datasource/influxdb/img/influxdb_logo.svg\",
   \"access\": \"proxy\",
-  \"url\": \"http://${database_ip}:8086\",
+  \"url\": \"http://${database_addr}\",
   \"user\": \"${DATABASE_USERNAME}\",
   \"database\": \"\",
   \"basicAuth\": false,
