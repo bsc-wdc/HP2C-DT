@@ -20,22 +20,94 @@ In our application, we use edge nodes responsible for collecting, processing, an
 To configure an edge node, we use JSON files (refer to the `deployments` directory for examples). In this section, we will explain how to create them. An edge setup file will consist of three sections, as described below:
 
 #### Global Properties
-This section contains the global properties of the edge node, such as its `label` and its connection ports (`comms`). In `comms`, the user can define communication methods. Each method has a name (the key of the JSON object) and, within the object, a `protocol` (currently we only have `udp` and `tcp`), and how `sensors` and `actuators` will be handled. For each one, specify an IP or IPs (it can also be a list of IPs), and the port. These ports must be unique for every node.
 
-There is another property called `geo-data` which includes the `position` (`x` and `y` coordinates) and `connections` (a list of edge labels).
+```json
+"global-properties":{
+    "label": "edge1",
+    "comms":{
+        "opal-tcp": {
+            "protocol": "tcp",
+            "sensors": {
+                "ip": "0.0.0.0",
+                "port": "20102"
+            },
+            "actuators": {
+                "ip": ["$LOCAL_IP", "localhost"],
+                "port": "30102"
+            }
+        }
+        ...
+    },
+    "geo-data": {
+        "position": {
+            "x": 2.1153889,
+            "y": 41.389917
+        },
+        "connections": ["edge2"]
+    }
+}
+```
+
+This section contains the global properties of the edge node, such as 
+
+- `label`, the name of the edge.
+- `comms`, where the user can define communication methods that can be later used by each device separatelly. Each method has a name (the key of the JSON object) and, within the object, a `protocol` (currently we only have `udp` and `tcp`), and how `sensors` and `actuators` will be handled. For each one, specify an IP or IPs (it can also be a list of IPs), and the port. These ports must be unique for every node.
+- `geo-data`, which includes the `position` (`x` and `y` coordinates) and `connections` (a list of edge labels).
 
 
 #### Devices
+
+```json
+"devices": [
+    {
+        "label": "Three-Phase Switch Gen1",
+        "driver": "es.bsc.hp2c.edge.opalrt.OpalSwitch",
+        "driver-dt": "es.bsc.hp2c.server.device.VirtualSwitch",
+        "position": {
+            "x":0,
+            "y":0
+        },
+        "properties": {
+            "comm-type": "opal-tcp",
+            "indexes": [0,1,2]
+        }
+    },
+    ...
+]
+```
+
 The `devices` section will contain each device within the edge. Each device has the following attributes:
 1. `label`: the name of the device, which must be unique within this edge.
 2. `driver`: the path to the device's implementation.
 3. `driver-dt`: the path to the device's digital twin implementation.
-4. `position`: the XY position.
+4. `position`: the XY position of the specific device.
 5. `properties`: We have two properties:
-- `comm-type`, where the user can refer to the methods declared in the `comms` section in `global-properties`.
-- `indexes`, which serves as a device identifier for those simulated by OpalRT. Indices represent the order in which measurements are sent in a packet from OpalRT. Voltmeters, ammeters, generators, wattmeters, and varmeters can have one or three indexes. Three-phase voltmeters and three-phase ammeters should have three indexes, while switches can have one or three, depending on their number of phases. These indexes must be unique, as they define the correspondent position in the socket received.
+   - `comm-type`, where the user can refer to the methods declared in the `comms` section in `global-properties`.
+   - `indexes`, which serves as a device identifier for those simulated by OpalRT. Indices represent the order in which measurements are sent in a packet from OpalRT. Voltmeters, ammeters, generators, wattmeters, and varmeters can have one or three indexes. Three-phase voltmeters and three-phase ammeters should have three indexes, while switches can have one or three, depending on their number of phases. These indexes must be unique, as they define the correspondent position in the socket received.
 
 #### Functions
+
+```json
+"funcs": [
+    {
+        "label": "VoltLimitation",
+        "lang": "Java",
+        "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
+        "parameters": {
+            "sensors": ["Voltmeter Gen1"],
+            "actuators": ["Three-Phase Switch Gen1"],
+            "other": [200]
+        },
+        "trigger": {
+            "type": "onRead",
+            "method-name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
+            "parameters": ["Voltmeter Gen1"]
+        }
+
+    },
+]
+```
+
 A function is a method that can read from one or more sensors and actuate over one or more actuators. Within the `functions` section, the user must specify the following:
 1. `label`: a unique name for the function.
 2. `lang`: the language in which it was implemented (Java or Python).
@@ -43,10 +115,22 @@ A function is a method that can read from one or more sensors and actuate over o
 4. `parameters`: the user must define lists of `sensors`, `actuators`, and additional parameters called `others` that are needed by the function.
 5. `trigger`: the event that triggers the execution of the function. As for `type`, it can be `onFrequency` (executed with a periodicity specified in `parameters`) and `onRead` (executed after every read of the devices declared as sensors). Additionally, the user should provide a `method-name` (path to the implementation of those triggers).
 
-### Deployment
-We provide two different deployment examples: `testbed`, a simple one with two edges, and `9-buses` (with nine). Each deployment has a setup (previously explained) and a `deployment_setup.json`, which includes the IP and port of every service (refer to the given examples).
+## Deployment
+Under the `deployments` directory, we provide several deployment bash scripts and two different deployment configuration examples: `testbed`, a simple one with two edges, and `9-buses` (with nine). Each deployment has a setup (previously explained) and a `deployment_setup.json`, which includes the IP and port of every service (refer to the given examples).
 
-The final file involved in the deployment is the `config.json`. It should contain the username and password for the database, as well as the API key for Grafana, as follows:
+The final file involved in the deployment is the `config.json`. It must be manually created by the user and located at the root of the repository:
+
+```
+.
+├── apps/
+├── components/
+├── deployments/
+├── docker/
+├── docs/
+└── config.json
+```
+
+`config.json` should contain the username and password for the database, as well as the API key for Grafana, as follows:
 
 ```json
 {
@@ -68,12 +152,12 @@ To deploy the edges, the user must create its image (`docker/edge/create_images.
 ```bash
 ./deployments/deploy_edges.sh
 ```
-#### Local execution
-This option is meant for testing purposes, and allows to create and deploy broker, server, user interface and opal simulator all together by using a docker compose:
+### Local execution
+This option is meant for testing purposes, and allows to create and deploy broker, server, user interface and opal simulator all together by using docker compose:
 ```bash
 ./deployments/deploy_all.sh
 ```
-#### Distributed execution
+### Distributed execution
 1. Create images using the script `docker/create_images.sh`.
 2. Run the created images:
 ```bash
@@ -191,12 +275,25 @@ This database contains time series data from IoT devices. Each device is represe
 
 
 ## Hypersim
-Hypersim is a simulation platform that enables parallel execution of power system simulations. This tool will perform as our "real" devices, generating realistic values for them in a given setup. To connect Hypersim with our edges, we developed an architecture using a bridge application implemented in Python that will act as a broker, connecting Hypersim with the corresponding edge in our network.
+Hypersim is a real-time simulation platform for power system applications. This tool will perform as our "real" devices, generating realistic values for them in a given setup. To connect Hypersim with our edges, we developed an architecture using a bridge application implemented in Python that will act as a broker, connecting Hypersim with the corresponding edge nodes in our architecture.
 
 ![hypersim-edge_comms](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/Hypersim-edge_comms.png)
 
 At the bottom of this figure, we show the Hypersim representation of an electric grid. This grid, composed of devices, will be divided into edges based on different criteria like locality, frequent interaction, or computational logic. In this case, the grid shown is divided into seven edges. Each of them will send information to the corresponding edge in the bridge via UDP (for UDP Sensors) or via the Hypersim API (for TCP Sensors). Hypersim will receive actuations also through the API.
 
-The bridge application, responsible for communicating Hypersim with our edges, will have several Edge objects storing the ports and sockets for every interaction. When it receives a message coming from Hypersim (UDP sensors), it will redirect it to the UDP-Sensors-port of the corresponding edge and, in the opposite direction (TCP Actuators), it will redirect it to the API. Regarding the TCP Sensors, the Bridge will demand the value from Hypersim (with a certain frequency) and send it to the TCP-Sensors-port of the appropriate edge.
+The bridge application, responsible for communicating Hypersim with our edge nodes, will have several Edge objects storing the ports and sockets for every interaction. When each of them receives a message coming from Hypersim (UDP sensors), it will redirect it to the UDP-Sensors-port of the corresponding edge and, in the opposite direction (TCP Actuators), it will redirect it to the API. Regarding the TCP Sensors, the Bridge will demand the value from Hypersim (with a certain frequency) and send it to the TCP-Sensors-port of the appropriate edge. The distribution of sensors among protocols typically follows the next convention:
 
-We always use the same pattern to choose the ports: `1{nn}02` for UDP Sensors ports, with "nn" being the edge number expressed with two digits, `2{nn}02` for TCP Sensors, and `3{nn}02` for TCP Actuators. Since the TCP communication with Hypersim will be performed via API, we only have to decide which port is used for UDP. Thus, we will use `1{nn}02 + 2: 1{nn}04`.
+- UDP communications: 
+  - high-frequency sensors, such as voltmeters and ammeters
+- TCP communications
+  - lower-frequency sensors, e.g., power-meters
+  - actuators: switches and generators
+
+Regarding port numeration, we use the following pattern (with `{nn}` being the edge number expressed with two digits):
+
+- Edge node (Java) to Bridge (Python).
+  - `1{nn}02` for UDP Sensors ports.
+  - `2{nn}02` for TCP Sensors.
+  - `3{nn}02` for TCP Actuators.
+- Bridge (Python) to Hypersim. Since the TCP communication with Hypersim will be performed via API, we only have to decide which port is used for UDP. 
+  - `1{nn}04` (The number of the UDP between Edge node and Bridge, `1{nn}02`, plus 2).
