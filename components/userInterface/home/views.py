@@ -224,7 +224,8 @@ def generate_nodes_and_links(edges_info):
 
         nodes.append({"id": edge_id, "coordinates": [x, y], "show": show})
         for connection in edge_data["connections"]:
-            links.append({"source": edge_id, "target": connection})
+            if Edge.objects.filter(name=edge_id).exists() and Edge.objects.filter(name=connection).exists():
+                links.append({"source": edge_id, "target": connection})
     return nodes, links
 
 
