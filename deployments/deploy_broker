@@ -34,7 +34,7 @@ done
 
 # Initialization
 broker_config="${SCRIPT_DIR}/../components/broker/${CFG_FILE}"
-if [! -f ${broker_config}]; then
+if [ ! -f "${broker_config}" ]; then
     echo "Configuration file not found: ${broker_config}"
     exit 1
 fi
@@ -57,7 +57,7 @@ echo "Deploying container for BROKER (SIMPLE)"
 
 # Run container
 docker run \
-    -d --rm \
+    -d -it --rm \
     --name ${DEPLOYMENT_PREFIX}_broker \
     --hostname ${DEPLOYMENT_PREFIX}_broker \
     -p ${MAIN_MQ_PORT}:${MAIN_MQ_PORT} \

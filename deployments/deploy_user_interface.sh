@@ -109,7 +109,7 @@ wait_containers(){
 
 echo "Deploying container for USER_INTERFACE"
 docker run \
-    -d --rm \
+    -d -it --rm \
     --name ${DEPLOYMENT_PREFIX}_user_interface \
     -v ${setup_folder}:/data/edge \
     -v ${deployment_json}:/data/deployment_setup.json \

@@ -86,7 +86,7 @@ wait_containers(){
 
 echo "Deploying container for OPAL_SIMULATOR"
 docker run \
-    -d --rm \
+    -d -it --rm \
     --name ${DEPLOYMENT_PREFIX}_opal_simulator \
     -v ${setup_folder}:/data/edge \
     -v ${SCRIPT_DIR}/../components/opalSimulator/simulations:/data/simulations \
