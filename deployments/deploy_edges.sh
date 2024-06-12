@@ -170,7 +170,7 @@ for label in "${!labels_paths[@]}"; do
     echo "deploying container for $label"
     docker \
         run \
-        -d --rm \
+        -d -it --rm \
         --name ${DEPLOYMENT_PREFIX}_"$label" \
         -p "${labels_udp_ports[$label]}:${labels_udp_ports[$label]}/udp" \
         -p "${labels_tcp_sensors_ports[$label]}:${labels_tcp_sensors_ports[$label]}/tcp" \
