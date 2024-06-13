@@ -39,7 +39,6 @@ public class DatabaseHandler {
      * localIp is provided in case the proper IP address is not set up in deployment_setup.json
      *
      * @param localIp local IP (server)
-     * @param port Database port number
      */
     public DatabaseHandler(String localIp) throws IOException {
         // Select database IP
