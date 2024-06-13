@@ -6,10 +6,12 @@ usage() {
     echo "  -h: Show usage instructions" 1>&2
     echo "  --deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2
     echo "  --deployment_prefix=<prefix>: The deployment prefix (default: hp2c)" 1>&2
-    echo "  --comm=<mode>: The communication mode. If provided, overrides 'deployment_setup.json' 
-                 and uses the corresponding one at the 'defaults/' directory. 
-                 e.g., if '--comm=bsc', it uses the configuration file
-                 'defaults/deployment_setup_bsc.json' (default: None)" 1>&2
+    echo "  --comm=<mode>: The communication mode. Overrides 'deployment_setup.json' 
+                 with one of the file in 'defaults/'. Options are: 
+                    local
+                    bsc
+                    bsc_subnet
+                    (default: None)" 1>&2
     exit 1
 }
 
