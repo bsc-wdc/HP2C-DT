@@ -188,13 +188,13 @@ The docker container of the broker is based on the RabbitMQ image maintained by 
 
 To deploy this image, either use:
 ```bash
-docker run -it --rm --name hp2c_broker -p 5672:5672 -p 15672:15672 hp2c/broker:latest
+docker run -it --rm --name hp2c_broker -p 8005:8005 -p 8015:8015 hp2c/broker:latest
 ```
 or use:
 ```bash
 ./deployments/deploy_broker.sh
 ```
-Ports 5672 (main AMQP port) and 15672 (RabbitMQ Management console) are reserved.
+Ports 8005 (previously 5672 by default), as the main AMQP port, and 8015 (previously 15672 by default), as the RabbitMQ Management console, are reserved.
 
 To diagnose the RabbitMQ server:
 ```shell
