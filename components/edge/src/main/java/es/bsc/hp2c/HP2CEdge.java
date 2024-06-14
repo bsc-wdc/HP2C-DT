@@ -128,42 +128,46 @@ public class HP2CEdge {
         private final JSONObject jEdgeSetup;
         private final String routingKey;
         public Heartbeat(JSONObject jEdgeSetup, String edgeLabel) {
-            System.out.println("[Heartbeat] Instantiating heartbeat scheduler for edge " + edgeLabel);
             this.jEdgeSetup = jEdgeSetup;
             this.routingKey = "edge" + "." + edgeLabel + "." + "heartbeat";
+            System.out.println("[Heartbeat] Instantiating heartbeat scheduler for edge " + edgeLabel);
         }
         @Override
         public void run() {
-            // Add timestamp and status to the JSON object
-            JSONObject jGlobalProps = jEdgeSetup.getJSONObject("global-properties");
-            JSONArray jDevices = jEdgeSetup.getJSONArray("devices");
-            int index = 0;
-            for (Object d : jDevices){
-                JSONObject jD = (JSONObject) d;
-                boolean availability = true;
-                String deviceLabel = jD.optString("label", "").replace(" ", "").replace("-","");
-                Device device = devices.get(deviceLabel);
-                if (device.isSensitive() && !device.isSensorAvailable()){
-                    availability = false;
-                }
-                if (device.isActionable() && !device.isActuatorAvailable()){
-                    availability = false;
-                }
-                jD.put("availability", availability);
-                jDevices.put(index, jD);
-                index += 1;
-            }
-            jGlobalProps.put("heartbeat", System.currentTimeMillis());
-            jGlobalProps.put("available", true);
-
-            // Convert the string to bytes
-            byte[] message = jEdgeSetup.toString().getBytes();
             try {
-                channel.basicPublish(EXCHANGE_NAME, routingKey, null, message);
-            } catch (IOException e) {
-                System.err.println("Exception in " + edgeLabel + " edge heartbeat: " + e.getMessage());
+                // Add timestamp and status to the JSON object
+                JSONObject jGlobalProps = jEdgeSetup.getJSONObject("global-properties");
+                JSONArray jDevices = jEdgeSetup.getJSONArray("devices");
+                int index = 0;
+                for (Object d : jDevices) {
+                    JSONObject jD = (JSONObject) d;
+                    boolean availability = true;
+                    String deviceLabel = jD.optString("label", "").replace(" ", "").replace("-", "");
+                    Device device = devices.get(deviceLabel);
+                    if (device.isSensitive() && !device.isSensorAvailable()) {
+                        availability = false;
+                    }
+                    if (device.isActionable() && !device.isActuatorAvailable()) {
+                        availability = false;
+                    }
+                    jD.put("availability", availability);
+                    jDevices.put(index, jD);
+                    index += 1;
+                }
+                jGlobalProps.put("heartbeat", System.currentTimeMillis());
+                jGlobalProps.put("available", true);
+
+                // Convert the string to bytes
+                byte[] message = jEdgeSetup.toString().getBytes();
+                try {
+                    channel.basicPublish(EXCHANGE_NAME, routingKey, null, message);
+                } catch (IOException e) {
+                    System.err.println("Exception in " + edgeLabel + " edge heartbeat: " + e.getMessage());
+                }
+                System.out.println("[Heartbeat] Sent JSON message to routing key " + routingKey);
+            } catch (Exception e) {
+                System.err.println("[Heartbeat] Exception in Heartbeat task: " + e.getMessage());
             }
-            System.out.println("[Heartbeat] Sent JSON message to routing key " + routingKey);
         }
     }
 }
