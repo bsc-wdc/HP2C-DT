@@ -71,6 +71,7 @@ def update_dashboards():
     database_ip = setup_data["database"]["ip"]
     # Grafana API URL and key
     GRAFANA_URL = f"http://{grafana_addr}"
+    GRAFANA_PORT = setup_data['grafana']['port']
 
     config_file = "../../../config.json" if os.path.isfile(
         "../../../config.json") else "/run/secrets/config.json"
@@ -80,17 +81,19 @@ def update_dashboards():
     GRAFANA_API_KEY = config_data["grafana"]["api_key"]
     DATABASE_USERNAME = config_data["database"]["username"]
     DATABASE_PASSWORD = config_data["database"]["password"]
+    DATABASE_PORT = setup_data['database']['port']
     # Define a list of GRAFANA_URLs
     URLs = [GRAFANA_URL]
     # Check if LOCAL_IP is not empty and add it to the list
     LOCAL_IP = os.getenv("LOCAL_IP", None)
     if LOCAL_IP:
-        URLs.append(f"http://{LOCAL_IP}:3000")
-
-    ############################ GET DATASOURCE UID ###########################
+        URLs.append(f"http://{LOCAL_IP}:{GRAFANA_PORT}")
+        
+    ############################ GET DATASOURCE UID ######################################
     datasource_uid = ""
 
     for url in URLs:
+        print(f"Trying URL {url} to handle datasource UID...", flush=True)
         try:
             response = requests.get(f"{url}/api/datasources", headers={
                 "Authorization": f"Bearer {GRAFANA_API_KEY}"})
@@ -115,7 +118,7 @@ def update_dashboards():
         "typeName": "InfluxDB",
         "typeLogoUrl": "/public/app/plugins/datasource/influxdb/img/influxdb_logo.svg",
         "access": "proxy",
-        "url": f"http://{database_ip}:8086",
+        "url": f"http://{database_ip}:{DATABASE_PORT}",
         "user": DATABASE_USERNAME,
         "database": "",
         "basicAuth": False,
@@ -237,7 +240,7 @@ def check_changes(edges_info):
 def get_deployment_info(setup_data):
     grafana_ip = setup_data["grafana"]["ip"]
     grafana_port = setup_data["grafana"]["port"]
-    grafana_url = grafana_ip + ":" + grafana_port
+    grafana_url = f'{grafana_ip}:{grafana_port}'
     server_ip = setup_data["server"]["ip"]
     server_port = setup_data["server"]["port"]
     server_url = f"http://{server_ip}:{server_port}"

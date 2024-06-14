@@ -1,0 +1,72 @@
+#!/bin/bash
+
+usage() {
+    echo "Deploy broker container" 1>&2
+    echo "Usage: $0 [-h]" 1>&2
+    echo "Options:" 1>&2
+    echo "  -h: Show usage instructions" 1>&2
+    echo "  --deployment_prefix=<prefix>: The deployment prefix (default: hp2c)" 1>&2
+    exit 1
+}
+
+# Configuration
+CFG_FILE="20-main-simple.conf"
+MAIN_MQ_PORT=8005
+MANAGEMEN_MQ_PORT=8015
+ERL_EPMD_PORT=8069
+RABBITMQ_DIST_PORT=8025
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+DEPLOYMENT_PREFIX="hp2c"
+
+# Parse command line arguments
+pos=1
+for arg in "$@"; do
+    case $arg in
+        -h)
+            usage
+            ;;
+        --deployment_prefix=*)
+            DEPLOYMENT_PREFIX="${arg#*=}"
+            ;;
+    esac
+    ((pos++))
+done
+
+# Initialization
+broker_config="${SCRIPT_DIR}/../components/broker/${CFG_FILE}"
+if [ ! -f "${broker_config}" ]; then
+    echo "Configuration file not found: ${broker_config}"
+    exit 1
+fi
+echo "Using RabbitMQ configuration file: $broker_config"
+
+# Auxiliar functions
+on_exit(){
+    echo "Clearing deployment"
+    echo "Removing containers"
+    docker stop ${DEPLOYMENT_PREFIX}_broker
+}
+trap 'on_exit' EXIT
+
+wait_containers(){
+    docker wait ${DEPLOYMENT_PREFIX}_broker
+}
+
+echo
+echo "Deploying container for BROKER (SIMPLE)"
+
+# Run container
+docker run \
+    -d -it --rm \
+    --name ${DEPLOYMENT_PREFIX}_broker \
+    --hostname ${DEPLOYMENT_PREFIX}_broker \
+    -p ${MAIN_MQ_PORT}:${MAIN_MQ_PORT} \
+    -p ${MANAGEMEN_MQ_PORT}:${MANAGEMEN_MQ_PORT} \
+    -v ${broker_config}:/etc/rabbitmq/conf.d/${CFG_FILE} \
+    -e ERL_EPMD_PORT=${ERL_EPMD_PORT} \
+    -e RABBITMQ_DIST_PORT=${RABBITMQ_DIST_PORT} \
+    ${DEPLOYMENT_PREFIX}/broker:latest
+
+echo "Testbed properly deployed"
+wait_containers
+echo "Ended properly"

@@ -6,6 +6,12 @@ usage() {
     echo "  -h: Show usage instructions" 1>&2
     echo "  --deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2
     echo "  --deployment_prefix=<prefix>: The deployment prefix (default: hp2c)" 1>&2
+    echo "  --comm=<mode>: The communication mode. Overrides 'deployment_setup.json' 
+                 with one of the file in 'defaults/'. Options are: 
+                    local
+                    bsc
+                    bsc_subnet
+                    (default: None)" 1>&2
     exit 1
 }
 
@@ -16,6 +22,7 @@ usage() {
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
 DEPLOYMENT_NAME="testbed"
+COMM_SETUP=""
 
 # Parse command line arguments
 pos=1
@@ -29,6 +36,9 @@ for arg in "$@"; do
             ;;
         --deployment_prefix=*)
             DEPLOYMENT_PREFIX="${arg#*=}"
+            ;;
+        --comm=*)
+            COMM_SETUP="${arg#*=}"
             ;;
         *)
             if [ $pos -eq 1 ]; then
@@ -47,26 +57,43 @@ DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/edge:latest"
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
 
-# Create a dictionary containg pairs of label-files (JSON files)
+
+# Initialize configuration files and directories
 defaults_json="${SCRIPT_DIR}/defaults/setup/edge_default.json"  # Edge default configuration
-deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  # Deployment configuration (IPs, etc.)
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup")
 
-if [ ! -f $defaults_json ]; then
-  echo "Error: edge_default not found in $defaults_json"
+# Deployment communications configuration (IP addresses and ports)
+if [ -z "$COMM_SETUP" ]; then
+    # If no communication setup is provided, use the one in the corresponding deployment directory
+    deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  
+else
+    # If a communication setup is provided, override the deployment configuration and use the one in the defaults directory
+    deployment_json="${SCRIPT_DIR}/defaults/deployment_setup_${COMM_SETUP}.json"
+fi
+
+echo "Using JSON for deployment communications:   $deployment_json"
+echo "Using setup folder:                         $setup_folder"
+echo "Using defaults JSON for default edge funcs: $defaults_json"
+
+
+# Verify the provided files and directories exist
+if [ ! -f "${defaults_json}" ]; then
+  echo "Error: edge_default not found in ${defaults_json}"
   exit 1
 fi
 
-if [ ! -f "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json" ];then
-  echo "Error: Config file not found in ${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json."
+if [ ! -f "${deployment_json}" ];then
+  echo "Error: Config file not found in ${deployment_json}."
   exit 1
 fi
 
-if [ ! -d "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup" ];then
-  echo"Error: Setup directory not found in ${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup."
+if [ ! -d "${setup_folder}" ];then
+  echo"Error: Setup directory not found in ${setup_folder}."
   exit 1
 fi
 
+
+# Create a dictionary containg pairs of label-files (JSON files)
 declare -A labels_paths
 declare -A labels_udp_ports
 declare -A labels_tcp_sensors_ports
@@ -98,6 +125,7 @@ custom_ip_address="172.29.128.1"
 
 echo "Local IPv4 Address: $ip_address"
 echo "Custom IP Address: $custom_ip_address"
+echo
 
 
 # Setting up trap to clear environment
@@ -144,7 +172,7 @@ for label in "${!labels_paths[@]}"; do
     echo "deploying container for $label"
     docker \
         run \
-        -d --rm \
+        -d -it --rm \
         --name ${DEPLOYMENT_PREFIX}_"$label" \
         -p "${labels_udp_ports[$label]}:${labels_udp_ports[$label]}/udp" \
         -p "${labels_tcp_sensors_ports[$label]}:${labels_tcp_sensors_ports[$label]}/tcp" \

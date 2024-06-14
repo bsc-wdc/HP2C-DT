@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
 
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
@@ -57,16 +58,18 @@ public final class CommUtils {
     }
 
     /** Checks if the parsed IP address is valid, otherwise return the default IP. */
-    public static String parseRemoteIp(String component, String defaultIp) throws IOException {
-        String brokerIp = parseRemoteIp(component);
-        if (brokerIp.isEmpty()) {
-            brokerIp = defaultIp;
+    public static HashMap<String, Object> parseRemoteIp(String component, String defaultIp)
+            throws IOException {
+        HashMap<String, Object> connectionMap = parseRemoteIp(component);
+        String ip = (String) connectionMap.get("ip");
+        if (ip.isEmpty()) {
+            connectionMap.put("ip", defaultIp);
         }
-        return brokerIp;
+        return connectionMap;
     }
 
     /** Look for the IP address of a component (e.g., broker) in the deployment setup file. */
-    public static String parseRemoteIp(String component) throws IOException {
+    public static HashMap<String, Object> parseRemoteIp(String component) throws IOException {
         // Check existence of file
         String deploymentFile = "/data/deployment_setup.json";
         if (!new File(deploymentFile).isFile()) {
@@ -75,21 +78,36 @@ public final class CommUtils {
                 throw new IOException("Could not find 'deployment_setup.json'");
             }
         }
-        // Parse JSON file and look for IP address
-        JSONObject object = getJsonObject(deploymentFile);
-        String ip = object.getJSONObject(component).optString("ip");
+        HashMap<String, Object> connectionMap = new HashMap<>();
+        // Parse JSON file and look for IP address and port
+        JSONObject jObject = getJsonObject(deploymentFile).getJSONObject(component);
+        String ip = jObject.optString("ip");
+        int port = jObject.optInt("port");
+        // Put port in hash map if it exists
+        if (jObject.has("port")) {
+            connectionMap.put("port", port);
+        }
+        // Put IP in hash map
         // Do not use 0.0.0.0 or localhost since containers do not work well with them
         if (ip.equals("0.0.0.0") || ip.equals("localhost") || ip.equals("127.0.0.1")) {
-            return "";
+            connectionMap.put("ip", "");
         } else {
-            return ip;
+            connectionMap.put("ip", ip);
         }
+        return connectionMap;
     }
 
-    public static Connection AmqpConnectAndRetry(String ip) {
-        System.out.println("Connecting to RabbitMQ broker at address " + ip + "...");
+    public static Connection AmqpConnectAndRetry(HashMap<String, Object> connectionMap) {
+        String ip = (String) connectionMap.get("ip");
+        int port = (int) connectionMap.get("port");
+        return AmqpConnectAndRetry(ip, port);
+    }
+
+    public static Connection AmqpConnectAndRetry(String ip, int port) {
+        System.out.println("Connecting to RabbitMQ broker at address " + ip + ":" + port + "...");
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(ip);
+        factory.setPort(port);
         boolean connected = false;
         Connection connection = null;
         while (!connected) {
@@ -97,8 +115,8 @@ public final class CommUtils {
                 connection = factory.newConnection();
                 connected = true;
             } catch (IOException | TimeoutException e) {
-                System.err.println("Error initializing RabbitMQ Connection to address " + ip + ": "
-                        + e.getMessage() + ". Retrying...");
+                System.err.println("Error initializing RabbitMQ Connection to address "
+                        + ip + ":" + port + ". " + e.getMessage() + ". Retrying...");
                 // Retry connection after 5 seconds
                 try {
                     Thread.sleep(5000);
