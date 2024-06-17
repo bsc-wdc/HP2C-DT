@@ -32,7 +32,20 @@
 
     "devices": [
         {
-            "label": "Ammeter Gen1",
+            "label": "Three-Phase Voltmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualVoltmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+            "properties": {
+                "comm-type": "opal-udp",
+                "indexes": [0,1,2]
+            }
+        },
+        {
+            "label": "Three-Phase Ammeter Gen1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalAmmeter",
             "driver-dt": "es.bsc.hp2c.server.device.VirtualAmmeter",
             "position": {
@@ -42,81 +55,38 @@
 
             "properties": {
                 "comm-type": "opal-udp",
-                "indexes": [0]
+                "indexes": [3,4,5]
             }
         },
         {
-            "label": "Three-Phase Switch Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalSwitch",
-            "driver-dt": "es.bsc.hp2c.server.device.VirtualSwitch",
-            "position": {
-                "x":0,
-                "y":0
-            },
-            "properties": {
-                "comm-type": "opal-tcp",
-                "indexes": [0,1,2]
-            }
-        },
-        {
-            "label": "Voltmeter Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
-            "driver-dt": "es.bsc.hp2c.server.device.VirtualVoltmeter",
+            "label": "Wattmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalWattmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualWattmeter",
             "position": {
                 "x":20,
                 "y":40
             },
             "properties": {
                 "comm-type": "opal-udp",
-                "indexes": [1]
+                "indexes": [6]
             }
         },
         {
-            "label": "Generator Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalGenerator",
-            "driver-dt": "es.bsc.hp2c.server.device.VirtualGenerator",
+            "label": "Varmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalWattmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualWattmeter",
             "position": {
-                "x":0,
-                "y":0
+                "x":20,
+                "y":40
             },
+
             "properties": {
-                "comm-type": "opal-tcp",
-                "indexes": [3,4]
+                "comm-type": "opal-udp",
+                "indexes": [7]
             }
         }
     ],
 
     "funcs":[
-        {
-            "label": "VoltLimitation",
-            "lang": "Java",
-            "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
-            "parameters": {
-                "sensors": ["Voltmeter Gen1"],
-                "actuators": ["Three-Phase Switch Gen1"],
-                "other": [200]
-            },
-            "trigger": {
-                "type": "onRead",
-                "method-name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
-                "parameters": ["Voltmeter Gen1"]
-            }
-
-        },
-        {
-            "label": "CalcPower",
-            "lang": "Python",
-            "method-name": "es.bsc.hp2c.edge.funcs.CalcPower",
-            "parameters": {
-                "sensors": ["Voltmeter Gen1", "Ammeter Gen1"],
-                "actuators": [],
-                "other": []
-            },
-            "trigger": {
-                "type": "onFrequency",
-                "method-name": "es.bsc.hp2c.edge.HP2Cedge.onFrequency",
-                "parameters": [10]
-            }
-        }
     ]
 }

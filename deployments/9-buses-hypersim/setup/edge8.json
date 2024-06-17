@@ -32,7 +32,7 @@
 
     "devices": [
         {
-            "label": "Voltmeter Gen1",
+            "label": "Three-Phase Voltmeter Gen1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
             "driver-dt": "es.bsc.hp2c.server.device.VirtualVoltmeter",
             "position": {
@@ -41,68 +41,11 @@
             },
             "properties": {
                 "comm-type": "opal-udp",
-                "indexes": [0]
-            }
-        },
-        {
-            "label": "Wattmeter Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalWattmeter",
-            "driver-dt": "es.bsc.hp2c.server.device.VirtualWattmeter",
-            "position": {
-                "x":20,
-                "y":40
-            },
-
-            "properties": {
-                "comm-type": "opal-udp",
-                "indexes": [1]
-            }
-        },
-        {
-            "label": "Three-Phase Ammeter Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalAmmeter",
-            "driver-dt": "es.bsc.hp2c.server.device.VirtualAmmeter",
-            "position": {
-                "x":20,
-                "y":40
-            },
-
-            "properties": {
-                "comm-type": "opal-udp",
-                "indexes": [2,3,4]
-            }
-        },
-        {
-            "label": "Three-Phase Switch Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalSwitch",
-            "driver-dt": "es.bsc.hp2c.server.device.VirtualSwitch",
-            "position": {
-                "x":0,
-                "y":0
-            },
-            "properties": {
-                "comm-type": "opal-tcp",
                 "indexes": [0,1,2]
             }
         }
     ],
 
     "funcs":[
-        {
-            "label": "VoltLimitation",
-            "lang": "Java",
-            "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
-            "parameters": {
-                "sensors": ["Voltmeter Gen1"],
-                "actuators": ["Three-Phase Switch Gen1"],
-                "other": [200]
-            },
-            "trigger": {
-                "type": "onRead",
-                "method-name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
-                "parameters": ["Voltmeter Gen1"]
-            }
-
-        }
     ]
 }
