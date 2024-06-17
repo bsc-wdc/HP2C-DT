@@ -121,7 +121,7 @@ if [ -z "$ip_address" ]; then
     ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'eth[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
 fi
 
-custom_ip_address="172.29.128.1"
+custom_ip_address="172.31.144.1"
 
 echo "Local IPv4 Address: $ip_address"
 echo "Custom IP Address: $custom_ip_address"
