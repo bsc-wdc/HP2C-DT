@@ -1,0 +1,92 @@
+{
+    "global-properties":{
+        "label": "edge4",
+        "comms":{
+            "opal-udp": {
+                "protocol": "udp",
+                "sensors": {
+                    "ip": "0.0.0.0",
+                    "port": "24002"
+                }
+            },
+            "opal-tcp": {
+                "protocol": "tcp",
+                "sensors": {
+                    "ip": "0.0.0.0",
+                    "port": "14002"
+                },
+                "actuators": {
+                    "ip": "$CUSTOM_IP",
+                    "port": "34002"
+                }
+            }
+        },
+        "geo-data": {
+            "position": {
+                "x": -4.4214,
+                "y": 36.7213
+            },
+            "connections": ["edge5", "edge6"]
+        }
+    },
+
+    "devices": [
+        {
+            "label": "Three-Phase Voltmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualVoltmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+            "properties": {
+                "comm-type": "opal-udp",
+                "indexes": [0,1,2]
+            }
+        },
+        {
+            "label": "Three-Phase Ammeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalAmmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualAmmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+
+            "properties": {
+                "comm-type": "opal-udp",
+                "indexes": [3,4,5]
+            }
+        },
+        {
+            "label": "Wattmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalWattmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualWattmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+            "properties": {
+                "comm-type": "opal-udp",
+                "indexes": [6]
+            }
+        },
+        {
+            "label": "Varmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalWattmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualWattmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+
+            "properties": {
+                "comm-type": "opal-udp",
+                "indexes": [7]
+            }
+        }
+    ],
+
+    "funcs":[
+    ]
+}
