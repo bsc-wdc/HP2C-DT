@@ -20,6 +20,13 @@
                     "port": "31002"
                 }
             }
+        },
+        "geo-data": {
+            "position": {
+                "x": 2.1153889,
+                "y": 41.389917
+            },
+            "connections": ["edge2"]
         }
     },
 
@@ -34,7 +41,7 @@
             },
 
             "properties": {
-                "comm-type": "opal-tcp",
+                "comm-type": "opal-udp",
                 "indexes": [0]
             }
         },
@@ -48,7 +55,7 @@
             },
             "properties": {
                 "comm-type": "opal-tcp",
-                "indexes": [1,2,3]
+                "indexes": [0,1,2]
             }
         },
         {
@@ -61,7 +68,7 @@
             },
             "properties": {
                 "comm-type": "opal-udp",
-                "indexes": [0]
+                "indexes": [1]
             }
         },
         {
@@ -74,7 +81,7 @@
             },
             "properties": {
                 "comm-type": "opal-tcp",
-                "indexes": [4,5]
+                "indexes": [3,4]
             }
         }
     ],

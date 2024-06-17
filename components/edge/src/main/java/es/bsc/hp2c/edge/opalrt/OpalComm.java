@@ -386,7 +386,7 @@ public class OpalComm {
         try{
             // count the number of floats to be sent
             int nIndexes = getnIndexes();
-            ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
+            ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES + Integer.BYTES + Character.BYTES);
             // obtain indexes of the actuator and put the proper values in bytebuffer
             int[] indexesLocal = getIndexesLocal(actuator, values, nIndexes, byteBuffer);
             // check data integrity
@@ -444,7 +444,7 @@ public class OpalComm {
 
     private static int[] getIndexesLocal(OpalActuator<?> actuator, Float[] values, int nIndexes, ByteBuffer byteBuffer) {
         int[] indexesLocal = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
-
+        byteBuffer.putInt(nIndexes);
         // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
         for (int i = 0; i < nIndexes; ++i){
             // Check if current index is in indexes
@@ -460,6 +460,7 @@ public class OpalComm {
             if (found){ byteBuffer.putFloat(values[index]); }
             else { byteBuffer.putFloat(Float.NEGATIVE_INFINITY); }
         }
+        byteBuffer.putChar('\n');
         return indexesLocal;
     }
 
@@ -477,11 +478,13 @@ public class OpalComm {
             try{
                 // count the number of floats to be sent
                 int nIndexes = getnIndexes();
-                ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
+                ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES + Integer.BYTES + Character.BYTES);
+                byteBuffer.putInt(nIndexes);
                 // Assign a dummy -Inf value as a testing message
                 for (int i = 0; i < nIndexes; ++i){
                     byteBuffer.putFloat(Float.NEGATIVE_INFINITY);
                 }
+                byteBuffer.putChar('\n');
                 DataOutputStream outputStream = new DataOutputStream(actuationSocket.getOutputStream());
                 byte[] buffer = byteBuffer.array();
                 outputStream.write(buffer);
