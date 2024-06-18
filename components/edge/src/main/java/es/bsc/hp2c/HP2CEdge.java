@@ -54,7 +54,7 @@ public class HP2CEdge {
         if (args.length == 1) {
             setupFile = args[0];
         } else {
-            setupFile = "../../deployments/testbed/setup/edge1.json";
+            setupFile = "../../deployments/simple/setup/edge1.json";
         }
         // Get defaults file
         String defaultsPath = "/data/edge_default.json";
