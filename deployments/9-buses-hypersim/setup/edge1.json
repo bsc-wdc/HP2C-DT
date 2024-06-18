@@ -57,7 +57,7 @@
             }
         },
         {
-            "label": "CB3",
+            "label": "CB1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalSwitch",
             "driver-dt": "es.bsc.hp2c.server.device.VirtualSwitch",
             "position": {
@@ -70,7 +70,7 @@
             }
         },
         {
-            "label": "SM3",
+            "label": "SM1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalGenerator",
             "driver-dt": "es.bsc.hp2c.server.device.VirtualGenerator",
             "position": {
