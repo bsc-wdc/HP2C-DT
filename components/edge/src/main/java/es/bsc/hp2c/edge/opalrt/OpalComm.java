@@ -165,13 +165,13 @@ public class OpalComm {
                 }
                 udpSocket = new DatagramSocket(udpPORT, serverAddress);
             } catch (SocketException e) {
-                System.err.println("Error initializing UDP socket at IP " + udpIP +" and port " + udpPORT);
+                System.err.println("Error initializing UDP Sensors socket at IP " + udpIP +" and port " + udpPORT);
                 throw new RuntimeException(e);
             } catch (UnknownHostException e) {
                 System.err.println("Unable to resolve " + udpIP + " for the specified host.");
                 throw new RuntimeException(e);
             }
-            System.out.println("\nUDP socket running on port: " + udpPORT + "\n");
+            System.out.println("\nUDP Sensors socket running on port: " + udpPORT + "\n");
 
             while (true) {
                 // Print time each iteration
@@ -247,7 +247,7 @@ public class OpalComm {
                         //when a connection fails, set every TCP sensor as not available
                         setAvailableSensors(tcpSensorsList, false);
                     }
-                } catch (IOException ex) { System.err.println("Error closing client socket: " + ex.getMessage()); }
+                } catch (IOException ex) { System.err.println("Error closing TCP Sensors socket: " + ex.getMessage()); }
             }
         });
         TCPSensorsThread.setName("TCPSensorsThread");
