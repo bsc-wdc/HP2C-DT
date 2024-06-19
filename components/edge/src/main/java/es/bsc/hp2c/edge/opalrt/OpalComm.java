@@ -343,7 +343,7 @@ public class OpalComm {
                 new Timer().scheduleAtFixedRate(new connectionTester(), 0, 5000);
                 break;
             } catch (IOException e) {
-                System.err.println("Failed to connect to server " + ip + " through port " + port + ": " +
+                System.err.println("Failed to connect to actuation ip " + ip + " through port " + port + ": " +
                         e.getMessage());
             }
         }
@@ -370,7 +370,7 @@ public class OpalComm {
                 missedValues = new HashMap<>();
             }
         } catch (IOException e) {
-            System.err.println("Failed to connect to server " + actuationIP + " through port " + actuationPORT + ": " +
+            System.err.println("Failed to connect to actuation ip " + actuationIP + " through port " + actuationPORT + ": " +
                     e.getMessage());
         }
     }
