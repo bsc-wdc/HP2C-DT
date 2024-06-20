@@ -387,7 +387,6 @@ public class OpalSimulator {
         while (true) {
             int messageLength = dis.readInt();
             byte[] buffer = new byte[messageLength * Float.BYTES];
-            System.out.println("Message length opalsimulator: " + messageLength);
             dis.readFully(buffer);
 
             char endChar = dis.readChar();

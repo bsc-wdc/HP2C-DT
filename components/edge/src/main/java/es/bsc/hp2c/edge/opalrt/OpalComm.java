@@ -97,6 +97,7 @@ public class OpalComm {
                 }
             }
         }
+        if (indexesSet.size() == 0) return;
         // Check if indices are consecutive
         int minIndex = indexesSet.stream().mapToInt(Integer::intValue).min().orElse(-1);
         int maxIndex = indexesSet.stream().mapToInt(Integer::intValue).max().orElse(-1);
