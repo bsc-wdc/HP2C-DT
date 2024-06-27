@@ -281,6 +281,7 @@ def get_devices(deployment_model, panels, edges_info, grafana_url):
         :param edges_info: Information about the devices.
         :param grafana_url: The URL of Grafana.
         """
+    Edge.objects.all().delete()
     edges_data = json.loads(edges_info)
     for edge, edge_info in edges_data.items():
         edge_available = edge_info["is_available"]
