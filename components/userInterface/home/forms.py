@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Machine
+from django.core.exceptions import ValidationError
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
@@ -17,6 +18,20 @@ class Machine_Form(forms.ModelForm):
     class Meta:
         model = Machine
         fields = ('author', 'user', 'fqdn', 'wdir', 'installDir', 'dataDir')
+        widgets = {
+            'author': forms.HiddenInput(),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        user = cleaned_data.get('user')
+        fqdn = cleaned_data.get('fqdn')
+        author = cleaned_data.get('author')
+
+        if Machine.objects.filter(author=author, user=user, fqdn=fqdn).exists():
+            raise ValidationError('A machine with this author, user and FQDN already exists.')
+
+        return cleaned_data
 
 
 class CategoricalDeviceForm(forms.Form):

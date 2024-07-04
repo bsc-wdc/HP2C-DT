@@ -6,6 +6,7 @@ str2bool==1.1
 # UI 
 django-admin-datta==1.0.10
 requests==2.26.0
+django-widget-tweaks==1.5.0
 
 # Tooling
 django-dynamic-datatb==1.0.25

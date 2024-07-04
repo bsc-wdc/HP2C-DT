@@ -432,20 +432,30 @@ def device_detail(request, edge_name, device_name):
 
 
 #################### MACHINES ######################
-
 @login_required
 def new_machine(request):
     if request.method == 'POST':
         form = Machine_Form(request.POST)
-        form.author = request.user
+        form.data = form.data.copy()
+        form.data['author'] = request.user
         if form.is_valid():
             instance = form.save(commit=False)
             instance.author = request.user
             instance.save()
             return render(request, 'pages/new_machine.html',
                           {'form': form, 'flag': 'yes'})
+        else:
+            error_string = ""
+            for field, errors in form.errors.items():
+                error_string += f"{', '.join(errors)}\n"
+
+            return render(request, 'pages/new_machine.html',
+                          {'form': form, 'error': True,
+                           'message': error_string})
+
     else:
-        form = Machine_Form()
+        form = Machine_Form(initial={'author': request.user})
+
     return render(request, 'pages/new_machine.html', {'form': form})
 
 
@@ -522,7 +532,6 @@ def populate_executions_machines(request):
 
 
 ##################### USERS #########################
-
 def login_page(request):
     if request.method == 'POST':
         username = request.POST['username']
@@ -555,7 +564,6 @@ def register_page(request):
             for error in form.non_field_errors():
                 error_string += f"Non-field error: {error}\n"
 
-            print("--------------------_____", form.errors)
             return render(request, 'pages/register_page.html',
                           {'form': form, 'error': True,
                            'message': error_string})
@@ -571,6 +579,15 @@ def logoutUser(request):
     messages.info(request, "Logged out successfully!")
     return redirect("login")
 
+
+######################## SSH KEYS ####################
+@login_required
+def ssh_keys(request):
+    return render(request, 'pages/ssh_keys.html')
+
+@login_required
+def ssh_keys_generation(request):
+    return render(request, 'pages/ssh_keys_generation.html')
 
 """def is_recaptcha_valid(request):
     try:
