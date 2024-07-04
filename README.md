@@ -12,6 +12,11 @@ This project embraces the digital and ecological transition to develop a High-Pr
 ![concept](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/concept.png)
 
 
+## Additional Documentation
+
+- [OpenStack Configuration Guide](docs/SERVER_SETUP.md)
+- [OpenStack Communications Instructions](docs/SERVER_COMM.md)
+
 
 ## Edge nodes
 In our application, we use edge nodes responsible for collecting, processing, and transmitting data between various components of the electric grid. To distribute the computational load of the operations carried out by these edge nodes, we utilize them as COMPSs agents. Within these nodes, you can find various devices, including voltmeters, ammeters, and switches, among others. These devices will enable us to create small smart subgrids. Depending on the nature of the device and its desired utility, these devices can function as sensors, actuators, or both.
