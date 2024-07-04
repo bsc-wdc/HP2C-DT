@@ -1,6 +1,19 @@
 from django.db import models
-
+from django.conf import settings
 # Create your models here.
+
+
+class Machine(models.Model):
+    author = models.ForeignKey(settings.AUTH_USER_MODEL,
+                               on_delete=models.CASCADE,
+                               to_field='username',
+                               null=True, blank=True)
+    user = models.CharField(max_length=255, null=False)
+    fqdn = models.CharField(max_length=255, null=False)
+    wdir = models.CharField(max_length=2048, null=False)
+    installDir= models.CharField(max_length=2048, null=False)
+    dataDir=models.CharField(max_length=2048, null=False)
+
 
 class Product(models.Model):
     id    = models.AutoField(primary_key=True)

@@ -1,31 +1,43 @@
 import os
+
+from django.contrib.auth import authenticate, login, logout
 from requests import RequestException
 from django.views.decorators.csrf import csrf_exempt
 from scripts.update_dashboards import update_dashboards, get_deployment_info
 from .models import *
 from django.contrib import messages
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .forms import CategoricalDeviceForm, NonCategoricalDeviceForm
+from .forms import CategoricalDeviceForm, NonCategoricalDeviceForm, \
+    CreateUserForm, Machine_Form
+from core import settings
 import json
 import requests
+from django.contrib.auth.decorators import login_required
 
+
+@login_required
 def edge_detail(request, edge_name):
-    edge = Edge.objects.get(name=edge_name)
     edgeDevices = {}
     forms = []
-    devices = Device.objects.filter(edge=edge)
-    edgeDevices[edge] = devices
-    for device in devices:
-        form = None
-        if device.is_actionable and device.is_categorical:
-            form = CategoricalDeviceForm(device)
-        elif device.is_actionable:
-            form = NonCategoricalDeviceForm(device)
-        forms.append((device, form))
+    try:
+        edge = Edge.objects.get(name=edge_name)
+        devices = Device.objects.filter(edge=edge)
+        edgeDevices[edge] = devices
+        for device in devices:
+            form = None
+            if device.is_actionable and device.is_categorical:
+                form = CategoricalDeviceForm(device)
+            elif device.is_actionable:
+                form = NonCategoricalDeviceForm(device)
+            forms.append((device, form))
+    except:
+        pass
     return render(request, 'pages/edge_detail.html',
                   {'edgeDevices': edgeDevices, 'forms': forms})
 
+
+@login_required
 @csrf_exempt
 def index(request):
     """Render the index page.
@@ -47,35 +59,42 @@ def index(request):
             'edgeLabel': device.edge.name,
             'actuatorLabel': device.name
         }
-        response = requests.post(f"{device.edge.deployment.server_url}/actuate", json=actuation_data)
+        response = requests.post(
+            f"{device.edge.deployment.server_url}/actuate",
+            json=actuation_data)
 
         if response.status_code == 200:
             return HttpResponse('Actuation sent correctly')
         else:
-            return HttpResponse('Error while sending actuation', status=response.status_code)
+            return HttpResponse('Error while sending actuation',
+                                status=response.status_code)
     else:
         edges_info, deployment_name, grafana_url, server_port, server_url = (
             update_dashboards())
         if edges_info is not None:
             get_deployment(edges_info, deployment_name, grafana_url,
                            server_url, server_port)
-        deployment = Deployment.objects.get(name=deployment_name)
-        edges = Edge.objects.filter(deployment=deployment)
         edgeDevices = {}
         forms = []
-        for edge in edges:
-            devices = Device.objects.filter(edge=edge)
-            edgeDevices[edge] = devices
-            for device in devices:
-                form = None
-                if device.is_actionable and device.is_categorical:
-                    form = CategoricalDeviceForm(device)
-                elif device.is_actionable:
-                    form = NonCategoricalDeviceForm(device)
-                forms.append((device, form))
+        try:
+            deployment = Deployment.objects.get(name=deployment_name)
+            edges = Edge.objects.filter(deployment=deployment)
+            for edge in edges:
+                devices = Device.objects.filter(edge=edge)
+                edgeDevices[edge] = devices
+                for device in devices:
+                    form = None
+                    if device.is_actionable and device.is_categorical:
+                        form = CategoricalDeviceForm(device)
+                    elif device.is_actionable:
+                        form = NonCategoricalDeviceForm(device)
+                    forms.append((device, form))
+        except:
+            pass
         script_content = geomap(server_port, server_url)
         return render(request, 'pages/index.html',
-                      {'edgeDevices': edgeDevices,'forms': forms, 'script_content': script_content})
+                      {'edgeDevices': edgeDevices, 'forms': forms,
+                       'script_content': script_content})
 
 
 def geomap(server_port, server_url):
@@ -86,15 +105,17 @@ def geomap(server_port, server_url):
     :param server_url: The URL of the server.
     :return: The JavaScript code for rendering the map.
     """
-    try:
-        response = requests.get(f"{server_url}/getGeoInfo")
-        geo_info = response.json()
-    except RequestException as _:
-        if "LOCAL_IP" in os.environ:
-            server_ip = os.getenv("LOCAL_IP")
-            server_url = f"http://{server_ip}:{server_port}"
+    geo_info = {}
+    if server_url:
+        try:
             response = requests.get(f"{server_url}/getGeoInfo")
             geo_info = response.json()
+        except RequestException as _:
+            if "LOCAL_IP" in os.environ:
+                server_ip = os.getenv("LOCAL_IP")
+                server_url = f"http://{server_ip}:{server_port}"
+                response = requests.get(f"{server_url}/getGeoInfo")
+                geo_info = response.json()
     nodes, links = generate_nodes_and_links(geo_info)
 
     script_content = f"""
@@ -224,12 +245,15 @@ def generate_nodes_and_links(edges_info):
 
         nodes.append({"id": edge_id, "coordinates": [x, y], "show": show})
         for connection in edge_data["connections"]:
-            if Edge.objects.filter(name=edge_id).exists() and Edge.objects.filter(name=connection).exists():
+            if Edge.objects.filter(
+                    name=edge_id).exists() and Edge.objects.filter(
+                    name=connection).exists():
                 links.append({"source": edge_id, "target": connection})
     return nodes, links
 
 
-def get_deployment(edges_info, deployment_name, grafana_url, server_url, server_port):
+def get_deployment(edges_info, deployment_name, grafana_url, server_url,
+                   server_port):
     """
     Retrieves deployment information and devices from server, and creates the
     deployment model.
@@ -302,7 +326,8 @@ def get_devices(deployment_model, panels, edges_info, grafana_url):
             device_model.type = device_type
             device_model.save()
             table_link, timeseries_link = (
-                get_panel_links(deployment_model, edge, device, panels, grafana_url))
+                get_panel_links(deployment_model, edge, device, panels,
+                                grafana_url))
             device_model.table_link = table_link
             device_model.timeseries_link = timeseries_link
             if attributes["isActionable"]:
@@ -334,7 +359,7 @@ def get_panel_links(deployment, edge, device, panels, grafana_url):
         # Get the name of the edge and the device from the panel title
         title_parts = panel['title'].split(' - ')
         edge_name = title_parts[0].replace("-", "").replace(" ", "")
-        device_name = title_parts[1].replace("-", "").replace(" ","")
+        device_name = title_parts[1].replace("-", "").replace(" ", "")
         is_table = False
         if "(Table)" in edge_name:
             is_table = True
@@ -345,9 +370,10 @@ def get_panel_links(deployment, edge, device, panels, grafana_url):
                               f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
                               f"&panelId={panel_id}")
             else:
-                timeseries_link = (f"http://{grafana_url}/d-solo/{deployment.uid}/"
-                              f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
-                              f"&panelId={panel_id}")
+                timeseries_link = (
+                    f"http://{grafana_url}/d-solo/{deployment.uid}/"
+                    f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
+                    f"&panelId={panel_id}")
     return table_link, timeseries_link
 
 
@@ -376,7 +402,8 @@ def device_detail(request, edge_name, device_name):
         }
 
         response = requests.post(
-            f"{device.edge.deployment.server_url}/actuate", json=actuation_data)
+            f"{device.edge.deployment.server_url}/actuate",
+            json=actuation_data)
 
         if response.status_code == 200:
             messages.success(request, response.text)
@@ -404,14 +431,157 @@ def device_detail(request, edge_name, device_name):
     })
 
 
-def tables(request):
-    """
-    Displays the tables page.
+#################### MACHINES ######################
 
-    :param request: The HTTP request object.
-    :return: The HTTP response object.
-    """
-    context = {
-    'segment': 'tables'
-    }
-    return render(request, "pages/dynamic-tables.html", context)
+@login_required
+def new_machine(request):
+    if request.method == 'POST':
+        form = Machine_Form(request.POST)
+        form.author = request.user
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.author = request.user
+            instance.save()
+            return render(request, 'pages/new_machine.html',
+                          {'form': form, 'flag': 'yes'})
+    else:
+        form = Machine_Form()
+    return render(request, 'pages/new_machine.html', {'form': form})
+
+
+@login_required
+def machines(request):
+    # method to redefine the details of a Machine
+    if request.method == 'POST':
+        form = Machine_Form(request.POST)
+        request.session['noMachines'] = "yes"
+        if 'chooseButton' in request.POST:
+            request.session['firstPhase'] = "no"
+            machine = request.POST.get('machineChoice')
+            user = machine.split("@")[0]
+            fqdn = machine.split("@")[1]
+            machine_found = Machine.objects.get(author=request.user,
+                                                user=user, fqdn=fqdn)
+            machineID = machine_found.id
+            request.session['machineID'] = machineID
+            form = Machine_Form(
+                initial={'fqdn': machine_found.fqdn,
+                         'user': machine_found.user,
+                         'wdir': machine_found.wdir,
+                         'installDir': machine_found.installDir,
+                         'dataDir': machine_found.dataDir,
+                         'id': machine_found.id,
+                         'author': machine_found.author})
+            return render(request, 'pages/machines.html',
+                          {'form': form,
+                           'firstPhase': request.session['firstPhase'],
+                           'noMachines': request.session['noMachines']})
+        elif 'redefineButton' in request.POST:
+            if (form.is_valid()):
+                machine_found = Machine.objects.get(
+                    id=request.session['machineID'])
+                userForm = form['user'].value()
+                fqdnForm = form['fqdn'].value()
+                wdirForm = form['wdir'].value()
+                installDirForM = form['installDir'].value()
+                dataDirForM = form['dataDir'].value()
+                Machine.objects.filter(
+                    id=request.session['machineID']).update(user=userForm,
+                                                            wdir=wdirForm,
+                                                            fqdn=fqdnForm,
+                                                            installDir=installDirForM,
+                                                            dataDir=dataDirForM)
+                return render(request, 'pages/machines.html',
+                              {'form': form,
+                               'firstPhase': request.session['firstPhase'],
+                               'flag': 'yes',
+                               'noMachines': request.session[
+                                   'noMachines']})
+    else:
+        form = Machine_Form()
+        machines_done = populate_executions_machines(request)
+        if not machines_done:
+            request.session['noMachines'] = "no"
+            request.session['firstPhase'] = "no"
+        else:
+            request.session['noMachines'] = "yes"
+            request.session['firstPhase'] = "yes"
+    return render(request, 'pages/machines.html',
+                  {'form': form, 'machines': machines_done,
+                   'noMachines': request.session['noMachines'],
+                   'firstPhase': request.session['firstPhase']})
+
+
+def populate_executions_machines(request):
+    machines = Machine.objects.all().filter(author=request.user)
+    machines_done = []
+    if machines.count() != 0:
+        for machine in machines:
+            machines_done.append("" + str(machine.user) + "@" + machine.fqdn)
+    return machines_done
+
+
+##################### USERS #########################
+
+def login_page(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password1']
+        # if is_recaptcha_valid(request):
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            form = login(request, user)
+            messages.success(request, f' welcome {username} !!')
+            return redirect('dashboard')
+        else:
+            form = CreateUserForm()
+            return render(request, 'pages/login_page.html',
+                          {'form': form, 'error': True})
+    else:
+        form = CreateUserForm()
+    return render(request, 'pages/login_page.html', {'form': form})
+
+
+def register_page(request):
+    if request.method == 'POST':
+        form = CreateUserForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')
+        else:
+            error_string = ""
+            for field, errors in form.errors.items():
+                error_string += f"{field}: {', '.join(errors)}\n"
+            for error in form.non_field_errors():
+                error_string += f"Non-field error: {error}\n"
+
+            print("--------------------_____", form.errors)
+            return render(request, 'pages/register_page.html',
+                          {'form': form, 'error': True,
+                           'message': error_string})
+    else:
+        form = CreateUserForm()
+
+    return render(request, 'pages/register_page.html', {'form': form})
+
+
+@login_required
+def logoutUser(request):
+    logout(request)
+    messages.info(request, "Logged out successfully!")
+    return redirect("login")
+
+
+"""def is_recaptcha_valid(request):
+    try:
+        response = requests.post(
+            settings.GOOGLE_VERIFY_RECAPTCHA_URL,
+            data={
+                'secret': settings.RECAPTCHA_SECRET_KEY,
+                'response': request.POST.get('g-recaptcha-response'),
+                'remoteip': get_client_ip(request)
+            },
+            verify=True
+        )
+        response_json = response.json()
+        return response_json.get("success", False)"""

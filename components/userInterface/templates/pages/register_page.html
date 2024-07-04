@@ -1,0 +1,72 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<html lang="en">
+<head>
+  <style>
+    .status-dot {
+      height: 10px;
+      width: 10px;
+      background-color: red;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card-header">
+    <h5 class="text-center">SIGN UP</h5>
+  </div>
+  <div class="card-block px-0 py-3">
+    <form method="POST" enctype="multipart/form-data" class="inputfield">
+      {% csrf_token %}
+      <div class="container">
+        <div class="row">
+          <div class="col-sm">
+            <label class="form-label">Username</label>
+            {{ form.username }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm">
+            <label class="form-label">Email</label>
+            {{ form.email }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm">
+            <label class="form-label">Password</label>
+            {{ form.password1 }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm">
+            <label class="form-label" for="typePasswordX-2">Confirm Password</label>
+            {{ form.password2 }}
+          </div>
+        </div>
+      </div>
+      {% if error %}
+        <div class="alert alert-danger text-center" role="alert">
+          Register Failed:
+          {{message}}
+        </div>
+
+      {% endif %}
+      <div>
+        <button type="submit" class="btn btn-success btn-block btn-lg gradient-custom-4 text-body" value="Submit">Register</button>
+      </div>
+      <p class="text-center text-muted mt-5 mb-0">Have already an account?
+        <a href="login" class="fw-bold text-body">
+          <u>Login here</u>
+        </a>
+      </p>
+    </form>
+  </div>
+</body>
+</html>
+{% endblock content %}

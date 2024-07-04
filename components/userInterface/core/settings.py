@@ -55,7 +55,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
+    #"django_recaptcha",
+    'widget_tweaks',
     "home",
 
     # Tooling Dynamic_DT
@@ -63,8 +64,7 @@ INSTALLED_APPS = [
 
     # Tooling API-GEN
     'django_api_gen',            # Django API GENERATOR  # <-- NEW
-    'rest_framework',            # Include DRF           # <-- NEW 
-    'rest_framework.authtoken',  # Include DRF Auth      # <-- NEW     
+    'rest_framework',            # Include DRF           # <-- NEW
 ]
 
 MIDDLEWARE = [
@@ -182,6 +182,7 @@ STATICFILES_DIRS = (
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+LOGIN_URL = '/'
 
 LOGIN_REDIRECT_URL = '/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -197,12 +198,5 @@ DYNAMIC_DATATB = {
 API_GENERATOR = {
     # SLUG -> Import_PATH 
     'product'  : "home.models.Product",
-}
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-    ],
 }
 ########################################
