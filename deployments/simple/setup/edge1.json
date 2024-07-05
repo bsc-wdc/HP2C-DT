@@ -20,6 +20,13 @@
                     "port": "30102"
                 }
             }
+        },
+        "geo-data": {
+            "position": {
+                "x": 2.1153889,
+                "y": 41.389917
+            },
+            "connections": []
         }
     },
     "devices": [
