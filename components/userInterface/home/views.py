@@ -9,11 +9,15 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .forms import CategoricalDeviceForm, NonCategoricalDeviceForm, \
-    CreateUserForm, Machine_Form
+    CreateUserForm, Machine_Form, Key_Gen_Form
 from core import settings
 import json
 import requests
 from django.contrib.auth.decorators import login_required
+from cryptography.fernet import Fernet
+import paramiko
+from io import StringIO
+
 
 
 @login_required
@@ -247,7 +251,7 @@ def generate_nodes_and_links(edges_info):
         for connection in edge_data["connections"]:
             if Edge.objects.filter(
                     name=edge_id).exists() and Edge.objects.filter(
-                    name=connection).exists():
+                name=connection).exists():
                 links.append({"source": edge_id, "target": connection})
     return nodes, links
 
@@ -583,11 +587,110 @@ def logoutUser(request):
 ######################## SSH KEYS ####################
 @login_required
 def ssh_keys(request):
-    return render(request, 'pages/ssh_keys.html')
+    if request.method == 'POST':
+        form = Key_Gen_Form(request.POST)
+        if form.is_valid():
+            if 'reuse_token_button' in request.POST:  # if the user has more than 1 Machine, he can decide to use the same SSH keys and token for all its machines
+                machine = request.POST.get('machineChoice')
+                user = machine.split("@")[0]
+                fqdn = machine.split("@")[1]
+                machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
+                instance = form.save(commit=False)
+                instance.author = request.user
+                instance.machine = machine_found
+                instance.public_key = Key_Gen.objects.get(author=instance.author).public_key
+                instance.private_key = Key_Gen.objects.get(author=instance.author).private_key
+                instance.save()
+                request.session['warning'] = "first"
+                return redirect('accounts:dashboard')
+            else:  # normal generation of the SSH keys
+                instance = form.save(commit=False)
+                instance.author = request.user
+                machine = request.POST.get('machineChoice')  # it's the machine choosen by the user
+                user = machine.split("@")[0]
+                fqdn = machine.split("@")[1]
+                request.userMachine = user
+                request.fqdn = fqdn
+                machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
+                instance.machine = machine_found
+                token = Fernet.generate_key()  # to generate a security token
+                key = paramiko.RSAKey.generate(2048)  # to generate the SSH keys
+                privateString = StringIO()
+                key.write_private_key(privateString)
+                private_key = privateString.getvalue()
+                x = private_key.split("\'")
+                private_key = x[0]
+                public_key = key.get_base64()
+                enc_private_key = encrypt(private_key.encode(), token)  # encrypting the private SSH keys using the security token, only the user is allowed to use its SSH keys to connect to its machine
+                enc_private_key = str(enc_private_key).split("\'")[1]
+                x = str(token).split("\'")
+                token = x[1]
+                instance.public_key = public_key
+                instance.private_key = enc_private_key
+                if Key_Gen.objects.filter(author=instance.author, machine=instance.machine).exists():
+                    if request.session['warning'] == "first":
+                        if (Key_Gen.objects.filter(author=instance.author).count() > 1):
+                            request.session['warning'] = "third"
+                            return render(request, 'pages/ssh_keys.html',
+                                          {'form': form, 'warning': request.session['warning'],
+                                           'machines': populate_executions_machines(request)})
+                        else:
+                            request.session['warning'] = "second"
+                            return render(request, 'pages/ssh_keys.html',
+                                          {'form': form, 'warning': request.session['warning'],
+                                           'machines': populate_executions_machines(request)})
+
+                    if (Key_Gen.objects.filter(author=instance.author).count() > 1):
+                        Key_Gen.objects.filter(author=instance.author).update(public_key=instance.public_key,
+                                                                              private_key=instance.private_key)
+                    else:
+                        Key_Gen.objects.filter(author=instance.author, machine=instance.machine).update(
+                            public_key=instance.public_key, private_key=instance.private_key)
+                elif (Key_Gen.objects.filter(author=instance.author).exists()):
+                    if request.session['reuse_token'] == "no":
+                        request.session['reuse_token'] = "yes"
+                        request.session['warning'] = "first"
+                        machine = request.POST.get('machineChoice')
+                        return render(request, 'pages/ssh_keys.html',
+                                      {'form': form, 'warning': request.session['warning'],
+                                       'reuse_token': request.session['reuse_token'],
+                                       'machines': populate_executions_machines(request), 'choice': machine})
+                else:
+                    instance.save()
+                public_key = "rsa-sha2-512 " + public_key
+                return render(request, 'pages/ssh_keys_generation.html', {'token': token, 'public_key': public_key})
+    else:
+        form = Key_Gen_Form(initial={'public_key': 123, 'private_key': 123})
+        request.session['reuse_token'] = "no"
+        request.session['warning'] = "first"
+        if not populate_executions_machines(request):
+            request.session['firstCheck'] = "yes"
+        else:
+            request.session['firstCheck'] = "no"
+    return render(request, 'pages/ssh_keys.html',
+                  {'form': form, 'warning': request.session['warning'], 'reuse_token': request.session['reuse_token'],
+                   'machines': populate_executions_machines(request), 'firstCheck': request.session['firstCheck']})
+
+
+def encrypt(message: bytes, key: bytes) -> bytes:
+    return Fernet(key).encrypt(message)
+
+
+def decrypt(token: bytes, key: bytes) -> bytes:
+    try:
+        res = Fernet(key).decrypt(token)
+    except Exception as e:
+        log.error("Error decrypting token: %s", str(e))
+        raise
+    return res
 
 @login_required
 def ssh_keys_generation(request):
-    return render(request, 'pages/ssh_keys_generation.html')
+    if request.method == 'POST':
+        return render('/')
+    else:
+        return render('/')
+
 
 """def is_recaptcha_valid(request):
     try:

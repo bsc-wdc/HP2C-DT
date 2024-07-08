@@ -5,15 +5,41 @@
 {% block breadcrumbs %}{% endblock breadcrumbs %}
 
 {% block content %}
-<h3 class="page-title">SSH Keys Generation</h3>
-<div class="card-block px-0 py-3">
-  <div class="card" style="border-radius: 15px;">
-    <div class="card-body p-5">
-      <div class="wrapper-create-work">
-
-      </div>
+    <h3 class="page-title">SSH Keys generation</h3>
+    <div class="card-block px-0 py-3">
+        <div class="card" style="border-radius: 15px;">
+            <div class="card-body p-5">
+                <div class="wrapper-create-work">
+                    <script>
+                        function copyToClipboard(element) {
+                            var $temp = $("<input>");
+                            $("body").append($temp);
+                            $temp.val($(element).text()).select();
+                            document.execCommand("copy");
+                            $temp.remove();
+                        }
+                    </script>
+                    <button hidden id="p1">{{ token }}</button>
+                    <button class="btn btn-secondary" onclick="copyToClipboard('#p1')">Click to copy your token</button>
+                    <button id="p2" hidden>{{ public_key }}</button>
+                    <button class="btn btn-secondary" onclick="copyToClipboard('#p2')">Click to copy your public key
+                    </button>
+                    <br><br>
+                    <div class="alert alert-warning" role="alert">
+                        Store the token, you will need it for running a new simulation!
+                    </div>
+                    <div class="alert alert-info" role="alert">
+                        Add the provided SSH public key to allow access on your machine!
+                    </div>
+                    <div class="d-flex flex-row-reverse">
+                        <div class="p-2">
+                            <a href="{% url 'dashboard' %}">
+                                <button type="button" class="btn btn-success">Continue</button>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-
 {% endblock content %}

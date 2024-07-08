@@ -5,19 +5,74 @@
 {% block breadcrumbs %}{% endblock breadcrumbs %}
 
 {% block content %}
-<h3 class="page-title">SSH Keys</h3>
-<div class="card-block px-0 py-3">
-  <div class="card" style="border-radius: 15px;">
-    <div class="card-body p-5">
-      <div class="wrapper-create-work">
-        <div class="p-2">
-          <a href="{% url 'ssh_keys_generation' %}">
-            <button type="button" class="btn btn-success">Create new SSH Key Pair</button>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+    <h3 class="page-title">SSH Keys</h3>
+    <div class="card-block px-0 py-3">
+        <div class="card" style="border-radius: 15px;">
+            <div class="card-body p-5">
+                {% if firstCheck != "yes" %}
+                    <div class="wrapper-create-work">
+                        <form method="post">
+                            {% csrf_token %}
+                            <select id="machineChoice" name="machineChoice" class="btn btn-secondary dropdown-toggle">
+                                {% if choice %}
+                                    <option>{{ choice }}</option>
+                                {% else %}
+                                    {% for m in machines %}
+                                        <option>{{ m }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <small class="form-text text-muted">Choose for which machine you want to generate the SSH
+                                keys</small>
 
+                            {{ form.author.as_hidden }}
+                            {{ form.private_key.as_hidden }}
+                            {{ form.public_key.as_hidden }}
+
+                            {% if reuse_token == "yes" %}
+                                <div title="Some Flag">
+                                    <div class="alert alert-warning" role="alert">
+                                        By clicking the above button, you will use the same SSH keys and token for the
+                                        new machine!
+                                    </div>
+                                </div>
+                                <button type="submit" name="reuse_token_button" class="btn btn-primary">Reuse</button>
+                            {% else %}
+                                <button type="submit" class="btn btn-primary">Continue</button>
+                            {% endif %}
+                        </form>
+                        {% if warning == "second" %}
+                            <div title="Some Flag">
+                                <div class="alert alert-warning" role="alert">
+                                    SSH keys for this user already existed, by clicking continue new keys will be
+                                    generated and the old ones will be cancelled!
+                                </div>
+                            </div>
+                        {% elif warning == "third" %}
+                            <div title="Some Flag">
+                                <div class="alert alert-warning" role="alert">
+                                    You have multiple machines that are using the token you forgot. By clicking
+                                    continue, new shared keys for your machines will be generated and the old ones will
+                                    be cancelled!
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="d-flex flex-row-reverse">
+                        <div class="p-2">
+                            <a href="{% url 'new_machine' %}">
+                                <button type="button" class="btn btn-success">New machine</button>
+                            </a>
+                        </div>
+                    </div>
+                    <div title="Some Flag">
+                        <div class="alert alert-warning" role="alert">
+                            You haven't defined any machines yet!
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 {% endblock content %}

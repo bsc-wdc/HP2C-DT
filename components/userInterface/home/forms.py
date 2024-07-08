@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Machine
+from .models import Machine, Key_Gen
 from django.core.exceptions import ValidationError
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
@@ -48,6 +48,12 @@ class CategoricalDeviceForm(forms.Form):
                                                               if category != 'NULL']
                                                           )
 
+
+
+class Key_Gen_Form(forms.ModelForm):
+    class Meta:
+        model = Key_Gen
+        fields = ('author', 'machine', 'public_key', 'private_key')
 
 class NonCategoricalDeviceForm(forms.Form):
     def __init__(self, device, *args, **kwargs):

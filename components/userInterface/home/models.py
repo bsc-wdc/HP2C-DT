@@ -66,3 +66,15 @@ class Device(models.Model):
     def __str__(self):
         return f"{self.name} - {self.edge}"
 
+
+class Key_Gen(models.Model):
+    author = models.ForeignKey(settings.AUTH_USER_MODEL,
+                               on_delete=models.CASCADE,
+                               to_field='username',
+                               null=True, blank=True)
+    machine = models.ForeignKey("Machine",
+                                on_delete=models.CASCADE,
+                                to_field='id',
+                                null=True, blank=True)
+    public_key = models.CharField(max_length=3000, null=False)
+    private_key = models.CharField(max_length=3000, null=False)
