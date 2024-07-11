@@ -1,0 +1,26 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+    <div class="card" style="border-radius: 15px;">
+        <div class="card-body p-5">
+            {% if machine_chosen %}
+                <h2 class="text-center mb-5" style="text-decoration: underline;">
+                    <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
+                </h2>
+            {% endif %}
+            <div class="alert alert-warning" role="alert">
+                Squeue machine: {{ squeue_list }}
+            </div>
+            <div class="d-flex justify-content-end">
+                <form method="POST">
+                    {% csrf_token %}
+                    <button type="submit" name="disconnectButton" class="btn btn-primary">DISCONNECT</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

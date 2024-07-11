@@ -12,5 +12,7 @@ urlpatterns = [
   path('new_machine/', views.new_machine, name='new_machine'),
   path('machines/', views.machines, name='machines'),
   path('ssh_keys/', views.ssh_keys, name='ssh_keys'),
-  path('ssh_keys_generation/', views.ssh_keys_generation, name='ssh_keys_generation')
+  path('ssh_keys_generation/', views.ssh_keys_generation, name='ssh_keys_generation'),
+  path('tools/', views.tools, name='tools'),
+  path('connection/', views.connection, name='connection')
 ]

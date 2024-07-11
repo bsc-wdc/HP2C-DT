@@ -1,0 +1,56 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+    <div class="card" style="border-radius: 15px;">
+        <div class="card-body p-5">
+            {% if check_existence_machines != "no" %}
+                    <h2 class="text-center mb-5" style="text-decoration: underline;">
+                        <button type="button" class="btn btn-primary btn-xl" disabled>Connection</button>
+                    </h2>
+                    <div class="wrapper-create-work">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label class="font-weight-bold">Machine Choice</label>
+                                <select id="machineChoice" name="machineChoice"
+                                        class="btn btn-secondary dropdown-toggle form-control">
+                                    {% if choice %}
+                                        <option>{{ choice }}</option>
+                                    {% else %}
+                                        {% for m in machines %}
+                                            <option>{{ m }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="font-weight-bold">Token</label>
+                                <input type="password" name="token" class="form-control" placeholder="Enter your Token">
+                                <small class="form-text text-muted">We'll never store your token.</small>
+                            </div>
+                            <button type="submit" name="connection" class="btn btn-primary fa fa-plug">Connect</button>
+                        </form>
+                    </div>
+                    {% if errorToken == "yes" %}
+                        <div class="alert alert-danger" role="alert">
+                            Provided token is wrong!
+                        </div>
+                    {% endif %}
+            {% else %}
+                <div class="p-2">
+                    <a href="{% url 'new_machine' %}">
+                        <button type="button" class="btn btn-success">New machine</button>
+                    </a>
+                </div>
+                <div class="alert alert-warning" role="alert">
+                    You haven't defined any machines yet!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+{% endblock content %}

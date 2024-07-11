@@ -435,6 +435,126 @@ def device_detail(request, edge_name, device_name):
     })
 
 
+@login_required
+def tools(request):
+    if request.method == 'POST':
+        if 'disconnectButton' in request.POST:
+            print("CIAO CIAO 3")
+            Connection.objects.filter(idConn_id=request.session["idConn"]).update(status="Disconnect")
+            for key in list(request.session.keys()):
+                if not key.startswith("_"):  # skip keys set by the django system
+                    del request.session[key]
+            return redirect("connection")
+    else:
+        stability_connection = check_stability_connection(request)
+        print(f"tools connection stability_connection: {stability_connection}")
+        if  not stability_connection:
+            return redirect('connection')
+        squeue_list = squeue(request, request.session["machine_chosen"])
+        return render(request, 'pages/tools.html',
+                      {'check_connection_stable': "yes",
+                       'machine_chosen': request.session['nameConnectedMachine'], 'squeue_list': squeue_list})
+
+
+
+@login_required
+def connection(request):
+    if request.method == 'POST':
+        if 'connection' in request.POST:
+            user, fqdn = get_name_fqdn(request.POST.get('machineChoice'))
+            machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
+            obj = Key_Gen.objects.filter(machine_id=machine_found.id).get()
+
+            private_key = obj.private_key
+
+            try:
+                content = decrypt(private_key, request.POST.get("token")).decode()
+            except Exception:
+                machines_done = populate_executions_machines(request)
+                request.session['check_existence_machines'] = "yes"
+                return render(request, 'pages/connection.html',
+                              { 'machines': machines_done,
+                               'check_existence_machines': request.session['check_existence_machines'], "errorToken": 'yes'})
+
+            request.session["content"] = content
+            request.session['machine_chosen'] = machine_found.id
+            c = Connection()
+            c.user = request.user
+            c.status = "Active"
+            c.save()
+            request.session["idConn"] = c.idConn_id
+            stability_connection = check_stability_connection(request)
+            print(f"connection 2 stability_connection: {stability_connection}")
+            if not stability_connection:
+                machines_done = populate_executions_machines(request)
+                if not machines_done:
+                    request.session['check_existence_machines'] = "no"
+                request.session["check_connection_stable"] = "Required"
+                return render(request, 'pages/connection.html',
+                              {'machines': machines_done, 'check_connection_stable': "no"})
+            machine_connected = Machine.objects.get(id=request.session["machine_chosen"])
+            request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
+            return redirect("tools")
+
+
+    machines_done = populate_executions_machines(request)
+    if not machines_done:
+        request.session['check_existence_machines'] = "no"
+        return render(request, 'pages/connection.html',
+                      {'check_existence_machines': request.session['check_existence_machines']})
+    stability_connection = check_stability_connection(request)
+    if stability_connection:
+        return redirect("tools")
+    request.session["check_connection_stable"] = "no"
+    request.session["check_existence_machines"] = "yes"
+    return render(request, 'pages/connection.html',
+                  {'machines': machines_done,
+                   'check_existence_machines': request.session['check_existence_machines']})
+
+
+
+def squeue(request, machineID):
+    ssh = connection_ssh(request.session["content"], machineID)
+    stdin, stdout, stderr = ssh.exec_command("squeue")
+    stdout = stdout.readlines()
+    return stdout
+
+def get_name_fqdn(machine):
+    user = machine.split("@")[0]
+    fqdn = machine.split("@")[1]
+    return user, fqdn
+
+def check_stability_connection(request):
+    idConn = request.session.get('idConn')
+    if idConn != None:
+        conn = Connection.objects.get(idConn_id=request.session["idConn"])
+        if conn.status == "Disconnect":
+            return False
+        return True
+    return False
+
+
+def connection_ssh(content, machineID):
+    try:
+        ssh = paramiko.SSHClient()
+        pkey = paramiko.RSAKey.from_private_key(StringIO(content))
+        machine_found = Machine.objects.get(id=machineID)
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
+        return ssh
+    except paramiko.AuthenticationException as auth_error:
+        print(f"Authentication error: {auth_error}")
+    except paramiko.BadHostKeyException as host_key_error:
+        print(f"Bad host key error: {host_key_error}")
+    except paramiko.SSHException as ssh_error:
+        print(f"SSH error: {ssh_error}")
+    except Machine.DoesNotExist as not_found_error:
+        print(f"Machine not found error: {not_found_error}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return redirect("tools")
+
+    
 #################### MACHINES ######################
 @login_required
 def new_machine(request):
@@ -664,12 +784,12 @@ def ssh_keys(request):
         request.session['reuse_token'] = "no"
         request.session['warning'] = "first"
         if not populate_executions_machines(request):
-            request.session['firstCheck'] = "yes"
+            request.session['check_existence_machines'] = "yes"
         else:
-            request.session['firstCheck'] = "no"
+            request.session['check_existence_machines'] = "no"
     return render(request, 'pages/ssh_keys.html',
                   {'form': form, 'warning': request.session['warning'], 'reuse_token': request.session['reuse_token'],
-                   'machines': populate_executions_machines(request), 'firstCheck': request.session['firstCheck']})
+                   'machines': populate_executions_machines(request), 'check_existence_machines': request.session['check_existence_machines']})
 
 
 def encrypt(message: bytes, key: bytes) -> bytes:
@@ -680,7 +800,7 @@ def decrypt(token: bytes, key: bytes) -> bytes:
     try:
         res = Fernet(key).decrypt(token)
     except Exception as e:
-        log.error("Error decrypting token: %s", str(e))
+        print("Error decrypting token: %s", str(e))
         raise
     return res
 

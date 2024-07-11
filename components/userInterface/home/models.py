@@ -78,3 +78,20 @@ class Key_Gen(models.Model):
                                 null=True, blank=True)
     public_key = models.CharField(max_length=3000, null=False)
     private_key = models.CharField(max_length=3000, null=False)
+
+STATUS_CONN = [
+    ('Active', 'Active'),
+    ('Disconnect', 'Disconnect'),
+    ('Timeout', 'Timeout')
+]
+
+class Connection(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE,
+                             to_field='username',
+                             null=True, blank=True)
+    idConn_id = models.AutoField(primary_key=True)
+    status = models.CharField(max_length=30, choices=STATUS_CONN, default='Disconnect')
+
+
+
