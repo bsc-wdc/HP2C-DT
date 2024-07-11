@@ -439,7 +439,6 @@ def device_detail(request, edge_name, device_name):
 def tools(request):
     if request.method == 'POST':
         if 'disconnectButton' in request.POST:
-            print("CIAO CIAO 3")
             Connection.objects.filter(idConn_id=request.session["idConn"]).update(status="Disconnect")
             for key in list(request.session.keys()):
                 if not key.startswith("_"):  # skip keys set by the django system
@@ -447,7 +446,6 @@ def tools(request):
             return redirect("connection")
     else:
         stability_connection = check_stability_connection(request)
-        print(f"tools connection stability_connection: {stability_connection}")
         if  not stability_connection:
             return redirect('connection')
         squeue_list = squeue(request, request.session["machine_chosen"])
@@ -484,7 +482,6 @@ def connection(request):
             c.save()
             request.session["idConn"] = c.idConn_id
             stability_connection = check_stability_connection(request)
-            print(f"connection 2 stability_connection: {stability_connection}")
             if not stability_connection:
                 machines_done = populate_executions_machines(request)
                 if not machines_done:
@@ -554,7 +551,7 @@ def connection_ssh(content, machineID):
         print(f"An unexpected error occurred: {e}")
         return redirect("tools")
 
-    
+
 #################### MACHINES ######################
 @login_required
 def new_machine(request):
