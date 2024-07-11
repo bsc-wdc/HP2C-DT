@@ -461,12 +461,10 @@ def connection(request):
         if 'connection' in request.POST:
             user, fqdn = get_name_fqdn(request.POST.get('machineChoice'))
             machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
-            obj = Key_Gen.objects.filter(machine_id=machine_found.id).get()
-
-            private_key = obj.private_key
-
+            machine_chosen = Key_Gen.objects.filter(machine_id=machine_found.id).get()
+            private_key_encrypted = machine_chosen.private_key
             try:
-                content = decrypt(private_key, request.POST.get("token")).decode()
+                private_key_decrypted = decrypt(private_key_encrypted, request.POST.get("token")).decode()
             except Exception:
                 machines_done = populate_executions_machines(request)
                 request.session['check_existence_machines'] = "yes"
@@ -474,7 +472,7 @@ def connection(request):
                               { 'machines': machines_done,
                                'check_existence_machines': request.session['check_existence_machines'], "errorToken": 'yes'})
 
-            request.session["content"] = content
+            request.session["private_key_decrypted"] = private_key_decrypted
             request.session['machine_chosen'] = machine_found.id
             c = Connection()
             c.user = request.user
@@ -511,7 +509,7 @@ def connection(request):
 
 
 def squeue(request, machineID):
-    ssh = connection_ssh(request.session["content"], machineID)
+    ssh = connection_ssh(request.session["private_key_decrypted"], machineID)
     stdin, stdout, stderr = ssh.exec_command("squeue")
     stdout = stdout.readlines()
     return stdout
@@ -531,10 +529,10 @@ def check_stability_connection(request):
     return False
 
 
-def connection_ssh(content, machineID):
+def connection_ssh(private_key_decrypted, machineID):
     try:
         ssh = paramiko.SSHClient()
-        pkey = paramiko.RSAKey.from_private_key(StringIO(content))
+        pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
         machine_found = Machine.objects.get(id=machineID)
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
