@@ -1,5 +1,6 @@
 package es.bsc.hp2c.common.utils;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
 import org.json.JSONObject;
@@ -7,7 +8,9 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
@@ -126,5 +129,28 @@ public final class CommUtils {
             }
         }
         return connection;
+    }
+
+    /** Create RabbitMQ BasicProperties object with the current nanoseconds timestamp inserted in headers. */
+    public static AMQP.BasicProperties createAmqpPropertiesNanos() {
+        Instant now = Instant.now();
+        long epochSeconds = now.getEpochSecond();
+        int nanos = now.getNano();
+        Map<String, Object> headers = new HashMap<>();
+        headers.put("epochSeconds", epochSeconds);
+        headers.put("nanos", nanos);
+        return new AMQP.BasicProperties.Builder()
+                .headers(headers)
+                .build();
+    }
+
+    /** Extract nanos timestamp from RabbitMQ headers and compose them into an Instant object. */
+    public static Instant extractNanosFromHeaders(Map<String, Object> headers) {
+        if (headers == null || !headers.containsKey("epochSeconds") || !headers.containsKey("nanos")) {
+            throw new IllegalArgumentException("No headers found in RabbitMQ message");
+        }
+        long epochSeconds = (long) headers.get("epochSeconds");
+        int nanos = (int) headers.get("nanos");
+        return Instant.ofEpochSecond(epochSeconds, nanos);
     }
 }

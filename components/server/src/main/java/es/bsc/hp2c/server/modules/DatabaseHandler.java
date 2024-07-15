@@ -25,6 +25,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -93,7 +94,8 @@ public class DatabaseHandler {
      * @param deviceName Name of the Influx tag where we will write. Typically,
      *                   the name of the device.
      */
-    public void write(Float[] values, long timestamp, String edgeLabel, String deviceName) {
+    public void write(Float[] values, Instant timestamp, String edgeLabel, String deviceName) {
+        long epochNanos = timestamp.getEpochSecond() * 1_000_000_000L + timestamp.getNano();
         for (int i = 0; i < values.length; i++) {
             String tagName = deviceName + "Sensor" + i;
             if (isVerbose()) {
@@ -101,7 +103,7 @@ public class DatabaseHandler {
                         deviceName + "':'" + values[i] + "'");
             }
             influxDB.write(Point.measurement(edgeLabel)
-                    .time(timestamp, TimeUnit.MILLISECONDS)
+                    .time(epochNanos, TimeUnit.NANOSECONDS)
                     .tag("device", tagName)
                     .addField("value", values[i])
                     .build());
