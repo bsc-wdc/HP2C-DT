@@ -26,6 +26,7 @@ import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -81,10 +82,12 @@ public class AmqpManager {
             // Parse message. For instance: routingKey = "edge.edge1.sensors.voltmeter1"
             byte[] message = delivery.getBody();
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
-            long timestampMillis = delivery.getProperties().getTimestamp().getTime();
+            // Reconstruct timestamp
+            Map<String, Object> headers = delivery.getProperties().getHeaders();
+            Instant timestamp = CommUtils.extractNanosFromHeaders(headers);
+            // Check existence of pair edge-device
             String edgeLabel = getEdgeLabel(senderRoutingKey);
             String deviceName = getDeviceName(senderRoutingKey);
-            // Check existence of pair edge-device
             if (!HP2CServer.isInMap(edgeLabel, deviceName, edgeMap)) {
                 System.err.println("Edge " + edgeLabel + ", Device " + deviceName
                         + ": message received but device not listed as " + edgeLabel + " digital twin devices.");
@@ -94,7 +97,7 @@ public class AmqpManager {
             Sensor<?, ?> sensor = (Sensor<?, ?>) edgeMap.get(edgeLabel).getDevice(deviceName);
             sensor.sensed(message);
             // Write entry in database
-            db.write((Float[]) sensor.decodeValuesSensor(message), timestampMillis, edgeLabel, deviceName);
+            db.write((Float[]) sensor.decodeValuesSensor(message), timestamp, edgeLabel, deviceName);
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });
     }
