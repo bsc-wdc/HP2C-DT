@@ -557,20 +557,26 @@ def new_machine(request):
         form = Machine_Form(request.POST)
         form.data = form.data.copy()
         form.data['author'] = request.user
+
         if form.is_valid():
+            user = form.cleaned_data.get('user')
+            fqdn = form.cleaned_data.get('fqdn')
+            author = form.cleaned_data.get('author')
+
+            if Machine.objects.filter(author=author, user=user, fqdn=fqdn).exists():
+                error_string = 'A machine with this author, user and FQDN already exists.'
+                return render(request, 'pages/new_machine.html', {'form': form, 'error': True, 'message': error_string})
+
             instance = form.save(commit=False)
             instance.author = request.user
             instance.save()
-            return render(request, 'pages/new_machine.html',
-                          {'form': form, 'flag': 'yes'})
+            return render(request, 'pages/new_machine.html', {'form': form, 'flag': 'yes'})
         else:
             error_string = ""
             for field, errors in form.errors.items():
                 error_string += f"{', '.join(errors)}\n"
 
-            return render(request, 'pages/new_machine.html',
-                          {'form': form, 'error': True,
-                           'message': error_string})
+            return render(request, 'pages/new_machine.html', {'form': form, 'error': True, 'message': error_string})
 
     else:
         form = Machine_Form(initial={'author': request.user})
@@ -635,6 +641,7 @@ def machines(request):
         else:
             request.session['noMachines'] = "yes"
             request.session['firstPhase'] = "yes"
+
     return render(request, 'pages/machines.html',
                   {'form': form, 'machines': machines_done,
                    'noMachines': request.session['noMachines'],

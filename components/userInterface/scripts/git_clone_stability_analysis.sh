@@ -1,8 +1,8 @@
 #!/bin/bash
 # Set the repository URL and destination path
 repository_url="git@github.com:iraola/stability_analysis.git"
-dest_path="$1" # Receive install dir as first argument
-requested_branch="${2:-new-GridCal}"  # Default to 'new-GridCal' if no second argument is provided
+dest_path="/home/ubuntu/install_dir"
+requested_branch="${1:-new-GridCal}"  # Default to 'new-GridCal' if no argument is provided
 
 # Create a folder with the name of the branch inside the destination path
 branch_folder="${dest_path}/stability_analysis/${requested_branch}"

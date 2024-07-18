@@ -1,8 +1,8 @@
 #!/bin/bash
 # Set the repository URL and destination path
 repository_url="git@github.com:MauroGarciaLorenzo/hp2c-dt.git"
-dest_path="$1" # Receive install dir as first argument
-requested_branch="${2:-new-input-format}"  # Default to 'new-input-format' if no second argument is provided
+dest_path="/home/ubuntu/install_dir"
+requested_branch="${1:-new-input-format}"  # Default to 'new-input-format' if no argument is provided
 
 # Create a folder with the name of the branch inside the destination path
 branch_folder="${dest_path}/datagen/${requested_branch}"
