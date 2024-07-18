@@ -14,5 +14,7 @@ urlpatterns = [
   path('ssh_keys/', views.ssh_keys, name='ssh_keys'),
   path('ssh_keys_generation/', views.ssh_keys_generation, name='ssh_keys_generation'),
   path('tools/', views.tools, name='tools'),
-  path('connection/', views.connection, name='connection')
+  path('connection/', views.connection, name='connection'),
+  path('run_sim/', views.run_sim, name='run_sim'),
+  path('executions/', views.executions, name='executions')
 ]

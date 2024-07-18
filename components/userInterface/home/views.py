@@ -1,5 +1,13 @@
 import os
+import random
+import re
+import string
+import subprocess
+import threading
+import time
+import uuid
 
+from stat import S_ISDIR
 from django.contrib.auth import authenticate, login, logout
 from requests import RequestException
 from django.views.decorators.csrf import csrf_exempt
@@ -9,7 +17,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .forms import CategoricalDeviceForm, NonCategoricalDeviceForm, \
-    CreateUserForm, Machine_Form, Key_Gen_Form
+    CreateUserForm, Machine_Form, Key_Gen_Form, DocumentForm, ExecutionForm
 from core import settings
 import json
 import requests
@@ -17,7 +25,7 @@ from django.contrib.auth.decorators import login_required
 from cryptography.fernet import Fernet
 import paramiko
 from io import StringIO
-
+from django.db.models import Q
 
 
 @login_required
@@ -435,121 +443,6 @@ def device_detail(request, edge_name, device_name):
     })
 
 
-@login_required
-def tools(request):
-    if request.method == 'POST':
-        if 'disconnectButton' in request.POST:
-            Connection.objects.filter(idConn_id=request.session["idConn"]).update(status="Disconnect")
-            for key in list(request.session.keys()):
-                if not key.startswith("_"):  # skip keys set by the django system
-                    del request.session[key]
-            return redirect("connection")
-    else:
-        stability_connection = check_stability_connection(request)
-        if  not stability_connection:
-            return redirect('connection')
-        squeue_list = squeue(request, request.session["machine_chosen"])
-        return render(request, 'pages/tools.html',
-                      {'check_connection_stable': "yes",
-                       'machine_chosen': request.session['nameConnectedMachine'], 'squeue_list': squeue_list})
-
-
-
-@login_required
-def connection(request):
-    if request.method == 'POST':
-        if 'connection' in request.POST:
-            user, fqdn = get_name_fqdn(request.POST.get('machineChoice'))
-            machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
-            machine_chosen = Key_Gen.objects.filter(machine_id=machine_found.id).get()
-            private_key_encrypted = machine_chosen.private_key
-            try:
-                private_key_decrypted = decrypt(private_key_encrypted, request.POST.get("token")).decode()
-            except Exception:
-                machines_done = populate_executions_machines(request)
-                request.session['check_existence_machines'] = "yes"
-                return render(request, 'pages/connection.html',
-                              { 'machines': machines_done,
-                               'check_existence_machines': request.session['check_existence_machines'], "errorToken": 'yes'})
-
-            request.session["private_key_decrypted"] = private_key_decrypted
-            request.session['machine_chosen'] = machine_found.id
-            c = Connection()
-            c.user = request.user
-            c.status = "Active"
-            c.save()
-            request.session["idConn"] = c.idConn_id
-            stability_connection = check_stability_connection(request)
-            if not stability_connection:
-                machines_done = populate_executions_machines(request)
-                if not machines_done:
-                    request.session['check_existence_machines'] = "no"
-                request.session["check_connection_stable"] = "Required"
-                return render(request, 'pages/connection.html',
-                              {'machines': machines_done, 'check_connection_stable': "no"})
-            machine_connected = Machine.objects.get(id=request.session["machine_chosen"])
-            request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
-            return redirect("tools")
-
-
-    machines_done = populate_executions_machines(request)
-    if not machines_done:
-        request.session['check_existence_machines'] = "no"
-        return render(request, 'pages/connection.html',
-                      {'check_existence_machines': request.session['check_existence_machines']})
-    stability_connection = check_stability_connection(request)
-    if stability_connection:
-        return redirect("tools")
-    request.session["check_connection_stable"] = "no"
-    request.session["check_existence_machines"] = "yes"
-    return render(request, 'pages/connection.html',
-                  {'machines': machines_done,
-                   'check_existence_machines': request.session['check_existence_machines']})
-
-
-
-def squeue(request, machineID):
-    ssh = connection_ssh(request.session["private_key_decrypted"], machineID)
-    stdin, stdout, stderr = ssh.exec_command("squeue")
-    stdout = stdout.readlines()
-    return stdout
-
-def get_name_fqdn(machine):
-    user = machine.split("@")[0]
-    fqdn = machine.split("@")[1]
-    return user, fqdn
-
-def check_stability_connection(request):
-    idConn = request.session.get('idConn')
-    if idConn != None:
-        conn = Connection.objects.get(idConn_id=request.session["idConn"])
-        if conn.status == "Disconnect":
-            return False
-        return True
-    return False
-
-
-def connection_ssh(private_key_decrypted, machineID):
-    try:
-        ssh = paramiko.SSHClient()
-        pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
-        machine_found = Machine.objects.get(id=machineID)
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
-        return ssh
-    except paramiko.AuthenticationException as auth_error:
-        print(f"Authentication error: {auth_error}")
-    except paramiko.BadHostKeyException as host_key_error:
-        print(f"Bad host key error: {host_key_error}")
-    except paramiko.SSHException as ssh_error:
-        print(f"SSH error: {ssh_error}")
-    except Machine.DoesNotExist as not_found_error:
-        print(f"Machine not found error: {not_found_error}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        return redirect("tools")
-
-
 #################### MACHINES ######################
 @login_required
 def new_machine(request):
@@ -814,6 +707,132 @@ def ssh_keys_generation(request):
         return render('/')
 
 
+@login_required
+def tools(request):
+    if request.method == 'POST':
+        if 'disconnectButton' in request.POST:
+            Connection.objects.filter(conn_id=request.session["conn_id"]).update(status="Disconnect")
+            for key in list(request.session.keys()):
+                if not key.startswith("_"):  # skip keys set by the django system
+                    del request.session[key]
+            return redirect("connection")
+    else:
+        stability_connection = check_stability_connection(request)
+        if not stability_connection:
+            return redirect('connection')
+        squeue_list = squeue(request, request.session["machine_chosen"])
+        return render(request, 'pages/tools.html',
+                      {'check_connection_stable': "yes",
+                       'machine_chosen': request.session['nameConnectedMachine'], 'squeue_list': squeue_list})
+
+
+@login_required
+def connection(request):
+    if request.method == 'POST':
+        if 'connection' in request.POST:
+            user, fqdn = get_name_fqdn(request.POST.get('machineChoice'))
+            machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
+            machine_chosen = Key_Gen.objects.filter(machine_id=machine_found.id).get()
+            private_key_encrypted = machine_chosen.private_key
+            try:
+                private_key_decrypted = decrypt(private_key_encrypted, request.POST.get("token")).decode()
+            except Exception:
+                machines_done = populate_executions_machines(request)
+                request.session['check_existence_machines'] = "yes"
+                return render(request, 'pages/connection.html',
+                              {'machines': machines_done,
+                               'check_existence_machines': request.session['check_existence_machines'],
+                               "errorToken": 'yes'})
+
+            request.session["private_key_decrypted"] = private_key_decrypted
+            request.session['machine_chosen'] = machine_found.id
+            c = Connection()
+            c.user = request.user
+            c.status = "Active"
+            c.save()
+            request.session["conn_id"] = c.conn_id
+            stability_connection = check_stability_connection(request)
+            if not stability_connection:
+                machines_done = populate_executions_machines(request)
+                if not machines_done:
+                    request.session['check_existence_machines'] = "no"
+                request.session["check_connection_stable"] = "Required"
+                return render(request, 'pages/connection.html',
+                              {'machines': machines_done, 'check_connection_stable': "no"})
+            machine_connected = Machine.objects.get(id=request.session["machine_chosen"])
+            request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
+            if request.session.get('redirect_to_run_sim', False):
+                request.session.pop('redirect_to_run_sim')
+                if 'original_request' in request.session:
+                    request.method = 'POST'
+                    request.POST = request.session.pop('original_request')
+                    return redirect('run_sim')
+
+            return redirect("tools")
+
+    machines_done = populate_executions_machines(request)
+    request.session["check_connection_stable"] = "no"
+    request.session["check_existence_machines"] = "yes"
+    show_warning = request.session.get('redirect_to_run_sim', False)
+
+    if not machines_done:
+        request.session['check_existence_machines'] = "no"
+
+
+    stability_connection = check_stability_connection(request)
+    if stability_connection:
+        return redirect("tools")
+
+    return render(request, 'pages/connection.html',
+                  {'machines': machines_done,
+                   'check_existence_machines': request.session['check_existence_machines'],
+                   'show_warning': show_warning
+                   })
+
+def squeue(request, machineID):
+    ssh = connection_ssh(request.session["private_key_decrypted"], machineID)
+    stdin, stdout, stderr = ssh.exec_command("squeue")
+    stdout = stdout.readlines()
+    return stdout
+
+
+def get_name_fqdn(machine):
+    user = machine.split("@")[0]
+    fqdn = machine.split("@")[1]
+    return user, fqdn
+
+
+def check_stability_connection(request):
+    conn_id = request.session.get('conn_id')
+    if conn_id != None:
+        conn = Connection.objects.get(conn_id=request.session["conn_id"])
+        if conn.status == "Disconnect":
+            return False
+        return True
+    return False
+
+
+def connection_ssh(private_key_decrypted, machineID):
+    try:
+        ssh = paramiko.SSHClient()
+        pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
+        machine_found = Machine.objects.get(id=machineID)
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
+        return ssh
+    except paramiko.AuthenticationException as auth_error:
+        print(f"Authentication error: {auth_error}")
+    except paramiko.BadHostKeyException as host_key_error:
+        print(f"Bad host key error: {host_key_error}")
+    except paramiko.SSHException as ssh_error:
+        print(f"SSH error: {ssh_error}")
+    except Machine.DoesNotExist as not_found_error:
+        print(f"Machine not found error: {not_found_error}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return redirect("tools")
+
+
 """def is_recaptcha_valid(request):
     try:
         response = requests.post(
@@ -827,3 +846,476 @@ def ssh_keys_generation(request):
         )
         response_json = response.json()
         return response_json.get("success", False)"""
+
+
+################### RUN SIMULATIONS ####################
+@login_required
+def run_sim(request):
+    if request.method == 'POST':
+        check_conn_bool = checkConnection(request)
+        if not check_conn_bool:
+            request.session['original_request'] = request.POST
+            request.session['redirect_to_run_sim'] = True
+            return redirect('connection')
+
+        form = DocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            branch = request.POST.get('branchChoice')
+            for filename, file in request.FILES.items():
+                unique_id = uuid.uuid4()
+                name_e = ((str(file).split(".")[0]) + "_" + str(unique_id) + "."
+                          + str(file).split(".")[1])
+            name = name_e
+            document = form.save(commit=False)
+            document.document.name = name
+            document.save()
+            num_nodes = request.POST.get('numNodes')
+            name_sim = request.POST.get('name_sim')
+            qos = request.POST.get('qos')
+            exec_time = request.POST.get('execTime')
+            g_flag = request.POST.get("gSwitch")
+            d_flag = request.POST.get("dSwitch")
+            t_flag = request.POST.get("tSwitch")
+            if name_sim is None:
+                name_sim = get_random_string(8)
+            g_bool = "false"  # graph option
+            if g_flag == "on":
+                g_bool = "true"
+            t_bool = "false"  # trace option
+            if t_flag == "on":
+                t_bool = "true"
+            d_bool = "false"  # debug option
+            if d_flag == "on":
+                d_bool = "true"
+            project_name = request.POST.get('project_name')
+            e_id = start_exec(num_nodes, name_sim, exec_time, qos, name, request,
+                              d_bool, t_bool, g_bool, branch)
+            """run_sim = run_sim_async(request, name, num_nodes, name_sim,
+                                    exec_time, qos, e_id, branch, g_bool,
+                                    t_bool, d_bool, project_name)"""
+            return redirect('executions')
+
+    else:
+        form = DocumentForm()
+        request.session['flag'] = 'first'
+        branches = get_github_repo_branches()
+        check_conn_bool = checkConnection(request)
+        if not check_conn_bool:
+            request.session['original_request'] = request.POST
+            request.session['redirect_to_run_sim'] = True
+            return redirect('connection')
+        return render(request, 'pages/run_simulation.html',
+                      {'form': form, 'flag': request.session['flag'],
+                       'machines': populate_executions_machines(request),
+                       'machine_chosen': request.session['nameConnectedMachine'],
+                       'branches': branches})
+
+def checkConnection(request):
+    conn_id = request.session.get('conn_id')
+    if conn_id != None:
+        conn = Connection.objects.get(conn_id=request.session["conn_id"])
+        print(conn.status)
+        if conn.status == "Disconnect":
+            return False
+        return True
+    return False
+
+
+# Generate a random string of specified length
+def get_random_string(length):
+    # With combination of lower and upper case
+    result_str = ''.join(random.choice(string.ascii_letters) for i in range(length))
+    return result_str
+
+
+def run_command(command):
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+    if result.returncode != 0:
+        print(f"Error executing command: {command}")
+        print(result.stderr)
+        return None
+    return result.stdout.strip()
+
+
+def get_github_repo_branches():
+    repo_url = "https://github.com/CAELESTIS-Project-EU/Workflows"
+    # Extract the user/repo from the URL
+    user_repo = repo_url.split("github.com/")[1]
+    # GitHub API endpoint to get branches
+    api_url = f"https://api.github.com/repos/{user_repo}/branches"
+
+    # Make the API request
+    response = requests.get(api_url)
+
+    # Check if the response is successful
+    if response.status_code == 200:
+        branches = response.json()
+        return [branch['name'] for branch in branches]
+    else:
+        return f"Error: Unable to access the GitHub repository. Status code: {response.status_code}"
+
+
+def start_exec(numNodes, name_sim, execTime, qos, name, request, d_bool, t_bool,
+               g_bool, branch):
+    machine_found = Machine.objects.get(id=request.session['machine_chosen'])
+    user_machine = machine_found.user
+    principal_folder = machine_found.wdir
+    uID = uuid.uuid4()
+    form = Execution()
+    form.eID = uID
+    form.jobID = 0
+    form.user = user_machine
+    form.author = request.user
+    form.nodes = numNodes
+    form.status = "INITIALIZING"
+    form.time = "00:00:00"
+    form.wdir = ""
+    form.setup_path = ""
+    form.execution_time = 0
+    form.name_workflow = ""
+    form.qos = qos
+    form.name_sim = name_sim
+    form.machine = machine_found
+    form.d_bool = d_bool
+    form.t_bool = t_bool
+    form.g_bool = g_bool
+    form.branch = branch
+    form.results_ftp_path = ""
+    form.save()
+    return uID
+
+@login_required
+def executions(request):
+    if request.method == 'POST':
+        if 'resultExecution' in request.POST:
+            request.session['jobIDdone'] = request.POST.get("resultExecutionValue")
+            return redirect('accounts:results')
+        elif 'failedExecution' in request.POST:
+            request.session['jobIDfailed'] = request.POST.get("failedExecutionValue")
+            return redirect('accounts:execution_failed')
+        elif 'infoExecution' in request.POST:
+            request.session['eIDinfo'] = request.POST.get("infoExecutionValue")
+            return redirect('accounts:info_execution')
+        elif 'stopExecution' in request.POST:
+            request.session['stopExecutionValue'] = request.POST.get("stopExecutionValue")
+            stopExecution(request.POST.get("stopExecutionValue"), request)
+        elif 'deleteExecution' in request.POST:
+            request.session['deleteExecutionValue'] = request.POST.get("deleteExecutionValue")
+            deleteExecution(request.POST.get("deleteExecutionValue"), request)
+        elif 'run_sim' in request.POST:
+            request.session['machine_chosen'] = get_id_from_string(request.POST.get("machine_chosen_value"),
+                                                                   request.user)
+            return redirect('accounts:run_sim')
+
+        elif 'disconnectButton' in request.POST:
+            global dict_thread
+            Connection.objects.filter(idConn_id=request.session["idConn"]).update(status="Disconnect")
+            for key in list(request.session.keys()):
+                if not key.startswith("_"):  # skip keys set by the django system
+                    del request.session[key]
+            machines_done = populate_executions_machines(request)
+            if not machines_done:
+                request.session['firstCheck'] = "no"
+            request.session["checkConn"] = "Required"
+            request.session['machine_chosen'] = None
+            return render(request, 'accounts/executions.html',
+                          {'machines': machines_done, 'checkConn': "no"})
+        elif 'connection' in request.POST:
+            user, fqdn = get_name_fqdn(request.POST.get('machineChoice'))
+            machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
+            obj = Key_Gen.objects.filter(machine_id=machine_found.id).get()
+
+            private_key = obj.private_key
+            try:
+                try:
+                    content = decrypt(private_key, request.POST.get("token")).decode()
+                except Exception:
+                    form = ExecutionForm()
+                    machines_done = populate_executions_machines(request)
+                    request.session['firstCheck'] = "yes"
+                    request.session["checkConn"] = "no"
+                    return render(request, 'accounts/executions.html',
+                                  {'form': form, 'machines': machines_done,
+                                   'checkConn': request.session["checkConn"],
+                                   'firstCheck': request.session['firstCheck'], "errorToken": 'yes'})
+
+            except:
+                return False
+
+            request.session["content"] = content
+            request.session['machine_chosen'] = machine_found.id
+            c = Connection()
+            c.user = request.user
+            c.status = "Active"
+            c.save()
+            request.session["idConn"] = c.idConn_id
+            threadUpdate = updateExecutions(request, c.idConn_id)
+            threadUpdate.start()
+        checkConnBool = checkConnection(request)
+        if not checkConnBool:
+            machines_done = populate_executions_machines(request)
+            if not machines_done:
+                request.session['firstCheck'] = "no"
+            request.session["checkConn"] = "Required"
+            return render(request, 'accounts/executions.html',
+                          {'machines': machines_done, 'checkConn': "no"})
+        machine_connected = Machine.objects.get(id=request.session["machine_chosen"])
+        executions = Execution.objects.all().filter(author=request.user, machine=machine_connected).filter(
+            Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
+        executionsDone = Execution.objects.all().filter(author=request.user, status="COMPLETED",
+                                                        machine=machine_connected)
+        executionsFailed = Execution.objects.all().filter(author=request.user, status="FAILED",
+                                                          machine=machine_connected)
+        executionTimeout = Execution.objects.all().filter(author=request.user, status="TIMEOUT",
+                                                          autorestart=False, checkpointBool=True,
+                                                          machine=machine_connected)
+        executionsCheckpoint = Execution.objects.all().filter(author=request.user, status="TIMEOUT",
+                                                              autorestart=True, machine=machine_connected)
+        executionsCanceled = Execution.objects.all().filter(author=request.user, status="CANCELLED+",
+                                                            checkpoint="-1", machine=machine_connected)
+        request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
+        for execution in executionsCanceled:
+            checks = Execution.objects.all().get(author=request.user, status="CANCELLED+", checkpoint=execution.jobID,
+                                                 machine=machine_connected)
+            if checks is not None:
+                execution.status = "TIMEOUT"
+                execution.checkpoint = 0
+                execution.save()
+        return render(request, 'accounts/executions.html',
+                      {'executions': executions, 'executionsDone': executionsDone,
+                       'executionsFailed': executionsFailed,
+                       'executionsTimeout': executionTimeout, 'checkConn': "yes",
+                       'machine_chosen': request.session['nameConnectedMachine']})
+    else:
+        form = ExecutionForm()
+        machines_done = populate_executions_machines(request)
+        if not machines_done:
+            request.session['firstCheck'] = "no"
+            return render(request, 'pages/executions.html',
+                          {'firstCheck': request.session['firstCheck']})
+        elif "content" not in request.session:
+            request.session['firstCheck'] = "yes"
+            request.session["checkConn"] = "no"
+            return render(request, 'pages/executions.html',
+                          {'form': form, 'machines': machines_done,
+                           'checkConn': request.session["checkConn"],
+                           'firstCheck': request.session['firstCheck']})
+        else:
+            checkConnBool = checkConnection(request)
+            if not checkConnBool:
+                machines_done = populate_executions_machines(request)
+                if not machines_done:
+                    request.session['firstCheck'] = "no"
+                request.session["checkConn"] = "Required"
+                return render(request, 'pages/executions.html',
+                              {'machines': machines_done, 'checkConn': "no",
+                               'machine_chosen': request.POST.get('machineChoice')})
+
+            machine_connected = Machine.objects.get(id=get_machine(request))
+            request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
+            executions = Execution.objects.all().filter(author=request.user, machine=machine_connected).filter(
+                Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
+            print("&&&&&&&&&&&&&&&&", executions)
+            executionsDone = Execution.objects.all().filter(author=request.user, machine=machine_connected,
+                                                            status="COMPLETED")
+            executionsFailed = Execution.objects.all().filter(author=request.user, machine=machine_connected,
+                                                              status="FAILED")
+            executionsCheckpoint = Execution.objects.all().filter(author=request.user, machine=machine_connected,
+                                                                  status="TIMEOUT")
+            executionTimeout = Execution.objects.all().filter(author=request.user, machine=machine_connected,
+                                                              status="TIMEOUT",
+                                                              autorestart=False, checkpointBool=True)
+            executionsCanceled = Execution.objects.all().filter(author=request.user, machine=machine_connected,
+                                                                status="CANCELED",
+                                                                checkpoint="-1")
+            for execution in executionsCanceled:
+                checks = Execution.objects.all().get(author=request.user, status="CANCELLED+",
+                                                     machine=machine_connected,
+                                                     checkpoint=execution.jobID)
+                if checks is not None:
+                    execution.status = "TIMEOUT"
+                    execution.checkpoint = 0
+                    execution.save()
+                checks.delete()
+            request.session["checkConn"] = "yes"
+    return render(request, 'pages/executions.html',
+                  {'form': form, 'executions': executions, 'executionsDone': executionsDone,
+                   'executionsFailed': executionsFailed, 'executionsTimeout': executionTimeout,
+                   "checkConn": request.session["checkConn"],
+                   'machine_chosen': request.session['nameConnectedMachine']})
+
+
+def get_machine(request):
+    return Machine.objects.get(id=request.session['machine_chosen']).id
+
+
+def get_id_from_string(machine, author):
+    user, fqdn = get_name_fqdn(machine)
+    machine_found = Machine.objects.get(author=author, user=user, fqdn=fqdn)
+    return machine_found.id
+
+
+def stopExecution(eIDstop, request):
+    ssh = connection(request.session['content'], request.session['machine_chosen'])
+    exec = Execution.objects.filter(eID=eIDstop).get()
+    if exec.eID != 0:
+        command = "scancel " + str(exec.jobID)
+        stdin, stdout, stderr = ssh.exec_command(command)
+    Execution.objects.filter(eID=eIDstop).update(status="CANCELLED+")
+    form = ExecutionForm()
+    executions = Execution.objects.all().filter(author=request.user).filter(
+        Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
+    executionsDone = Execution.objects.all().filter(author=request.user, status="COMPLETED")
+    executionsFailed = Execution.objects.all().filter(author=request.user, status="FAILED")
+    executionTimeout = Execution.objects.all().filter(author=request.user, status="TIMEOUT", autorestart=False,
+                                                      checkpointBool=True)
+    return render(request, 'accounts/executions.html',
+                  {'form': form, 'executions': executions, 'executionsDone': executionsDone,
+                   'executionsFailed': executionsFailed, 'executionsTimeout': executionTimeout})
+
+
+def delete_parent_folder(path, ssh):
+    parent_folder = os.path.dirname(path)
+    command = "rm -rf " + parent_folder + "/"
+    stdin, stdout, stderr = ssh.exec_command(command)
+    return
+
+
+def deleteExecution(eIDdelete, request):
+    try:
+        ssh = connection(request.session['content'], request.session['machine_chosen'])
+        exec = Execution.objects.filter(eID=eIDdelete).get()
+        delete_parent_folder(exec.wdir, ssh)
+        if exec.eID != 0:
+            command = "scancel " + str(exec.jobID)
+            stdin, stdout, stderr = ssh.exec_command(command)
+        Execution.objects.filter(eID=eIDdelete).delete()
+        form = ExecutionForm()
+        executions = Execution.objects.all().filter(author=request.user).filter(
+            Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
+        executionsDone = Execution.objects.all().filter(author=request.user, status="COMPLETED")
+        executionsFailed = Execution.objects.all().filter(author=request.user, status="FAILED")
+        executionTimeout = Execution.objects.all().filter(author=request.user, status="TIMEOUT", autorestart=False,
+                                                          checkpointBool=True)
+        return render(request, 'pages/executions.html',
+                      {'form': form, 'executions': executions, 'executionsDone': executionsDone,
+                       'executionsFailed': executionsFailed, 'executionsTimeout': executionTimeout})
+    except:
+        Execution.objects.filter(eID=eIDdelete).delete()
+        form = ExecutionForm()
+        executions = Execution.objects.all().filter(author=request.user).filter(
+            Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
+        executionsDone = Execution.objects.all().filter(author=request.user, status="COMPLETED")
+        executionsFailed = Execution.objects.all().filter(author=request.user, status="FAILED")
+        executionTimeout = Execution.objects.all().filter(author=request.user, status="TIMEOUT", autorestart=False,
+                                                          checkpointBool=True)
+        return render(request, 'accounts/executions.html',
+                      {'form': form, 'executions': executions, 'executionsDone': executionsDone,
+                       'executionsFailed': executionsFailed, 'executionsTimeout': executionTimeout})
+
+
+def update_table(request):
+    machine_found = Machine.objects.get(id=request.session['machine_chosen'])
+    machineID = machine_found.id
+    ssh = connection(request.session["content"], machineID)
+    executions = Execution.objects.all().filter(author=request.user, machine=request.session['machine_chosen']).filter(
+        Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
+    for executionE in executions:
+        if executionE.jobID != 0:
+            stdin, stdout, stderr = ssh.exec_command(
+                "sacct -j " + str(executionE.jobID) + " --format=jobId,user,nnodes,elapsed,state | sed -n 3,3p")
+            stdout = stdout.readlines()
+            values = str(stdout).split()
+            Execution.objects.filter(jobID=executionE.jobID).update(time=values[3])
+            if str(values[4]) == "COMPLETED" and executionE.status != "COMPLETED":
+                Execution.objects.filter(jobID=executionE.jobID).update(status=values[4], time=values[3],
+                                                                        nodes=int(values[2]))
+                results_path = "results"
+                local_folder_path = os.path.join(executionE.wdir, results_path)
+            if not (str(values[4]) == "FAILED" and executionE.status == "INITIALIZING"):
+                Execution.objects.filter(jobID=executionE.jobID).update(status=values[4], time=values[3],
+                                                                        nodes=int(values[2]))
+    return True
+
+
+def get_last_subdirectory(url):
+    # Split the URL by '/' and get the last element
+    return url.rstrip('/').split('/')[-1]
+
+
+def remove_protocol_and_domain(url):
+    # Remove protocol and domain
+    return re.sub(r'^.*?//[^/]+/', '', url)
+
+
+def copy_folder_hpc_to_service(request, service_local_path, remote_hpc_path):
+    ssh = paramiko.SSHClient()
+    pkey = paramiko.RSAKey.from_private_key(StringIO(request.session["content"]))
+    machine_found = Machine.objects.get(id=request.session['machine_chosen'])  # Assuming this is your custom code
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
+    sftp = ssh.open_sftp()
+    download_directory(sftp, remote_hpc_path, service_local_path)
+    sftp.close()
+    ssh.close()
+    return
+
+
+def download_directory(sftp, remote_dir, local_dir, depth=0, max_depth=10):
+    if depth > max_depth:
+        print("Maximum recursion depth reached.")
+        return
+    os.makedirs(local_dir, exist_ok=True)
+
+    try:
+        items = sftp.listdir_attr(remote_dir)
+    except Exception as e:
+        print(f"Error listing directory {remote_dir}: {e}")
+        return
+
+    for item in items:
+        remote_item = f"{remote_dir}/{item.filename}"
+        local_item = os.path.join(local_dir, item.filename)
+
+        if S_ISDIR(item.st_mode):
+            download_directory(sftp, remote_item, local_item, depth=depth + 1, max_depth=max_depth)
+        else:
+            try:
+                sftp.get(remote_item, local_item)
+            except Exception as e:
+                print(f"Error downloading {remote_item}: {e}")
+    return
+
+
+def render_right(request):
+    checkConnBool = checkConnection(request)
+    if not checkConnBool:
+        machines_done = populate_executions_machines(request)
+        if not machines_done:
+            request.session['firstCheck'] = "no"
+        request.session["checkConn"] = "Required"
+        return render(request, 'pages/connections.html',
+                      {'machines': machines_done, 'checkConn': "no"})
+    return
+
+
+class updateExecutions(threading.Thread):
+    def __init__(self, request, connectionID):
+        threading.Thread.__init__(self)
+        self.request = request
+        self.timeout = 120 * 60
+        self.connectionID = connectionID
+
+    def run(self):
+        timeout_start = time.time()
+        while time.time() < timeout_start + self.timeout:
+            conn = Connection.objects.get(idConn_id=self.connectionID)
+            if conn.status == "Disconnect":
+                break
+            boolException = update_table(self.request)
+            if not boolException:
+                break
+            time.sleep(5)
+        Connection.objects.filter(idConn_id=self.connectionID).update(status="Disconnect")
+        render_right(self.request)
+        return

@@ -1,0 +1,286 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<h3 class="page-title">Executions</h3>
+<div class="card-block px-0 py-3">
+  <div class="card" style="border-radius: 15px;">
+    <div class="card-body p-5">
+        {% if machine_chosen %}
+            <h2 class="text-center mb-5" style="text-decoration: underline;">
+                <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
+            </h2>
+        {% endif %}
+
+        <div class="d-flex">
+            <div class="p-2 mr-auto">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" value="{{ machine_chosen }}" name="machine_chosen_value">
+                    <button type="submit" name="run_sim" class="btn btn-success feather icon-play" data-toggle="tooltip"
+                            data-placement="top" title="Run new execution">
+                    </button>
+                </form>
+            </div>
+            <div class="p-2">
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form.as_hidden }}
+                    <button type="submit" class="btn btn-primary feather icon-refresh-cw" data-toggle="tooltip"
+                            data-placement="top" title="Refresh the data" aria-hidden="true"></button>
+                </form>
+            </div>
+        </div>
+
+        <div class="wrapper-create-work">
+            <div>
+                <div class="rounded" style="outline: 2px solid black;">
+                    <p class="h4" style="text-align: center">Pending executions:</p>
+                    {% if executions %}
+                        <table class="table">
+                            <thead>
+                                <tr style="text-align: center">
+                                    <th scope="col">Name</th>
+                                    <th scope="col">JobID</th>
+                                    <th scope="col">User</th>
+                                    <th scope="col">Nodes</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Checkpoint</th>
+                                    <th scope="col">Autorestart</th>
+                                    <th scope="col">Time</th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for e in executions %}
+                                    <tr style="text-align: center">
+                                        <td>{{ e.name_sim }}</td>
+                                        <td>{{ e.jobID }}</td>
+                                        <td>{{ e.user }}</td>
+                                        <td>{{ e.nodes }}</td>
+                                        <td>{{ e.status }}</td>
+                                        <td>{{ e.checkpointBool }}</td>
+                                        <td>{{ e.autorestart }}</td>
+                                        <td>{{ e.time }}</td>
+                                        <td>
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" value="{{ e.eID }}" name="infoExecutionValue">
+                                                <button type="submit" name="infoExecution" class="btn btn-primary fa fa-info" data-toggle="tooltip" data-placement="top" title="Execution info"></button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" value="{{ e.eID }}" name="stopExecutionValue">
+                                                <button type="submit" name="stopExecution" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Stop execution">STOP</button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" value="{{ e.eID }}" name="deleteExecutionValue">
+                                                <button type="submit" name="deleteExecution" class="btn btn-primary fa fa-trash" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="alert alert-warning" role="alert">
+                            No pending executions!
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="rounded" style="outline: 2px solid black;">
+                    <p class="h4" style="text-align: center">Finished executions:</p>
+                    {% if executionsDone %}
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">JobID</th>
+                                    <th scope="col">User</th>
+                                    <th scope="col">Nodes</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Checkpoint</th>
+                                    <th scope="col">Autorestart</th>
+                                    <th scope="col">Time</th>
+                                    <th scope="col"></th>
+                                    <th scope="col"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for e in executionsDone %}
+                                    <tr>
+                                        <td>{{ e.name_sim }}</td>
+                                        <td>{{ e.jobID }}</td>
+                                        <td>{{ e.user }}</td>
+                                        <td>{{ e.nodes }}</td>
+                                        <td>{{ e.status }}</td>
+                                        <td>{{ e.checkpointBool }}</td>
+                                        <td>{{ e.autorestart }}</td>
+                                        <td>{{ e.time }}</td>
+                                        <td>
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" value="{{ e.jobID }}" name="resultExecutionValue">
+                                                <button type="submit" name="resultExecution" class="btn btn-primary fa fa-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" value="{{ e.eID }}" name="deleteExecutionValue">
+                                                <button type="submit" name="deleteExecution" class="btn btn-primary fa fa-trash" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="alert alert-warning" role="alert">
+                            No finished executions!
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="rounded" style="outline: 2px solid black;">
+                    <p class="h4" style="text-align: center">Timeout executions:</p>
+                    {% if executionsTimeout %}
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">JobID</th>
+                                    <th scope="col">User</th>
+                                    <th scope="col">Nodes</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Checkpoint</th>
+                                    <th scope="col">Autorestart</th>
+                                    <th scope="col">Time</th>
+                                    <th scope="col"></th>
+                                    <th scope="col"></th>
+                                    <th scope="col"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for e in executionsTimeout %}
+                                    <tr>
+                                        <td>{{ e.name_sim }}</td>
+                                        <td>{{ e.jobID }}</td>
+                                        <td>{{ e.user }}</td>
+                                        <td>{{ e.nodes }}</td>
+                                        <td>{{ e.status }}</td>
+                                        <td>{{ e.checkpointBool }}</td>
+                                        <td>{{ e.autorestart }}</td>
+                                        <td>{{ e.time }}</td>
+                                        <td>
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" value="{{ e.jobID }}" name="timeoutExecutionValue">
+                                                <button type="submit" name="timeoutExecution" class="btn btn-primary fa fa-undo" data-toggle="tooltip" data-placement="top" title="Restart execution from the checkpoint"></button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" value="{{ e.eID }}" name="infoExecutionValue">
+                                                <button type="submit" name="infoExecution" class="btn btn-primary fa fa-info" data-toggle="tooltip" data-placement="top" title="Execution info"></button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" value="{{ e.eID }}" name="deleteExecutionValue">
+                                                <button type="submit" name="deleteExecution" class="btn btn-primary fa fa-trash" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="alert alert-warning" role="alert">
+                            No finished executions with a timeout!
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="rounded" style="outline: 2px solid black;">
+                    <p class="h4" style="text-align: center">Failed executions:</p>
+                    {% if executionsFailed %}
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">JobID</th>
+                                    <th scope="col">User</th>
+                                    <th scope="col">Nodes</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Checkpoint</th>
+                                    <th scope="col">Autorestart</th>
+                                    <th scope="col">Time</th>
+                                    <th scope="col"></th>
+                                    <th scope="col"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for e in executionsFailed %}
+                                    <tr>
+                                        <td>{{ e.name_sim }}</td>
+                                        <td>{{ e.jobID }}</td>
+                                        <td>{{ e.user }}</td>
+                                        <td>{{ e.nodes }}</td>
+                                        <td>{{ e.status }}</td>
+                                        <td>{{ e.checkpointBool }}</td>
+                                        <td>{{ e.autorestart }}</td>
+                                        <td>{{ e.time }}</td>
+                                        <td>
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" value="{{ e.jobID }}" name="failedExecutionValue">
+                                                <button type="submit" name="failedExecution" class="btn btn-primary fa fa-info" data-toggle="tooltip" data-placement="top" title="Failed execution info"></button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <form method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" value="{{ e.eID }}" name="deleteExecutionValue">
+                                                <button type="submit" name="deleteExecution" class="btn btn-primary fa fa-trash" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="alert alert-warning" role="alert">
+                            No failed executions!
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex flex-row-reverse">
+                    <div class="p-2">
+                        <form method="POST">
+                            {% csrf_token %}
+                            <button type="submit" name="disconnectButton" class="btn btn-primary">Disconnect</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

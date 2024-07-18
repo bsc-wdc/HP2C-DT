@@ -5,12 +5,15 @@
 {% block breadcrumbs %}{% endblock breadcrumbs %}
 
 {% block content %}
+<h3 class="page-title">Connection</h3>
     <div class="card" style="border-radius: 15px;">
         <div class="card-body p-5">
+            {% if show_warning %}
+              <div class="alert alert-warning text-center" role="alert">
+                You must establish a connection to a machine
+              </div>
+            {% endif %}
             {% if check_existence_machines != "no" %}
-                    <h2 class="text-center mb-5" style="text-decoration: underline;">
-                        <button type="button" class="btn btn-primary btn-xl" disabled>Connection</button>
-                    </h2>
                     <div class="wrapper-create-work">
                         <form method="post" enctype="multipart/form-data">
                             {% csrf_token %}
@@ -32,7 +35,7 @@
                                 <input type="password" name="token" class="form-control" placeholder="Enter your Token">
                                 <small class="form-text text-muted">We'll never store your token.</small>
                             </div>
-                            <button type="submit" name="connection" class="btn btn-primary fa fa-plug">Connect</button>
+                            <button type="submit" name="connection" class="btn btn-primary btn-xl"> Connect</button>
                         </form>
                     </div>
                     {% if errorToken == "yes" %}

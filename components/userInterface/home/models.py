@@ -1,6 +1,13 @@
 from django.db import models
 from django.conf import settings
-# Create your models here.
+
+
+class Document(models.Model):
+    document = models.FileField(upload_to='documents/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return str(self.document)
 
 
 class Machine(models.Model):
@@ -85,13 +92,41 @@ STATUS_CONN = [
     ('Timeout', 'Timeout')
 ]
 
+
 class Connection(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE,
                              to_field='username',
                              null=True, blank=True)
-    idConn_id = models.AutoField(primary_key=True)
+    conn_id = models.AutoField(primary_key=True)
     status = models.CharField(max_length=30, choices=STATUS_CONN, default='Disconnect')
 
 
+class Execution(models.Model):
+    eID = models.CharField(max_length=255, null=False)
+    jobID = models.IntegerField(null=False)
+    user = models.CharField(max_length=255, null=False)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL,
+                               on_delete=models.CASCADE,
+                               to_field='username',
+                               null=True)
+    nodes = models.IntegerField(null=False)
+    status = models.CharField(max_length=255, null=False)
+    time = models.CharField(max_length=255, null=False)
+    execution_time = models.IntegerField(null=False)
+    qos = models.CharField(max_length=255, null=False)
+    name_workflow = models.CharField(max_length=255, null=False)
+    wdir = models.CharField(max_length=500, null=False)
+    setup_path = models.CharField(max_length=500, null=False)
+    name_sim = models.CharField(max_length=255, null=False)
+    machine = models.ForeignKey("Machine",
+                                on_delete=models.CASCADE,
+                                to_field='id',
+                                null=True, blank=True)
+    results_ftp_path = models.CharField(max_length=255, null=False)
+    branch = models.CharField(max_length=255, null=False, default="main")
+    g_bool = models.CharField(max_length=255, null=False, default="false")
+    d_bool = models.CharField(max_length=255, null=False, default="false")
+    t_bool = models.CharField(max_length=255, null=False, default="false")
+    project_name = models.CharField(max_length=255, null=False, default="bsc19")
 
