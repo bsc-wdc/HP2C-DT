@@ -115,9 +115,11 @@ class Execution(models.Model):
     time = models.CharField(max_length=255, null=False)
     execution_time = models.IntegerField(null=False)
     qos = models.CharField(max_length=255, null=False)
-    name_workflow = models.CharField(max_length=255, null=False)
+    checkpoint = models.IntegerField(null=False, default=0)
+    checkpointBool = models.BooleanField(default=False)
     wdir = models.CharField(max_length=500, null=False)
     setup_path = models.CharField(max_length=500, null=False)
+    autorestart = models.BooleanField(default=False)
     name_sim = models.CharField(max_length=255, null=False)
     machine = models.ForeignKey("Machine",
                                 on_delete=models.CASCADE,

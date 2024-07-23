@@ -15,16 +15,11 @@
                     </h2>
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
-                        {% if branches %}
                         <div class="form-group">
                             <label class="font-weight-bold">GitHub's branch</label>
-                            <select id="branchChoice" name="branchChoice" class="form-control">
-                                {% for branch in branches %}
-                                    <option>{{ branch }}</option>
-                                {% endfor %}
-                            </select>
+                            <input type="text" name="branchChoice" class="form-control" placeholder="Choose a branch for the simulation">
+                            <small class="form-text text-muted">What's the GitHub branch?</small>
                         </div>
-                        {% endif %}
                         <input hidden type="text" name="user" value="{{ user.username }}"/>
                         <div class="form-group">
                             <label class="font-weight-bold">Name of the simulation</label>
@@ -64,19 +59,16 @@
                             });
                         </script>
                         <div class="form-group">
-                            <label class="font-weight-bold">Checkpointing</label>
-                            <label class="switch">
-                                <input type="checkbox" name="checkpoint_flag" id="checkpointFlagCheckbox">
-                                <span class="slider round"></span>
-                            </label>
-                            <small class="form-text text-muted">Allows checkpointing</small>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="checkpoint_flag">
+                                <label class="form-check-label" for="inlineRadio1">Checkpointing</label>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label class="font-weight-bold">Auto restart for Checkpointing</label>
-                            <label class="switch">
-                                <input type="checkbox" name="auto_restart" id="autoRestartCheckbox">
-                                <span class="slider round"></span>
-                            </label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="auto_restart">
+                                <label class="form-check-label" for="inlineRadio1">Auto restart </label>
+                            </div>
                             <small class="form-text text-muted">Allows auto restarting from the checkpoint (If you activate this flag, the previous flag will also be considered active)</small>
                         </div>
                         <div class="form-check form-check-inline">
@@ -96,7 +88,7 @@
                             {% render_field form.document type="file" class="form-control" id="customFile" placeholder="Upload your workflow definition" %}
                             <small class="form-text text-muted">Upload your workflow's definition</small>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-block btn-lg gradient-custom-4 feather icon-play" onclick="this.disabled=true,this.form.submit();"></button>
+                        <button type="submit" class="btn btn-success btn-block btn-lg gradient-custom-4 feather icon-play" onclick="this.disabled=true,this.form.submit();"></button>
                     </form>
                     {% if flag == "second" %}
                     <div class="alert alert-danger text-center" role="alert">

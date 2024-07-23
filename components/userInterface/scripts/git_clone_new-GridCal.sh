@@ -1,11 +1,11 @@
 #!/bin/bash
 # Set the repository URL and destination path
-repository_url="git@github.com:iraola/stability_analysis.git"
-requested_branch="${1:-new-GridCal}"  # Default to 'new-GridCal' if no argument is provided
+repository_url="git@github.com:iraola/new-GridCal.git"
+requested_branch="${1:-205_ACOPF}"  # Default to '205_ACOPF' if no argument is provided
 dest_path="$2"
 
 # Create a folder with the name of the branch inside the destination path
-branch_folder="${dest_path}/stability_analysis/${requested_branch}"
+branch_folder="${dest_path}/new-GridCal/${requested_branch}"
 
 if [ ! -d "$branch_folder" ]; then
   echo "Creating directory for branch: $requested_branch"
