@@ -1009,19 +1009,19 @@ def executions(request):
     if request.method == 'POST':
         if 'resultExecution' in request.POST:
             request.session['jobIDdone'] = request.POST.get("resultExecutionValue")
-            return redirect('accounts:results')
+            return redirect('results')
         elif 'failedExecution' in request.POST:
             request.session['jobIDfailed'] = request.POST.get("failedExecutionValue")
-            return redirect('accounts:execution_failed')
+            return redirect('execution_failed')
         elif 'infoExecution' in request.POST:
             request.session['eIDinfo'] = request.POST.get("infoExecutionValue")
-            return redirect('accounts:info_execution')
+            return redirect('info_execution')
         elif 'timeoutExecution' in request.POST:
             request.session['jobIDcheckpoint'] = request.POST.get(
                 "timeoutExecutionValue")
             checkpointing_noAutorestart(
                 request.POST.get("timeoutExecutionValue"), request)
-            return redirect('accounts:executions')
+            return redirect('executions')
         elif 'stopExecution' in request.POST:
             request.session['stopExecutionValue'] = request.POST.get("stopExecutionValue")
             stopExecution(request.POST.get("stopExecutionValue"), request)
@@ -1031,7 +1031,7 @@ def executions(request):
         elif 'run_sim' in request.POST:
             request.session['machine_chosen'] = get_id_from_string(request.POST.get("machine_chosen_value"),
                                                                    request.user)
-            return redirect('accounts:run_sim')
+            return redirect('run_sim')
 
         elif 'disconnectButton' in request.POST:
             global dict_thread
@@ -1474,8 +1474,7 @@ class run_sim_async(threading.Thread):
         for s in stdout:
             print(s)
         print("---------------------------")
-        for s in stderr:
-            print(s)
+
 
         s = "Submitted batch job"
         var = ""
