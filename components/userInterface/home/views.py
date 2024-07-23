@@ -755,6 +755,8 @@ def connections(request):
             c.status = "Active"
             c.save()
             request.session["conn_id"] = c.conn_id
+            threadUpdate = updateExecutions(request, c.conn_id)
+            threadUpdate.start()
             stability_connection = check_stability_connection(request)
             if not stability_connection:
                 machines_done = populate_executions_machines(request)
@@ -1349,14 +1351,14 @@ class updateExecutions(threading.Thread):
     def run(self):
         timeout_start = time.time()
         while time.time() < timeout_start + self.timeout:
-            conn = Connection.objects.get(idConn_id=self.connectionID)
+            conn = Connection.objects.get(conn_id=self.connectionID)
             if conn.status == "Disconnect":
                 break
             boolException = update_table(self.request)
             if not boolException:
                 break
             time.sleep(5)
-        Connection.objects.filter(idConn_id=self.connectionID).update(status="Disconnect")
+        Connection.objects.filter(conn_id=self.connectionID).update(status="Disconnect")
         render_right(self.request)
         return
 
