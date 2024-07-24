@@ -93,7 +93,7 @@
                                                 <td align="right">
                                                     {% if form %}
                                                         <div class="btn-group mb-2 mr-2">
-                                                            <form method="post" action="{% url 'index' %}"
+                                                            <form method="post" action="{% url 'dashboard' %}"
                                                                   class="actuation-form" style="display: none">
                                                                 {% csrf_token %}
                                                                 {{ form.as_ul }}

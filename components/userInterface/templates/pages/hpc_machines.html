@@ -1,0 +1,134 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<h3 class="page-title">HPC Machines</h3>
+    <div class="card" style="border-radius: 15px;">
+        <div class="card-body p-5">
+            {% if show_warning %}
+              <div class="alert alert-warning text-center" role="alert">
+                You must establish a connection to a machine
+              </div>
+            {% endif %}
+            {% if check_existence_machines != "no" %}
+                <form method="post">
+                    {% csrf_token %}
+                    {% if firstPhase == "yes" %}
+                        {% if flag == "yes" %}
+                          <div title="Some Flag">
+                            <div class="alert alert-success" role="alert">
+                              Redefinition of the machine done!
+                            </div>
+                          </div>
+                        {% endif %}
+                        {% if show_connected %}
+                          <div>
+                            <div class="alert alert-success" role="alert">
+                              Successfully connected to machine {{show_connected}}!
+                            </div>
+                          </div>
+                        {% endif %}
+                        {% if errorToken == "yes" %}
+                            <div class="alert alert-danger" role="alert">
+                                Provided token is wrong!
+                            </div>
+                        {% endif %}
+                        {% if show_disconnected %}
+                            <div class="alert alert-success" role="alert">
+                                Succesfully disconnected from machine {{show_disconnected}}!
+                            </div>
+                        {% endif %}
+                        {% if show_already_connected %}
+                            <div class="alert alert-danger" role="alert">
+                                You must disconnect from machine {{show_already_connected}}!
+                            </div>
+                        {% endif %}
+                        <div class="wrapper-create-work">
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <label class="font-weight-bold mr-2">Machine Choice</label>
+                                <div class="form-group d-flex align-items-center">
+                                    <select id="machineChoice" name="machineChoice" class="btn btn-secondary dropdown-toggle form-control">
+                                        {% if choice %}
+                                            <option>{{ choice }}</option>
+                                        {% else %}
+                                            {% for m in machines %}
+                                                <option>{{ m }}</option>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                    <button name="detailsButton" type="submit" class="btn btn-primary ml-2">Details</button>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="font-weight-bold">Token</label>
+                                    <input type="password" name="token" class="form-control" placeholder="Enter your Token">
+                                    <small class="form-text text-muted">We'll never store your token.</small>
+                                </div>
+                                {% if connected %}
+                                    <button type="submit" name="connectButton" class="btn btn-success btn-xl" disabled>Connect</button>
+                                    <button type="submit" name="disconnectButton" class="btn btn-danger">Disconnect</button>
+                                {% else %}
+                                    <button type="submit" name="connectButton" class="btn btn-success btn-xl">Connect</button>
+                                    <button type="submit" name="disconnectButton" class="btn btn-danger" disabled>Disconnect</button>
+                                {% endif %}
+                            </form>
+                        </div>
+
+                    {% else %}
+                        <div class="form-group">
+                          <label class="font-weight-bold">USERNAME</label>
+                          {% render_field form.user name="userForm" type="text" class="form-control" value="{{ form.user }}" %}
+                          <small class="form-text text-muted">Redefine your username</small>
+                        </div>
+                        <div class="form-group">
+                          <label class="font-weight-bold">FQDN</label>
+                          {% render_field form.fqdn name="fqdForm" type="text" class="form-control" value="{{ form.fqdn }}" %}
+                          <small class="form-text text-muted">Redefine the machine Fully Qualified Domain Name</small>
+                        </div>
+                        <div class="form-group">
+                          <label class="font-weight-bold">WDIR</label>
+                          {% render_field form.wdir name="wdirForm" type="text" class="form-control" value="{{ form.wdir }}" %}
+                          <small class="form-text text-muted">Redefine the working directory path for the chosen machine</small>
+                        </div>
+                        <div class="form-group">
+                          <label class="font-weight-bold">INSTALL_DIR</label>
+                          {% render_field form.installDir name="installDir" type="text" class="form-control" value="{{ form.installDir }}" %}
+                          <small class="form-text text-muted">Redefine the installation directory path for the chosen machine</small>
+                        </div>
+                        <div class="form-group">
+                          <label class="font-weight-bold">DATA_DIR</label>
+                          {% render_field form.dataDir name="dataDir" type="text" class="form-control" value="{{ form.dataDir }}" %}
+                          <small class="form-text text-muted">Redefine the data directory path for the chosen machine</small>
+                        </div>
+                        {{ form.author.as_hidden }}
+                        <button type="submit" name="redefineButton" class="btn btn-primary">Redefine</button>
+                  {% endif %}
+                </form>
+            {% else %}
+                <div class="d-flex flex-row-reverse">
+                    <div class="p-2">
+                      <a href="{% url 'new_machine' %}">
+                        <button type="button" class="btn btn-success">New machine</button>
+                      </a>
+                    </div>
+                  </div>
+                  <div title="Some Flag">
+                    <div class="alert alert-warning" role="alert">
+                      You haven't defined any machines yet!
+                    </div>
+          </div>
+            {% endif %}
+        </div>
+    </div>
+
+<style>
+  .btn[disabled] {
+    opacity: 0.2;
+    pointer-events: none;
+  }
+</style>
+{% endblock content %}

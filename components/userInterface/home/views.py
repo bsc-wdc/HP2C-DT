@@ -482,6 +482,7 @@ def new_machine(request):
 
 @login_required
 def machines(request):
+    machines_done = populate_executions_machines(request)
     # method to redefine the details of a Machine
     if request.method == 'POST':
         form = Machine_Form(request.POST)
@@ -530,7 +531,6 @@ def machines(request):
                                    'noMachines']})
     else:
         form = Machine_Form()
-        machines_done = populate_executions_machines(request)
         if not machines_done:
             request.session['noMachines'] = "no"
             request.session['firstPhase'] = "no"
@@ -620,7 +620,7 @@ def ssh_keys(request):
                 instance.private_key = Key_Gen.objects.get(author=instance.author).private_key
                 instance.save()
                 request.session['warning'] = "first"
-                return redirect('accounts:dashboard')
+                return redirect('dashboard')
             else:  # normal generation of the SSH keys
                 instance = form.save(commit=False)
                 instance.author = request.user
@@ -713,17 +713,23 @@ def ssh_keys_generation(request):
 
 @login_required
 def tools(request):
+    check_conn_bool = checkConnection(request)
+    if not check_conn_bool:
+        request.session['original_request'] = request.POST
+        request.session['redirect_to_tools'] = True
+        return redirect('hpc_machines')
+
     if request.method == 'POST':
         if 'disconnectButton' in request.POST:
             Connection.objects.filter(conn_id=request.session["conn_id"]).update(status="Disconnect")
             for key in list(request.session.keys()):
                 if not key.startswith("_"):  # skip keys set by the django system
                     del request.session[key]
-            return redirect("connections")
+            return redirect("hpc_machines")
     else:
         stability_connection = check_stability_connection(request)
         if not stability_connection:
-            return redirect('connections')
+            return redirect('hpc_machines')
         squeue_list = squeue(request, request.session["machine_chosen"])
         return render(request, 'pages/tools.html',
                       {'check_connection_stable': "yes",
@@ -731,9 +737,14 @@ def tools(request):
 
 
 @login_required
-def connections(request):
+def hpc_machines(request):
+    machines_done = populate_executions_machines(request)
+    stability_connection = check_stability_connection(request)
+
     if request.method == 'POST':
-        if 'connection' in request.POST:
+        form = Machine_Form(request.POST)
+
+        if 'connectButton' in request.POST:
             user, fqdn = get_name_fqdn(request.POST.get('machineChoice'))
             machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
             machine_chosen = Key_Gen.objects.filter(machine_id=machine_found.id).get()
@@ -741,11 +752,13 @@ def connections(request):
             try:
                 private_key_decrypted = decrypt(private_key_encrypted, request.POST.get("token")).decode()
             except Exception:
-                machines_done = populate_executions_machines(request)
                 request.session['check_existence_machines'] = "yes"
-                return render(request, 'pages/connections.html',
-                              {'machines': machines_done,
-                               'check_existence_machines': request.session['check_existence_machines'],
+                return render(request, 'pages/hpc_machines.html',
+                              {'form': form, 'machines': machines_done,
+                                'firstPhase': request.session['firstPhase'],
+                               'connected': stability_connection,
+                               'check_existence_machines':
+                                   request.session['check_existence_machines'],
                                "errorToken": 'yes'})
 
             request.session["private_key_decrypted"] = private_key_decrypted
@@ -759,13 +772,15 @@ def connections(request):
             threadUpdate.start()
             stability_connection = check_stability_connection(request)
             if not stability_connection:
-                machines_done = populate_executions_machines(request)
                 if not machines_done:
                     request.session['check_existence_machines'] = "no"
                 request.session["check_connection_stable"] = "Required"
-                return render(request, 'pages/connections.html',
-                              {'machines': machines_done, 'check_connection_stable': "no"})
+                return render(request, 'pages/hpc_machines.html',
+                              {'machines': machines_done,
+                               'check_connection_stable': "no",
+                               'connected': stability_connection})
             machine_connected = Machine.objects.get(id=request.session["machine_chosen"])
+            str_machine_connected = str(machine_connected.user) + "@" + machine_connected.fqdn
             request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
             if request.session.get('redirect_to_run_sim', False):
                 request.session.pop('redirect_to_run_sim')
@@ -774,26 +789,130 @@ def connections(request):
                     request.POST = request.session.pop('original_request')
                     return redirect('run_sim')
 
-            return redirect("tools")
+            if request.session.get('redirect_to_tools', False):
+                request.session.pop('redirect_to_tools')
+                if 'original_request' in request.session:
+                    request.method = 'POST'
+                    request.POST = request.session.pop('original_request')
+                    return redirect('tools')
 
-    machines_done = populate_executions_machines(request)
-    request.session["check_connection_stable"] = "no"
-    request.session["check_existence_machines"] = "yes"
-    show_warning = request.session.get('redirect_to_run_sim', False)
+            request.session['firstPhase'] = "yes"
+            return render(request, 'pages/hpc_machines.html',
+                          {'machines': machines_done, 'form': form,
+                           'firstPhase': request.session['firstPhase'],
+                           'check_existence_machines': request.session[
+                               'check_existence_machines'],
+                           'show_connected': str_machine_connected,
+                           'connected': stability_connection
+                           })
 
-    if not machines_done:
-        request.session['check_existence_machines'] = "no"
+        if 'disconnectButton' in request.POST:
+            choice = request.POST.get(
+                'machineChoice')
+            machine_disconnected = Machine.objects.get(
+                id=request.session["machine_chosen"])
+            str_machine_disconnected = str(
+                machine_disconnected.user) + "@" + machine_disconnected.fqdn
+
+            if choice != str_machine_disconnected:
+                return render(request, 'pages/hpc_machines.html',
+                              {'machines': machines_done, 'form': form,
+                               'firstPhase': request.session['firstPhase'],
+                               'check_existence_machines': request.session[
+                                   'check_existence_machines'],
+                               'show_already_connected': str_machine_disconnected,
+                               'connected': stability_connection
+                               })
+            Connection.objects.filter(
+                conn_id=request.session["conn_id"]).update(
+                status="Disconnect")
+            for key in list(request.session.keys()):
+                if not key.startswith("_"):
+                    del request.session[key]
+            request.session['firstPhase'] = "yes"
+            request.session['check_existence_machines'] = "yes"
+
+            stability_connection = check_stability_connection(request)
+            if not stability_connection:
+                if not machines_done:
+                    request.session['check_existence_machines'] = "no"
+                request.session["check_connection_stable"] = "Required"
+            return render(request, 'pages/hpc_machines.html',
+                          {'machines': machines_done, 'form': form,
+                           'firstPhase': request.session['firstPhase'],
+                           'check_existence_machines': request.session[
+                               'check_existence_machines'],
+                           'connected': stability_connection,
+                           'show_disconnected': str_machine_disconnected
+                           })
+
+        if 'detailsButton' in request.POST:
+            request.session['firstPhase'] = "no"
+            machine = request.POST.get('machineChoice')
+            user = machine.split("@")[0]
+            fqdn = machine.split("@")[1]
+            machine_found = Machine.objects.get(author=request.user,
+                                                user=user, fqdn=fqdn)
+            machineID = machine_found.id
+            request.session['machineID'] = machineID
+            form = Machine_Form(
+                initial={'fqdn': machine_found.fqdn,
+                         'user': machine_found.user,
+                         'wdir': machine_found.wdir,
+                         'installDir': machine_found.installDir,
+                         'dataDir': machine_found.dataDir,
+                         'id': machine_found.id,
+                         'author': machine_found.author})
+            return render(request, 'pages/hpc_machines.html',
+                          {'form': form, 'machines': machines_done,
+                           'firstPhase': request.session['firstPhase'],
+                           'connected': stability_connection,
+                           'check_existence_machines':
+                               request.session['check_existence_machines']})
+
+        if 'redefineButton' in request.POST:
+            if (form.is_valid()):
+                machine_found = Machine.objects.get(
+                    id=request.session['machineID'])
+                userForm = form['user'].value()
+                fqdnForm = form['fqdn'].value()
+                wdirForm = form['wdir'].value()
+                installDirForM = form['installDir'].value()
+                dataDirForM = form['dataDir'].value()
+                Machine.objects.filter(
+                    id=request.session['machineID']).update(user=userForm,
+                                                            wdir=wdirForm,
+                                                            fqdn=fqdnForm,
+                                                            installDir=installDirForM,
+                                                            dataDir=dataDirForM)
+                request.session['firstPhase'] = "yes"
+                return render(request, 'pages/hpc_machines.html',
+                              {'form': form, 'machines': machines_done,
+                               'firstPhase': request.session['firstPhase'],
+                               'flag': 'yes', 'connected': stability_connection,
+                               'check_existence_machines': request.session[
+                                   'check_existence_machines']})
+    else:
+        form = Machine_Form()
+        request.session["check_connection_stable"] = "no"
+        request.session["check_existence_machines"] = "yes"
+        show_warning = (request.session.get('redirect_to_run_sim', False) or
+                         request.session.get('redirect_to_tools', False))
+
+        if not machines_done:
+            request.session['check_existence_machines'] = "no"
+            request.session['firstPhase'] = "no"
+
+        else:
+            request.session['firstPhase'] = "yes"
 
 
-    stability_connection = check_stability_connection(request)
-    if stability_connection:
-        return redirect("tools")
-
-    return render(request, 'pages/connections.html',
-                  {'machines': machines_done,
-                   'check_existence_machines': request.session['check_existence_machines'],
-                   'show_warning': show_warning
-                   })
+        return render(request, 'pages/hpc_machines.html',
+                      {'machines': machines_done, 'form': form,
+                       'firstPhase': request.session['firstPhase'],
+                       'check_existence_machines': request.session['check_existence_machines'],
+                       'show_warning': show_warning, 'connected': stability_connection
+                       })
 
 
 def squeue(request, machineID):
@@ -863,7 +982,7 @@ def run_sim(request):
         if not check_conn_bool:
             request.session['original_request'] = request.POST
             request.session['redirect_to_run_sim'] = True
-            return redirect('connections')
+            return redirect('hpc_machines')
 
         form = DocumentForm(request.POST, request.FILES)
         if form.is_valid():
@@ -923,7 +1042,7 @@ def run_sim(request):
         if not check_conn_bool:
             request.session['original_request'] = request.POST
             request.session['redirect_to_run_sim'] = True
-            return redirect('connections')
+            return redirect('hpc_machines')
         return render(request, 'pages/run_simulation.html',
                       {'form': form, 'flag': request.session['flag'],
                        'machines': populate_executions_machines(request),
@@ -1330,15 +1449,19 @@ def download_directory(sftp, remote_dir, local_dir, depth=0, max_depth=10):
 
 
 def render_right(request):
+    form = Machine_Form()
     checkConnBool = checkConnection(request)
+    machines_done = populate_executions_machines(request)
     if not checkConnBool:
-        machines_done = populate_executions_machines(request)
         if not machines_done:
             request.session['firstCheck'] = "no"
         request.session["checkConn"] = "Required"
-        return render(request, 'pages/connections.html',
-                      {'machines': machines_done, 'checkConn': "no"})
-    return
+    return render(request, 'pages/hpc_machines.html',
+                  {'form': form, 'machines': machines_done,
+                   'firstPhase': request.session['firstPhase'],
+                   'connected': checkConnBool,
+                   'check_existence_machines':
+                       request.session['check_existence_machines']})
 
 
 class updateExecutions(threading.Thread):
