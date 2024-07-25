@@ -720,20 +720,198 @@ def tools(request):
         return redirect('hpc_machines')
 
     if request.method == 'POST':
-        if 'disconnectButton' in request.POST:
-            Connection.objects.filter(conn_id=request.session["conn_id"]).update(status="Disconnect")
-            for key in list(request.session.keys()):
-                if not key.startswith("_"):  # skip keys set by the django system
-                    del request.session[key]
-            return redirect("hpc_machines")
-    else:
-        stability_connection = check_stability_connection(request)
-        if not stability_connection:
-            return redirect('hpc_machines')
-        squeue_list = squeue(request, request.session["machine_chosen"])
+        if 'stAnalysisButton' in request.POST:
+            document_form = DocumentForm(request.POST, request.FILES)
+            if document_form.is_valid():
+                branch = request.POST.get('branchChoice')
+                for filename, file in request.FILES.items():
+                    unique_id = uuid.uuid4()
+                    name_e = ((str(file).split(".")[0]) + "_" + str(
+                        unique_id) + "."
+                              + str(file).split(".")[1])
+                name = name_e
+                document = document_form.save(commit=False)
+                document.document.name = name
+                document.save()
+                num_nodes = request.POST.get('numNodes')
+                name_sim = request.POST.get('name_sim')
+                qos = request.POST.get('qos')
+                exec_time = request.POST.get('execTime')
+                checkpoint_flag = request.POST.get("checkpoint_flag")
+                auto_restart = request.POST.get("auto_restart")
+                g_flag = request.POST.get("gSwitch")
+                d_flag = request.POST.get("dSwitch")
+                t_flag = request.POST.get("tSwitch")
+                auto_restart_bool = False
+                checkpoint_bool = False
+                if name_sim is None:
+                    name_sim = get_random_string(8)
+                if checkpoint_flag == "on":
+                    checkpoint_bool = True
+                if auto_restart == "on":
+                    auto_restart_bool = True
+                if auto_restart_bool:
+                    checkpoint_bool = True
+                g_bool = "false"  # graph option
+                if g_flag == "on":
+                    g_bool = "true"
+                t_bool = "false"  # trace option
+                if t_flag == "on":
+                    t_bool = "true"
+                d_bool = "false"  # debug option
+                if d_flag == "on":
+                    d_bool = "true"
+                project_name = request.POST.get('project_name')
+                e_id = start_exec(num_nodes, name_sim, exec_time, qos, name,
+                                  request,
+                                  auto_restart_bool, checkpoint_bool, d_bool,
+                                  t_bool, g_bool, branch)
+                run_sim = run_sim_async(request, name, num_nodes, name_sim,
+                                        exec_time, qos, checkpoint_bool,
+                                        auto_restart_bool, e_id, branch,
+                                        g_bool,
+                                        t_bool, d_bool, project_name)
+                run_sim.start()
+                request.session['run_job'] = name_sim
+                return redirect('tools')
+
+        if 'resultExecution' in request.POST:
+            request.session['jobIDdone'] = request.POST.get(
+                "resultExecutionValue")
+            return redirect('results')
+
+        elif 'failedExecution' in request.POST:
+            request.session['jobIDfailed'] = request.POST.get(
+                "failedExecutionValue")
+            return redirect('execution_failed')
+
+        elif 'infoExecution' in request.POST:
+            request.session['eIDinfo'] = request.POST.get(
+                "infoExecutionValue")
+            return redirect('info_execution')
+
+        elif 'timeoutExecution' in request.POST:
+            request.session['jobIDcheckpoint'] = request.POST.get(
+                "timeoutExecutionValue")
+            checkpointing_noAutorestart(
+                request.POST.get("timeoutExecutionValue"), request)
+            return redirect('tools')
+
+        elif 'stopExecution' in request.POST:
+            request.session['stopExecutionValue'] = request.POST.get(
+                "stopExecutionValue")
+            stopExecution(request.POST.get("stopExecutionValue"), request)
+
+        elif 'deleteExecution' in request.POST:
+            request.session['deleteExecutionValue'] = request.POST.get(
+                "deleteExecutionValue")
+            deleteExecution(request.POST.get("deleteExecutionValue"),
+                            request)
+
+        machine_connected = Machine.objects.get(
+            id=request.session["machine_chosen"])
+        executions = Execution.objects.all().filter(author=request.user,
+                                                    machine=machine_connected).filter(
+            Q(status="PENDING") | Q(status="RUNNING") | Q(
+                status="INITIALIZING"))
+        executionsDone = Execution.objects.all().filter(
+            author=request.user, status="COMPLETED",
+            machine=machine_connected)
+        executionsFailed = Execution.objects.all().filter(
+            author=request.user, status="FAILED",
+            machine=machine_connected)
+        executionTimeout = Execution.objects.all().filter(
+            author=request.user, status="TIMEOUT", checkpointBool=True,
+            machine=machine_connected)
+        executionsCheckpoint = Execution.objects.all().filter(
+            author=request.user, status="TIMEOUT",
+            autorestart=True, machine=machine_connected)
+        executionsCanceled = Execution.objects.all().filter(
+            author=request.user, status="CANCELLED+",
+            checkpoint="-1", machine=machine_connected)
+        request.session[
+            'nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
+        for execution in executionsCanceled:
+            checks = Execution.objects.all().get(author=request.user,
+                                                 status="CANCELLED+",
+                                                 checkpoint=execution.jobID,
+                                                 machine=machine_connected)
+            if checks is not None:
+                execution.status = "TIMEOUT"
+                execution.checkpoint = 0
+                execution.save()
+
+        document_form = DocumentForm()
+        branches = get_github_repo_branches()
+
         return render(request, 'pages/tools.html',
-                      {'check_connection_stable': "yes",
-                       'machine_chosen': request.session['nameConnectedMachine'], 'squeue_list': squeue_list})
+                      {'executions': executions,
+                       'executionsDone': executionsDone,
+                       'executionsFailed': executionsFailed,
+                       'executionsTimeout': executionTimeout,
+                       'checkConn': "yes",
+                       'machine_chosen': request.session[
+                           'nameConnectedMachine'],
+                       'document_form': document_form,
+                       'machines': populate_executions_machines(request),
+                       'branches': branches
+                       })
+    else:
+        execution_form = ExecutionForm()
+
+        machine_connected = Machine.objects.get(id=get_machine(request))
+        request.session[
+            'nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
+        executions = Execution.objects.all().filter(author=request.user,
+                                                    machine=machine_connected).filter(
+            Q(status="PENDING") | Q(status="RUNNING") | Q(
+                status="INITIALIZING"))
+        executionsDone = Execution.objects.all().filter(author=request.user,
+                                                        machine=machine_connected,
+                                                        status="COMPLETED")
+        executionsFailed = Execution.objects.all().filter(author=request.user,
+                                                          machine=machine_connected,
+                                                          status="FAILED")
+        executionsCheckpoint = Execution.objects.all().filter(
+            author=request.user, machine=machine_connected,
+            status="TIMEOUT")
+        executionTimeout = Execution.objects.all().filter(author=request.user,
+                                                          machine=machine_connected,
+                                                          status="TIMEOUT",
+                                                          autorestart=False,
+                                                          checkpointBool=True)
+        executionsCanceled = Execution.objects.all().filter(
+            author=request.user, machine=machine_connected,
+            status="CANCELED",
+            checkpoint="-1")
+        for execution in executionsCanceled:
+            checks = Execution.objects.all().get(author=request.user,
+                                                 status="CANCELLED+",
+                                                 machine=machine_connected,
+                                                 checkpoint=execution.jobID)
+            if checks is not None:
+                execution.status = "TIMEOUT"
+                execution.checkpoint = 0
+                execution.save()
+            checks.delete()
+        request.session["checkConn"] = "yes"
+
+        document_form = DocumentForm()
+        branches = get_github_repo_branches()
+        run_job = request.session.get('run_job', None)
+
+        return render(request, 'pages/tools.html',
+                      {'document_form': document_form,
+                       'machines': populate_executions_machines(request),
+                       'machine_chosen': request.session[
+                           'nameConnectedMachine'],
+                       'branches': branches, 'execution_form': execution_form,
+                       'executions': executions,
+                       'executionsDone': executionsDone,
+                       'executionsFailed': executionsFailed,
+                       'executionsTimeout': executionTimeout,
+                       "checkConn": request.session["checkConn"],
+                       'run_job': run_job})
 
 
 @login_required

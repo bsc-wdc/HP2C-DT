@@ -5,49 +5,25 @@
 {% block breadcrumbs %}{% endblock breadcrumbs %}
 
 {% block content %}
-    <div class="card" style="border-radius: 15px;">
-        <div class="card-body p-5">
-            {% if machine_chosen %}
-                <h2 class="text-center mb-5" style="text-decoration: underline;">
-                    <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
-                </h2>
-            {% endif %}
-            <div class="alert alert-warning" role="alert">
-                Squeue machine: {{ squeue_list }}
-            </div>
-            <div class="d-flex justify-content-end">
-                <form method="POST">
-                    {% csrf_token %}
-                    <button type="submit" name="disconnectButton" class="btn btn-primary">DISCONNECT</button>
-                </form>
-            </div>
+<h3 class="page-title">Tools</h3>
+<div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active show" id="profile-tab" data-toggle="tab" href="#profile" role="tab"
+               aria-controls="profile" aria-selected="true">Executions</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
+               aria-selected="false">Stability analysis</a>
+        </li>
+    </ul>
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade" id="home" role="tabpanel" aria-labelledby="home-tab">
+            {% include 'pages/run_st_analysis.html' %}
+        </div>
+        <div class="tab-pane fade active show" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+            {% include 'pages/executions.html' %}
         </div>
     </div>
-
-<h3 class="page-title">Deployment dashboard</h3>
-    <div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link active show" id="execs" data-toggle="tab" href="#profile" role="tab"
-                   aria-controls="profile" aria-selected="true">Executions</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="st_analysis" data-toggle="tab" href="#home" role="tab" aria-controls="home"
-                   aria-selected="false">Stability analysis</a>
-            </li>
-        </ul>
-        <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade" id="home" role="tabpanel" aria-labelledby="execs">
-                
-            </div>
-
-            <div class="tab-pane fade active show" id="profile" role="tabpanel" aria-labelledby="st_analysis">
-                <div class="table-responsive" >
-
-                </div>
-            </div>
-
-
-        </div>
-    </div>
+</div>
 {% endblock content %}
