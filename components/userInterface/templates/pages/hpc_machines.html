@@ -20,35 +20,52 @@
                         {% if flag == "yes" %}
                           <div title="Some Flag">
                             <div class="alert alert-success" role="alert">
-                              Redefinition of the machine done!
+                              Redefinition of the machine done
                             </div>
                           </div>
                         {% endif %}
                         {% if show_connected %}
                           <div>
                             <div class="alert alert-success" role="alert">
-                              Successfully connected to machine {{show_connected}}!
+                              Successfully connected to machine {{show_connected}}
+                            </div>
+                          </div>
+                        {% endif %}
+                        {% if machine_created %}
+                          <div>
+                            <div class="alert alert-success" role="alert">
+                              Successfully created or updated machine {{machine_created}}
                             </div>
                           </div>
                         {% endif %}
                         {% if errorToken == "yes" %}
                             <div class="alert alert-danger" role="alert">
-                                Provided token is wrong!
+                                Provided token is wrong
                             </div>
                         {% endif %}
                         {% if show_disconnected %}
                             <div class="alert alert-success" role="alert">
-                                Succesfully disconnected from machine {{show_disconnected}}!
+                                Succesfully disconnected from machine {{show_disconnected}}
+                            </div>
+                        {% endif %}
+                        {% if machine_deleted %}
+                            <div class="alert alert-success" role="alert">
+                                Succesfully deleted machine {{machine_deleted}}
                             </div>
                         {% endif %}
                         {% if show_already_connected %}
                             <div class="alert alert-danger" role="alert">
-                                You must disconnect from machine {{show_already_connected}}!
+                                You must disconnect from machine {{show_already_connected}}
                             </div>
                         {% endif %}
                         <div class="wrapper-create-work">
                             <form method="post" enctype="multipart/form-data">
                                 {% csrf_token %}
+                                <div class="d-flex flex-row-reverse">
+                                    <a href="{% url 'new_machine' %}">
+                                        <button type="button" class="btn btn-success">New machine</button>
+                                    </a>
+                                </div>
                                 <label class="font-weight-bold mr-2">Machine Choice</label>
                                 <div class="form-group d-flex align-items-center">
                                     <select id="machineChoice" name="machineChoice" class="btn btn-secondary dropdown-toggle form-control">
@@ -61,6 +78,7 @@
                                         {% endif %}
                                     </select>
                                     <button name="detailsButton" type="submit" class="btn btn-primary ml-2">Details</button>
+                                    <button name="deleteButton" type="submit" class="btn btn-danger ml-2">Delete machine</button>
                                 </div>
 
                                 <div class="form-group">

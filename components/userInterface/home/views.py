@@ -465,7 +465,8 @@ def new_machine(request):
             instance = form.save(commit=False)
             instance.author = request.user
             instance.save()
-            return render(request, 'pages/new_machine.html', {'form': form, 'flag': 'yes'})
+            request.session['machine_created'] = f"{user}@{fqdn}"
+            return redirect('hpc_machines')
         else:
             error_string = ""
             for field, errors in form.errors.items():
@@ -477,70 +478,6 @@ def new_machine(request):
         form = Machine_Form(initial={'author': request.user})
 
     return render(request, 'pages/new_machine.html', {'form': form})
-
-
-@login_required
-def machines(request):
-    machines_done = populate_executions_machines(request)
-    # method to redefine the details of a Machine
-    if request.method == 'POST':
-        form = Machine_Form(request.POST)
-        request.session['noMachines'] = "yes"
-        if 'chooseButton' in request.POST:
-            request.session['firstPhase'] = "no"
-            machine = request.POST.get('machineChoice')
-            user = machine.split("@")[0]
-            fqdn = machine.split("@")[1]
-            machine_found = Machine.objects.get(author=request.user,
-                                                user=user, fqdn=fqdn)
-            machineID = machine_found.id
-            request.session['machineID'] = machineID
-            form = Machine_Form(
-                initial={'fqdn': machine_found.fqdn,
-                         'user': machine_found.user,
-                         'wdir': machine_found.wdir,
-                         'installDir': machine_found.installDir,
-                         'dataDir': machine_found.dataDir,
-                         'id': machine_found.id,
-                         'author': machine_found.author})
-            return render(request, 'pages/machines.html',
-                          {'form': form,
-                           'firstPhase': request.session['firstPhase'],
-                           'noMachines': request.session['noMachines']})
-        elif 'redefineButton' in request.POST:
-            if (form.is_valid()):
-                machine_found = Machine.objects.get(
-                    id=request.session['machineID'])
-                userForm = form['user'].value()
-                fqdnForm = form['fqdn'].value()
-                wdirForm = form['wdir'].value()
-                installDirForM = form['installDir'].value()
-                dataDirForM = form['dataDir'].value()
-                Machine.objects.filter(
-                    id=request.session['machineID']).update(user=userForm,
-                                                            wdir=wdirForm,
-                                                            fqdn=fqdnForm,
-                                                            installDir=installDirForM,
-                                                            dataDir=dataDirForM)
-                return render(request, 'pages/machines.html',
-                              {'form': form,
-                               'firstPhase': request.session['firstPhase'],
-                               'flag': 'yes',
-                               'noMachines': request.session[
-                                   'noMachines']})
-    else:
-        form = Machine_Form()
-        if not machines_done:
-            request.session['noMachines'] = "no"
-            request.session['firstPhase'] = "no"
-        else:
-            request.session['noMachines'] = "yes"
-            request.session['firstPhase'] = "yes"
-
-    return render(request, 'pages/machines.html',
-                  {'form': form, 'machines': machines_done,
-                   'noMachines': request.session['noMachines'],
-                   'firstPhase': request.session['firstPhase']})
 
 
 def populate_executions_machines(request):
@@ -1047,6 +984,23 @@ def hpc_machines(request):
                            'check_existence_machines':
                                request.session['check_existence_machines']})
 
+        if 'deleteButton' in request.POST:
+            request.session['firstPhase'] = "yes"
+            machine = request.POST.get('machineChoice')
+            user = machine.split("@")[0]
+            fqdn = machine.split("@")[1]
+            machine_found = Machine.objects.get(author=request.user,
+                                                user=user, fqdn=fqdn)
+            machine_found.delete()
+            machines_done = populate_executions_machines(request)
+            return render(request, 'pages/hpc_machines.html',
+                          {'form': form, 'machines': machines_done,
+                           'firstPhase': request.session['firstPhase'],
+                           'connected': stability_connection,
+                           'machine_deleted': machine,
+                           'check_existence_machines':
+                               request.session['check_existence_machines']})
+
         if 'redefineButton' in request.POST:
             if (form.is_valid()):
                 machine_found = Machine.objects.get(
@@ -1063,12 +1017,8 @@ def hpc_machines(request):
                                                             installDir=installDirForM,
                                                             dataDir=dataDirForM)
                 request.session['firstPhase'] = "yes"
-                return render(request, 'pages/hpc_machines.html',
-                              {'form': form, 'machines': machines_done,
-                               'firstPhase': request.session['firstPhase'],
-                               'flag': 'yes', 'connected': stability_connection,
-                               'check_existence_machines': request.session[
-                                   'check_existence_machines']})
+                request.session['machine_created'] = f"{userForm}@{fqdnForm}"
+                return redirect('hpc_machines')
     else:
         form = Machine_Form()
         request.session["check_connection_stable"] = "no"
@@ -1083,20 +1033,16 @@ def hpc_machines(request):
         else:
             request.session['firstPhase'] = "yes"
 
+        machine_created = request.session.get('machine_created', None)
+        request.session.pop('machine_created', None)
 
         return render(request, 'pages/hpc_machines.html',
                       {'machines': machines_done, 'form': form,
                        'firstPhase': request.session['firstPhase'],
                        'check_existence_machines': request.session['check_existence_machines'],
-                       'show_warning': show_warning, 'connected': stability_connection
+                       'show_warning': show_warning, 'connected': stability_connection,
+                       'machine_created': machine_created
                        })
-
-
-def squeue(request, machineID):
-    ssh = connection_ssh(request.session["private_key_decrypted"], machineID)
-    stdin, stdout, stderr = ssh.exec_command("squeue")
-    stdout = stdout.readlines()
-    return stdout
 
 
 def get_name_fqdn(machine):
@@ -1152,80 +1098,6 @@ def connection_ssh(private_key_decrypted, machineID):
 
 
 ################### RUN SIMULATIONS ####################
-@login_required
-def run_sim(request):
-    if request.method == 'POST':
-        check_conn_bool = checkConnection(request)
-        if not check_conn_bool:
-            request.session['original_request'] = request.POST
-            request.session['redirect_to_run_sim'] = True
-            return redirect('hpc_machines')
-
-        form = DocumentForm(request.POST, request.FILES)
-        if form.is_valid():
-            branch = request.POST.get('branchChoice')
-            for filename, file in request.FILES.items():
-                unique_id = uuid.uuid4()
-                name_e = ((str(file).split(".")[0]) + "_" + str(unique_id) + "."
-                          + str(file).split(".")[1])
-            name = name_e
-            document = form.save(commit=False)
-            document.document.name = name
-            document.save()
-            num_nodes = request.POST.get('numNodes')
-            name_sim = request.POST.get('name_sim')
-            qos = request.POST.get('qos')
-            exec_time = request.POST.get('execTime')
-            checkpoint_flag = request.POST.get("checkpoint_flag")
-            auto_restart = request.POST.get("auto_restart")
-            g_flag = request.POST.get("gSwitch")
-            d_flag = request.POST.get("dSwitch")
-            t_flag = request.POST.get("tSwitch")
-            auto_restart_bool = False
-            checkpoint_bool = False
-            if name_sim is None:
-                name_sim = get_random_string(8)
-            if checkpoint_flag == "on":
-                checkpoint_bool = True
-            if auto_restart == "on":
-                auto_restart_bool = True
-            if auto_restart_bool:
-                checkpoint_bool = True
-            g_bool = "false"  # graph option
-            if g_flag == "on":
-                g_bool = "true"
-            t_bool = "false"  # trace option
-            if t_flag == "on":
-                t_bool = "true"
-            d_bool = "false"  # debug option
-            if d_flag == "on":
-                d_bool = "true"
-            project_name = request.POST.get('project_name')
-            e_id = start_exec(num_nodes, name_sim, exec_time, qos, name, request,
-                              auto_restart_bool, checkpoint_bool, d_bool,
-                              t_bool, g_bool, branch)
-            run_sim = run_sim_async(request, name, num_nodes, name_sim,
-                                    exec_time, qos, checkpoint_bool,
-                                    auto_restart_bool, e_id, branch, g_bool,
-                                    t_bool, d_bool, project_name)
-            run_sim.start()
-            return redirect('executions')
-
-    else:
-        form = DocumentForm()
-        request.session['flag'] = 'first'
-        branches = get_github_repo_branches()
-        check_conn_bool = checkConnection(request)
-        if not check_conn_bool:
-            request.session['original_request'] = request.POST
-            request.session['redirect_to_run_sim'] = True
-            return redirect('hpc_machines')
-        return render(request, 'pages/run_simulation.html',
-                      {'form': form, 'flag': request.session['flag'],
-                       'machines': populate_executions_machines(request),
-                       'machine_chosen': request.session['nameConnectedMachine'],
-                       'branches': branches})
-
 
 def checkConnection(request):
     conn_id = request.session.get('conn_id')
@@ -1301,140 +1173,6 @@ def start_exec(num_nodes, name_sim, execTime, qos, name, request, auto_restart_b
     form.results_ftp_path = ""
     form.save()
     return uID
-
-@login_required
-def executions(request):
-    if request.method == 'POST':
-        if 'resultExecution' in request.POST:
-            request.session['jobIDdone'] = request.POST.get("resultExecutionValue")
-            return redirect('results')
-        elif 'failedExecution' in request.POST:
-            request.session['jobIDfailed'] = request.POST.get("failedExecutionValue")
-            return redirect('execution_failed')
-        elif 'infoExecution' in request.POST:
-            request.session['eIDinfo'] = request.POST.get("infoExecutionValue")
-            return redirect('info_execution')
-        elif 'timeoutExecution' in request.POST:
-            request.session['jobIDcheckpoint'] = request.POST.get(
-                "timeoutExecutionValue")
-            checkpointing_noAutorestart(
-                request.POST.get("timeoutExecutionValue"), request)
-            return redirect('executions')
-        elif 'stopExecution' in request.POST:
-            request.session['stopExecutionValue'] = request.POST.get("stopExecutionValue")
-            stopExecution(request.POST.get("stopExecutionValue"), request)
-        elif 'deleteExecution' in request.POST:
-            request.session['deleteExecutionValue'] = request.POST.get("deleteExecutionValue")
-            deleteExecution(request.POST.get("deleteExecutionValue"), request)
-        elif 'run_sim' in request.POST:
-            request.session['machine_chosen'] = get_id_from_string(request.POST.get("machine_chosen_value"),
-                                                                   request.user)
-            return redirect('run_sim')
-
-        elif 'disconnectButton' in request.POST:
-            global dict_thread
-            Connection.objects.filter(idConn_id=request.session["idConn"]).update(status="Disconnect")
-            for key in list(request.session.keys()):
-                if not key.startswith("_"):  # skip keys set by the django system
-                    del request.session[key]
-            machines_done = populate_executions_machines(request)
-            if not machines_done:
-                request.session['firstCheck'] = "no"
-            request.session["checkConn"] = "Required"
-            request.session['machine_chosen'] = None
-            return render(request, 'pages/executions.html',
-                          {'machines': machines_done, 'checkConn': "no"})
-
-        checkConnBool = checkConnection(request)
-        if not checkConnBool:
-            machines_done = populate_executions_machines(request)
-            if not machines_done:
-                request.session['firstCheck'] = "no"
-            request.session["checkConn"] = "Required"
-            return render(request, 'pages/executions.html',
-                          {'machines': machines_done, 'checkConn': "no"})
-        machine_connected = Machine.objects.get(id=request.session["machine_chosen"])
-        executions = Execution.objects.all().filter(author=request.user, machine=machine_connected).filter(
-            Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
-        executionsDone = Execution.objects.all().filter(author=request.user, status="COMPLETED",
-                                                        machine=machine_connected)
-        executionsFailed = Execution.objects.all().filter(author=request.user, status="FAILED",
-                                                          machine=machine_connected)
-        executionTimeout = Execution.objects.all().filter(author=request.user, status="TIMEOUT", checkpointBool=True,
-                                                          machine=machine_connected)
-        executionsCheckpoint = Execution.objects.all().filter(author=request.user, status="TIMEOUT",
-                                                              autorestart=True, machine=machine_connected)
-        executionsCanceled = Execution.objects.all().filter(author=request.user, status="CANCELLED+",
-                                                            checkpoint="-1", machine=machine_connected)
-        request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
-        for execution in executionsCanceled:
-            checks = Execution.objects.all().get(author=request.user, status="CANCELLED+", checkpoint=execution.jobID,
-                                                 machine=machine_connected)
-            if checks is not None:
-                execution.status = "TIMEOUT"
-                execution.checkpoint = 0
-                execution.save()
-        return render(request, 'pages/executions.html',
-                      {'executions': executions, 'executionsDone': executionsDone,
-                       'executionsFailed': executionsFailed,
-                       'executionsTimeout': executionTimeout, 'checkConn': "yes",
-                       'machine_chosen': request.session['nameConnectedMachine']})
-    else:
-        form = ExecutionForm()
-        machines_done = populate_executions_machines(request)
-        if not machines_done:
-            request.session['firstCheck'] = "no"
-            return render(request, 'pages/executions.html',
-                          {'firstCheck': request.session['firstCheck']})
-        elif "private_key_decrypted" not in request.session:
-            request.session['firstCheck'] = "yes"
-            request.session["checkConn"] = "no"
-            return render(request, 'pages/executions.html',
-                          {'form': form, 'machines': machines_done,
-                           'checkConn': request.session["checkConn"],
-                           'firstCheck': request.session['firstCheck']})
-        else:
-            checkConnBool = checkConnection(request)
-            if not checkConnBool:
-                machines_done = populate_executions_machines(request)
-                if not machines_done:
-                    request.session['firstCheck'] = "no"
-                request.session["checkConn"] = "Required"
-                return render(request, 'pages/executions.html',
-                              {'machines': machines_done, 'checkConn': "no",
-                               'machine_chosen': request.POST.get('machineChoice')})
-
-            machine_connected = Machine.objects.get(id=get_machine(request))
-            request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
-            executions = Execution.objects.all().filter(author=request.user, machine=machine_connected).filter(
-                Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
-            executionsDone = Execution.objects.all().filter(author=request.user, machine=machine_connected,
-                                                            status="COMPLETED")
-            executionsFailed = Execution.objects.all().filter(author=request.user, machine=machine_connected,
-                                                              status="FAILED")
-            executionsCheckpoint = Execution.objects.all().filter(author=request.user, machine=machine_connected,
-                                                                  status="TIMEOUT")
-            executionTimeout = Execution.objects.all().filter(author=request.user, machine=machine_connected,
-                                                              status="TIMEOUT",
-                                                              autorestart=False, checkpointBool=True)
-            executionsCanceled = Execution.objects.all().filter(author=request.user, machine=machine_connected,
-                                                                status="CANCELED",
-                                                                checkpoint="-1")
-            for execution in executionsCanceled:
-                checks = Execution.objects.all().get(author=request.user, status="CANCELLED+",
-                                                     machine=machine_connected,
-                                                     checkpoint=execution.jobID)
-                if checks is not None:
-                    execution.status = "TIMEOUT"
-                    execution.checkpoint = 0
-                    execution.save()
-                checks.delete()
-            request.session["checkConn"] = "yes"
-    return render(request, 'pages/executions.html',
-                  {'form': form, 'executions': executions, 'executionsDone': executionsDone,
-                   'executionsFailed': executionsFailed, 'executionsTimeout': executionTimeout,
-                   "checkConn": request.session["checkConn"],
-                   'machine_chosen': request.session['nameConnectedMachine']})
 
 
 def checkpointing_noAutorestart(jobIDCheckpoint, request):
@@ -1804,6 +1542,11 @@ def scp_upload_code_folder(local_path, remote_path, private_key_decrypted, machi
     sftp = ssh.open_sftp()
 
     # Check and create remote folder if it doesn't exist
+    if not remote_path.startswith('/'):
+        stdin, stdout, stderr = ssh.exec_command("echo $HOME")
+        stdout = "".join(stdout.readlines()).strip()
+        remote_path = stdout + "/" + remote_path
+
     remote_dirs = remote_path.split('/')
     current_dir = ''
     emptyDir = False
@@ -1813,9 +1556,10 @@ def scp_upload_code_folder(local_path, remote_path, private_key_decrypted, machi
             try:
                 sftp.stat(current_dir)
             except FileNotFoundError:
-                print("FileNotFoundError " + str(current_dir))
+                print("Creating directory " + str(current_dir))
                 sftp.mkdir(current_dir)
                 emptyDir = True
+
     if res or emptyDir:
         # Recursively upload the local folder and its contents
         for root, dirs, files in os.walk(local_path + f"/{repository}/" + branch):
