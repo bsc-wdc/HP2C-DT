@@ -9,7 +9,6 @@ import time
 import uuid
 import yaml
 
-from scp import SCPClient
 from stat import S_ISDIR
 from django.contrib.auth import authenticate, login, logout
 from requests import RequestException
