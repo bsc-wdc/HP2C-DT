@@ -4,7 +4,7 @@
 {% block breadcrumbs %}{% endblock breadcrumbs %}
 
 {% block content %}
-<div class="card-body p-5">
+<div class="card-body mx-5">
     <div class="wrapper-create-work">
         <h2 class="text-center mb-5" style="text-decoration: underline;">
             <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
@@ -35,7 +35,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">QOS</label>
                 <input type="text" name="qos" class="form-control" placeholder="Enter the queue you want to use">
-                <small class="form-text text-muted">QOS (default bsc_cs)</small>
+                <small class="form-text text-muted">QOS (For mn5: gp_bsccs, gp_debug)</small>
             </div>
             <div class="form-group">
                 <label class="font-weight-bold">Project Name</label>

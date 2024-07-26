@@ -835,6 +835,7 @@ def tools(request):
         document_form = DocumentForm()
         branches = get_github_repo_branches()
         run_job = request.session.get('run_job', None)
+        request.session.pop('run_job', None)
 
         return render(request, 'pages/tools.html',
                       {'document_form': document_form,
@@ -1392,8 +1393,13 @@ class updateExecutions(threading.Thread):
             conn = Connection.objects.get(conn_id=self.connectionID)
             if conn.status == "Disconnect":
                 break
-            boolException = update_table(self.request)
-            if not boolException:
+            bool_exception = True
+            try:
+                bool_exception = update_table(self.request)
+            except Exception as e:
+                print("Error updating the table of executions: ", e)
+
+            if not bool_exception:
                 break
             time.sleep(5)
         Connection.objects.filter(conn_id=self.connectionID).update(status="Disconnect")
@@ -1462,58 +1468,50 @@ class run_sim_async(threading.Thread):
         machine_node = machine_found.fqdn.split(".")[0]
         home_path = os.getenv("HOME")
         local_folder = os.path.join(home_path, "ui-hp2cdt", "installDir")
-        scp_upload_code_folder(local_folder, path_install_dir,
-                               self.request.session["private_key_decrypted"],
-                               machine_found.id, self.branch,
-                               repository="datagen", local_folder=local_folder)
-        scp_upload_code_folder(local_folder, path_install_dir_stability_analysis,
-                               self.request.session["private_key_decrypted"],
-                               machine_found.id, stability_analysis_branch,
-                               repository="stability_analysis",
-                               local_folder=local_folder)
-        scp_upload_code_folder(local_folder,
-                               path_install_dir_gridcal,
-                               self.request.session["private_key_decrypted"],
-                               machine_found.id, gridcal_branch,
-                               repository="new-GridCal",
-                               local_folder=local_folder)
+        self.upload_repositories(gridcal_branch, local_folder, machine_found,
+                                 path_install_dir, path_install_dir_gridcal,
+                                 path_install_dir_stability_analysis,
+                                 stability_analysis_branch,
+                                 repositories=["datagen", "stability_analysis",
+                                               "new-GridCal"])
 
-        exported_variables = set_environment_variables(setup)
+        stderr, stdout = self.execute_cmds(execution_folder, machine_found,
+                                           machine_name, machine_node,
+                                           path_install_dir,
+                                           path_install_dir_gridcal,
+                                           path_install_dir_stability_analysis,
+                                           setup, setup_folder, ssh,
+                                           userMachine)
 
-        if self.checkpoint_bool:
-            cmd2 = (
-                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
-                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
-                f"{get_variables_exported(exported_variables)} mkdir -p {execution_folder}; "
-                f"cd {path_install_dir}/scripts/{machine_name}/; source app-checkpoint.sh {userMachine} {str(self.name)} {setup_folder} "
-                f"{execution_folder} {self.numNodes} {self.execTime} {self.qos} {machine_found.installDir} {self.branch} {machine_found.dataDir} "
-                f"{self.gOPTION} {self.tOPTION} {self.dOPTION} {self.project_name};")
-            cmd_writeFile_checkpoint = (
-                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
-                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
-                f"{get_variables_exported(exported_variables)} cd {path_install_dir}/scripts/{machine_name}/; "
-                f"source app-checkpoint.sh {userMachine} {str(self.name)} {setup_folder} {execution_folder} {self.numNodes} "
-                f"{self.execTime} {self.qos} {machine_found.installDir} {self.branch} {machine_found.dataDir} {self.gOPTION} "
-                f"{self.tOPTION} {self.dOPTION} {self.project_name};")
-            cmd2 += write_checkpoint_file(execution_folder,
-                                          cmd_writeFile_checkpoint)
-        else:
-            cmd2 = (
-                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
-                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
-                f"{get_variables_exported(exported_variables)} mkdir -p {execution_folder}; "
-                f"cd {path_install_dir}/scripts/{machine_name}/; source app.sh {userMachine} {str(self.name)} {setup_folder} "
-                f"{execution_folder} {self.numNodes} {self.execTime} {self.qos} {path_install_dir} {self.branch} {machine_found.dataDir} "
-                f"{self.gOPTION} {self.tOPTION} {self.dOPTION} {self.project_name};")
-        print(f"run_sim : {cmd2} ")
+        retry_repositories = set()
+        for s in stderr:
+            if ("Error submitting script to queue system" or
+                    "Batch job submission failed" in s):
+                Execution.objects.filter(eID=self.eiD).update(status="FAILED")
+            if "No such file or directory" in s:
+                if machine_found.installDir in s:
+                    rest_of_the_string = s.split(machine_found.installDir)[1]
+                    repository = rest_of_the_string.split("/")[1]
+                    retry_repositories.add(repository)
 
-        stdin, stdout, stderr = ssh.exec_command(cmd2)
-        stdout = stdout.readlines()
-        stderr = stderr.readlines()
-        print("---------------------------")
-        for s in stdout:
-            print(s)
-        print("---------------------------")
+        if len(retry_repositories) > 0:
+            self.upload_repositories(gridcal_branch, local_folder,
+                                     machine_found,
+                                     path_install_dir,
+                                     path_install_dir_gridcal,
+                                     path_install_dir_stability_analysis,
+                                     stability_analysis_branch,
+                                     repositories=retry_repositories,
+                                     retry=True)
+
+            stderr, stdout = self.execute_cmds(execution_folder,
+                                               machine_found,
+                                               machine_name, machine_node,
+                                               path_install_dir,
+                                               path_install_dir_gridcal,
+                                               path_install_dir_stability_analysis,
+                                               setup, setup_folder, ssh,
+                                               userMachine)
 
 
         s = "Submitted batch job"
@@ -1530,9 +1528,71 @@ class run_sim_async(threading.Thread):
         os.remove("documents/" + str(self.name))
         return
 
+    def execute_cmds(self, execution_folder, machine_found, machine_name,
+                     machine_node, path_install_dir, path_install_dir_gridcal,
+                     path_install_dir_stability_analysis, setup, setup_folder,
+                     ssh, userMachine):
+        exported_variables = set_environment_variables(setup)
+        if self.checkpoint_bool:
+            cmd2 = (
+                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
+                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
+                f"{get_variables_exported(exported_variables)} mkdir -p {execution_folder}; "
+                f"cd {path_install_dir}/scripts/{machine_name}/; source app-checkpoint.sh {userMachine} {str(self.name)} {setup_folder} "
+                f"{execution_folder} {self.numNodes} {self.execTime} {self.qos} {machine_found.installDir} {self.branch} {machine_found.dataDir} "
+                f"{self.gOPTION} {self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
+            cmd_writeFile_checkpoint = (
+                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
+                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
+                f"{get_variables_exported(exported_variables)} cd {path_install_dir}/scripts/{machine_name}/; "
+                f"source app-checkpoint.sh {userMachine} {str(self.name)} {setup_folder} {execution_folder} {self.numNodes} "
+                f"{self.execTime} {self.qos} {machine_found.installDir} {self.branch} {machine_found.dataDir} {self.gOPTION} "
+                f"{self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
+            cmd2 += write_checkpoint_file(execution_folder,
+                                          cmd_writeFile_checkpoint)
+        else:
+            cmd2 = (
+                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
+                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
+                f"{get_variables_exported(exported_variables)} mkdir -p {execution_folder}; "
+                f"cd {path_install_dir}/scripts/{machine_name}/; source app.sh {userMachine} {str(self.name)} {setup_folder} "
+                f"{execution_folder} {self.numNodes} {self.execTime} {self.qos} {path_install_dir} {self.branch} {machine_found.dataDir} "
+                f"{self.gOPTION} {self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
+        print(f"run_sim : {cmd2} ")
+        stdin, stdout, stderr = ssh.exec_command(cmd2)
+        stdout = stdout.readlines()
+        stderr = stderr.readlines()
+        print("-------------START STDOUT--------------")
+        print("".join(stdout))
+        print("---------------------------------------")
+        print("-------------START STDERR--------------")
+        print("".join(stderr))
+        print("---------------------------------------")
+        return stderr, stdout
+
+    def upload_repositories(self, gridcal_branch, local_folder, machine_found,
+                            path_install_dir, path_install_dir_gridcal,
+                            path_install_dir_stability_analysis,
+                            stability_analysis_branch, repositories,
+                            retry=False):
+        for repo in repositories:
+            install_dir = path_install_dir
+            branch = self.branch
+            if repo == "stability_analysis":
+                branch = stability_analysis_branch
+                install_dir = path_install_dir_stability_analysis
+            if repo == "new-GridCal":
+                branch = gridcal_branch
+                install_dir = path_install_dir_gridcal
+            scp_upload_code_folder(local_folder, install_dir,
+                                   self.request.session["private_key_decrypted"],
+                                   machine_found.id, branch=branch,
+                                   repository=repo, local_folder=local_folder,
+                                   retry=retry)
+
 
 def scp_upload_code_folder(local_path, remote_path, private_key_decrypted, machineID, branch,
-                           repository, local_folder):
+                           repository, local_folder, retry):
     res = get_github_code(repository, branch, local_folder)
     ssh = paramiko.SSHClient()
     pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
@@ -1560,7 +1620,7 @@ def scp_upload_code_folder(local_path, remote_path, private_key_decrypted, machi
                 sftp.mkdir(current_dir)
                 emptyDir = True
 
-    if res or emptyDir:
+    if res or emptyDir or retry:
         # Recursively upload the local folder and its contents
         for root, dirs, files in os.walk(local_path + f"/{repository}/" + branch):
             if '.git' in dirs:
