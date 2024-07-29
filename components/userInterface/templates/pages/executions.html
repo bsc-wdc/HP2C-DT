@@ -38,6 +38,7 @@
                         <thead>
                             <tr style="text-align: center">
                                 <th scope="col">Name</th>
+                                <th scope="col">Tool</th>
                                 <th scope="col">JobID</th>
                                 <th scope="col">User</th>
                                 <th scope="col">Nodes</th>
@@ -54,6 +55,7 @@
                             {% for e in executions %}
                                 <tr style="text-align: center">
                                     <td>{{ e.name_sim }}</td>
+                                    <td>{{ e.tool }}</td>
                                     <td>{{ e.jobID }}</td>
                                     <td>{{ e.user }}</td>
                                     <td>{{ e.nodes }}</td>
@@ -72,7 +74,7 @@
                                         <form method="POST">
                                             {% csrf_token %}
                                             <input type="hidden" value="{{ e.eID }}" name="stopExecutionValue">
-                                            <button type="submit" name="stopExecution" class="btn btn-warning " data-toggle="tooltip" data-placement="top" title="Stop execution">STOP</button>
+                                            <button type="submit" name="stopExecution" class="btn btn-warning" data-toggle="tooltip" data-placement="top" title="Stop execution">STOP</button>
                                         </form>
                                     </td>
                                     <td>
@@ -82,6 +84,7 @@
                                             <button type="submit" name="deleteExecution" class="btn btn-danger feather icon-stop-circle" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
                                         </form>
                                     </td>
+
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -100,6 +103,7 @@
                         <thead>
                             <tr>
                                 <th scope="col">Name</th>
+                                <th scope="col">Tool</th>
                                 <th scope="col">JobID</th>
                                 <th scope="col">User</th>
                                 <th scope="col">Nodes</th>
@@ -115,6 +119,7 @@
                             {% for e in executionsDone %}
                                 <tr>
                                     <td>{{ e.name_sim }}</td>
+                                    <td>{{ e.tool }}</td>
                                     <td>{{ e.jobID }}</td>
                                     <td>{{ e.user }}</td>
                                     <td>{{ e.nodes }}</td>
@@ -154,6 +159,7 @@
                         <thead>
                             <tr>
                                 <th scope="col">Name</th>
+                                <th scope="col">Tool</th>
                                 <th scope="col">JobID</th>
                                 <th scope="col">User</th>
                                 <th scope="col">Nodes</th>
@@ -170,6 +176,7 @@
                             {% for e in executionsTimeout %}
                                 <tr>
                                     <td>{{ e.name_sim }}</td>
+                                    <td>{{ e.tool }}</td>
                                     <td>{{ e.jobID }}</td>
                                     <td>{{ e.user }}</td>
                                     <td>{{ e.nodes }}</td>
@@ -216,6 +223,7 @@
                         <thead>
                             <tr>
                                 <th scope="col">Name</th>
+                                <th scope="col">Tool</th>
                                 <th scope="col">JobID</th>
                                 <th scope="col">User</th>
                                 <th scope="col">Nodes</th>
@@ -231,6 +239,7 @@
                             {% for e in executionsFailed %}
                                 <tr>
                                     <td>{{ e.name_sim }}</td>
+                                    <td>{{ e.tool }}</td>
                                     <td>{{ e.jobID }}</td>
                                     <td>{{ e.user }}</td>
                                     <td>{{ e.nodes }}</td>

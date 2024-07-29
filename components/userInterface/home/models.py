@@ -131,4 +131,6 @@ class Execution(models.Model):
     d_bool = models.CharField(max_length=255, null=False, default="false")
     t_bool = models.CharField(max_length=255, null=False, default="false")
     project_name = models.CharField(max_length=255, null=False, default="bsc19")
+    tool = models.CharField(max_length=255, null=False, default="-")
+    results_dir = models.CharField(max_length=500, default="")
 

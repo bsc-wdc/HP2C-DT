@@ -7,6 +7,8 @@ import subprocess
 import threading
 import time
 import uuid
+
+import pandas as pd
 import yaml
 
 from stat import S_ISDIR
@@ -701,7 +703,7 @@ def tools(request):
                 e_id = start_exec(num_nodes, name_sim, exec_time, qos, name,
                                   request,
                                   auto_restart_bool, checkpoint_bool, d_bool,
-                                  t_bool, g_bool, branch)
+                                  t_bool, g_bool, branch, tool="stability_analysis")
                 run_sim = run_sim_async(request, name, num_nodes, name_sim,
                                         exec_time, qos, checkpoint_bool,
                                         auto_restart_bool, e_id, branch,
@@ -757,7 +759,7 @@ def tools(request):
             author=request.user, status="FAILED",
             machine=machine_connected)
         executionTimeout = Execution.objects.all().filter(
-            author=request.user, status="TIMEOUT", checkpointBool=True,
+            author=request.user, status="TIMEOUT",
             machine=machine_connected)
         executionsCheckpoint = Execution.objects.all().filter(
             author=request.user, status="TIMEOUT",
@@ -814,8 +816,7 @@ def tools(request):
         executionTimeout = Execution.objects.all().filter(author=request.user,
                                                           machine=machine_connected,
                                                           status="TIMEOUT",
-                                                          autorestart=False,
-                                                          checkpointBool=True)
+                                                          autorestart=False)
         executionsCanceled = Execution.objects.all().filter(
             author=request.user, machine=machine_connected,
             status="CANCELED",
@@ -1145,7 +1146,7 @@ def get_github_repo_branches():
 
 
 def start_exec(num_nodes, name_sim, execTime, qos, name, request, auto_restart_bool, checkpoint_bool, d_bool, t_bool,
-               g_bool, branch):
+               g_bool, branch, tool=""):
     machine_found = Machine.objects.get(id=request.session['machine_chosen'])
     user_machine = machine_found.user
     principal_folder = machine_found.wdir
@@ -1172,6 +1173,7 @@ def start_exec(num_nodes, name_sim, execTime, qos, name, request, auto_restart_b
     form.g_bool = g_bool
     form.branch = branch
     form.results_ftp_path = ""
+    form.tool = tool
     form.save()
     return uID
 
@@ -1325,6 +1327,29 @@ def remove_protocol_and_domain(url):
     return re.sub(r'^.*?//[^/]+/', '', url)
 
 
+@login_required
+def results(request):
+    if request.method == 'POST':
+        pass
+    else:
+        jobID = request.session['jobIDdone']
+        ssh = connection_ssh(request.session['private_key_decrypted'], request.session['machine_chosen'])
+        stdin, stdout, stderr = ssh.exec_command(
+            "sacct -j " + str(jobID) + " --format=jobId,user,nnodes,elapsed,state | sed -n 3,3p")
+        stdout = stdout.readlines()
+        values = str(stdout).split()
+        Execution.objects.filter(jobID=jobID).update(status=values[4], time=values[3], nodes=int(values[2]))
+        execUpdate = Execution.objects.get(jobID=jobID)
+
+        scp_download_code_folder(execUpdate.wdir, execUpdate.results_dir, request.session['private_key_decrypted'],
+                                 request.session['machine_chosen'])
+        files = sorted(os.listdir(execUpdate.results_dir))
+
+        request.session['results_dir'] = execUpdate.results_dir
+    return render(request, 'pages/results.html',
+                  {'executionsDone': execUpdate, 'files':files})
+
+
 def copy_folder_hpc_to_service(request, service_local_path, remote_hpc_path):
     ssh = paramiko.SSHClient()
     pkey = paramiko.RSAKey.from_private_key(StringIO(request.session["private_key_decrypted"]))
@@ -1429,6 +1454,7 @@ class run_sim_async(threading.Thread):
 
     def run(self):
         setup = read_and_write_yaml(self.name)
+        local_path = os.path.join(os.getenv("HOME"), "ui-hp2cdt")
         machine_found = Machine.objects.get(id=self.request.session['machine_chosen'])
         fqdn = machine_found.fqdn
         machine_folder = extract_substring(fqdn)
@@ -1449,9 +1475,11 @@ class run_sim_async(threading.Thread):
 
         execution_folder = wdirPath + "/execution"
         setup_folder = wdirPath + "/setup"
+        results_dir = os.path.join(local_path, "results", nameWdir)
 
         Execution.objects.filter(eID=self.eiD).update(wdir=execution_folder,
-                                                      setup_path=setup_folder)
+                                                      setup_path=setup_folder,
+                                                      results_dir=results_dir)
 
         self.request.session['workflow_path'] = setup_folder
 
@@ -1466,8 +1494,8 @@ class run_sim_async(threading.Thread):
                                                 "new-GridCal", gridcal_branch)
         machine_name = remove_numbers(machine_found.fqdn)
         machine_node = machine_found.fqdn.split(".")[0]
-        home_path = os.getenv("HOME")
-        local_folder = os.path.join(home_path, "ui-hp2cdt", "installDir")
+
+        local_folder = os.path.join(local_path, "installDir")
         self.upload_repositories(gridcal_branch, local_folder, machine_found,
                                  path_install_dir, path_install_dir_gridcal,
                                  path_install_dir_stability_analysis,
@@ -1657,6 +1685,50 @@ def scp_upload_code_folder(local_path, remote_path, private_key_decrypted, machi
     return
 
 
+def download_dir_one_level(sftp, remote_path, local_path):
+    """
+    Function to recursively download the folder contents. It will store the
+    files and the files in subdirectories in the same local path.
+
+    :param sftp: sftp connection
+    :param remote_path: Path in the machine where the files are stored
+    :param local_path: Local path (where the files will be stored)
+    """
+    os.makedirs(local_path, exist_ok=True)
+    for entry in sftp.listdir_attr(remote_path):
+        remote_file_path = os.path.join(remote_path, entry.filename)
+        local_file_path = os.path.join(local_path, entry.filename)
+
+        if entry.longname.startswith('d'):
+            download_dir_one_level(sftp, remote_file_path, local_path)
+        else:
+            sftp.get(remote_file_path, local_file_path)
+
+
+def scp_download_code_folder(remote_path, results_dir, private_key_decrypted, machineID):
+    ssh = paramiko.SSHClient()
+    pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
+    machine_found = Machine.objects.get(id=machineID)
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
+    sftp = ssh.open_sftp()
+
+    # Check if the remote path is relative
+    if not remote_path.startswith('/'):
+        stdin, stdout, stderr = ssh.exec_command("echo $HOME")
+        stdout = "".join(stdout.readlines()).strip()
+        remote_path = stdout + "/" + remote_path
+
+    # Create the local directory if it doesn't exist
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    download_dir_one_level(sftp, remote_path, results_dir)
+
+    sftp.close()
+    ssh.close()
+
+
 def get_github_code(repository, branch_name, local_folder):
     local_path = os.path.dirname(__file__)
     script_path = f"{local_path}/../scripts/git_clone_{repository}.sh"
@@ -1749,3 +1821,48 @@ def wdir_folder(principal_folder):
         principal_folder = principal_folder + "/"
     wdirDone = principal_folder + "" + nameWdir
     return wdirDone, nameWdir
+
+
+def read_and_format_file(file_path):
+    content = ""
+
+
+
+    if file_path.endswith('.xlsx'):
+        try:
+            xls = pd.ExcelFile(file_path)
+            content = ""
+            for sheet_name in xls.sheet_names:
+                df = pd.read_excel(file_path, sheet_name=sheet_name)
+                content += f"<h2>{sheet_name}</h2>"
+                content += df.to_html(index=False)
+        except Exception as e:
+            content = f"Failed to read XLSX: {e}"
+
+    elif file_path.endswith('.csv'):
+        try:
+            df = pd.read_csv(file_path)
+            content = df.to_html(index=False)
+        except Exception as e:
+            content = f"Failed to read CSV: {e}"
+    else:
+        try:
+            with open(file_path, 'r') as file:
+                content = file.read()
+        except Exception as e:
+            print("Error reading the file: ", e)
+
+    return content
+
+
+@login_required()
+def show_file_content(request, filename):
+    directory = request.session.get('results_dir', None)
+    file_path = os.path.join(directory, filename)
+    if not os.path.isfile(file_path):
+        return HttpResponse("File not found", status=404)
+
+    file_content = read_and_format_file(file_path)
+    print(file_content)
+    return render(request, 'pages/show_file_content.html',
+                  {'filename': filename, 'file_content': file_content})

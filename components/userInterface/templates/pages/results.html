@@ -1,0 +1,63 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<h3 class="page-title">Result</h3>
+<div class="card" style="border-radius: 15px;">
+    <div class="card-body p-5">
+        <div class="wrapper-create-work">
+            <script>
+                function copyToClipboard(element) {
+                    var $temp = $("<input>");
+                    $("body").append($temp);
+                    $temp.val($(element).text()).select();
+                    document.execCommand("copy");
+                    $temp.remove();
+                }
+            </script>
+
+            <p class="h4" style="text-align: center">Pending executions:</p>
+            <table class="table">
+                <thead>
+                <tr style="text-align: center">
+                    <th scope="col">Name</th>
+                    <th scope="col">Tool</th>
+                    <th scope="col">JobID</th>
+                    <th scope="col">User</th>
+                    <th scope="col">Nodes</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Time</th>
+                    <th scope="col">Queue</th>
+                    <th scope="col">Checkpoint</th>
+                    <th scope="col">Autorestart</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr style="text-align: center">
+                    <td>{{ executionsDone.name_sim }}</td>
+                    <td>{{ executionsDone.tool }}</td>
+                    <td>{{ executionsDone.jobID }}</td>
+                    <td>{{ executionsDone.user }}</td>
+                    <td>{{ executionsDone.nodes }}</td>
+                    <td>{{ executionsDone.status }}</td>
+                    <td>{{ executionsDone.time }}</td>
+                    <td>{{ executionsDone.qos }}</td>
+                    <td>{{ executionsDone.checkpointBool }}</td>
+                    <td>{{ executionsDone.autorestart }}</td>
+                </tr>
+                </tbody>
+            </table>
+            <button class="btn btn-secondary" onclick="copyToClipboard('#p2')">Click to copy the result's path</button>
+            <button id="p2" hidden>{{ executionsDone.wdir }}</button>
+            <h5>Files</h5>
+            <ul>
+                {% for file in files %}
+                    <li><a href="{% url 'show_file_content' file %}">{{ file }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

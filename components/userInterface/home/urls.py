@@ -14,4 +14,6 @@ urlpatterns = [
   path('ssh_keys_generation/', views.ssh_keys_generation, name='ssh_keys_generation'),
   path('tools/', views.tools, name='tools'),
   path('hpc_machines/', views.hpc_machines, name='hpc_machines'),
+  path('results/', views.results, name='results'),
+  path('file/<str:filename>/', views.show_file_content, name='show_file_content'),
 ]
