@@ -1137,21 +1137,27 @@ def run_command(command):
 
 
 def get_github_repo_branches():
-    repo_url = "https://github.com/CAELESTIS-Project-EU/Workflows"
-    # Extract the user/repo from the URL
-    user_repo = repo_url.split("github.com/")[1]
-    # GitHub API endpoint to get branches
+    try:
+        with open(os.path.expanduser('~/keys/github-token-hp2cdt.txt'),
+                  'r') as file:
+            token = file.read().strip()
+    except FileNotFoundError:
+        return "Unable to read the token from ~/keys/github-token-hp2cdt.txt"
+
+    user_repo = "MauroGarciaLorenzo/hp2c-dt"
     api_url = f"https://api.github.com/repos/{user_repo}/branches"
 
-    # Make the API request
-    response = requests.get(api_url)
+    headers = {
+        'Authorization': f'Token {token}'
+    }
 
-    # Check if the response is successful
+    response = requests.get(api_url, headers=headers)
+
     if response.status_code == 200:
         branches = response.json()
         return [branch['name'] for branch in branches]
     else:
-        return f"Error: Unable to access the GitHub repository. Status code: {response.status_code}"
+        return f"Unable to access the GitHub repository. Status code: {response.status_code}"
 
 
 def start_exec(num_nodes, name_sim, execTime, qos, name, request, auto_restart_bool, checkpoint_bool, d_bool, t_bool,

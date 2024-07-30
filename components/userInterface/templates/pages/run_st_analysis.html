@@ -11,11 +11,26 @@
         </h2>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            <div class="form-group">
-                <label class="font-weight-bold">GitHub's branch</label>
-                <input type="text" name="branchChoice" class="form-control" placeholder="Choose a branch for the simulation">
-                <small class="form-text text-muted">What's the GitHub branch?</small>
-            </div>
+            {% if branches %}
+                {% if branches.0 == 'U' %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ branches }}
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">GitHub's branch</label>
+                        <input type="text" name="branchChoice" class="form-control" placeholder="Choose a branch for the simulation">
+                        <small class="form-text text-muted">What's the GitHub branch?</small>
+                    </div>
+                {% else %}
+                    <label class="font-weight-bold">Github's branch</label>
+                    <br>
+                    <select id="branchChoice" name="branchChoice" class="btn btn-secondary dropdown-toggle form-control">
+                        {% for branch in branches %}
+                            <option>{{ branch }}</option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
+            {% endif %}
             <input hidden type="text" name="user" value="{{ user.username }}"/>
             <div class="form-group">
                 <label class="font-weight-bold">Name of the simulation</label>
