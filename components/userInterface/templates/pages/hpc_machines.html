@@ -43,6 +43,11 @@
                                 Provided token is wrong
                             </div>
                         {% endif %}
+                        {% if ssh_keys_error %}
+                            <div class="alert alert-danger" role="alert">
+                                SSH keys have not been created for this machine. Please create them in the SSH Keys section.
+                            </div>
+                        {% endif %}
                         {% if show_disconnected %}
                             <div class="alert alert-success" role="alert">
                                 Succesfully disconnected from machine {{show_disconnected}}

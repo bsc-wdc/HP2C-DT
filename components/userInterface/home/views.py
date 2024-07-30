@@ -15,6 +15,7 @@ from stat import S_ISDIR
 from django.contrib.auth import authenticate, login, logout
 from requests import RequestException
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ObjectDoesNotExist
 from scripts.update_dashboards import update_dashboards, get_deployment_info
 from .models import *
 from django.contrib import messages
@@ -856,14 +857,18 @@ def tools(request):
 def hpc_machines(request):
     machines_done = populate_executions_machines(request)
     stability_connection = check_stability_connection(request)
-
     if request.method == 'POST':
         form = Machine_Form(request.POST)
 
         if 'connectButton' in request.POST:
             user, fqdn = get_name_fqdn(request.POST.get('machineChoice'))
             machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
-            machine_chosen = Key_Gen.objects.filter(machine_id=machine_found.id).get()
+            try:
+                machine_chosen = Key_Gen.objects.filter(machine_id=machine_found.id).get()
+            except ObjectDoesNotExist:
+                request.session['ssh_keys_not_created'] = True
+                return redirect('hpc_machines')
+
             private_key_encrypted = machine_chosen.private_key
             try:
                 private_key_decrypted = decrypt(private_key_encrypted, request.POST.get("token")).decode()
@@ -1038,12 +1043,15 @@ def hpc_machines(request):
         machine_created = request.session.get('machine_created', None)
         request.session.pop('machine_created', None)
 
+        ssh_keys_error = request.session.get('ssh_keys_not_created', None)
+        request.session.pop('ssh_keys_not_created', None)
+
         return render(request, 'pages/hpc_machines.html',
                       {'machines': machines_done, 'form': form,
                        'firstPhase': request.session['firstPhase'],
                        'check_existence_machines': request.session['check_existence_machines'],
                        'show_warning': show_warning, 'connected': stability_connection,
-                       'machine_created': machine_created
+                       'machine_created': machine_created, 'ssh_keys_error': ssh_keys_error
                        })
 
 
