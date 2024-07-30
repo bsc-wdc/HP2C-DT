@@ -133,4 +133,7 @@ class Execution(models.Model):
     project_name = models.CharField(max_length=255, null=False, default="bsc19")
     tool = models.CharField(max_length=255, null=False, default="-")
     results_dir = models.CharField(max_length=500, default="")
+    submit = models.DateTimeField(null=True, blank=True, default=None)
+    start = models.DateTimeField(null=True, blank=True, default=None)
+    end = models.DateTimeField(null=True, blank=True, default=None)
 

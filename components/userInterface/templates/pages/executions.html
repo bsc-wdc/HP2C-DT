@@ -36,19 +36,22 @@
                 {% if executions %}
                     <table class="table">
                         <thead>
-                            <tr style="text-align: center">
+                            <tr>
                                 <th scope="col">Name</th>
                                 <th scope="col">Tool</th>
                                 <th scope="col">JobID</th>
                                 <th scope="col">User</th>
                                 <th scope="col">Nodes</th>
                                 <th scope="col">Status</th>
+                                <th scope="col">Submit</th>
+                                <th scope="col">Start</th>
+                                <th scope="col">End</th>
+                                <th scope="col">Time</th>
                                 <th scope="col">Checkpoint</th>
                                 <th scope="col">Autorestart</th>
-                                <th scope="col">Time</th>
-                                <th></th>
-                                <th></th>
-                                <th></th>
+                                <th scope="col"></th>
+                                <th scope="col"></th>
+                                <th scope="col"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -60,9 +63,12 @@
                                     <td>{{ e.user }}</td>
                                     <td>{{ e.nodes }}</td>
                                     <td>{{ e.status }}</td>
+                                    <td>{% if e.submit %}<div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{% if e.start %}<div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{% if e.end %}<div>{{ e.end|date:"Y-m-d" }}<br>{{ e.end|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{{ e.time }}</td>
                                     <td>{{ e.checkpointBool }}</td>
                                     <td>{{ e.autorestart }}</td>
-                                    <td>{{ e.time }}</td>
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
@@ -108,9 +114,12 @@
                                 <th scope="col">User</th>
                                 <th scope="col">Nodes</th>
                                 <th scope="col">Status</th>
+                                <th scope="col">Submit</th>
+                                <th scope="col">Start</th>
+                                <th scope="col">End</th>
+                                <th scope="col">Time</th>
                                 <th scope="col">Checkpoint</th>
                                 <th scope="col">Autorestart</th>
-                                <th scope="col">Time</th>
                                 <th scope="col"></th>
                                 <th scope="col"></th>
                             </tr>
@@ -124,21 +133,24 @@
                                     <td>{{ e.user }}</td>
                                     <td>{{ e.nodes }}</td>
                                     <td>{{ e.status }}</td>
+                                    <td>{% if e.submit %}<div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{% if e.start %}<div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{% if e.end %}<div>{{ e.end|date:"Y-m-d" }}<br>{{ e.end|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{{ e.time }}</td>
                                     <td>{{ e.checkpointBool }}</td>
                                     <td>{{ e.autorestart }}</td>
-                                    <td>{{ e.time }}</td>
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
                                             <input type="hidden" value="{{ e.jobID }}" name="resultExecutionValue">
-                                            <button type="submit" name="resultExecution" class="btn btn-primary fa fa-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
+                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
                                         </form>
                                     </td>
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
                                             <input type="hidden" value="{{ e.eID }}" name="deleteExecutionValue">
-                                            <button type="submit" name="deleteExecution" class="btn btn-primary fa fa-trash" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
+                                            <button type="submit" name="deleteExecution" class="btn btn-danger feather icon-stop-circle" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
                                         </form>
                                     </td>
                                 </tr>
@@ -164,9 +176,12 @@
                                 <th scope="col">User</th>
                                 <th scope="col">Nodes</th>
                                 <th scope="col">Status</th>
+                                <th scope="col">Submit</th>
+                                <th scope="col">Start</th>
+                                <th scope="col">End</th>
+                                <th scope="col">Time</th>
                                 <th scope="col">Checkpoint</th>
                                 <th scope="col">Autorestart</th>
-                                <th scope="col">Time</th>
                                 <th scope="col"></th>
                                 <th scope="col"></th>
                                 <th scope="col"></th>
@@ -181,9 +196,12 @@
                                     <td>{{ e.user }}</td>
                                     <td>{{ e.nodes }}</td>
                                     <td>{{ e.status }}</td>
+                                    <td>{% if e.submit %}<div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{% if e.start %}<div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{% if e.end %}<div>{{ e.end|date:"Y-m-d" }}<br>{{ e.end|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{{ e.time }}</td>
                                     <td>{{ e.checkpointBool }}</td>
                                     <td>{{ e.autorestart }}</td>
-                                    <td>{{ e.time }}</td>
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
@@ -195,14 +213,14 @@
                                         <form method="POST">
                                             {% csrf_token %}
                                             <input type="hidden" value="{{ e.eID }}" name="infoExecutionValue">
-                                            <button type="submit" name="infoExecution" class="btn btn-primary fa fa-info" data-toggle="tooltip" data-placement="top" title="Execution info"></button>
+                                            <button type="submit" name="infoExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Execution info"></button>
                                         </form>
                                     </td>
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
                                             <input type="hidden" value="{{ e.eID }}" name="deleteExecutionValue">
-                                            <button type="submit" name="deleteExecution" class="btn btn-primary fa fa-trash" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
+                                            <button type="submit" name="deleteExecution" class="btn btn-danger feather icon-stop-circle" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
                                         </form>
                                     </td>
                                 </tr>
@@ -228,9 +246,13 @@
                                 <th scope="col">User</th>
                                 <th scope="col">Nodes</th>
                                 <th scope="col">Status</th>
+                                <th scope="col">Submit</th>
+                                <th scope="col">Start</th>
+                                <th scope="col">End</th>
+                                <th scope="col">Time</th>
                                 <th scope="col">Checkpoint</th>
                                 <th scope="col">Autorestart</th>
-                                <th scope="col">Time</th>
+                                <th scope="col"></th>
                                 <th scope="col"></th>
                                 <th scope="col"></th>
                             </tr>
@@ -244,21 +266,24 @@
                                     <td>{{ e.user }}</td>
                                     <td>{{ e.nodes }}</td>
                                     <td>{{ e.status }}</td>
+                                    <td>{% if e.submit %}<div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{% if e.start %}<div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{% if e.end %}<div>{{ e.end|date:"Y-m-d" }}<br>{{ e.end|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
+                                    <td>{{ e.time }}</td>
                                     <td>{{ e.checkpointBool }}</td>
                                     <td>{{ e.autorestart }}</td>
-                                    <td>{{ e.time }}</td>
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
                                             <input type="hidden" value="{{ e.jobID }}" name="failedExecutionValue">
-                                            <button type="submit" name="failedExecution" class="btn btn-primary fa fa-info" data-toggle="tooltip" data-placement="top" title="Failed execution info"></button>
+                                            <button type="submit" name="failedExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Failed execution info"></button>
                                         </form>
                                     </td>
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
                                             <input type="hidden" value="{{ e.eID }}" name="deleteExecutionValue">
-                                            <button type="submit" name="deleteExecution" class="btn btn-primary fa fa-trash" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
+                                            <button type="submit" name="deleteExecution" class="btn btn-danger feather icon-stop-circle" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
                                         </form>
                                     </td>
                                 </tr>

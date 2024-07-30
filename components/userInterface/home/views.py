@@ -11,6 +11,7 @@ import uuid
 import pandas as pd
 import yaml
 
+from datetime import datetime
 from stat import S_ISDIR
 from django.contrib.auth import authenticate, login, logout
 from requests import RequestException
@@ -1304,24 +1305,44 @@ def deleteExecution(eIDdelete, request):
 def update_table(request):
     machine_found = Machine.objects.get(id=request.session['machine_chosen'])
     machineID = machine_found.id
+    date_format = "%Y-%m-%dT%H:%M:%S"
     ssh = connection_ssh(request.session["private_key_decrypted"], machineID)
     executions = Execution.objects.all().filter(author=request.user, machine=request.session['machine_chosen']).filter(
         Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
     for executionE in executions:
         if executionE.jobID != 0:
             stdin, stdout, stderr = ssh.exec_command(
-                "sacct -j " + str(executionE.jobID) + " --format=jobId,user,nnodes,elapsed,state | sed -n 3,3p")
+                "sacct -j " + str(executionE.jobID) + " --format=jobId,user,nnodes,elapsed,state,submit,start,end | sed -n 3,3p")
             stdout = stdout.readlines()
             values = str(stdout).split()
             Execution.objects.filter(jobID=executionE.jobID).update(time=values[3])
+
+            submit_date = values[5]
+            if submit_date != "Unknown":
+                submit_date = datetime.strptime(submit_date, date_format)
+                Execution.objects.filter(jobID=executionE.jobID).update(
+                    submit=submit_date)
+
+            start_date = values[6]
+            if start_date != "Unknown":
+                start_date = datetime.strptime(start_date, date_format)
+                Execution.objects.filter(jobID=executionE.jobID).update(
+                    start=start_date)
+
+            end_date = values[7]
+            if end_date != "Unknown":
+                end_date = datetime.strptime(end_date, date_format)
+                Execution.objects.filter(jobID=executionE.jobID).update(
+                    end=end_date)
+
             if str(values[4]) == "COMPLETED" and executionE.status != "COMPLETED":
                 Execution.objects.filter(jobID=executionE.jobID).update(status=values[4], time=values[3],
-                                                                        nodes=int(values[2]))
+                                                                        nodes=int(values[2]), end=end_date)
                 results_path = "results"
                 local_folder_path = os.path.join(executionE.wdir, results_path)
             if not (str(values[4]) == "FAILED" and executionE.status == "INITIALIZING"):
                 Execution.objects.filter(jobID=executionE.jobID).update(status=values[4], time=values[3],
-                                                                        nodes=int(values[2]))
+                                                                        nodes=int(values[2]), end=end_date)
     return True
 
 
@@ -1341,6 +1362,7 @@ def results(request):
         pass
     else:
         jobID = request.session['jobIDdone']
+        print("---------------------------", jobID)
         ssh = connection_ssh(request.session['private_key_decrypted'], request.session['machine_chosen'])
         stdin, stdout, stderr = ssh.exec_command(
             "sacct -j " + str(jobID) + " --format=jobId,user,nnodes,elapsed,state | sed -n 3,3p")
