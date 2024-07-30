@@ -72,8 +72,8 @@
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
-                                            <input type="hidden" value="{{ e.eID }}" name="infoExecutionValue">
-                                            <button type="submit" name="infoExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Execution info"></button>
+                                            <input type="hidden" value="{{ e.jobID }}" name="resultExecutionValue">
+                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
                                         </form>
                                     </td>
                                     <td>
@@ -212,9 +212,8 @@
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
-                                            <input type="hidden" value="{{ e.eID }}" name="infoExecutionValue">
-                                            <button type="submit" name="infoExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Execution info"></button>
-                                        </form>
+                                            <input type="hidden" value="{{ e.jobID }}" name="resultExecutionValue">
+                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>                                        </form>
                                     </td>
                                     <td>
                                         <form method="POST">
@@ -275,8 +274,8 @@
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
-                                            <input type="hidden" value="{{ e.jobID }}" name="failedExecutionValue">
-                                            <button type="submit" name="failedExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Failed execution info"></button>
+                                            <input type="hidden" value="{{ e.jobID }}" name="resultExecutionValue">
+                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>                                        </form>
                                         </form>
                                     </td>
                                     <td>
