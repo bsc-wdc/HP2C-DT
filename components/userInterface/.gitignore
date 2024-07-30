@@ -6,6 +6,7 @@
 __pycache__
 db.sqlite3
 media
+documents/*.yaml
 staticfiles/*
 scripts/dashboards/*
 scripts/jsons_dashboards/*
