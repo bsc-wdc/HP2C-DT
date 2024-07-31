@@ -1341,14 +1341,11 @@ def update_table(request):
                 Execution.objects.filter(jobID=executionE.jobID).update(
                     end=end_date)
 
-            if str(values[4]) == "COMPLETED" and executionE.status != "COMPLETED":
-                Execution.objects.filter(jobID=executionE.jobID).update(status=values[4], time=values[3],
-                                                                        nodes=int(values[2]), end=end_date)
-                results_path = "results"
-                local_folder_path = os.path.join(executionE.wdir, results_path)
-            if not (str(values[4]) == "FAILED" and executionE.status == "INITIALIZING"):
-                Execution.objects.filter(jobID=executionE.jobID).update(status=values[4], time=values[3],
-                                                                        nodes=int(values[2]), end=end_date)
+            if str(values[4]) != executionE.status:
+                Execution.objects.filter(jobID=executionE.jobID).update(
+                    status=values[4], time=values[3],
+                    nodes=int(values[2]))
+                
     return True
 
 
@@ -1368,7 +1365,6 @@ def results(request):
         pass
     else:
         jobID = request.session['jobIDdone']
-        print("---------------------------", jobID)
         ssh = connection_ssh(request.session['private_key_decrypted'], request.session['machine_chosen'])
         stdin, stdout, stderr = ssh.exec_command(
             "sacct -j " + str(jobID) + " --format=jobId,user,nnodes,elapsed,state | sed -n 3,3p")
@@ -1628,10 +1624,10 @@ class run_sim_async(threading.Thread):
         stderr = stderr.readlines()
         print("-------------START STDOUT--------------")
         print("".join(stdout))
-        print("---------------------------------------")
+        print("---------------END STDOUT--------------")
         print("-------------START STDERR--------------")
         print("".join(stderr))
-        print("---------------------------------------")
+        print("---------------END STDERR--------------")
         return stderr, stdout
 
     def upload_repositories(self, gridcal_branch, local_folder, machine_found,

@@ -34,41 +34,63 @@
             <div class="rounded" style="outline: 2px solid black;">
                 <p class="h4" style="text-align: center">Pending executions:</p>
                 {% if executions %}
-                    <table class="table">
+                    <table class="table" style="table-layout: fixed; width: 100%;">
                         <thead>
                             <tr>
-                                <th scope="col">Name</th>
-                                <th scope="col">Tool</th>
-                                <th scope="col">JobID</th>
-                                <th scope="col">User</th>
-                                <th scope="col">Nodes</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Submit</th>
-                                <th scope="col">Start</th>
-                                <th scope="col">End</th>
-                                <th scope="col">Time</th>
-                                <th scope="col">Checkpoint</th>
-                                <th scope="col">Autorestart</th>
-                                <th scope="col"></th>
-                                <th scope="col"></th>
-                                <th scope="col"></th>
+                                <th scope="col" style="width: 10%;">Name</th>
+                                <th scope="col" style="width: 9%;">Tool</th>
+                                <th scope="col" style="width: 9%;">JobID</th>
+                                <th scope="col" style="width: 6%;">Status</th>
+                                <th scope="col" style="width: 9%;">Submit</th>
+                                <th scope="col" style="width: 9%;">Start</th>
+                                <th scope="col" style="width: 9%;">Time</th>
+                                <th scope="col" style="width: 9%;">Checkpoint</th>
+                                <th scope="col" style="width: 9%;">Autorestart</th>
+                                <th scope="col" style="width: 8%;"></th>
+                                <th scope="col" style="width: 8%;"></th>
+                                <th scope="col" style="width: 8%;"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for e in executions %}
-                                <tr style="text-align: center">
-                                    <td>{{ e.name_sim }}</td>
-                                    <td>{{ e.tool }}</td>
-                                    <td>{{ e.jobID }}</td>
-                                    <td>{{ e.user }}</td>
-                                    <td>{{ e.nodes }}</td>
-                                    <td>{{ e.status }}</td>
-                                    <td>{% if e.submit %}<div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{% if e.start %}<div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{% if e.end %}<div>{{ e.end|date:"Y-m-d" }}<br>{{ e.end|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{{ e.time }}</td>
-                                    <td>{{ e.checkpointBool }}</td>
-                                    <td>{{ e.autorestart }}</td>
+                                <tr>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.name_sim }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.tool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.jobID }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.status == "PENDING" %}
+                                            PEN
+                                        {% elif e.status == "INITIALIZING" %}
+                                            INI
+                                        {% elif e.status == "RUNNING" %}
+                                            RUN
+                                        {% elif e.status == "COMPLETED" %}
+                                            COM
+                                        {% elif e.status == "TIMEOUT" %}
+                                            TOUT
+                                        {% elif e.status == "FAILED" %}
+                                            FAIL
+                                        {% else %}
+                                            {{ e.status }}
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.submit %}
+                                            <div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.start %}
+                                            <div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.time }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.checkpointBool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.autorestart }}</td>
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
@@ -90,7 +112,6 @@
                                             <button type="submit" name="deleteExecution" class="btn btn-danger feather icon-stop-circle" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
                                         </form>
                                     </td>
-
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -102,43 +123,67 @@
                 {% endif %}
             </div>
 
+
             <div class="rounded" style="outline: 2px solid black;">
                 <p class="h4" style="text-align: center">Finished executions:</p>
                 {% if executionsDone %}
-                    <table class="table">
+                    <table class="table" style="table-layout: fixed; width: 100%;">
                         <thead>
                             <tr>
-                                <th scope="col">Name</th>
-                                <th scope="col">Tool</th>
-                                <th scope="col">JobID</th>
-                                <th scope="col">User</th>
-                                <th scope="col">Nodes</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Submit</th>
-                                <th scope="col">Start</th>
-                                <th scope="col">End</th>
-                                <th scope="col">Time</th>
-                                <th scope="col">Checkpoint</th>
-                                <th scope="col">Autorestart</th>
-                                <th scope="col"></th>
-                                <th scope="col"></th>
+                                <th scope="col" style="width: 10%;">Name</th>
+                                <th scope="col" style="width: 10%;">Tool</th>
+                                <th scope="col" style="width: 10%;">JobID</th>
+                                <th scope="col" style="width: 8%;">Status</th>
+                                <th scope="col" style="width: 9%;">Submit</th>
+                                <th scope="col" style="width: 9%;">Start</th>
+                                <th scope="col" style="width: 9%;">Time</th>
+                                <th scope="col" style="width: 9%;">Checkpoint</th>
+                                <th scope="col" style="width: 9%;">Autorestart</th>
+                                <th scope="col" style="width: 9%;"></th>
+                                <th scope="col" style="width: 9%;"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for e in executionsDone %}
                                 <tr>
-                                    <td>{{ e.name_sim }}</td>
-                                    <td>{{ e.tool }}</td>
-                                    <td>{{ e.jobID }}</td>
-                                    <td>{{ e.user }}</td>
-                                    <td>{{ e.nodes }}</td>
-                                    <td>{{ e.status }}</td>
-                                    <td>{% if e.submit %}<div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{% if e.start %}<div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{% if e.end %}<div>{{ e.end|date:"Y-m-d" }}<br>{{ e.end|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{{ e.time }}</td>
-                                    <td>{{ e.checkpointBool }}</td>
-                                    <td>{{ e.autorestart }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.name_sim }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.tool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.jobID }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.status == "PENDING" %}
+                                            PEN
+                                        {% elif e.status == "INITIALIZING" %}
+                                            INI
+                                        {% elif e.status == "RUNNING" %}
+                                            RUN
+                                        {% elif e.status == "COMPLETED" %}
+                                            COM
+                                        {% elif e.status == "TIMEOUT" %}
+                                            TOUT
+                                        {% elif e.status == "FAILED" %}
+                                            FAIL
+                                        {% else %}
+                                            {{ e.status }}
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.submit %}
+                                            <div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.start %}
+                                            <div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.time }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.checkpointBool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.autorestart }}</td>
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
@@ -167,41 +212,63 @@
             <div class="rounded" style="outline: 2px solid black;">
                 <p class="h4" style="text-align: center">Timeout executions:</p>
                 {% if executionsTimeout %}
-                    <table class="table">
+                    <table class="table" style="table-layout: fixed; width: 100%;">
                         <thead>
                             <tr>
-                                <th scope="col">Name</th>
-                                <th scope="col">Tool</th>
-                                <th scope="col">JobID</th>
-                                <th scope="col">User</th>
-                                <th scope="col">Nodes</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Submit</th>
-                                <th scope="col">Start</th>
-                                <th scope="col">End</th>
-                                <th scope="col">Time</th>
-                                <th scope="col">Checkpoint</th>
-                                <th scope="col">Autorestart</th>
-                                <th scope="col"></th>
-                                <th scope="col"></th>
-                                <th scope="col"></th>
+                                <th scope="col" style="width: 10%;">Name</th>
+                                <th scope="col" style="width: 9%;">Tool</th>
+                                <th scope="col" style="width: 9%;">JobID</th>
+                                <th scope="col" style="width: 6%;">Status</th>
+                                <th scope="col" style="width: 9%;">Submit</th>
+                                <th scope="col" style="width: 9%;">Start</th>
+                                <th scope="col" style="width: 9%;">Time</th>
+                                <th scope="col" style="width: 9%;">Checkpoint</th>
+                                <th scope="col" style="width: 9%;">Autorestart</th>
+                                <th scope="col" style="width: 8%;"></th>
+                                <th scope="col" style="width: 8%;"></th>
+                                <th scope="col" style="width: 8%;"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for e in executionsTimeout %}
                                 <tr>
-                                    <td>{{ e.name_sim }}</td>
-                                    <td>{{ e.tool }}</td>
-                                    <td>{{ e.jobID }}</td>
-                                    <td>{{ e.user }}</td>
-                                    <td>{{ e.nodes }}</td>
-                                    <td>{{ e.status }}</td>
-                                    <td>{% if e.submit %}<div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{% if e.start %}<div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{% if e.end %}<div>{{ e.end|date:"Y-m-d" }}<br>{{ e.end|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{{ e.time }}</td>
-                                    <td>{{ e.checkpointBool }}</td>
-                                    <td>{{ e.autorestart }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.name_sim }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.tool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.jobID }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.status == "PENDING" %}
+                                            PEN
+                                        {% elif e.status == "INITIALIZING" %}
+                                            INI
+                                        {% elif e.status == "RUNNING" %}
+                                            RUN
+                                        {% elif e.status == "COMPLETED" %}
+                                            COM
+                                        {% elif e.status == "TIMEOUT" %}
+                                            TOUT
+                                        {% elif e.status == "FAILED" %}
+                                            FAIL
+                                        {% else %}
+                                            {{ e.status }}
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.submit %}
+                                            <div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.start %}
+                                            <div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.time }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.checkpointBool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.autorestart }}</td>
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
@@ -213,7 +280,8 @@
                                         <form method="POST">
                                             {% csrf_token %}
                                             <input type="hidden" value="{{ e.jobID }}" name="resultExecutionValue">
-                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>                                        </form>
+                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
+                                        </form>
                                     </td>
                                     <td>
                                         <form method="POST">
@@ -236,46 +304,67 @@
             <div class="rounded" style="outline: 2px solid black;">
                 <p class="h4" style="text-align: center">Failed executions:</p>
                 {% if executionsFailed %}
-                    <table class="table">
+                    <table class="table" style="table-layout: fixed; width: 100%;">
                         <thead>
                             <tr>
-                                <th scope="col">Name</th>
-                                <th scope="col">Tool</th>
-                                <th scope="col">JobID</th>
-                                <th scope="col">User</th>
-                                <th scope="col">Nodes</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Submit</th>
-                                <th scope="col">Start</th>
-                                <th scope="col">End</th>
-                                <th scope="col">Time</th>
-                                <th scope="col">Checkpoint</th>
-                                <th scope="col">Autorestart</th>
-                                <th scope="col"></th>
-                                <th scope="col"></th>
-                                <th scope="col"></th>
+                                <th scope="col" style="width: 10%;">Name</th>
+                                <th scope="col" style="width: 10%;">Tool</th>
+                                <th scope="col" style="width: 10%;">JobID</th>
+                                <th scope="col" style="width: 8%;">Status</th>
+                                <th scope="col" style="width: 9%;">Submit</th>
+                                <th scope="col" style="width: 9%;">Start</th>
+                                <th scope="col" style="width: 9%;">Time</th>
+                                <th scope="col" style="width: 9%;">Checkpoint</th>
+                                <th scope="col" style="width: 9%;">Autorestart</th>
+                                <th scope="col" style="width: 9%;"></th>
+                                <th scope="col" style="width: 9%;"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for e in executionsFailed %}
                                 <tr>
-                                    <td>{{ e.name_sim }}</td>
-                                    <td>{{ e.tool }}</td>
-                                    <td>{{ e.jobID }}</td>
-                                    <td>{{ e.user }}</td>
-                                    <td>{{ e.nodes }}</td>
-                                    <td>{{ e.status }}</td>
-                                    <td>{% if e.submit %}<div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{% if e.start %}<div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{% if e.end %}<div>{{ e.end|date:"Y-m-d" }}<br>{{ e.end|date:"H:i:s" }}</div>{% else %}-{% endif %}</td>
-                                    <td>{{ e.time }}</td>
-                                    <td>{{ e.checkpointBool }}</td>
-                                    <td>{{ e.autorestart }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.name_sim }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.tool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.jobID }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.status == "PENDING" %}
+                                            PEN
+                                        {% elif e.status == "INITIALIZING" %}
+                                            INI
+                                        {% elif e.status == "RUNNING" %}
+                                            RUN
+                                        {% elif e.status == "COMPLETED" %}
+                                            COM
+                                        {% elif e.status == "TIMEOUT" %}
+                                            TOUT
+                                        {% elif e.status == "FAILED" %}
+                                            FAIL
+                                        {% else %}
+                                            {{ e.status }}
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.submit %}
+                                            <div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.start %}
+                                            <div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.time }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.checkpointBool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.autorestart }}</td>
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
                                             <input type="hidden" value="{{ e.jobID }}" name="resultExecutionValue">
-                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>                                        </form>
+                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
                                         </form>
                                     </td>
                                     <td>
@@ -295,6 +384,7 @@
                     </div>
                 {% endif %}
             </div>
+
         </div>
     </div>
 </div>
