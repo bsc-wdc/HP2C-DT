@@ -601,6 +601,7 @@ def ssh_keys(request):
                     if (Key_Gen.objects.filter(author=instance.author).count() > 1):
                         Key_Gen.objects.filter(author=instance.author).update(public_key=instance.public_key,
                                                                               private_key=instance.private_key)
+                        
                     else:
                         Key_Gen.objects.filter(author=instance.author, machine=instance.machine).update(
                             public_key=instance.public_key, private_key=instance.private_key)
@@ -1143,6 +1144,8 @@ def get_github_repo_branches():
             token = file.read().strip()
     except FileNotFoundError:
         return "Unable to read the token from ~/keys/github-token-hp2cdt.txt"
+    except PermissionError:
+        return "Unable to access the file ~/keys/github-token-hp2cdt.txt: PermissionError"
 
     user_repo = "MauroGarciaLorenzo/hp2c-dt"
     api_url = f"https://api.github.com/repos/{user_repo}/branches"
