@@ -902,6 +902,8 @@ def hpc_machines(request):
                               {'machines': machines_done,
                                'check_connection_stable': "no",
                                'connected': stability_connection})
+
+
             machine_connected = Machine.objects.get(id=request.session["machine_chosen"])
             str_machine_connected = str(machine_connected.user) + "@" + machine_connected.fqdn
             request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
@@ -1740,6 +1742,16 @@ def download_dir_one_level(sftp, remote_path, local_path):
             sftp.get(remote_file_path, local_file_path)
 
 
+def get_files(remote_path, sftp):
+    files = {}
+    for fileattr in sftp.listdir_attr(remote_path):
+        if S_ISDIR(fileattr.st_mode):
+            files.update(get_files(remote_path + "/" + fileattr.filename))
+        else:
+            files[fileattr.filename] = fileattr.st_size
+    return files
+
+
 def scp_download_code_folder(remote_path, results_dir, private_key_decrypted, machineID):
     ssh = paramiko.SSHClient()
     pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
@@ -1748,7 +1760,11 @@ def scp_download_code_folder(remote_path, results_dir, private_key_decrypted, ma
     ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
     sftp = ssh.open_sftp()
 
-    # Check if the remote path is relative
+    files = get_files(remote_path, sftp)
+    print("------------------------", files)
+
+
+        # Check if the remote path is relative
     if not remote_path.startswith('/'):
         stdin, stdout, stderr = ssh.exec_command("echo $HOME")
         stdout = "".join(stdout.readlines()).strip()
