@@ -100,6 +100,8 @@ class Connection(models.Model):
                              null=True, blank=True)
     conn_id = models.AutoField(primary_key=True)
     status = models.CharField(max_length=30, choices=STATUS_CONN, default='Disconnect')
+    machine = models.ForeignKey("Machine", on_delete=models.CASCADE,
+                                blank=True, null=True, default=None)
 
 
 class Execution(models.Model):

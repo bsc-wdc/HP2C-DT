@@ -41,6 +41,11 @@
                                 <button type="submit" class="btn btn-primary">Continue</button>
                             {% endif %}
                         </form>
+                        {% if machine_connected != None and machine_connected != "" %}
+                        <div class="alert alert-warning" role="alert">
+                            If you click continue, you will be disconnected from {{machine_connected}}
+                        </div>
+                        {% endif %}
                         {% if warning == "second" %}
                             <div title="Some Flag">
                                 <div class="alert alert-warning" role="alert">

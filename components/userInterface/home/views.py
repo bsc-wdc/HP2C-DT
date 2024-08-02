@@ -485,12 +485,25 @@ def new_machine(request):
 
 
 def populate_executions_machines(request):
+    machine_connected = get_machine_connected(request)
     machines = Machine.objects.all().filter(author=request.user)
     machines_done = []
+    if machine_connected is not None:
+        machines_done.append("" + str(machine_connected.user) + "@" + machine_connected.fqdn)
     if machines.count() != 0:
         for machine in machines:
-            machines_done.append("" + str(machine.user) + "@" + machine.fqdn)
+            if machine != machine_connected:
+                machines_done.append("" + str(machine.user) + "@" + machine.fqdn)
     return machines_done
+
+
+def get_machine_connected(request):
+    connection = Connection.objects.filter(user=request.user, status="Active")
+    machine_connected = None
+    if len(connection) > 0:
+        connection = connection[0]
+        machine_connected = connection.machine
+    return machine_connected
 
 
 ##################### USERS #########################
@@ -545,9 +558,11 @@ def logoutUser(request):
 ######################## SSH KEYS ####################
 @login_required
 def ssh_keys(request):
+    machine_connected = get_machine_connected(request)
     if request.method == 'POST':
         form = Key_Gen_Form(request.POST)
         if form.is_valid():
+            Connection.objects.filter(user=request.user).update(status="Disconnect")
             if 'reuse_token_button' in request.POST:  # if the user has more than 1 Machine, he can decide to use the same SSH keys and token for all its machines
                 machine = request.POST.get('machineChoice')
                 user = machine.split("@")[0]
@@ -601,7 +616,7 @@ def ssh_keys(request):
                     if (Key_Gen.objects.filter(author=instance.author).count() > 1):
                         Key_Gen.objects.filter(author=instance.author).update(public_key=instance.public_key,
                                                                               private_key=instance.private_key)
-                        
+
                     else:
                         Key_Gen.objects.filter(author=instance.author, machine=instance.machine).update(
                             public_key=instance.public_key, private_key=instance.private_key)
@@ -626,9 +641,16 @@ def ssh_keys(request):
             request.session['check_existence_machines'] = "yes"
         else:
             request.session['check_existence_machines'] = "no"
-    return render(request, 'pages/ssh_keys.html',
-                  {'form': form, 'warning': request.session['warning'], 'reuse_token': request.session['reuse_token'],
-                   'machines': populate_executions_machines(request), 'check_existence_machines': request.session['check_existence_machines']})
+
+    context = {'form': form, 'warning': request.session['warning'], 'reuse_token': request.session['reuse_token'],
+                   'machines': populate_executions_machines(request),
+               'check_existence_machines': request.session['check_existence_machines']}
+
+    if machine_connected is not None:
+        machine_connected = "" + machine_connected.user + "@" + machine_connected.fqdn
+        context['machine_connected'] = machine_connected
+
+    return render(request, 'pages/ssh_keys.html', context)
 
 
 def encrypt(message: bytes, key: bytes) -> bytes:
@@ -654,7 +676,7 @@ def ssh_keys_generation(request):
 
 @login_required
 def tools(request):
-    check_conn_bool = checkConnection(request)
+    check_conn_bool = check_connection(request)
     if not check_conn_bool:
         request.session['original_request'] = request.POST
         request.session['redirect_to_tools'] = True
@@ -800,7 +822,7 @@ def tools(request):
     else:
         execution_form = ExecutionForm()
 
-        machine_connected = Machine.objects.get(id=get_machine(request))
+        machine_connected = get_machine_connected(request)
         request.session[
             'nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
         executions = Execution.objects.all().filter(author=request.user,
@@ -858,7 +880,7 @@ def tools(request):
 @login_required
 def hpc_machines(request):
     machines_done = populate_executions_machines(request)
-    stability_connection = check_stability_connection(request)
+    stability_connection = check_connection(request)
     if request.method == 'POST':
         form = Machine_Form(request.POST)
 
@@ -886,14 +908,16 @@ def hpc_machines(request):
 
             request.session["private_key_decrypted"] = private_key_decrypted
             request.session['machine_chosen'] = machine_found.id
-            c = Connection()
-            c.user = request.user
-            c.status = "Active"
-            c.save()
-            request.session["conn_id"] = c.conn_id
-            threadUpdate = updateExecutions(request, c.conn_id)
+
+            connection, created = Connection.objects.get_or_create(user=request.user)
+            connection.machine = machine_found
+            connection.status = 'Active'
+            connection.save()
+
+            request.session["conn_id"] = connection.conn_id
+            threadUpdate = updateExecutions(request, connection.conn_id)
             threadUpdate.start()
-            stability_connection = check_stability_connection(request)
+            stability_connection = check_connection(request)
             if not stability_connection:
                 if not machines_done:
                     request.session['check_existence_machines'] = "no"
@@ -948,16 +972,16 @@ def hpc_machines(request):
                                'show_already_connected': str_machine_disconnected,
                                'connected': stability_connection
                                })
-            Connection.objects.filter(
-                conn_id=request.session["conn_id"]).update(
-                status="Disconnect")
+            Connection.objects.filter(user=request.user).update(
+                status="Disconnect", machine=None)
+
             for key in list(request.session.keys()):
                 if not key.startswith("_"):
                     del request.session[key]
             request.session['firstPhase'] = "yes"
             request.session['check_existence_machines'] = "yes"
 
-            stability_connection = check_stability_connection(request)
+            stability_connection = check_connection(request)
             if not stability_connection:
                 if not machines_done:
                     request.session['check_existence_machines'] = "no"
@@ -1065,12 +1089,9 @@ def get_name_fqdn(machine):
     return user, fqdn
 
 
-def check_stability_connection(request):
-    conn_id = request.session.get('conn_id')
-    if conn_id != None:
-        conn = Connection.objects.get(conn_id=request.session["conn_id"])
-        if conn.status == "Disconnect":
-            return False
+def check_connection(request):
+    connection = Connection.objects.filter(user=request.user, status="Active")
+    if len(connection) > 0:
         return True
     return False
 
@@ -1112,16 +1133,6 @@ def connection_ssh(private_key_decrypted, machineID):
 
 
 ################### RUN SIMULATIONS ####################
-
-def checkConnection(request):
-    conn_id = request.session.get('conn_id')
-    if conn_id != None:
-        conn = Connection.objects.get(conn_id=request.session["conn_id"])
-        if conn.status == "Disconnect":
-            return False
-        return True
-    return False
-
 
 # Generate a random string of specified length
 def get_random_string(length):
@@ -1242,10 +1253,6 @@ def checkpointing_noAutorestart(jobIDCheckpoint, request):
     checkpointID.status = "CONTINUE"
     checkpointID.save()
     return
-
-
-def get_machine(request):
-    return Machine.objects.get(id=request.session['machine_chosen']).id
 
 
 def get_id_from_string(machine, author):
@@ -1428,7 +1435,7 @@ def download_directory(sftp, remote_dir, local_dir, depth=0, max_depth=10):
 
 def render_right(request):
     form = Machine_Form()
-    checkConnBool = checkConnection(request)
+    checkConnBool = check_connection(request)
     machines_done = populate_executions_machines(request)
     if not checkConnBool:
         if not machines_done:
@@ -1452,10 +1459,10 @@ class updateExecutions(threading.Thread):
     def run(self):
         timeout_start = time.time()
         while time.time() < timeout_start + self.timeout:
-            conn = Connection.objects.get(conn_id=self.connectionID)
-            if conn.status == "Disconnect":
+            if not check_connection(self.request):
                 break
-            bool_exception = True
+
+            bool_exception = False
             try:
                 bool_exception = update_table(self.request)
             except Exception as e:
@@ -1464,7 +1471,8 @@ class updateExecutions(threading.Thread):
             if not bool_exception:
                 break
             time.sleep(5)
-        Connection.objects.filter(conn_id=self.connectionID).update(status="Disconnect")
+
+        Connection.objects.filter(user=self.request.user).update(status="Disconnect", machine=None)
         render_right(self.request)
         return
 
@@ -1761,8 +1769,6 @@ def scp_download_code_folder(remote_path, results_dir, private_key_decrypted, ma
     sftp = ssh.open_sftp()
 
     files = get_files(remote_path, sftp)
-    print("------------------------", files)
-
 
         # Check if the remote path is relative
     if not remote_path.startswith('/'):
