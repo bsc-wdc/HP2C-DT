@@ -1754,7 +1754,7 @@ def get_files(remote_path, sftp):
     files = {}
     for fileattr in sftp.listdir_attr(remote_path):
         if S_ISDIR(fileattr.st_mode):
-            files.update(get_files(remote_path + "/" + fileattr.filename))
+            files.update(get_files(remote_path + "/" + fileattr.filename, sftp))
         else:
             files[fileattr.filename] = fileattr.st_size
     return files
