@@ -16,4 +16,5 @@ urlpatterns = [
   path('hpc_machines/', views.hpc_machines, name='hpc_machines'),
   path('results/', views.results, name='results'),
   path('file/<str:filename>/', views.show_file_content, name='show_file_content'),
+  path('create_tool/', views.create_tool, name='create_tool'),
 ]

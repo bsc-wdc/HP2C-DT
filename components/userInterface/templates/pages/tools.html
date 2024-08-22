@@ -6,6 +6,21 @@
 
 {% block content %}
 <h3 class="page-title">Tools</h3>
+
+<div class="d-flex flex-row-reverse">
+    <a href="{% url 'create_tool' %}">
+        <button type="button" class="btn btn-success">New tool</button>
+    </a>
+</div>
+
+{% if tool_created %}
+  <div>
+    <div class="alert alert-success" role="alert">
+      Successfully created tool {{tool_created}}
+    </div>
+  </div>
+{% endif %}
+
 <div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
     <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item">
@@ -16,14 +31,29 @@
             <a class="nav-link" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
                aria-selected="false">Stability analysis</a>
         </li>
+
+        {% for tool_name, tool_form in tool_forms.items %}
+        <li class="nav-item">
+            <a class="nav-link" id="{{ tool_name|slugify }}-tab" data-toggle="tab" href="#{{ tool_name|slugify }}"
+               role="tab" aria-controls="{{ tool_name|slugify }}" aria-selected="false">{{ tool_name }}</a>
+        </li>
+        {% endfor %}
     </ul>
+
     <div class="tab-content" id="myTabContent">
-        <div class="tab-pane fade" id="home" role="tabpanel" aria-labelledby="home-tab">
-            {% include 'pages/run_st_analysis.html' %}
-        </div>
         <div class="tab-pane fade active show" id="profile" role="tabpanel" aria-labelledby="profile-tab">
             {% include 'pages/executions.html' %}
         </div>
+        <div class="tab-pane fade" id="home" role="tabpanel" aria-labelledby="home-tab">
+            {% include 'pages/run_st_analysis.html' %}
+        </div>
+
+        {% for tool_name, tool_form in tool_forms.items %}
+            <div class="tab-pane fade" id="{{ tool_name|slugify }}" role="tabpanel" aria-labelledby="{{ tool_name|slugify }}-tab">
+                {% include 'pages/custom_tool.html' with form=tool_form name=tool_name%}
+            </div>
+        {% endfor %}
     </div>
+
 </div>
 {% endblock content %}

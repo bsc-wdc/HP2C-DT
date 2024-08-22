@@ -1,0 +1,39 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+  <h2>Create Tools</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div id="form-container">
+        {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+            {{ field|add_class:"form-control" }}
+        </div>
+        {% endfor %}
+    </div>
+
+    <button type="button" id="add-field" class="btn btn-secondary">Add Custom Field</button>
+    <button type="submit" class="btn btn-primary">Create</button>
+  </form>
+
+  <script type="text/javascript">
+    let fieldCounter = 0;
+
+    document.getElementById('add-field').onclick = function() {
+      fieldCounter++;
+      const formContainer = document.getElementById('form-container');
+      const newFieldDiv = document.createElement('div');
+      newFieldDiv.classList.add('form-group');
+      newFieldDiv.innerHTML = `
+        <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
+        <input type="text" name="custom_field_${fieldCounter}" class="form-control" id="custom_field_${fieldCounter}">
+      `;
+      formContainer.appendChild(newFieldDiv);
+    };
+  </script>
+{% endblock %}

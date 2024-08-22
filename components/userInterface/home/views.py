@@ -22,9 +22,10 @@ from .models import *
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .forms import CategoricalDeviceForm, NonCategoricalDeviceForm, \
-    CreateUserForm, Machine_Form, Key_Gen_Form, DocumentForm, ExecutionForm
-
+from .forms import (CategoricalDeviceForm, NonCategoricalDeviceForm, \
+    CreateUserForm, Machine_Form, Key_Gen_Form, DocumentForm, ExecutionForm,
+                    CreateToolForm)
+from django.forms import formset_factory
 import json
 import requests
 from django.contrib.auth.decorators import login_required
@@ -32,6 +33,7 @@ from cryptography.fernet import Fernet
 import paramiko
 from io import StringIO
 from django.db.models import Q
+from django import forms
 
 
 @login_required
@@ -862,6 +864,12 @@ def tools(request):
         branches = get_github_repo_branches()
         run_job = request.session.get('run_job', None)
         request.session.pop('run_job', None)
+        tool_created = request.session.get('tool_created', None)
+        request.session.pop('tool_created', None)
+
+        tool_forms = {}
+        for tool in Tool.objects.all():
+            tool_forms[tool.name] = get_form_from_tool(tool)
 
         return render(request, 'pages/tools.html',
                       {'document_form': document_form,
@@ -873,8 +881,36 @@ def tools(request):
                        'executionsDone': executionsDone,
                        'executionsFailed': executionsFailed,
                        'executionsTimeout': executionTimeout,
-                       "checkConn": request.session["checkConn"],
-                       'run_job': run_job})
+                       'checkConn': request.session['checkConn'],
+                       'run_job': run_job, 'tool_created': tool_created,
+                       'tool_forms': tool_forms
+                       })
+
+
+def get_form_from_tool(tool):
+    """
+    Generates a Django form class based on the `field_list` of a given Tool instance.
+
+    :param tool: Tool instance
+    :return: Django form class
+    """
+    form_fields = {}
+
+    field_list = json.loads(tool.field_list or "[]")
+
+    # Dynamically add fields to the form
+    for field_name in field_list:
+        form_fields[field_name] = forms.CharField(
+            label=field_name.replace("_", " ").lower(),
+            max_length=100,
+            required=False,
+            widget=forms.TextInput(attrs={'class': 'form-control'})
+        )
+
+    # Dynamically create a form class
+    DynamicToolForm = type('DynamicToolForm', (forms.Form,), form_fields)
+
+    return DynamicToolForm
 
 
 @login_required
@@ -1074,13 +1110,16 @@ def hpc_machines(request):
         ssh_keys_error = request.session.get('ssh_keys_not_created', None)
         request.session.pop('ssh_keys_not_created', None)
 
+        tool_created = request.session.get('tool_created', None)
+        request.session.pop('tool_created', None)
+
         return render(request, 'pages/hpc_machines.html',
                       {'machines': machines_done, 'form': form,
                        'firstPhase': request.session['firstPhase'],
                        'check_existence_machines': request.session['check_existence_machines'],
                        'show_warning': show_warning, 'connected': stability_connection,
-                       'machine_created': machine_created, 'ssh_keys_error': ssh_keys_error
-                       })
+                       'machine_created': machine_created, 'ssh_keys_error': ssh_keys_error,
+                       'tool_created': tool_created})
 
 
 def get_name_fqdn(machine):
@@ -1883,8 +1922,6 @@ def wdir_folder(principal_folder):
 def read_and_format_file(file_path):
     content = ""
 
-
-
     if file_path.endswith('.xlsx'):
         try:
             xls = pd.ExcelFile(file_path)
@@ -1923,3 +1960,23 @@ def show_file_content(request, filename):
     print(file_content)
     return render(request, 'pages/show_file_content.html',
                   {'filename': filename, 'file_content': file_content})
+
+
+@login_required()
+def create_tool(request):
+    if request.method == 'POST':
+        form = CreateToolForm(request.POST)
+        if form.is_valid():
+            tool_name = form.cleaned_data['name']
+            tool = Tool.objects.create(name=tool_name)
+            additional_fields = {k: v for k, v in request.POST.items() if k.startswith('custom_field_')}
+            for field_name, field_value in additional_fields.items():
+                tool.append_to_field_list(field_value)
+            request.session['tool_created'] = tool.name
+
+            return redirect('tools')
+
+    else:
+        form = CreateToolForm()
+
+    return render(request, 'pages/create_tool.html', {'form': form})

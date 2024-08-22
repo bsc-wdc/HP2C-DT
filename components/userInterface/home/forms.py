@@ -1,10 +1,19 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Machine, Key_Gen, Connection, Document, Execution
+from .models import Machine, Key_Gen, Connection, Document, Execution, Tool
 from django.core.exceptions import ValidationError
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
+
+
+class CreateToolForm(forms.ModelForm):
+    class Meta:
+        model = Tool
+        fields = ['name']
+        labels = {
+            'name': 'Tool Name',
+        }
 
 
 class CreateUserForm(UserCreationForm):
