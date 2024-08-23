@@ -21,7 +21,7 @@ from scripts.update_dashboards import update_dashboards, get_deployment_info
 from .models import *
 from django.contrib import messages
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from .forms import (CategoricalDeviceForm, NonCategoricalDeviceForm, \
     CreateUserForm, Machine_Form, Key_Gen_Form, DocumentForm, ExecutionForm,
                     CreateToolForm)
@@ -1430,13 +1430,15 @@ def results(request):
         Execution.objects.filter(jobID=jobID).update(status=values[4], time=values[3], nodes=int(values[2]))
         execUpdate = Execution.objects.get(jobID=jobID)
 
-        scp_download_code_folder(execUpdate.wdir, execUpdate.results_dir, request.session['private_key_decrypted'],
-                                 request.session['machine_chosen'])
-        files = sorted(os.listdir(execUpdate.results_dir))
+        files, remote_path = get_files(execUpdate.wdir, execUpdate.results_dir,
+                                       request.session['private_key_decrypted'],
+                                       request.session['machine_chosen'])
+        files = dict(sorted(files.items()))
 
+        request.session['remote_path'] = remote_path
         request.session['results_dir'] = execUpdate.results_dir
     return render(request, 'pages/results.html',
-                  {'executionsDone': execUpdate, 'files':files})
+                  {'executionsDone': execUpdate, 'files': files})
 
 
 def copy_folder_hpc_to_service(request, service_local_path, remote_hpc_path):
@@ -1476,6 +1478,47 @@ def download_directory(sftp, remote_dir, local_dir, depth=0, max_depth=10):
             except Exception as e:
                 print(f"Error downloading {remote_item}: {e}")
     return
+
+
+@login_required
+def download_file(request, file_name):
+    remote_path = request.session['remote_path']
+    private_key_decrypted = request.session['private_key_decrypted']
+    machineID = request.session['machine_chosen']
+
+    ssh = paramiko.SSHClient()
+    pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
+    machine_found = Machine.objects.get(id=machineID)
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
+    sftp = ssh.open_sftp()
+    try:
+        file_path = find_file_recursively(sftp, remote_path, file_name)
+        if file_path:
+            with sftp.file(file_path, 'rb') as file_obj:
+                file_data = file_obj.read()
+                response = HttpResponse(file_data, content_type='application/octet-stream')
+                response['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
+                return response
+        else:
+            raise Http404("File not found.")
+    except IOError:
+        raise Http404("Error accessing the file.")
+    finally:
+        sftp.close()
+        ssh.close()
+
+
+def find_file_recursively(sftp, remote_path, file_name):
+    for entry in sftp.listdir_attr(remote_path):
+        entry_path = os.path.join(remote_path, entry.filename)
+        if S_ISDIR(entry.st_mode):
+            found_path = find_file_recursively(sftp, entry_path, file_name)
+            if found_path:
+                return found_path
+        elif entry.filename == file_name:
+            return entry_path
+    return None
 
 
 def render_right(request):
@@ -1775,37 +1818,17 @@ def scp_upload_code_folder(local_path, remote_path, private_key_decrypted, machi
     return
 
 
-def download_dir_one_level(sftp, remote_path, local_path):
-    """
-    Function to recursively download the folder contents. It will store the
-    files and the files in subdirectories in the same local path.
-
-    :param sftp: sftp connection
-    :param remote_path: Path in the machine where the files are stored
-    :param local_path: Local path (where the files will be stored)
-    """
-    os.makedirs(local_path, exist_ok=True)
-    for entry in sftp.listdir_attr(remote_path):
-        remote_file_path = os.path.join(remote_path, entry.filename)
-        local_file_path = os.path.join(local_path, entry.filename)
-
-        if entry.longname.startswith('d'):
-            download_dir_one_level(sftp, remote_file_path, local_path)
-        else:
-            sftp.get(remote_file_path, local_file_path)
-
-
-def get_files(remote_path, sftp):
+def get_files_r(remote_path, sftp):
     files = {}
     for fileattr in sftp.listdir_attr(remote_path):
         if S_ISDIR(fileattr.st_mode):
-            files.update(get_files(remote_path + "/" + fileattr.filename, sftp))
+            files.update(get_files_r(remote_path + "/" + fileattr.filename, sftp))
         else:
             files[fileattr.filename] = fileattr.st_size
     return files
 
 
-def scp_download_code_folder(remote_path, results_dir, private_key_decrypted, machineID):
+def get_files(remote_path, results_dir, private_key_decrypted, machineID):
     ssh = paramiko.SSHClient()
     pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
     machine_found = Machine.objects.get(id=machineID)
@@ -1813,22 +1836,18 @@ def scp_download_code_folder(remote_path, results_dir, private_key_decrypted, ma
     ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
     sftp = ssh.open_sftp()
 
-    files = get_files(remote_path, sftp)
-
-        # Check if the remote path is relative
+    # Check if the remote path is relative
     if not remote_path.startswith('/'):
         stdin, stdout, stderr = ssh.exec_command("echo $HOME")
         stdout = "".join(stdout.readlines()).strip()
         remote_path = stdout + "/" + remote_path
 
-    # Create the local directory if it doesn't exist
-    if not os.path.exists(results_dir):
-        os.makedirs(results_dir)
-
-    download_dir_one_level(sftp, remote_path, results_dir)
+    files = get_files_r(remote_path, sftp)
 
     sftp.close()
     ssh.close()
+
+    return files, remote_path
 
 
 def get_github_code(repository, branch_name, local_folder):
@@ -1850,6 +1869,7 @@ def get_github_code(repository, branch_name, local_folder):
         print(f"Error: The script '{script_path}' was not found.")
     return False
 
+
 def write_checkpoint_file(execution_folder, cmd2):
     script_path = f"{execution_folder}/checkpoint_script.sh"
     cmd = f'echo "{cmd2}" > {script_path} && chmod +x {script_path}'
@@ -1868,7 +1888,6 @@ def get_variables_exported(exported_variables):
 def set_environment_variables(setup):
     exported_variables = {}
 
-    # Extract and set environment variables
     if 'environment' in setup and isinstance(setup['environment'], dict):
         for key, value in setup['environment'].items():
             exported_variables[key] = value
@@ -1953,19 +1972,6 @@ def read_and_format_file(file_path):
             print("Error reading the file: ", e)
 
     return content
-
-
-@login_required()
-def show_file_content(request, filename):
-    directory = request.session.get('results_dir', None)
-    file_path = os.path.join(directory, filename)
-    if not os.path.isfile(file_path):
-        return HttpResponse("File not found", status=404)
-
-    file_content = read_and_format_file(file_path)
-    print(file_content)
-    return render(request, 'pages/show_file_content.html',
-                  {'filename': filename, 'file_content': file_content})
 
 
 @login_required()
