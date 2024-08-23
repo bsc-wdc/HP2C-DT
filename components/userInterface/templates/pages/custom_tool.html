@@ -6,6 +6,11 @@
 {% block content %}
 <div class="card-body mx-5">
     <div class="wrapper-create-work">
+        <form method="POST">
+            {% csrf_token %}
+            <button name="deleteCustom{{name}}" type="submit" class="btn btn-danger ml-2">Delete tool</button>
+        </form>
+
         <h2 class="text-center mb-5" style="text-decoration: underline;">
             <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
         </h2>

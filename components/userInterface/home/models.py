@@ -97,6 +97,7 @@ STATUS_CONN = [
 
 class Tool(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    github_repos = models.TextField(default=None, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -115,6 +116,20 @@ class Tool(models.Model):
         current_list = self.get_string_list() or []
         current_list.append(new_element)
         self.set_field_list(current_list)
+        self.save()
+
+    def set_repos_list(self, string_list):
+        self.github_repos = json.dumps(string_list)
+
+    def get_repos_list(self):
+        if self.github_repos is None:
+            return []
+        return json.loads(self.github_repos)
+
+    def append_to_repos_list(self, new_element):
+        current_list = self.get_repos_list() or []
+        current_list.append(new_element)
+        self.set_repos_list(current_list)
         self.save()
 
 

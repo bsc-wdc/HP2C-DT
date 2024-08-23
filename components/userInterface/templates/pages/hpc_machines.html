@@ -86,11 +86,11 @@
                                     </select>
                                     <button name="detailsButton" type="submit" class="btn btn-primary ml-2">Details</button>
                                     <button name="deleteButton" type="submit" class="btn btn-danger ml-2">Delete machine</button>
-                                        <div class="d-flex flex-row-reverse">
-                                            <a href="{% url 'new_machine' %}">
-                                                <button type="button" class="btn btn-success">New machine</button>
-                                            </a>
-                                        </div>
+                                    <div class="d-flex flex-row-reverse">
+                                        <a href="{% url 'new_machine' %}">
+                                            <button type="button" class="btn btn-success">New machine</button>
+                                        </a>
+                                    </div>
                                 </div>
                                 {% if not connected %}
                                     <div class="form-group">

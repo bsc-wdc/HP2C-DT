@@ -685,6 +685,12 @@ def tools(request):
         return redirect('hpc_machines')
 
     if request.method == 'POST':
+        for key in request.POST.keys():
+            if 'deleteCustom' in key:
+                tool_name = key.split('deleteCustom')[1]
+                Tool.objects.get(name=tool_name).delete()
+                return redirect('tools')
+
         if 'stAnalysisButton' in request.POST:
             document_form = DocumentForm(request.POST, request.FILES)
             if document_form.is_valid():
@@ -1969,13 +1975,22 @@ def create_tool(request):
         if form.is_valid():
             tool_name = form.cleaned_data['name']
             tool = Tool.objects.create(name=tool_name)
+
             additional_fields = {k: v for k, v in request.POST.items() if k.startswith('custom_field_')}
             for field_name, field_value in additional_fields.items():
                 tool.append_to_field_list(field_value)
+
+            tool.append_to_repos_list(request.POST.get('github_repo'))
+            additional_repos = {k: v for k, v in request.POST.items() if
+                                 k.startswith('github_repo_')}
+            for repo_name, repo_value in additional_repos.items():
+                tool.append_to_repos_list(repo_value)
             request.session['tool_created'] = tool.name
 
             return redirect('tools')
-
+        else:
+            return render(request, 'pages/create_tool.html',
+                          {'form': form, 'errors': form.errors})
     else:
         form = CreateToolForm()
 

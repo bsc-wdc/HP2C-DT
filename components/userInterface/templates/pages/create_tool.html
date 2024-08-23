@@ -5,35 +5,75 @@
 {% block breadcrumbs %}{% endblock breadcrumbs %}
 
 {% block content %}
-  <h2>Create Tools</h2>
-  <form method="post">
-    {% csrf_token %}
-    <div id="form-container">
-        {% for field in form %}
-        <div class="form-group">
-            <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
-            {{ field|add_class:"form-control" }}
+<h2>Create Tools</h2>
+{% if errors %}
+    <div>
+      {% for field, error_list in errors.items %}
+        <div class="alert alert-danger" role="alert">
+          {% for error in error_list %}
+            Error in field {{ field }}: {{ error }}<br>
+          {% endfor %}
         </div>
-        {% endfor %}
+      {% endfor %}
     </div>
+  {% endif %}
+<form method="post">
+{% csrf_token %}
+<div id="form-container">
+    {% for field in form %}
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+        <div class="d-flex">
+            {{ field|add_class:"form-control flex-grow-1" }}
+            {% if "GitHub" in field.label %}
+                <button type="button" id="add-repo" class="btn btn-success feather icon-plus-circle ml-2"></button>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
 
-    <button type="button" id="add-field" class="btn btn-secondary">Add Custom Field</button>
-    <button type="submit" class="btn btn-primary">Create</button>
-  </form>
+<button type="button" id="add-field" class="btn btn-secondary">Add Custom Field</button>
 
-  <script type="text/javascript">
-    let fieldCounter = 0;
+<button type="submit" class="btn btn-primary">Create</button>
+</form>
 
-    document.getElementById('add-field').onclick = function() {
-      fieldCounter++;
-      const formContainer = document.getElementById('form-container');
-      const newFieldDiv = document.createElement('div');
-      newFieldDiv.classList.add('form-group');
-      newFieldDiv.innerHTML = `
-        <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
-        <input type="text" name="custom_field_${fieldCounter}" class="form-control" id="custom_field_${fieldCounter}">
-      `;
-      formContainer.appendChild(newFieldDiv);
-    };
-  </script>
+<script type="text/javascript">
+let fieldCounter = 0;
+let repoCounter = 0;
+
+function removeField(element) {
+  element.parentElement.parentElement.remove();
+}
+
+document.getElementById('add-field').onclick = function() {
+  fieldCounter++;
+  const formContainer = document.getElementById('form-container');
+  const newFieldDiv = document.createElement('div');
+  newFieldDiv.classList.add('form-group');
+  newFieldDiv.innerHTML = `
+    <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
+    <div class="d-flex">
+        <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
+        <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+    </div>
+  `;
+  formContainer.appendChild(newFieldDiv);
+};
+
+document.getElementById('add-repo').onclick = function() {
+  repoCounter++;
+  const formContainer = document.getElementById('form-container');
+  const newRepoDiv = document.createElement('div');
+  newRepoDiv.classList.add('form-group');
+  newRepoDiv.innerHTML = `
+    <label for="github_repo_${repoCounter}">GitHub Repo ${repoCounter}:</label>
+    <div class="d-flex">
+        <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1" id="github_repo_${repoCounter}">
+        <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+    </div>
+  `;
+  formContainer.appendChild(newRepoDiv);
+};
+</script>
 {% endblock %}
