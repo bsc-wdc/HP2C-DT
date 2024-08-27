@@ -902,15 +902,18 @@ def get_form_from_tool(tool):
     """
     form_fields = {}
 
-    field_list = json.loads(tool.field_list or "[]")
-
     # Dynamically add fields to the form
-    for field_name in field_list:
-        form_fields[field_name] = forms.CharField(
-            label=field_name.replace("_", " ").lower(),
+    for field in tool.get_fields():
+        initial = field.default_value or field.preset_value or None
+        disabled = field.preset_value is not None
+        # initial --> default value
+        # disabled --> if true, read only field
+        form_fields[field.name] = forms.CharField(
+            label=field.name.replace("_", " ").lower(),
             max_length=100,
             required=False,
-            widget=forms.TextInput(attrs={'class': 'form-control'})
+            widget=forms.TextInput(attrs={'class': 'form-control'}),
+            initial=initial, disabled=disabled
         )
 
     # Dynamically create a form class
@@ -1592,9 +1595,9 @@ class run_sim_async(threading.Thread):
         fqdn = machine_found.fqdn
         machine_folder = extract_substring(fqdn)
         userMachine = machine_found.user
-        principal_folder = machine_found.wdir #folder specified as workind dir in the online service
+        principal_folder = machine_found.wdir # folder specified as workind dir in the online service
         wdirPath, nameWdir = wdir_folder(principal_folder)
-        #command to create all the folders and copy the yaml file passed through the service
+        # command to create all the folders and copy the yaml file passed through the service
         setup_path = f"{principal_folder}/{nameWdir}/setup/{str(self.name)}"
         cmd1 = (
             f"source /etc/profile; mkdir -p {principal_folder}/{nameWdir}/setup/; "
@@ -1913,7 +1916,7 @@ def remove_numbers(input_str):
         return input_str
 
 
-def  extract_substring(s):
+def extract_substring(s):
     match = re.search(r'([a-zA-Z]+)\d\.', s)
     if match:
         return match.group(1)
@@ -1978,25 +1981,34 @@ def read_and_format_file(file_path):
 def create_tool(request):
     if request.method == 'POST':
         form = CreateToolForm(request.POST)
+        errors = {}  # To collect any errors for custom fields
+
         if form.is_valid():
             tool_name = form.cleaned_data['name']
             tool = Tool.objects.create(name=tool_name)
 
             additional_fields = {k: v for k, v in request.POST.items() if k.startswith('custom_field_')}
-            for field_name, field_value in additional_fields.items():
-                tool.append_to_field_list(field_value)
+            for field_key, field_name in additional_fields.items():
+                if not field_name:  # Check if the field name is empty
+                    errors[field_key] = ['This field cannot be empty.']
+                    return render(request, 'pages/create_tool.html',
+                                  {'form': form, 'errors': errors})
+
+                index = field_key.split('_')[2]
+                default_value = request.POST.get(f'default_value_{index}', None)
+                preset_value = request.POST.get(f'preset_value_{index}', None)
+
+                tool.add_field(field_name, default_value=default_value, preset_value=preset_value)
 
             tool.append_to_repos_list(request.POST.get('github_repo'))
-            additional_repos = {k: v for k, v in request.POST.items() if
-                                 k.startswith('github_repo_')}
+            additional_repos = {k: v for k, v in request.POST.items() if k.startswith('github_repo_')}
             for repo_name, repo_value in additional_repos.items():
                 tool.append_to_repos_list(repo_value)
             request.session['tool_created'] = tool.name
-
             return redirect('tools')
+
         else:
-            return render(request, 'pages/create_tool.html',
-                          {'form': form, 'errors': form.errors})
+            return render(request, 'pages/create_tool.html', {'form': form, 'errors': form.errors})
     else:
         form = CreateToolForm()
 

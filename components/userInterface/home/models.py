@@ -102,24 +102,19 @@ class Tool(models.Model):
     def __str__(self):
         return self.name
 
-    field_list = models.TextField(default=None, blank=True, null=True)
+    def get_fields(self):
+        return list(self.field_set.all())
 
-    def set_field_list(self, string_list):
-        self.field_list = json.dumps(string_list)
+    def add_field(self, field_name, default_value=None, preset_value=None):
+        field = Field.objects.create(name=field_name, default_value=default_value, preset_value=preset_value, tool=self)
+        return field
 
-    def get_string_list(self):
-        if self.field_list is None:
-            return []
-        return json.loads(self.field_list)
-
-    def append_to_field_list(self, new_element):
-        current_list = self.get_string_list() or []
-        current_list.append(new_element)
-        self.set_field_list(current_list)
-        self.save()
+    def remove_field(self, field_name):
+        Field.objects.filter(tool=self, name=field_name).delete()
 
     def set_repos_list(self, string_list):
         self.github_repos = json.dumps(string_list)
+        self.save()
 
     def get_repos_list(self):
         if self.github_repos is None:
@@ -130,7 +125,15 @@ class Tool(models.Model):
         current_list = self.get_repos_list() or []
         current_list.append(new_element)
         self.set_repos_list(current_list)
-        self.save()
+
+class Field(models.Model):
+    name = models.CharField(max_length=100)
+    default_value = models.CharField(max_length=255, null=True, blank=True, default=None)
+    preset_value = models.CharField(max_length=255, null=True, blank=True, default=None)
+    tool = models.ForeignKey(Tool, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
 
 
 class Connection(models.Model):
