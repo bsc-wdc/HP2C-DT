@@ -689,6 +689,7 @@ def tools(request):
             if 'deleteCustom' in key:
                 tool_name = key.split('deleteCustom')[1]
                 Tool.objects.get(name=tool_name).delete()
+                request.session['tool_deleted'] = tool_name
                 return redirect('tools')
 
         if 'stAnalysisButton' in request.POST:
@@ -872,6 +873,10 @@ def tools(request):
         request.session.pop('run_job', None)
         tool_created = request.session.get('tool_created', None)
         request.session.pop('tool_created', None)
+        tool_edited = request.session.get('tool_edited', None)
+        request.session.pop('tool_edited', None)
+        tool_deleted = request.session.get('tool_deleted', None)
+        request.session.pop('tool_deleted', None)
 
         tool_forms = {}
         for tool in Tool.objects.all():
@@ -889,7 +894,8 @@ def tools(request):
                        'executionsTimeout': executionTimeout,
                        'checkConn': request.session['checkConn'],
                        'run_job': run_job, 'tool_created': tool_created,
-                       'tool_forms': tool_forms
+                       'tool_forms': tool_forms, 'tool_edited': tool_edited,
+                       'tool_deleted': tool_deleted
                        })
 
 
@@ -2056,6 +2062,7 @@ def edit_tool(request, tool_name):
             for repo_name, repo_value in additional_repos.items():
                 tool.append_to_repos_list(repo_value)
 
+            request.session['tool_edited'] = tool_name
             return redirect('tools')
 
     else:

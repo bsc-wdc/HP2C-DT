@@ -21,6 +21,22 @@
   </div>
 {% endif %}
 
+{% if tool_edited %}
+  <div>
+    <div class="alert alert-success" role="alert">
+      Successfully edited tool {{tool_edited}}
+    </div>
+  </div>
+{% endif %}
+
+{% if tool_deleted %}
+  <div>
+    <div class="alert alert-success" role="alert">
+      Successfully deleted tool {{tool_deleted}}
+    </div>
+  </div>
+{% endif %}
+
 <div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
     <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item">
