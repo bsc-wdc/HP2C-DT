@@ -17,4 +17,5 @@ urlpatterns = [
   path('results/', views.results, name='results'),
   path('download/<str:file_name>/', views.download_file, name='download_file'),
   path('create_tool/', views.create_tool, name='create_tool'),
+  path('edit_tool/<str:tool_name>/', views.edit_tool, name='edit_tool'),
 ]

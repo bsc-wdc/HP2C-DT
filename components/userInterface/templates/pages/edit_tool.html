@@ -40,8 +40,8 @@
             <label for="{{ custom_field.name }}">{{ custom_field.name }}:</label>
             <div class="d-flex">
                 <input type="text" name="custom_field_{{ forloop.counter }}" class="form-control flex-grow-1" id="custom_field_{{ forloop.counter }}" value="{{ custom_field.name }}">
-                <input type="text" name="default_value_{{ forloop.counter }}" class="form-control ml-2" id="default_value_{{ forloop.counter }}" value="{{ custom_field.default_value|default_if_none:'' }}" placeholder="Default Value (optional)">
-                <input type="text" name="preset_value_{{ forloop.counter }}" class="form-control ml-2" id="preset_value_{{ forloop.counter }}" value="{{ custom_field.preset_value|default_if_none:'' }}" placeholder="Preset Value (optional)">
+                <input type="text" name="default_value_{{ forloop.counter }}" class="form-control ml-2" id="default_value_{{ forloop.counter }}" value="{{ custom_field.default_value }}" placeholder="Default Value (optional)">
+                <input type="text" name="preset_value_{{ forloop.counter }}" class="form-control ml-2" id="preset_value_{{ forloop.counter }}" value="{{ custom_field.preset_value }}" placeholder="Preset Value (optional)">
                 <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
             </div>
         </div>
@@ -89,56 +89,18 @@ document.getElementById('add-field').onclick = function() {
     formContainer.appendChild(newFieldDiv);
 
     document.getElementById(`default_value_${fieldCounter}`).addEventListener('input', function() {
-        toggleFieldState(`default_value_${fieldCounter}`, `preset_value_${fieldCounter}`);
+        toggleFieldState(`preset_value_${fieldCounter}`, this);
     });
 
     document.getElementById(`preset_value_${fieldCounter}`).addEventListener('input', function() {
-        toggleFieldState(`default_value_${fieldCounter}`, `preset_value_${fieldCounter}`);
+        toggleFieldState(`default_value_${fieldCounter}`, this);
     });
 };
 
-function toggleFieldState(defaultFieldId, presetFieldId) {
-    const defaultField = document.getElementById(defaultFieldId);
-    const presetField = document.getElementById(presetFieldId);
-
-    if (defaultField.value.length > 0) {
-        presetField.disabled = true;
-    } else {
-        presetField.disabled = false;
-    }
-
-    if (presetField.value.length > 0) {
-        defaultField.disabled = true;
-    } else {
-        defaultField.disabled = false;
-    }
+function toggleFieldState(fieldToToggle, currentField) {
+    const field = document.getElementById(fieldToToggle);
+    field.disabled = currentField.value.length > 0;
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    const defaultFields = document.querySelectorAll('[id^="default_value_"]');
-    const presetFields = document.querySelectorAll('[id^="preset_value_"]');
-
-    defaultFields.forEach((defaultField, index) => {
-        const presetField = presetFields[index];
-
-        if (defaultField.value.length > 0) {
-            presetField.disabled = true;
-        } else if (presetField.value.length > 0) {
-            defaultField.disabled = true;
-        } else {
-            defaultField.disabled = false;
-            presetField.disabled = false;
-        }
-
-        defaultField.addEventListener('input', function() {
-            toggleFieldState(defaultField.id, presetField.id);
-        });
-
-        presetField.addEventListener('input', function() {
-            toggleFieldState(defaultField.id, presetField.id);
-        });
-    });
-});
 
 document.getElementById('add-repo').onclick = function() {
     repoCounter++;
@@ -154,5 +116,41 @@ document.getElementById('add-repo').onclick = function() {
     `;
     formContainer.appendChild(newRepoDiv);
 };
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const defaultFields = document.querySelectorAll('[id^="default_value_"]');
+        const presetFields = document.querySelectorAll('[id^="preset_value_"]');
+
+        defaultFields.forEach((defaultField, index) => {
+            const presetField = presetFields[index];
+
+            if (defaultField.value) {
+                presetField.disabled = true;
+            }
+            if (presetField.value) {
+                defaultField.disabled = true;
+            }
+
+            defaultField.addEventListener('input', function() {
+                if (defaultField.value) {
+                    presetField.disabled = true;
+                    presetField.value = '';
+                } else {
+                    presetField.disabled = false;
+                }
+            });
+
+            presetField.addEventListener('input', function() {
+                if (presetField.value) {
+                    defaultField.disabled = true;
+                    defaultField.value = '';
+                } else {
+                    defaultField.disabled = false;
+                }
+            });
+        });
+    });
 </script>
 {% endblock %}

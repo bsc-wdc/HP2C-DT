@@ -20,7 +20,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from scripts.update_dashboards import update_dashboards, get_deployment_info
 from .models import *
 from django.contrib import messages
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, Http404
 from .forms import (CategoricalDeviceForm, NonCategoricalDeviceForm, \
     CreateUserForm, Machine_Form, Key_Gen_Form, DocumentForm, ExecutionForm,
@@ -2013,3 +2013,75 @@ def create_tool(request):
         form = CreateToolForm()
 
     return render(request, 'pages/create_tool.html', {'form': form})
+
+
+@login_required
+def edit_tool(request, tool_name):
+    tool = get_object_or_404(Tool, name=tool_name)
+    errors = {}
+
+    if request.method == 'POST':
+        form = CreateToolForm(request.POST, instance=tool)
+        if form.is_valid():
+            tool.name = form.cleaned_data['name']
+            tool.save()
+
+            tool.field_set.all().delete()
+            additional_fields = {k: v for k, v in request.POST.items() if k.startswith('custom_field_')}
+            for field_key, field_name in additional_fields.items():
+                if not field_name:
+                    errors[field_key] = ['This field cannot be empty.']
+                    return render(request, 'pages/edit_tool.html', {
+                        'form': form,
+                        'errors': errors,
+                        'tool': tool,
+                        'existing_fields': tool.get_fields(),
+                        'existing_repos': tool.get_repos_list(),
+                    })
+
+                index = field_key.split('_')[2]
+                default_value = request.POST.get(f'default_value_{index}', None)
+                preset_value = request.POST.get(f'preset_value_{index}', None)
+
+                if default_value == 'None' or default_value == '':
+                    default_value = None
+                if preset_value == 'None' or preset_value == '':
+                    preset_value = None
+
+                tool.add_field(field_name, default_value=default_value, preset_value=preset_value)
+
+            tool.set_repos_list([])
+            tool.append_to_repos_list(request.POST.get('github_repo'))
+            additional_repos = {k: v for k, v in request.POST.items() if k.startswith('github_repo_')}
+            for repo_name, repo_value in additional_repos.items():
+                tool.append_to_repos_list(repo_value)
+
+            return redirect('tools')
+
+    else:
+        # Pass the custom fields and repos to the template for display
+        existing_fields = tool.get_fields()
+        existing_repos = tool.get_repos_list()
+
+        # The first repo in repos_list is the required one, so it needs to be
+        # treated differently
+        form = CreateToolForm(instance=tool, initial={
+            'github_repo': '\n'.join(existing_repos[0])
+        })
+
+        existing_repos.pop(0)
+
+        for f in existing_fields:
+            if f.default_value is None:
+                f.default_value = ''
+            if f.preset_value is None:
+                f.preset_value = ''
+
+        return render(request, 'pages/edit_tool.html', {
+            'form': form,
+            'errors': errors,
+            'tool': tool,
+            'existing_fields': existing_fields,
+            'existing_repos': existing_repos,
+        })
+
