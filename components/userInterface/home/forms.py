@@ -9,6 +9,7 @@ from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
 class CreateToolForm(forms.ModelForm):
     github_repo = forms.CharField(label='GitHub Repo', max_length=255, required=True)
+    github_branch = forms.CharField(label='GitHub Branch', max_length=255, required=True)
 
     class Meta:
         model = Tool

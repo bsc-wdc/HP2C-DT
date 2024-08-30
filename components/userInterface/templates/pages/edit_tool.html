@@ -26,22 +26,33 @@
                 <input type="text" name="name" class="form-control" id="id_name" value="{{ form.name.value }}">
             </div>
             {% for section in sections %}
-                <div class="card-header">
-                    <h5 style="cursor: pointer;">{{ section|capfirst }}</h5>
+                <div class="card-header clickable-header" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                    <h5 class="mb-0">{{ section|capfirst }}</h5>
+                    <span class="toggle-icon">▼</span>
                 </div>
                 <div class="card-block px-0 py-3">
-                    <div class="section-content" id="section-{{ section }}" style="display: none;">
+                    <div class="section-content" id="section-{{ section }}" style="display: block;">
                         {% if section == "setup" %}
                             <div class="form-group" id="setup-section">
                                 <label for="id_github_repo">{{ form.github_repo.label }}:</label>
                                 <div class="d-flex align-items-center">
-                                    <input type="text" name="github_repo" class="form-control flex-grow-1" id="id_github_repo_1" value="{{ form.github_repo.value }}">
+                                    <input type="text" name="github_repo" class="form-control flex-grow-1 mr-2" id="id_github_repo" value="{{ form.github_repo.value|default_if_none:'' }}" placeholder="Repo Name">
+                                    <input type="text" name="github_branch" class="form-control flex-grow-1" id="id_github_branch" value="{{ form.github_branch.value|default_if_none:'' }}" placeholder="Branch Name">
                                     <button type="button" id="add-repo" class="btn btn-success feather icon-plus-circle ml-2"></button>
                                 </div>
                             </div>
+                            {% for repo, branch in existing_repos.items %}
+                                <div class="form-group">
+                                    <label for="github_repo_{{ forloop.counter }}">GitHub Repo {{ forloop.counter }}:</label>
+                                    <div class="d-flex align-items-center">
+                                        <input type="text" name="github_repo_{{ forloop.counter }}" class="form-control flex-grow-1 mr-2" id="github_repo_{{ forloop.counter }}" value="{{ repo }}" placeholder="Repo Name">
+                                        <input type="text" name="github_branch_{{ forloop.counter }}" class="form-control flex-grow-1" id="id_github_branch_{{ forloop.counter }}" value="{{ branch }}" placeholder="Branch Name">
+                                        <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                    </div>
+                                </div>
+                            {% endfor %}
                         {% endif %}
 
-                        <!-- Custom fields will be displayed here -->
                         {% for custom_field in existing_fields %}
                             {% if custom_field.section == section %}
                                 <div class="form-group">
@@ -81,6 +92,22 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+document.addEventListener('DOMContentLoaded', function() {
+    var sectionHeaders = document.querySelectorAll('.clickable-header');
+    sectionHeaders.forEach(function(header) {
+        header.addEventListener('click', function() {
+            var sectionContent = this.nextElementSibling.querySelector('.section-content');
+            if (sectionContent) {
+                sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+                var icon = this.querySelector('.toggle-icon');
+                if (icon) {
+                    icon.textContent = sectionContent.style.display === 'none' ? '▼' : '▲';
+                }
+            }
+        });
+    });
+});
+
 document.getElementById('add-repo').onclick = function() {
     repoCounter++;
     const setupSection = document.getElementById('setup-section');
@@ -89,7 +116,8 @@ document.getElementById('add-repo').onclick = function() {
     newRepoDiv.innerHTML = `
         <label for="github_repo_${repoCounter}">GitHub Repo ${repoCounter}:</label>
         <div class="d-flex align-items-center">
-            <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1" id="github_repo_${repoCounter}">
+            <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2" id="github_repo_${repoCounter}" placeholder="Repo Name">
+            <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1" id="id_github_branch_${repoCounter}" placeholder="Branch Name">
             <input type="hidden" name="section_github_repo_${repoCounter}" value="setup">
             <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
         </div>
@@ -169,4 +197,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<style>
+.clickable-header:hover {
+    background-color: #f8f9fa;
+}
+.toggle-icon {
+    font-size: 14px;
+    margin-left: 10px;
+    transition: transform 0.2s;
+}
+</style>
 {% endblock content %}

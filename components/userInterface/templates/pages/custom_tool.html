@@ -5,6 +5,19 @@
 
 {% block content %}
 <div class="card px-0 py-3" style="border-radius: 15px;">
+    <form method="POST">
+        {% csrf_token %}
+        <div>
+            <button name="deleteCustom{{name}}" type="submit" class="btn btn-danger ml-2">Delete tool</button>
+            <a href="{% url 'edit_tool' tool_name=name %}">
+                <button type="button" class="btn btn-primary">Edit tool</button>
+            </a>
+        </div>
+    </form>
+
+    <h2 class="text-center mb-5" style="text-decoration: underline;">
+        <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
+    </h2>
     <form method="post">
         {% csrf_token %}
         {% for section in sections %}

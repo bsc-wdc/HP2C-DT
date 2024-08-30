@@ -2017,12 +2017,15 @@ def create_tool(request):
                     preset_value = request.POST.get(f'preset_value_{index}', None)
                     tool.add_field(field_name, default_value=default_value, preset_value=preset_value, section=section)
 
-            if 'github_repo' in request.POST:
-                tool.append_to_repos_list(request.POST.get('github_repo'))
-
-            additional_repos = {k: v for k, v in request.POST.items() if k.startswith('github_repo_')}
+            tool.append_to_repos_dict(request.POST.get('github_repo'),
+                                      request.POST.get('github_branch'))
+            additional_repos = {k: v for k, v in request.POST.items() if
+                                k.startswith('github_repo_')}
             for repo_name, repo_value in additional_repos.items():
-                tool.append_to_repos_list(repo_value)
+                if "branch" not in repo_name:
+                    number = repo_name.split('github_repo_')[1]
+                    branch = request.POST.get('github_branch_' + number)
+                    tool.append_to_repos_dict(repo_value, branch)
 
             request.session['tool_created'] = tool.name
             return redirect('tools')
@@ -2075,11 +2078,14 @@ def edit_tool(request, tool_name):
                 tool.add_field(field_name, default_value=default_value,
                                preset_value=preset_value, section=section)
 
-            tool.set_repos_list([])
-            tool.append_to_repos_list(request.POST.get('github_repo'))
+            tool.set_repos_dict({})
+            tool.append_to_repos_dict(request.POST.get('github_repo'), request.POST.get('github_branch'))
             additional_repos = {k: v for k, v in request.POST.items() if k.startswith('github_repo_')}
-            for repo_key, repo_value in additional_repos.items():
-                tool.append_to_repos_list(repo_value, section="setup")
+            for repo_name, repo_value in additional_repos.items():
+                if "branch" not in repo_name:
+                    number = repo_name.split('github_repo_')[1]
+                    branch = request.POST.get('github_branch_' + number)
+                    tool.append_to_repos_dict(repo_value, branch)
 
             request.session['tool_edited'] = tool_name
             return redirect('tools')
@@ -2087,13 +2093,21 @@ def edit_tool(request, tool_name):
     else:
         # Pass the custom fields and repos to the template for display
         existing_fields = tool.get_fields()
-        existing_repos = tool.get_repos_list()
+        existing_repos = tool.get_repos_dict()
+
+        first_repo = ''
+        first_branch = ''
+        for k, v in existing_repos.items():
+            first_repo = k
+            first_branch = v
+            break
 
         form = CreateToolForm(instance=tool, initial={
-            'github_repo': '\n'.join(existing_repos[0])
+            'github_repo': first_repo,
+            'github_branch': first_branch
         })
 
-        existing_repos.pop(0)
+        existing_repos.pop(first_repo)
 
         for f in existing_fields:
             if f.default_value is None:

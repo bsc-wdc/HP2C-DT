@@ -97,7 +97,7 @@ STATUS_CONN = [
 
 class Tool(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    github_repos = models.TextField(default=None, blank=True, null=True)
+    github_repos = models.JSONField(default=dict, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -113,19 +113,18 @@ class Tool(models.Model):
     def remove_field(self, field_name):
         Field.objects.filter(tool=self, name=field_name).delete()
 
-    def set_repos_list(self, string_list):
-        self.github_repos = json.dumps(string_list)
+    def set_repos_dict(self, repos_dict):
+        self.github_repos = repos_dict
         self.save()
 
-    def get_repos_list(self):
-        if self.github_repos is None:
-            return []
-        return json.loads(self.github_repos)
+    def get_repos_dict(self):
+        return self.github_repos or {}
 
-    def append_to_repos_list(self, new_element):
-        current_list = self.get_repos_list() or []
-        current_list.append(new_element)
-        self.set_repos_list(current_list)
+    def append_to_repos_dict(self, repo_name, branch_name):
+        repos_dict = self.get_repos_dict()
+        repos_dict[repo_name] = branch_name
+        self.set_repos_dict(repos_dict)
+
 
 class Field(models.Model):
     name = models.CharField(max_length=100)
