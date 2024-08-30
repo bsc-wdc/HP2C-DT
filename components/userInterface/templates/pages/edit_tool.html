@@ -1,67 +1,169 @@
+{% extends 'layouts/base.html' %}
 {% load static %}
 {% load widget_tweaks %}
 
 {% block breadcrumbs %}{% endblock breadcrumbs %}
 
 {% block content %}
-<div class="card px-0 py-3" style="border-radius: 15px;">
-    <div class="wrapper-create-work">
-        <form method="POST">
-            {% csrf_token %}
-            <div>
-                <button name="deleteCustom{{name}}" type="submit" class="btn btn-danger ml-2">Delete tool</button>
-                <a href="{% url 'edit_tool' tool_name=name %}">
-                    <button type="button" class="btn btn-primary">Edit tool</button>
-                </a>
-            </div>
-        </form>
-
-        <h2 class="text-center mb-5" style="text-decoration: underline;">
-            <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
-        </h2>
-        <form method="post">
-            {% csrf_token %}
-            <div id="form-container">
-                {% for section in sections %}
-                    <div class="card-header">
-                        <h5 style="cursor: pointer;">{{ section|capfirst }}</h5>
-                    </div>
-                    <div class="card-block px-0 py-3">
-                        <div class="section-content" id="section-{{ section }}" style="display: none;">
-                            {% for field in form %}
-                                {% if field.section == section %}
-                                    <div class="form-group">
-                                        <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
-                                        {{ field|add_class:"form-control" }}
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-
-            <form method="POST">
-                {% csrf_token %}
-                <input type="hidden" value="{{ e.eID }}" name="{{name}}ButtonValue">
-                <button type="submit" name="{{name}}Button" class="btn btn-success btn-block btn-lg gradient-custom-4 feather icon-play" data-toggle="tooltip" data-placement="top" title="Run execution"></button>
-            </form>
-        </form>
+<h3 class="page-title">Edit Tool</h3>
+{% if errors %}
+    <div>
+        {% for field, error_list in errors.items %}
+        <div class="alert alert-danger" role="alert">
+            {% for error in error_list %}
+            Error in field {{ field }}: {{ error }}<br>
+            {% endfor %}
+        </div>
+        {% endfor %}
     </div>
+{% endif %}
+<div class="card px-0 py-3" style="border-radius: 15px;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
+            <div class="form-group">
+                <label for="id_name">{{ form.name.label }}</label>
+                <input type="text" name="name" class="form-control" id="id_name" value="{{ form.name.value }}">
+            </div>
+            {% for section in sections %}
+                <div class="card-header">
+                    <h5 style="cursor: pointer;">{{ section|capfirst }}</h5>
+                </div>
+                <div class="card-block px-0 py-3">
+                    <div class="section-content" id="section-{{ section }}" style="display: none;">
+                        {% if section == "setup" %}
+                            <div class="form-group" id="setup-section">
+                                <label for="id_github_repo">{{ form.github_repo.label }}:</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="text" name="github_repo" class="form-control flex-grow-1" id="id_github_repo_1" value="{{ form.github_repo.value }}">
+                                    <button type="button" id="add-repo" class="btn btn-success feather icon-plus-circle ml-2"></button>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Custom fields will be displayed here -->
+                        {% for custom_field in existing_fields %}
+                            {% if custom_field.section == section %}
+                                <div class="form-group">
+                                    <label for="custom_field_{{ custom_field.id }}">{{ custom_field.name }}:</label>
+                                    <div class="d-flex">
+                                        <input type="text" name="custom_field_{{ custom_field.id }}" class="form-control flex-grow-1" id="custom_field_{{ custom_field.id }}" value="{{ custom_field.name }}">
+                                        <input type="text" name="default_value_{{ custom_field.id }}" class="form-control ml-2" id="default_value_{{ custom_field.id }}" value="{{ custom_field.default_value|default_if_none:'' }}" placeholder="Default Value (optional)">
+                                        <input type="text" name="preset_value_{{ custom_field.id }}" class="form-control ml-2" id="preset_value_{{ custom_field.id }}" value="{{ custom_field.preset_value|default_if_none:'' }}" placeholder="Preset Value (optional)">
+                                        <input type="hidden" name="section_{{ custom_field.id }}" value="{{ section }}">
+                                        <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        <button type="button" class="btn btn-secondary add-field" data-section="{{ section }}">Add Custom Field to {{ section|capfirst }}</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
 </div>
 
 <script>
+let fieldCounter = {{ existing_fields|length }};
+let repoCounter = {{ existing_repos|length }};
+
 document.addEventListener('DOMContentLoaded', function() {
     var sectionHeaders = document.querySelectorAll('.card-header h5');
-
     sectionHeaders.forEach(function(header) {
         header.addEventListener('click', function() {
             var sectionContent = this.closest('.card-header').nextElementSibling.querySelector('.section-content');
+            if (sectionContent) {
+                sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    });
+});
 
-            if (sectionContent.style.display === 'none' || sectionContent.style.display === '') {
-                sectionContent.style.display = 'block';
+document.getElementById('add-repo').onclick = function() {
+    repoCounter++;
+    const setupSection = document.getElementById('setup-section');
+    const newRepoDiv = document.createElement('div');
+    newRepoDiv.classList.add('form-group');
+    newRepoDiv.innerHTML = `
+        <label for="github_repo_${repoCounter}">GitHub Repo ${repoCounter}:</label>
+        <div class="d-flex align-items-center">
+            <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1" id="github_repo_${repoCounter}">
+            <input type="hidden" name="section_github_repo_${repoCounter}" value="setup">
+            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+        </div>
+    `;
+    setupSection.appendChild(newRepoDiv);
+};
+
+document.querySelectorAll('.add-field').forEach(button => {
+    button.addEventListener('click', () => {
+        fieldCounter++;
+        const section = button.getAttribute('data-section');
+        const sectionContent = document.getElementById('section-' + section);
+        const newFieldDiv = document.createElement('div');
+        newFieldDiv.classList.add('form-group');
+        newFieldDiv.innerHTML = `
+            <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
+            <div class="d-flex">
+                <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
+                <input type="text" name="default_value_${fieldCounter}" class="form-control ml-2" id="default_value_${fieldCounter}" placeholder="Default Value (optional)">
+                <input type="text" name="preset_value_${fieldCounter}" class="form-control ml-2" id="preset_value_${fieldCounter}" placeholder="Preset Value (optional)">
+                <input type="hidden" name="section_${fieldCounter}" value="${section}">
+                <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+            </div>
+        `;
+        sectionContent.appendChild(newFieldDiv);
+
+        document.getElementById(`default_value_${fieldCounter}`).addEventListener('input', function() {
+            toggleFieldState(`preset_value_${fieldCounter}`, this);
+        });
+
+        document.getElementById(`preset_value_${fieldCounter}`).addEventListener('input', function() {
+            toggleFieldState(`default_value_${fieldCounter}`, this);
+        });
+    });
+});
+
+function toggleFieldState(fieldToToggle, currentField) {
+    const field = document.getElementById(fieldToToggle);
+    field.disabled = currentField.value.length > 0;
+}
+
+function removeField(element) {
+    element.parentElement.parentElement.remove();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const defaultFields = document.querySelectorAll('[id^="default_value_"]');
+    const presetFields = document.querySelectorAll('[id^="preset_value_"]');
+
+    defaultFields.forEach((defaultField, index) => {
+        const presetField = presetFields[index];
+
+        if (defaultField.value) {
+            presetField.disabled = true;
+        }
+        if (presetField.value) {
+            defaultField.disabled = true;
+        }
+
+        defaultField.addEventListener('input', function() {
+            if (defaultField.value) {
+                presetField.disabled = true;
+                presetField.value = '';
             } else {
-                sectionContent.style.display = 'none';
+                presetField.disabled = false;
+            }
+        });
+
+        presetField.addEventListener('input', function() {
+            if (presetField.value) {
+                defaultField.disabled = true;
+                defaultField.value = '';
+            } else {
+                defaultField.disabled = false;
             }
         });
     });
