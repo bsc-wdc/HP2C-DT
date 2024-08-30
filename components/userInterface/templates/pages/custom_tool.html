@@ -13,7 +13,7 @@
                     <h5 style="cursor: pointer;">{{ section|capfirst }}</h5>
                 </div>
                 <div class="card-block px-0 py-3">
-                    <div class="section-content" id="section-{{ section }}" style="display: none;">
+                    <div class="section-content" id="section-{{ section }}" style="display: block;">
                         {% for modified_name, field in fields.items %}
                             {% if field.section == section %}
                                 {% for f in form %}
@@ -30,7 +30,11 @@
                 </div>
             {% endfor %}
         </div>
-        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" value="{{ e.eID }}" name="{{name}}ButtonValue">
+            <button type="submit" name="{{name}}Button" class="btn btn-success btn-block btn-lg gradient-custom-4 feather icon-play" data-toggle="tooltip" data-placement="top" title="Run execution"></button>
+        </form>
     </form>
 </div>
 
