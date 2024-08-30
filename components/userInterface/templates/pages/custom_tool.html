@@ -45,7 +45,7 @@
         <form method="POST">
             {% csrf_token %}
             <input type="hidden" value="{{ e.eID }}" name="{{name}}ButtonValue">
-            <button type="submit" name="{{name}}Button" class="btn btn-success btn-block btn-lg gradient-custom-4 feather icon-play" data-toggle="tooltip" data-placement="top" title="Run execution"></button>
+            <button type="submit" name="{{name}}Button" class="btn btn-success btn-block btn-lg gradient-custom-4 feather icon-play mr-2" data-toggle="tooltip" data-placement="top" title="Run execution"></button>
         </form>
     </form>
 </div>

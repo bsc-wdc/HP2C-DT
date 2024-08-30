@@ -42,14 +42,16 @@
                                 </div>
                             </div>
                             {% for repo, branch in existing_repos.items %}
-                                <div class="form-group">
-                                    <label for="github_repo_{{ forloop.counter }}">GitHub Repo {{ forloop.counter }}:</label>
-                                    <div class="d-flex align-items-center">
-                                        <input type="text" name="github_repo_{{ forloop.counter }}" class="form-control flex-grow-1 mr-2" id="github_repo_{{ forloop.counter }}" value="{{ repo }}" placeholder="Repo Name">
-                                        <input type="text" name="github_branch_{{ forloop.counter }}" class="form-control flex-grow-1" id="id_github_branch_{{ forloop.counter }}" value="{{ branch }}" placeholder="Branch Name">
-                                        <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                {% if not forloop.first %}
+                                    <div class="form-group">
+                                        <label for="github_repo_{{ forloop.counter }}">GitHub Repo {{ forloop.counter }}:</label>
+                                        <div class="d-flex align-items-center">
+                                            <input type="text" name="github_repo_{{ forloop.counter }}" class="form-control flex-grow-1 mr-2" id="github_repo_{{ forloop.counter }}" value="{{ repo }}" placeholder="Repo Name">
+                                            <input type="text" name="github_branch_{{ forloop.counter }}" class="form-control flex-grow-1" id="id_github_branch_{{ forloop.counter }}" value="{{ branch }}" placeholder="Branch Name">
+                                            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                        </div>
                                     </div>
-                                </div>
+                                {% endif %}
                             {% endfor %}
                         {% endif %}
 
@@ -72,7 +74,7 @@
                 </div>
             {% endfor %}
         </div>
-        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button type="submit" class="btn btn-primary ml-2">Save Changes</button>
     </form>
 </div>
 

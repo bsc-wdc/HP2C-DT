@@ -2086,6 +2086,22 @@ def edit_tool(request, tool_name):
                     number = repo_name.split('github_repo_')[1]
                     branch = request.POST.get('github_branch_' + number)
                     tool.append_to_repos_dict(repo_value, branch)
+                    print("----------------",tool.get_repos_dict())
+                    if branch == '' or repo_value == '':
+                        if branch == '':
+                            errors['github_branch_' + number] = \
+                                ['This field cannot be empty.']
+                        else:
+                            errors[repo_value] = \
+                                ['This field cannot be empty.']
+                        return render(request, 'pages/edit_tool.html', {
+                            'form': form,
+                            'errors': errors,
+                            'tool': tool,
+                            'existing_fields': tool.get_fields(),
+                            'existing_repos': tool.get_repos_dict(),
+                            'sections': sections,
+                        })
 
             request.session['tool_edited'] = tool_name
             return redirect('tools')
@@ -2106,8 +2122,6 @@ def edit_tool(request, tool_name):
             'github_repo': first_repo,
             'github_branch': first_branch
         })
-
-        existing_repos.pop(first_repo)
 
         for f in existing_fields:
             if f.default_value is None:
