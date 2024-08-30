@@ -7,29 +7,28 @@
 <div class="card px-0 py-3" style="border-radius: 15px;">
     <form method="post">
         {% csrf_token %}
-        <div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
-            {% for section in sections %}
-                <div class="card-header">
-                    <h5 style="cursor: pointer;">{{ section|capfirst }}</h5>
+        {% for section in sections %}
+            <div class="card-header clickable-header" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                <h5 class="mb-0">{{ section|capfirst }}</h5>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="card-block px-0 py-3">
+                <div class="section-content" id="section-{{ section }}" style="display: block;">
+                    {% for modified_name, field in fields.items %}
+                        {% if field.section == section %}
+                            {% for f in form %}
+                                {% if modified_name == f.label %}
+                                    <div class="form-group">
+                                        <label for="{{ f.id_for_label }}">{{ f.label }}:</label>
+                                        {{ f|add_class:"form-control" }}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
                 </div>
-                <div class="card-block px-0 py-3">
-                    <div class="section-content" id="section-{{ section }}" style="display: block;">
-                        {% for modified_name, field in fields.items %}
-                            {% if field.section == section %}
-                                {% for f in form %}
-                                    {% if modified_name == f.label %}
-                                        <div class="form-group">
-                                            <label for="{{ f.id_for_label }}">{{ f.label }}:</label>
-                                            {{ f|add_class:"form-control" }}
-                                        </div>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+            </div>
+        {% endfor %}
         <form method="POST">
             {% csrf_token %}
             <input type="hidden" value="{{ e.eID }}" name="{{name}}ButtonValue">
@@ -49,6 +48,22 @@ document.addEventListener('DOMContentLoaded', function() {
             var sectionContent = this.closest('.card-header').nextElementSibling.querySelector('.section-content');
             if (sectionContent) {
                 sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    var sectionHeaders = document.querySelectorAll('.clickable-header');
+    sectionHeaders.forEach(function(header) {
+        header.addEventListener('click', function() {
+            var sectionContent = this.nextElementSibling.querySelector('.section-content');
+            if (sectionContent) {
+                sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+                var icon = this.querySelector('.toggle-icon');
+                if (icon) {
+                    icon.textContent = sectionContent.style.display === 'none' ? '▼' : '▲';
+                }
             }
         });
     });
@@ -108,4 +123,14 @@ function removeField(element) {
     element.parentElement.parentElement.remove();
 }
 </script>
+<style>
+.clickable-header:hover {
+    background-color: #f8f9fa;
+}
+.toggle-icon {
+    font-size: 14px;
+    margin-left: 10px;
+    transition: transform 0.2s;
+}
+</style>
 {% endblock content %}
