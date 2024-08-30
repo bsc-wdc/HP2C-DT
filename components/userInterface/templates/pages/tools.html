@@ -48,7 +48,7 @@
                aria-selected="false">Stability analysis</a>
         </li>
 
-        {% for tool_name, tool_form in tool_forms.items %}
+        {% for tool_name, tool_data in tool_forms.items %}
         <li class="nav-item">
             <a class="nav-link" id="{{ tool_name|slugify }}-tab" data-toggle="tab" href="#{{ tool_name|slugify }}"
                role="tab" aria-controls="{{ tool_name|slugify }}" aria-selected="false">{{ tool_name }}</a>
@@ -64,12 +64,11 @@
             {% include 'pages/run_st_analysis.html' %}
         </div>
 
-        {% for tool_name, tool_form in tool_forms.items %}
+        {% for tool_name, tool_data in tool_forms.items %}
             <div class="tab-pane fade" id="{{ tool_name|slugify }}" role="tabpanel" aria-labelledby="{{ tool_name|slugify }}-tab">
-                {% include 'pages/custom_tool.html' with form=tool_form name=tool_name%}
+                {% include 'pages/custom_tool.html' with form=tool_data.form name=tool_name tool=tool_data.tool fields=tool_data.fields %}
             </div>
         {% endfor %}
     </div>
-
 </div>
 {% endblock content %}

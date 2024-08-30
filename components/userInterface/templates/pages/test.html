@@ -5,58 +5,17 @@
 {% block breadcrumbs %}{% endblock breadcrumbs %}
 
 {% block content %}
-<h3 class="page-title">Create Tool</h3>
-{% if errors %}
-    <div>
-        {% for field, error_list in errors.items %}
-        <div class="alert alert-danger" role="alert">
-            {% for error in error_list %}
-            Error in field {{ field }}: {{ error }}<br>
-            {% endfor %}
-        </div>
-        {% endfor %}
-    </div>
-{% endif %}
 <div class="card px-0 py-3" style="border-radius: 15px;">
     <form method="post">
         {% csrf_token %}
         <div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
-            <div class="form-group">
-                <label for="id_name">{{ form.name.label }}:</label>
-                <input type="text" name="name" class="form-control" id="id_name" value="{{ form.name.value|default_if_none:'' }}">
-            </div>
             {% for section in sections %}
                 <div class="card-header">
                     <h5 style="cursor: pointer;">{{ section|capfirst }}</h5>
                 </div>
                 <div class="card-block px-0 py-3">
                     <div class="section-content" id="section-{{ section }}" style="display: none;">
-                        {% if section == "setup" %}
-                            <div class="form-group" id="setup-section">
-                                <label for="id_github_repo">{{ form.github_repo.label }}:</label>
-                                <div class="d-flex align-items-center">
-                                    <input type="text" name="github_repo" class="form-control flex-grow-1" id="id_github_repo_1" value="{{ form.github_repo.value|default_if_none:'' }}">
-                                    <button type="button" id="add-repo" class="btn btn-success feather icon-plus-circle ml-2"></button>
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        <!-- Custom fields will be displayed here -->
-                        {% for custom_field in existing_fields %}
-                            {% if custom_field.section == section %}
-                                <div class="form-group">
-                                    <label for="custom_field_{{ custom_field.id }}">{{ custom_field.name }}:</label>
-                                    <div class="d-flex">
-                                        <input type="text" name="custom_field_{{ custom_field.id }}" class="form-control flex-grow-1" id="custom_field_{{ custom_field.id }}" value="{{ custom_field.name }}">
-                                        <input type="text" name="default_value_{{ custom_field.id }}" class="form-control ml-2" id="default_value_{{ custom_field.id }}" value="{{ custom_field.default_value|default_if_none:'' }}" placeholder="Default Value (optional)">
-                                        <input type="text" name="preset_value_{{ custom_field.id }}" class="form-control ml-2" id="preset_value_{{ custom_field.id }}" value="{{ custom_field.preset_value|default_if_none:'' }}" placeholder="Preset Value (optional)">
-                                        <input type="hidden" name="section_{{ custom_field.id }}" value="{{ section }}">
-                                        <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                        <button type="button" class="btn btn-secondary add-field" data-section="{{ section }}">Add Custom Field to {{ section|capfirst }}</button>
+                        <h3>test</h3>
                     </div>
                 </div>
             {% endfor %}

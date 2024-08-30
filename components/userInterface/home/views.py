@@ -679,6 +679,7 @@ def ssh_keys_generation(request):
 @login_required
 def tools(request):
     check_conn_bool = check_connection(request)
+    sections = ['application', 'setup', 'slurm', 'compss','environment']
     if not check_conn_bool:
         request.session['original_request'] = request.POST
         request.session['redirect_to_tools'] = True
@@ -826,31 +827,33 @@ def tools(request):
                            'nameConnectedMachine'],
                        'document_form': document_form,
                        'machines': populate_executions_machines(request),
-                       'branches': branches
+                       'branches': branches, 'sections': sections,
                        })
     else:
         execution_form = ExecutionForm()
 
         machine_connected = get_machine_connected(request)
         request.session[
-            'nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
-        executions = Execution.objects.all().filter(author=request.user,
-                                                    machine=machine_connected).filter(
+            'nameConnectedMachine'] = f"{machine_connected.user}@{machine_connected.fqdn}"
+
+        executions = Execution.objects.filter(author=request.user,
+                                              machine=machine_connected).filter(
             Q(status="PENDING") | Q(status="RUNNING") | Q(
                 status="INITIALIZING"))
-        executionsDone = Execution.objects.all().filter(author=request.user,
+        executionsDone = Execution.objects.filter(author=request.user,
+                                                  machine=machine_connected,
+                                                  status="COMPLETED")
+        executionsFailed = Execution.objects.filter(author=request.user,
+                                                    machine=machine_connected,
+                                                    status="FAILED")
+        executionTimeout = Execution.objects.filter(author=request.user,
+                                                    machine=machine_connected,
+                                                    status="TIMEOUT")
+        executionsCheckpoint = Execution.objects.filter(author=request.user,
                                                         machine=machine_connected,
-                                                        status="COMPLETED")
-        executionsFailed = Execution.objects.all().filter(author=request.user,
-                                                          machine=machine_connected,
-                                                          status="FAILED")
-        executionsCheckpoint = Execution.objects.all().filter(
-            author=request.user, machine=machine_connected,
-            status="TIMEOUT")
-        executionTimeout = Execution.objects.all().filter(author=request.user,
-                                                          machine=machine_connected,
-                                                          status="TIMEOUT",
-                                                          autorestart=False)
+                                                        status="TIMEOUT",
+                                                        autorestart=True)
+
         executionsCanceled = Execution.objects.all().filter(
             author=request.user, machine=machine_connected,
             status="CANCELED",
@@ -869,34 +872,39 @@ def tools(request):
 
         document_form = DocumentForm()
         branches = get_github_repo_branches()
-        run_job = request.session.get('run_job', None)
-        request.session.pop('run_job', None)
-        tool_created = request.session.get('tool_created', None)
-        request.session.pop('tool_created', None)
-        tool_edited = request.session.get('tool_edited', None)
-        request.session.pop('tool_edited', None)
-        tool_deleted = request.session.get('tool_deleted', None)
-        request.session.pop('tool_deleted', None)
+        run_job = request.session.pop('run_job', None)
+        tool_created = request.session.pop('tool_created', None)
+        tool_edited = request.session.pop('tool_edited', None)
+        tool_deleted = request.session.pop('tool_deleted', None)
 
         tool_forms = {}
         for tool in Tool.objects.all():
-            tool_forms[tool.name] = get_form_from_tool(tool)
+            fields = {}
+            for f in tool.get_fields():
+                fields[f.name.replace("_", " ").lower()] = f
+            tool_forms[tool.name] = {
+                'form': get_form_from_tool(tool),
+                'tool': tool,
+                'fields': fields
+            }
 
-        return render(request, 'pages/tools.html',
-                      {'document_form': document_form,
-                       'machines': populate_executions_machines(request),
-                       'machine_chosen': request.session[
-                           'nameConnectedMachine'],
-                       'branches': branches, 'execution_form': execution_form,
-                       'executions': executions,
-                       'executionsDone': executionsDone,
-                       'executionsFailed': executionsFailed,
-                       'executionsTimeout': executionTimeout,
-                       'checkConn': request.session['checkConn'],
-                       'run_job': run_job, 'tool_created': tool_created,
-                       'tool_forms': tool_forms, 'tool_edited': tool_edited,
-                       'tool_deleted': tool_deleted
-                       })
+        return render(request, 'pages/tools.html', {
+            'document_form': document_form,
+            'machines': populate_executions_machines(request),
+            'machine_chosen': request.session['nameConnectedMachine'],
+            'branches': branches,
+            'executions': executions,
+            'executionsDone': executionsDone,
+            'executionsFailed': executionsFailed,
+            'executionsTimeout': executionTimeout,
+            'checkConn': request.session['checkConn'],
+            'run_job': run_job,
+            'tool_created': tool_created,
+            'tool_forms': tool_forms,
+            'tool_edited': tool_edited,
+            'tool_deleted': tool_deleted,
+            'sections': sections,
+        })
 
 
 def get_form_from_tool(tool):
@@ -1983,48 +1991,56 @@ def read_and_format_file(file_path):
     return content
 
 
-@login_required()
+@login_required
 def create_tool(request):
+    sections = ['application', 'setup', 'slurm', 'compss', 'environment']
+
     if request.method == 'POST':
         form = CreateToolForm(request.POST)
-        errors = {}  # To collect any errors for custom fields
+        errors = {}
 
         if form.is_valid():
             tool_name = form.cleaned_data['name']
             tool = Tool.objects.create(name=tool_name)
 
-            additional_fields = {k: v for k, v in request.POST.items() if k.startswith('custom_field_')}
-            for field_key, field_name in additional_fields.items():
-                if not field_name:  # Check if the field name is empty
-                    errors[field_key] = ['This field cannot be empty.']
-                    return render(request, 'pages/create_tool.html',
-                                  {'form': form, 'errors': errors})
+            # Handle custom fields for each section
+            for section in sections:
+                custom_fields = {k: v for k, v in request.POST.items() if k.startswith(f'custom_field_') and request.POST.get(f'section_{k.split("_")[2]}') == section}
+                for field_key, field_name in custom_fields.items():
+                    if not field_name:
+                        errors[field_key] = ['This field cannot be empty.']
+                        return render(request, 'pages/create_tool.html',
+                                      {'form': form, 'errors': errors, 'sections': sections})
 
-                index = field_key.split('_')[2]
-                default_value = request.POST.get(f'default_value_{index}', None)
-                preset_value = request.POST.get(f'preset_value_{index}', None)
+                    index = field_key.split('_')[2]
+                    default_value = request.POST.get(f'default_value_{index}', None)
+                    preset_value = request.POST.get(f'preset_value_{index}', None)
+                    tool.add_field(field_name, default_value=default_value, preset_value=preset_value, section=section)
 
-                tool.add_field(field_name, default_value=default_value, preset_value=preset_value)
+            if 'github_repo' in request.POST:
+                tool.append_to_repos_list(request.POST.get('github_repo'))
 
-            tool.append_to_repos_list(request.POST.get('github_repo'))
             additional_repos = {k: v for k, v in request.POST.items() if k.startswith('github_repo_')}
             for repo_name, repo_value in additional_repos.items():
                 tool.append_to_repos_list(repo_value)
+
             request.session['tool_created'] = tool.name
             return redirect('tools')
 
         else:
-            return render(request, 'pages/create_tool.html', {'form': form, 'errors': form.errors})
+            return render(request, 'pages/create_tool.html',
+                          {'form': form, 'errors': form.errors, 'sections': sections})
     else:
         form = CreateToolForm()
 
-    return render(request, 'pages/create_tool.html', {'form': form})
+        return render(request, 'pages/create_tool.html', {'form': form, 'sections': sections})
 
 
 @login_required
 def edit_tool(request, tool_name):
     tool = get_object_or_404(Tool, name=tool_name)
     errors = {}
+    sections = ['application', 'setup', 'slurm', 'compss', 'environment']
 
     if request.method == 'POST':
         form = CreateToolForm(request.POST, instance=tool)
@@ -2043,24 +2059,27 @@ def edit_tool(request, tool_name):
                         'tool': tool,
                         'existing_fields': tool.get_fields(),
                         'existing_repos': tool.get_repos_list(),
+                        'sections': sections,
                     })
 
                 index = field_key.split('_')[2]
                 default_value = request.POST.get(f'default_value_{index}', None)
                 preset_value = request.POST.get(f'preset_value_{index}', None)
+                section = request.POST.get(f'section_{index}', None)
 
                 if default_value == 'None' or default_value == '':
                     default_value = None
                 if preset_value == 'None' or preset_value == '':
                     preset_value = None
 
-                tool.add_field(field_name, default_value=default_value, preset_value=preset_value)
+                tool.add_field(field_name, default_value=default_value,
+                               preset_value=preset_value, section=section)
 
             tool.set_repos_list([])
             tool.append_to_repos_list(request.POST.get('github_repo'))
             additional_repos = {k: v for k, v in request.POST.items() if k.startswith('github_repo_')}
-            for repo_name, repo_value in additional_repos.items():
-                tool.append_to_repos_list(repo_value)
+            for repo_key, repo_value in additional_repos.items():
+                tool.append_to_repos_list(repo_value, section="setup")
 
             request.session['tool_edited'] = tool_name
             return redirect('tools')
@@ -2070,8 +2089,6 @@ def edit_tool(request, tool_name):
         existing_fields = tool.get_fields()
         existing_repos = tool.get_repos_list()
 
-        # The first repo in repos_list is the required one, so it needs to be
-        # treated differently
         form = CreateToolForm(instance=tool, initial={
             'github_repo': '\n'.join(existing_repos[0])
         })
@@ -2090,5 +2107,7 @@ def edit_tool(request, tool_name):
             'tool': tool,
             'existing_fields': existing_fields,
             'existing_repos': existing_repos,
+            'sections': sections,
         })
+
 
