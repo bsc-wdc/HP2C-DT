@@ -676,10 +676,38 @@ def ssh_keys_generation(request):
         return render('/')
 
 
+def extract_tool_data(request, tool_name):
+    tool_data = {}
+    tool = Tool.objects.get(name=tool_name)
+    tool_data['tool_name'] = tool.name
+    tool_data['setup'] = {}
+    tool_data['setup']['github'] = tool.get_repos_dict()
+
+    for field_key, field_value in request.POST.items():
+        if 'section' in field_key:
+            field_form = field_key.split("section_id_")[1]
+            section = None
+            field_model = None
+            for field in tool.get_fields():
+                if field.name == field_form:
+                    field_model = field
+                    section = field.section
+                    break
+
+            if section not in tool_data:
+                tool_data[section] = {}
+            if field_model.preset_value:
+                tool_data[section][field_model.name] = request.POST.get(f'preset_value_id_{field_form}', None)
+            else:
+                tool_data[section][field_model.name] = request.POST.get(field_form, None)
+
+    return tool_data
+
+
 @login_required
 def tools(request):
     check_conn_bool = check_connection(request)
-    sections = ['application', 'setup', 'slurm', 'compss','environment']
+    sections = ['application', 'setup', 'slurm', 'COMPSs','environment']
     if not check_conn_bool:
         request.session['original_request'] = request.POST
         request.session['redirect_to_tools'] = True
@@ -691,6 +719,11 @@ def tools(request):
                 tool_name = key.split('deleteCustom')[1]
                 Tool.objects.get(name=tool_name).delete()
                 request.session['tool_deleted'] = tool_name
+                return redirect('tools')
+            match = re.match(rf'^run(.*)Button$', key)
+            if bool(match):
+                tool_name = match.group(1)
+                tool_data = extract_tool_data(request, tool_name)
                 return redirect('tools')
 
         if 'stAnalysisButton' in request.POST:
@@ -1993,7 +2026,7 @@ def read_and_format_file(file_path):
 
 @login_required
 def create_tool(request):
-    sections = ['application', 'setup', 'slurm', 'compss', 'environment']
+    sections = ['application', 'setup', 'slurm', 'COMPSs', 'environment']
 
     if request.method == 'POST':
         form = CreateToolForm(request.POST)
@@ -2059,7 +2092,7 @@ def create_tool(request):
 def edit_tool(request, tool_name):
     tool = get_object_or_404(Tool, name=tool_name)
     errors = {}
-    sections = ['application', 'setup', 'slurm', 'compss', 'environment']
+    sections = ['application', 'setup', 'slurm', 'COMPSs', 'environment']
 
     if request.method == 'POST':
 

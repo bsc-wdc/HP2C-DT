@@ -18,6 +18,7 @@
     <h2 class="text-center mb-5" style="text-decoration: underline;">
         <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
     </h2>
+
     <form method="post">
         {% csrf_token %}
         {% for section in sections %}
@@ -34,6 +35,8 @@
                                     <div class="form-group">
                                         <label for="{{ f.id_for_label }}">{{ f.label }}:</label>
                                         {{ f|add_class:"form-control" }}
+                                        <input type="hidden" name="preset_value_{{ f.id_for_label }}" value="{{ field.preset_value }}">
+                                        <input type="hidden" name="section_{{ f.id_for_label }}" value="{{ section }}">
                                     </div>
                                 {% endif %}
                             {% endfor %}
@@ -42,11 +45,8 @@
                 </div>
             </div>
         {% endfor %}
-        <form method="POST">
-            {% csrf_token %}
-            <input type="hidden" value="{{ e.eID }}" name="{{name}}ButtonValue">
-            <button type="submit" name="{{name}}Button" class="btn btn-success btn-block btn-lg gradient-custom-4 feather icon-play mr-2" data-toggle="tooltip" data-placement="top" title="Run execution"></button>
-        </form>
+        <input type="hidden" value="{{ e.eID }}" name="{{name}}ButtonValue">
+        <button type="submit" name="run{{name}}Button" class="btn btn-success btn-block btn-lg gradient-custom-4 feather icon-play mr-2" data-toggle="tooltip" data-placement="top" title="Run execution"></button>
     </form>
 </div>
 
@@ -109,33 +109,19 @@ document.querySelectorAll('.add-field').forEach(button => {
             <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
             <div class="d-flex">
                 <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
-                <input type="text" name="default_value_${fieldCounter}" class="form-control ml-2" id="default_value_${fieldCounter}" placeholder="Default Value (optional)">
-                <input type="text" name="preset_value_${fieldCounter}" class="form-control ml-2" id="preset_value_${fieldCounter}" placeholder="Preset Value (optional)">
                 <input type="hidden" name="section_${fieldCounter}" value="${section}">
                 <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
             </div>
         `;
         sectionContent.appendChild(newFieldDiv);
-
-        document.getElementById(`default_value_${fieldCounter}`).addEventListener('input', function() {
-            toggleFieldState(`preset_value_${fieldCounter}`, this);
-        });
-
-        document.getElementById(`preset_value_${fieldCounter}`).addEventListener('input', function() {
-            toggleFieldState(`default_value_${fieldCounter}`, this);
-        });
     });
 });
-
-function toggleFieldState(fieldToToggle, currentField) {
-    const field = document.getElementById(fieldToToggle);
-    field.disabled = currentField.value.length > 0;
-}
 
 function removeField(element) {
     element.parentElement.parentElement.remove();
 }
 </script>
+
 <style>
 .clickable-header:hover {
     background-color: #f8f9fa;
