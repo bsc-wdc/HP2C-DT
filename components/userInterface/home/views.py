@@ -2002,6 +2002,7 @@ def create_tool(request):
         if form.is_valid():
             tool_name = form.cleaned_data['name']
             tool = Tool.objects.create(name=tool_name)
+            field_names = set()
 
             # Handle custom fields for each section
             for section in sections:
@@ -2009,8 +2010,23 @@ def create_tool(request):
                 for field_key, field_name in custom_fields.items():
                     if not field_name:
                         errors[field_key] = ['This field cannot be empty.']
+                        tool.delete()
                         return render(request, 'pages/create_tool.html',
                                       {'form': form, 'errors': errors, 'sections': sections})
+
+                    if field_name in field_names:
+                        errors[field_key] = [
+                            f'The field name "{field_name}" is duplicated. Please '
+                            f'use unique names.']
+                        return render(request, 'pages/edit_tool.html', {
+                            'form': form,
+                            'errors': errors,
+                            'tool': tool,
+                            'existing_fields': tool.get_fields(),
+                            'existing_repos': tool.get_repos_dict(),
+                            'sections': sections,
+                        })
+                    field_names.add(field_name)
 
                     index = field_key.split('_')[2]
                     default_value = request.POST.get(f'default_value_{index}', None)
@@ -2046,6 +2062,7 @@ def edit_tool(request, tool_name):
     sections = ['application', 'setup', 'slurm', 'compss', 'environment']
 
     if request.method == 'POST':
+
         form = CreateToolForm(request.POST, instance=tool)
         if form.is_valid():
             tool.name = form.cleaned_data['name']
@@ -2053,6 +2070,7 @@ def edit_tool(request, tool_name):
 
             tool.field_set.all().delete()
             additional_fields = {k: v for k, v in request.POST.items() if k.startswith('custom_field_')}
+            field_names = set()
             for field_key, field_name in additional_fields.items():
                 if not field_name:
                     errors[field_key] = ['This field cannot be empty.']
@@ -2061,9 +2079,23 @@ def edit_tool(request, tool_name):
                         'errors': errors,
                         'tool': tool,
                         'existing_fields': tool.get_fields(),
-                        'existing_repos': tool.get_repos_list(),
+                        'existing_repos': tool.get_repos_dict(),
                         'sections': sections,
                     })
+
+                if field_name in field_names:
+                    errors[field_key] = [
+                        f'The field name "{field_name}" is duplicated. Please '
+                        f'use unique names.']
+                    return render(request, 'pages/edit_tool.html', {
+                        'form': form,
+                        'errors': errors,
+                        'tool': tool,
+                        'existing_fields': tool.get_fields(),
+                        'existing_repos': tool.get_repos_dict(),
+                        'sections': sections,
+                    })
+                field_names.add(field_name)
 
                 index = field_key.split('_')[2]
                 default_value = request.POST.get(f'default_value_{index}', None)
@@ -2086,7 +2118,6 @@ def edit_tool(request, tool_name):
                     number = repo_name.split('github_repo_')[1]
                     branch = request.POST.get('github_branch_' + number)
                     tool.append_to_repos_dict(repo_value, branch)
-                    print("----------------",tool.get_repos_dict())
                     if branch == '' or repo_value == '':
                         if branch == '':
                             errors['github_branch_' + number] = \
@@ -2105,8 +2136,13 @@ def edit_tool(request, tool_name):
 
             request.session['tool_edited'] = tool_name
             return redirect('tools')
+        else:
+            return render(request, 'pages/create_tool.html',
+                          {'form': form, 'errors': form.errors,
+                           'sections': sections})
 
     else:
+
         # Pass the custom fields and repos to the template for display
         existing_fields = tool.get_fields()
         existing_repos = tool.get_repos_dict()
