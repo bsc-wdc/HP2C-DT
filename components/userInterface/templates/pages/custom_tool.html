@@ -33,8 +33,15 @@
                             {% for f in form %}
                                 {% if modified_name == f.label %}
                                     <div class="form-group">
-                                        <label for="{{ f.id_for_label }}">{{ f.label }}:</label>
-                                        {{ f|add_class:"form-control" }}
+                                        {% if f.field.widget.input_type == "checkbox" %}
+                                            <div class="form-check form-check-inline">
+                                                <label class="form-check-label mr-2" for="{{ f.id_for_label }}">{{ f.label }}:</label>
+                                                {{ f|add_class:"form-check-input" }}
+                                            </div>
+                                        {% else %}
+                                            <label for="{{ f.id_for_label }}">{{ f.label }}:</label>
+                                            {{ f|add_class:"form-control" }}
+                                        {% endif %}
                                         <input type="hidden" name="preset_value_{{ f.id_for_label }}" value="{{ field.preset_value }}">
                                         <input type="hidden" name="section_{{ f.id_for_label }}" value="{{ section }}">
                                     </div>

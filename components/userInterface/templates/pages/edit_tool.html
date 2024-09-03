@@ -57,19 +57,39 @@
 
                         {% for custom_field in existing_fields %}
                             {% if custom_field.section == section %}
-                                <div class="form-group">
-                                    <label for="custom_field_{{ custom_field.id }}">{{ custom_field.name }}:</label>
-                                    <div class="d-flex">
-                                        <input type="text" name="custom_field_{{ custom_field.id }}" class="form-control flex-grow-1" id="custom_field_{{ custom_field.id }}" value="{{ custom_field.name }}">
-                                        <input type="text" name="default_value_{{ custom_field.id }}" class="form-control ml-2" id="default_value_{{ custom_field.id }}" value="{{ custom_field.default_value|default_if_none:'' }}" placeholder="Default Value (optional)">
-                                        <input type="text" name="preset_value_{{ custom_field.id }}" class="form-control ml-2" id="preset_value_{{ custom_field.id }}" value="{{ custom_field.preset_value|default_if_none:'' }}" placeholder="Preset Value (optional)">
-                                        <input type="hidden" name="section_{{ custom_field.id }}" value="{{ section }}">
-                                        <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                {% if custom_field.type == "text" %}
+                                    <div class="form-group">
+                                        <label for="custom_field_{{ custom_field.id }}">{{ custom_field.name }}:</label>
+                                        <div class="d-flex">
+                                            <input type="text" name="custom_field_{{ custom_field.id }}" class="form-control flex-grow-1" id="custom_field_{{ custom_field.id }}" value="{{ custom_field.name }}">
+                                            <input type="text" name="default_value_{{ custom_field.id }}" class="form-control ml-2" id="default_value_{{ custom_field.id }}" value="{{ custom_field.default_value|default_if_none:'' }}" placeholder="Default Value (optional)">
+                                            <input type="text" name="preset_value_{{ custom_field.id }}" class="form-control ml-2" id="preset_value_{{ custom_field.id }}" value="{{ custom_field.preset_value|default_if_none:'' }}" placeholder="Preset Value (optional)">
+                                            <input type="hidden" name="section_{{ custom_field.id }}" value="{{ section }}">
+                                            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                        </div>
                                     </div>
-                                </div>
+                                {% endif %}
+                                {% if custom_field.type == "boolean" %}
+                                    <div class="form-group">
+                                        <label for="custom_boolean_field_{{ custom_field.id }}">{{ custom_field.name }}:</label>
+                                        <div class="d-flex">
+                                            <input type="text" name="custom_boolean_field_{{ custom_field.id }}" class="form-control flex-grow-1" id="custom_boolean_field_{{ custom_field.id }}" value="{{ custom_field.name }}">
+                                            <input type="hidden" name="boolean_section_{{ custom_field.id }}" value="${section}">
+                                            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                        </div>
+                                    </div>
+                                {% endif %}
                             {% endif %}
                         {% endfor %}
-                        <button type="button" class="btn btn-secondary add-field" data-section="{{ section }}">Add Custom Field to {{ section|capfirst }}</button>
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Add Custom Field to {{ section|capfirst }}
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <a class="dropdown-item add-text-field" data-section="{{ section }}" href="#">Text Field</a>
+                                <a class="dropdown-item add-boolean-field" data-section="{{ section }}" href="#">Boolean Field</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             {% endfor %}
@@ -79,134 +99,163 @@
 </div>
 
 <script>
-let fieldCounter = {{ existing_fields|length }};
-let repoCounter = {{ existing_repos|length }};
+    let fieldCounter = {{ existing_fields|length }};
+    let repoCounter = {{ existing_repos|length }};
 
-document.addEventListener('DOMContentLoaded', function() {
-    var sectionHeaders = document.querySelectorAll('.card-header h5');
-    sectionHeaders.forEach(function(header) {
-        header.addEventListener('click', function() {
-            var sectionContent = this.closest('.card-header').nextElementSibling.querySelector('.section-content');
-            if (sectionContent) {
-                sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
-            }
+    document.querySelectorAll('.add-text-field').forEach(button => {
+        button.addEventListener('click', function() {
+            fieldCounter++;
+            const section = button.getAttribute('data-section');
+            const sectionContent = document.getElementById('section-' + section);
+            const newFieldDiv = document.createElement('div');
+            newFieldDiv.classList.add('form-group');
+            newFieldDiv.innerHTML = `
+                <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
+                <div class="d-flex">
+                    <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
+                    <input type="text" name="default_value_${fieldCounter}" class="form-control ml-2" id="default_value_${fieldCounter}" placeholder="Default Value (optional)">
+                    <input type="text" name="preset_value_${fieldCounter}" class="form-control ml-2" id="preset_value_${fieldCounter}" placeholder="Preset Value (optional)">
+                    <input type="hidden" name="section_${fieldCounter}" value="${section}">
+                    <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                </div>
+            `;
+            sectionContent.appendChild(newFieldDiv);
+
+            document.getElementById(`default_value_${fieldCounter}`).addEventListener('input', function() {
+                toggleFieldState(`preset_value_${fieldCounter}`, this);
+            });
+
+            document.getElementById(`preset_value_${fieldCounter}`).addEventListener('input', function() {
+                toggleFieldState(`default_value_${fieldCounter}`, this);
+            });
         });
     });
-});
 
-document.addEventListener('DOMContentLoaded', function() {
-    var sectionHeaders = document.querySelectorAll('.clickable-header');
-    sectionHeaders.forEach(function(header) {
-        header.addEventListener('click', function() {
-            var sectionContent = this.nextElementSibling.querySelector('.section-content');
-            if (sectionContent) {
-                sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
-                var icon = this.querySelector('.toggle-icon');
-                if (icon) {
-                    icon.textContent = sectionContent.style.display === 'none' ? '▼' : '▲';
+    document.querySelectorAll('.add-boolean-field').forEach(button => {
+        button.addEventListener('click', function() {
+            fieldCounter++;
+            const section = button.getAttribute('data-section');
+            const sectionContent = document.getElementById('section-' + section);
+            const newFieldDiv = document.createElement('div');
+            newFieldDiv.classList.add('form-group');
+            newFieldDiv.innerHTML = `
+                <label for="custom_boolean_field_${fieldCounter}">Custom Boolean Field ${fieldCounter}:</label>
+                <div class="d-flex">
+                    <input type="text" name="custom_boolean_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_boolean_field_${fieldCounter}" placeholder="Field Name">
+                    <input type="hidden" name="boolean_section_${fieldCounter}" value="${section}">
+                    <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                </div>
+            `;
+            sectionContent.appendChild(newFieldDiv);
+        });
+    });
+
+    function removeField(element) {
+        element.parentElement.parentElement.remove();
+    }
+
+    function toggleFieldState(fieldToToggle, currentField) {
+        const field = document.getElementById(fieldToToggle);
+        field.disabled = currentField.value.length > 0;
+    }
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var sectionHeaders = document.querySelectorAll('.card-header h5');
+        sectionHeaders.forEach(function(header) {
+            header.addEventListener('click', function() {
+                var sectionContent = this.closest('.card-header').nextElementSibling.querySelector('.section-content');
+                if (sectionContent) {
+                    sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
                 }
-            }
+            });
         });
     });
-});
 
-document.getElementById('add-repo').onclick = function() {
-    repoCounter++;
-    const setupSection = document.getElementById('setup-section');
-    const newRepoDiv = document.createElement('div');
-    newRepoDiv.classList.add('form-group');
-    newRepoDiv.innerHTML = `
-        <label for="github_repo_${repoCounter}">GitHub Repo ${repoCounter}:</label>
-        <div class="d-flex align-items-center">
-            <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2" id="github_repo_${repoCounter}" placeholder="Repo Name">
-            <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1" id="id_github_branch_${repoCounter}" placeholder="Branch Name">
-            <input type="hidden" name="section_github_repo_${repoCounter}" value="setup">
-            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
-        </div>
-    `;
-    setupSection.appendChild(newRepoDiv);
-};
+    document.addEventListener('DOMContentLoaded', function() {
+        var sectionHeaders = document.querySelectorAll('.clickable-header');
+        sectionHeaders.forEach(function(header) {
+            header.addEventListener('click', function() {
+                var sectionContent = this.nextElementSibling.querySelector('.section-content');
+                if (sectionContent) {
+                    sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+                    var icon = this.querySelector('.toggle-icon');
+                    if (icon) {
+                        icon.textContent = sectionContent.style.display === 'none' ? '▼' : '▲';
+                    }
+                }
+            });
+        });
+    });
 
-document.querySelectorAll('.add-field').forEach(button => {
-    button.addEventListener('click', () => {
-        fieldCounter++;
-        const section = button.getAttribute('data-section');
-        const sectionContent = document.getElementById('section-' + section);
-        const newFieldDiv = document.createElement('div');
-        newFieldDiv.classList.add('form-group');
-        newFieldDiv.innerHTML = `
-            <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
-            <div class="d-flex">
-                <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
-                <input type="text" name="default_value_${fieldCounter}" class="form-control ml-2" id="default_value_${fieldCounter}" placeholder="Default Value (optional)">
-                <input type="text" name="preset_value_${fieldCounter}" class="form-control ml-2" id="preset_value_${fieldCounter}" placeholder="Preset Value (optional)">
-                <input type="hidden" name="section_${fieldCounter}" value="${section}">
+    document.getElementById('add-repo').onclick = function() {
+        repoCounter++;
+        const setupSection = document.getElementById('setup-section');
+        const newRepoDiv = document.createElement('div');
+        newRepoDiv.classList.add('form-group');
+        newRepoDiv.innerHTML = `
+            <label for="github_repo_${repoCounter}">GitHub Repo ${repoCounter}:</label>
+            <div class="d-flex align-items-center">
+                <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2" id="github_repo_${repoCounter}" placeholder="Repo Name">
+                <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1" id="id_github_branch_${repoCounter}" placeholder="Branch Name">
+                <input type="hidden" name="section_github_repo_${repoCounter}" value="setup">
                 <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
             </div>
         `;
-        sectionContent.appendChild(newFieldDiv);
+        setupSection.appendChild(newRepoDiv);
+    };
 
-        document.getElementById(`default_value_${fieldCounter}`).addEventListener('input', function() {
-            toggleFieldState(`preset_value_${fieldCounter}`, this);
-        });
+    function toggleFieldState(fieldToToggle, currentField) {
+        const field = document.getElementById(fieldToToggle);
+        field.disabled = currentField.value.length > 0;
+    }
 
-        document.getElementById(`preset_value_${fieldCounter}`).addEventListener('input', function() {
-            toggleFieldState(`default_value_${fieldCounter}`, this);
-        });
-    });
-});
+    function removeField(element) {
+        element.parentElement.parentElement.remove();
+    }
 
-function toggleFieldState(fieldToToggle, currentField) {
-    const field = document.getElementById(fieldToToggle);
-    field.disabled = currentField.value.length > 0;
-}
+    document.addEventListener('DOMContentLoaded', function() {
+        const defaultFields = document.querySelectorAll('[id^="default_value_"]');
+        const presetFields = document.querySelectorAll('[id^="preset_value_"]');
 
-function removeField(element) {
-    element.parentElement.parentElement.remove();
-}
+        defaultFields.forEach((defaultField, index) => {
+            const presetField = presetFields[index];
 
-document.addEventListener('DOMContentLoaded', function() {
-    const defaultFields = document.querySelectorAll('[id^="default_value_"]');
-    const presetFields = document.querySelectorAll('[id^="preset_value_"]');
-
-    defaultFields.forEach((defaultField, index) => {
-        const presetField = presetFields[index];
-
-        if (defaultField.value) {
-            presetField.disabled = true;
-        }
-        if (presetField.value) {
-            defaultField.disabled = true;
-        }
-
-        defaultField.addEventListener('input', function() {
             if (defaultField.value) {
                 presetField.disabled = true;
-                presetField.value = '';
-            } else {
-                presetField.disabled = false;
             }
-        });
-
-        presetField.addEventListener('input', function() {
             if (presetField.value) {
                 defaultField.disabled = true;
-                defaultField.value = '';
-            } else {
-                defaultField.disabled = false;
             }
+
+            defaultField.addEventListener('input', function() {
+                if (defaultField.value) {
+                    presetField.disabled = true;
+                    presetField.value = '';
+                } else {
+                    presetField.disabled = false;
+                }
+            });
+
+            presetField.addEventListener('input', function() {
+                if (presetField.value) {
+                    defaultField.disabled = true;
+                    defaultField.value = '';
+                } else {
+                    defaultField.disabled = false;
+                }
+            });
         });
     });
-});
 </script>
 <style>
-.clickable-header:hover {
-    background-color: #f8f9fa;
-}
-.toggle-icon {
-    font-size: 14px;
-    margin-left: 10px;
-    transition: transform 0.2s;
-}
+    .clickable-header:hover {
+        background-color: #f8f9fa;
+    }
+    .toggle-icon {
+        font-size: 14px;
+        margin-left: 10px;
+        transition: transform 0.2s;
+    }
 </style>
 {% endblock content %}

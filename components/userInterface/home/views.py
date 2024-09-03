@@ -720,10 +720,12 @@ def tools(request):
                 Tool.objects.get(name=tool_name).delete()
                 request.session['tool_deleted'] = tool_name
                 return redirect('tools')
+
             match = re.match(rf'^run(.*)Button$', key)
             if bool(match):
                 tool_name = match.group(1)
                 tool_data = extract_tool_data(request, tool_name)
+                print(tool_data)
                 return redirect('tools')
 
         if 'stAnalysisButton' in request.POST:
@@ -953,15 +955,23 @@ def get_form_from_tool(tool):
     for field in tool.get_fields():
         initial = field.default_value or field.preset_value or None
         disabled = field.preset_value is not None
-        # initial --> default value
-        # disabled --> if true, read only field
-        form_fields[field.name] = forms.CharField(
-            label=field.name.replace("_", " ").lower(),
-            max_length=100,
-            required=False,
-            widget=forms.TextInput(attrs={'class': 'form-control'}),
-            initial=initial, disabled=disabled
-        )
+
+        if field.type == 'boolean':
+            form_fields[field.name] = forms.BooleanField(
+                label=field.name.replace("_", " ").lower(),
+                required=False,
+                initial=initial,
+                disabled=disabled
+            )
+        else:
+            form_fields[field.name] = forms.CharField(
+                label=field.name.replace("_", " ").lower(),
+                max_length=100,
+                required=False,
+                widget=forms.TextInput(attrs={'class': 'form-control'}),
+                initial=initial,
+                disabled=disabled
+            )
 
     # Dynamically create a form class
     DynamicToolForm = type('DynamicToolForm', (forms.Form,), form_fields)
@@ -2037,34 +2047,50 @@ def create_tool(request):
             tool = Tool.objects.create(name=tool_name)
             field_names = set()
 
-            # Handle custom fields for each section
-            for section in sections:
-                custom_fields = {k: v for k, v in request.POST.items() if k.startswith(f'custom_field_') and request.POST.get(f'section_{k.split("_")[2]}') == section}
-                for field_key, field_name in custom_fields.items():
-                    if not field_name:
-                        errors[field_key] = ['This field cannot be empty.']
-                        tool.delete()
-                        return render(request, 'pages/create_tool.html',
-                                      {'form': form, 'errors': errors, 'sections': sections})
+            custom_fields = {k: v for k, v in request.POST.items()
+                             if k.startswith(f'custom_field_') or k.startswith('custom_boolean_field')}
 
-                    if field_name in field_names:
-                        errors[field_key] = [
-                            f'The field name "{field_name}" is duplicated. Please '
-                            f'use unique names.']
-                        return render(request, 'pages/edit_tool.html', {
-                            'form': form,
-                            'errors': errors,
-                            'tool': tool,
-                            'existing_fields': tool.get_fields(),
-                            'existing_repos': tool.get_repos_dict(),
-                            'sections': sections,
-                        })
-                    field_names.add(field_name)
+            for field_key, field_name in custom_fields.items():
+                if not field_name:
+                    errors[field_key] = ['This field cannot be empty.']
+                    tool.delete()
+                    return render(request, 'pages/create_tool.html',
+                                  {'form': form, 'errors': errors,
+                                   'sections': sections})
 
+                if field_name in field_names:
+                    errors[field_key] = [
+                        f'The field name "{field_name}" is duplicated. Please '
+                        f'use unique names.']
+                    return render(request, 'pages/edit_tool.html', {
+                        'form': form,
+                        'errors': errors,
+                        'tool': tool,
+                        'existing_fields': tool.get_fields(),
+                        'existing_repos': tool.get_repos_dict(),
+                        'sections': sections,
+                    })
+                field_names.add(field_name)
+
+                if 'boolean' in field_key:
+                    type = 'boolean'
+                    index = field_key.split('_')[3]
+                    section = request.POST.get(f'boolean_section_{index}',
+                                                     None)
+                    default_value = None
+                    preset_value = None
+                else:
+                    type = 'text'
                     index = field_key.split('_')[2]
-                    default_value = request.POST.get(f'default_value_{index}', None)
+
+                    default_value = request.POST.get(f'default_value_{index}',
+                                                     None)
                     preset_value = request.POST.get(f'preset_value_{index}', None)
-                    tool.add_field(field_name, default_value=default_value, preset_value=preset_value, section=section)
+                    section = request.POST.get(f'section_{index}',
+                                               None)
+                tool.add_field(field_name, default_value=default_value,
+                               preset_value=preset_value, section=section,
+                               type=type)
 
             tool.append_to_repos_dict(request.POST.get('github_repo'),
                                       request.POST.get('github_branch'))
@@ -2102,8 +2128,11 @@ def edit_tool(request, tool_name):
             tool.save()
 
             tool.field_set.all().delete()
-            additional_fields = {k: v for k, v in request.POST.items() if k.startswith('custom_field_')}
-            field_names = set()
+            additional_fields = {k: v for k, v in request.POST.items() if
+                                 k.startswith('custom_field_') or
+                                 k.startswith('custom_boolean_field')}
+
+            field_names = set(field.name for field in tool.get_fields())
             for field_key, field_name in additional_fields.items():
                 if not field_name:
                     errors[field_key] = ['This field cannot be empty.']
@@ -2130,10 +2159,23 @@ def edit_tool(request, tool_name):
                     })
                 field_names.add(field_name)
 
-                index = field_key.split('_')[2]
-                default_value = request.POST.get(f'default_value_{index}', None)
-                preset_value = request.POST.get(f'preset_value_{index}', None)
-                section = request.POST.get(f'section_{index}', None)
+                if 'boolean' in field_key:
+                    type = 'boolean'
+                    index = field_key.split('_')[3]
+                    section = request.POST.get(f'boolean_section_{index}',
+                                               None)
+                    default_value = None
+                    preset_value = None
+                else:
+                    type = 'text'
+                    index = field_key.split('_')[2]
+
+                    default_value = request.POST.get(f'default_value_{index}',
+                                                     None)
+                    preset_value = request.POST.get(f'preset_value_{index}',
+                                                    None)
+                    section = request.POST.get(f'section_{index}',
+                                               None)
 
                 if default_value == 'None' or default_value == '':
                     default_value = None
@@ -2141,7 +2183,8 @@ def edit_tool(request, tool_name):
                     preset_value = None
 
                 tool.add_field(field_name, default_value=default_value,
-                               preset_value=preset_value, section=section)
+                               preset_value=preset_value, section=section,
+                               type=type)
 
             tool.set_repos_dict({})
             tool.append_to_repos_dict(request.POST.get('github_repo'), request.POST.get('github_branch'))
@@ -2175,7 +2218,6 @@ def edit_tool(request, tool_name):
                            'sections': sections})
 
     else:
-
         # Pass the custom fields and repos to the template for display
         existing_fields = tool.get_fields()
         existing_repos = tool.get_repos_dict()
