@@ -162,13 +162,78 @@ document.querySelectorAll('.add-boolean-field').forEach(button => {
         newFieldDiv.classList.add('form-group');
         newFieldDiv.innerHTML = `
             <label for="custom_boolean_field_${fieldCounter}">Custom Boolean Field ${fieldCounter}:</label>
-            <div class="d-flex">
+            <div class="d-flex align-items-center">
                 <input type="text" name="custom_boolean_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_boolean_field_${fieldCounter}" placeholder="Field Name">
+                <select name="default_value_boolean_${fieldCounter}" class="form-control ml-2" id="default_value_boolean_${fieldCounter}">
+                    <option value="" selected>No default value</option>
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
+                <select name="preset_value_boolean_${fieldCounter}" class="form-control ml-2" id="preset_value_boolean_${fieldCounter}">
+                    <option value="" selected>No preset value</option>
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
                 <input type="hidden" name="boolean_section_${fieldCounter}" value="${section}">
                 <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
             </div>
         `;
         sectionContent.appendChild(newFieldDiv);
+
+        const defaultField = document.getElementById(`default_value_boolean_${fieldCounter}`);
+        const presetField = document.getElementById(`preset_value_boolean_${fieldCounter}`);
+
+        defaultField.addEventListener('change', function() {
+            if (defaultField.value) {
+                presetField.disabled = true;
+                presetField.value = '';
+            } else {
+                presetField.disabled = false;
+            }
+        });
+
+        presetField.addEventListener('change', function() {
+            if (presetField.value) {
+                defaultField.disabled = true;
+                defaultField.value = '';
+            } else {
+                defaultField.disabled = false;
+            }
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const defaultBooleanFields = document.querySelectorAll('[id^="default_value_boolean_"]');
+    const presetBooleanFields = document.querySelectorAll('[id^="preset_value_boolean_"]');
+
+    defaultBooleanFields.forEach((defaultField, index) => {
+        const presetField = presetBooleanFields[index];
+
+        if (defaultField.value) {
+            presetField.disabled = true;
+        }
+        if (presetField.value) {
+            defaultField.disabled = true;
+        }
+
+        defaultField.addEventListener('change', function() {
+            if (defaultField.value) {
+                presetField.disabled = true;
+                presetField.value = '';
+            } else {
+                presetField.disabled = false;
+            }
+        });
+
+        presetField.addEventListener('change', function() {
+            if (presetField.value) {
+                defaultField.disabled = true;
+                defaultField.value = '';
+            } else {
+                defaultField.disabled = false;
+            }
+        });
     });
 });
 

@@ -685,21 +685,53 @@ def extract_tool_data(request, tool_name):
 
     for field_key, field_value in request.POST.items():
         if 'section' in field_key:
-            field_form = field_key.split("section_id_")[1]
-            section = None
-            field_model = None
-            for field in tool.get_fields():
-                if field.name == field_form:
-                    field_model = field
-                    section = field.section
-                    break
+            if 'boolean' in field_key:
+                field_form = field_key.split("boolean_section_id_")[1]
+                section = None
+                field_model = None
+                for field in tool.get_fields():
+                    if field.name == field_form:
+                        field_model = field
+                        section = field.section
+                        break
 
-            if section not in tool_data:
-                tool_data[section] = {}
-            if field_model.preset_value:
-                tool_data[section][field_model.name] = request.POST.get(f'preset_value_id_{field_form}', None)
+                if section not in tool_data:
+                    tool_data[section] = {}
+                if field_model.preset_value:
+                    value = request.POST.get(
+                        f'preset_value_boolean_id_{field_form}', None)
+                    if value == "true":
+                        value = True
+                    if value == "on":
+                        value = True
+                    if value == "false":
+                        value = False
+                    tool_data[section][field_model.name] = value
+                else:
+                    value = request.POST.get(field_form, False)
+                    if value == "true":
+                        value = True
+                    if value == "on":
+                        value = True
+                    if value == "false":
+                        value = False
+                    tool_data[section][field_model.name] = value
             else:
-                tool_data[section][field_model.name] = request.POST.get(field_form, None)
+                field_form = field_key.split("section_id_")[1]
+                section = None
+                field_model = None
+                for field in tool.get_fields():
+                    if field.name == field_form:
+                        field_model = field
+                        section = field.section
+                        break
+
+                if section not in tool_data:
+                    tool_data[section] = {}
+                if field_model.preset_value:
+                    tool_data[section][field_model.name] = request.POST.get(f'preset_value_id_{field_form}', None)
+                else:
+                    tool_data[section][field_model.name] = request.POST.get(field_form, None)
 
     return tool_data
 
@@ -957,6 +989,10 @@ def get_form_from_tool(tool):
         disabled = field.preset_value is not None
 
         if field.type == 'boolean':
+            if initial == "true":
+                initial = True
+            elif initial == "false":
+                initial = False
             form_fields[field.name] = forms.BooleanField(
                 label=field.name.replace("_", " ").lower(),
                 required=False,
@@ -2077,8 +2113,18 @@ def create_tool(request):
                     index = field_key.split('_')[3]
                     section = request.POST.get(f'boolean_section_{index}',
                                                      None)
-                    default_value = None
-                    preset_value = None
+                    default_value = request.POST.get(f'default_value_boolean_'
+                                                     f'{index}', None)
+                    if default_value == "true":
+                        default_value = True
+                    elif default_value == "false":
+                        default_value = False
+                    preset_value = request.POST.get(f'preset_value_boolean_'
+                                                    f'{index}', None)
+                    if preset_value == "true":
+                        preset_value = True
+                    elif preset_value == "false":
+                        preset_value = False
                 else:
                     type = 'text'
                     index = field_key.split('_')[2]
@@ -2088,6 +2134,12 @@ def create_tool(request):
                     preset_value = request.POST.get(f'preset_value_{index}', None)
                     section = request.POST.get(f'section_{index}',
                                                None)
+
+                if default_value == 'None' or default_value == '':
+                    default_value = None
+                if preset_value == 'None' or preset_value == '':
+                    preset_value = None
+
                 tool.add_field(field_name, default_value=default_value,
                                preset_value=preset_value, section=section,
                                type=type)
@@ -2164,18 +2216,27 @@ def edit_tool(request, tool_name):
                     index = field_key.split('_')[3]
                     section = request.POST.get(f'boolean_section_{index}',
                                                None)
-                    default_value = None
-                    preset_value = None
+                    default_value = request.POST.get(f'default_value_boolean_'
+                                                     f'{index}', None)
+                    if default_value == "true":
+                        default_value = True
+                    elif default_value == "false":
+                        default_value = False
+                    preset_value = request.POST.get(f'preset_value_boolean_'
+                                                    f'{index}', None)
+                    if preset_value == "true":
+                        preset_value = True
+                    elif preset_value == "false":
+                        preset_value = False
                 else:
                     type = 'text'
                     index = field_key.split('_')[2]
-
+                    section = request.POST.get(f'section_{index}',
+                                               None)
                     default_value = request.POST.get(f'default_value_{index}',
                                                      None)
                     preset_value = request.POST.get(f'preset_value_{index}',
                                                     None)
-                    section = request.POST.get(f'section_{index}',
-                                               None)
 
                 if default_value == 'None' or default_value == '':
                     default_value = None

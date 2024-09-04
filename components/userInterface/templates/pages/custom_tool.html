@@ -37,13 +37,15 @@
                                             <div class="form-check form-check-inline">
                                                 <label class="form-check-label mr-2" for="{{ f.id_for_label }}">{{ f.label }}:</label>
                                                 {{ f|add_class:"form-check-input" }}
+                                                <input type="hidden" name="preset_value_boolean_{{ f.id_for_label }}" value="{{ field.preset_value }}">
+                                                <input type="hidden" name="boolean_section_{{ f.id_for_label }}" value="{{ section }}">
                                             </div>
                                         {% else %}
                                             <label for="{{ f.id_for_label }}">{{ f.label }}:</label>
                                             {{ f|add_class:"form-control" }}
+                                            <input type="hidden" name="preset_value_{{ f.id_for_label }}" value="{{ field.preset_value }}">
+                                            <input type="hidden" name="section_{{ f.id_for_label }}" value="{{ section }}">
                                         {% endif %}
-                                        <input type="hidden" name="preset_value_{{ f.id_for_label }}" value="{{ field.preset_value }}">
-                                        <input type="hidden" name="section_{{ f.id_for_label }}" value="{{ section }}">
                                     </div>
                                 {% endif %}
                             {% endfor %}
