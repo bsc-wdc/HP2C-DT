@@ -41,21 +41,196 @@
                                     <button type="button" id="add-repo" class="btn btn-success feather icon-plus-circle ml-2"></button>
                                 </div>
                             </div>
+                            <div class="form-group">
+                                <label for="custom_field_Data Dir">Data Dir:</label>
+                                <div class="d-flex">
+                                    <input type="hidden" name="section_Data Dir" value="{{section}}">
+                                    <input type="hidden" name="custom_field_Data Dir" value="Data Dir">
+                                    <input type="text" name="default_value_Data Dir" class="form-control ml-2" id="default_value_Data Dir" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Data Dir" class="form-control ml-2" id="preset_value_Data Dir" placeholder="Preset Value (optional)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="custom_field_Simulation Name">Simulation Name:</label>
+                                <div class="d-flex">
+                                    <input type="hidden" name="section_Simulation Name" value="{{section}}">
+                                    <input type="hidden" name="custom_field_Simulation Name" value="Simulation Name">
+                                    <input type="text" name="default_value_Simulation Name" class="form-control ml-2" id="default_value_Simulation Name" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Simulation Name" class="form-control ml-2" id="preset_value_Simulation Name" placeholder="Preset Value (optional)">
+                                </div>
+                            </div>
                         {% endif %}
 
-                        <!-- Custom fields will be displayed here -->
+                        {% if section == "environment" %}
+                            <div class="form-group">
+                                <label for="custom_field_Computing Units">Computing Units:</label>
+                                <div class="d-flex">
+                                    <input type="hidden" name="section_Computing Units" value="{{section}}">
+                                    <input type="hidden" name="custom_field_Computing Units" value="Computing Units">
+                                    <input type="text" name="default_value_Computing Units" class="form-control ml-2" id="default_value_Computing Units" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Computing Units" class="form-control ml-2" id="preset_value_Computing Units" placeholder="Preset Value (optional)">
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if section == "slurm" %}
+                            <div class="form-group">
+                                <label for="custom_field_Number of Nodes">Number of Nodes:</label>
+                                <div class="d-flex">
+                                    <input type="hidden" name="section_Number of Nodes" value="{{section}}">
+                                    <input type="hidden" name="custom_field_Number of Nodes" value="Number of Nodes">
+                                    <input type="text" name="default_value_Number of Nodes" class="form-control ml-2" id="default_value_Number of Nodes" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Number of Nodes" class="form-control ml-2" id="preset_value_Number of Nodes" placeholder="Preset Value (optional)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="custom_field_Time Limit">Time Limit:</label>
+                                <div class="d-flex">
+                                    <input type="hidden" name="section_Time Limit" value="{{section}}">
+                                    <input type="hidden" name="custom_field_Time Limit" value="Time Limit">
+                                    <input type="text" name="default_value_Time Limit" class="form-control ml-2" id="default_value_Time Limit" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Time Limit" class="form-control ml-2" id="preset_value_Time Limit" placeholder="Preset Value (optional)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="custom_field_QOS">QOS:</label>
+                                <div class="d-flex">
+                                    <input type="hidden" name="section_QOS" value="{{section}}">
+                                    <input type="hidden" name="custom_field_QOS" value="QOS">
+                                    <input type="text" name="default_value_QOS" class="form-control ml-2" id="default_value_QOS" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_QOS" class="form-control ml-2" id="preset_value_QOS" placeholder="Preset Value (optional)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="custom_field_Project Name">Project Name:</label>
+                                <div class="d-flex">
+                                    <input type="hidden" name="section_Project Name" value="{{section}}">
+                                    <input type="hidden" name="custom_field_Project Name" value="Project Name">
+                                    <input type="text" name="default_value_Project Name" class="form-control ml-2" id="default_value_Project Name" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Project Name" class="form-control ml-2" id="preset_value_Project Name" placeholder="Preset Value (optional)">
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if section == "COMPSs" %}
+                            <div class="form-group">
+                                <label for="custom_boolean_field_Checkpointing">Checkpointing:</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="hidden" name="boolean_section_Checkpointing" value="{{section}}">
+                                    <input type="hidden" name="custom_boolean_field_Checkpointing" value="Checkpointing">
+                                    <select name="default_value_boolean_Checkpointing" class="form-control ml-2" id="default_value_boolean_Checkpointing">
+                                        <option value="" selected>No default value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                    <select name="preset_value_boolean_Checkpointing" class="form-control ml-2" id="preset_value_boolean_Checkpointing">
+                                        <option value="" selected>No preset value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="custom_boolean_field_Autorestart">Autorestart:</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="hidden" name="boolean_section_Autorestart" value="{{section}}">
+                                    <input type="hidden" name="custom_boolean_field_Autorestart" value="Autorestart">
+                                    <select name="default_value_boolean_Autorestart" class="form-control ml-2" id="default_value_boolean_Autorestart">
+                                        <option value="" selected>No default value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                    <select name="preset_value_boolean_Autorestart" class="form-control ml-2" id="preset_value_boolean_Autorestart">
+                                        <option value="" selected>No preset value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="custom_boolean_field_Graph">Graph:</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="hidden" name="boolean_section_Graph" value="{{section}}">
+                                    <input type="hidden" name="custom_boolean_field_Graph" value="Graph">
+                                    <select name="default_value_boolean_Graph" class="form-control ml-2" id="default_value_boolean_Graph">
+                                        <option value="" selected>No default value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                    <select name="preset_value_boolean_Graph" class="form-control ml-2" id="preset_value_boolean_Graph">
+                                        <option value="" selected>No preset value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="custom_boolean_field_Trace">Trace:</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="hidden" name="boolean_section_Trace" value="{{section}}">
+                                    <input type="hidden" name="custom_boolean_field_Trace" value="Trace">
+                                    <select name="default_value_boolean_Trace" class="form-control ml-2" id="default_value_boolean_Trace">
+                                        <option value="" selected>No default value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                    <select name="preset_value_boolean_Trace" class="form-control ml-2" id="preset_value_boolean_Trace">
+                                        <option value="" selected>No preset value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="custom_boolean_field_Debug">Debug:</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="hidden" name="boolean_section_Debug" value="{{section}}">
+                                    <input type="hidden" name="custom_boolean_field_Debug" value="Debug">
+                                    <select name="default_value_boolean_Debug" class="form-control ml-2" id="default_value_boolean_Debug">
+                                        <option value="" selected>No default value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                    <select name="preset_value_boolean_Debug" class="form-control ml-2" id="preset_value_boolean_Debug">
+                                        <option value="" selected>No preset value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                </div>
+                            </div>
+                        {% endif %}
+
                         {% for custom_field in existing_fields %}
                             {% if custom_field.section == section %}
-                                <div class="form-group">
-                                    <label for="custom_field_{{ custom_field.id }}">{{ custom_field.name }}:</label>
-                                    <div class="d-flex">
-                                        <input type="text" name="custom_field_{{ custom_field.id }}" class="form-control flex-grow-1" id="custom_field_{{ custom_field.id }}" value="{{ custom_field.name }}">
-                                        <input type="text" name="default_value_{{ custom_field.id }}" class="form-control ml-2" id="default_value_{{ custom_field.id }}" value="{{ custom_field.default_value|default_if_none:'' }}" placeholder="Default Value (optional)">
-                                        <input type="text" name="preset_value_{{ custom_field.id }}" class="form-control ml-2" id="preset_value_{{ custom_field.id }}" value="{{ custom_field.preset_value|default_if_none:'' }}" placeholder="Preset Value (optional)">
-                                        <input type="hidden" name="section_{{ custom_field.id }}" value="{{ section }}">
-                                        <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                {% if custom_field.field_type == "text" %}
+                                    <div class="form-group">
+                                        <label for="custom_field_{{ custom_field.name }}">{{ custom_field.name }}:</label>
+                                        <div class="d-flex">
+                                            <input type="hidden" name="custom_field_{{ custom_field.name }}" value="{{ custom_field.name }}">
+                                            <input type="text" name="default_value_{{ custom_field.name }}" class="form-control ml-2" id="default_value_{{ custom_field.name }}" value="{{ custom_field.default_value|default_if_none:'' }}" placeholder="Default Value (optional)">
+                                            <input type="text" name="preset_value_{{ custom_field.name }}" class="form-control ml-2" id="preset_value_{{ custom_field.name }}" value="{{ custom_field.preset_value|default_if_none:'' }}" placeholder="Preset Value (optional)">
+                                            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                        </div>
                                     </div>
-                                </div>
+                                {% elif custom_field.field_type == "boolean" %}
+                                    <div class="form-group">
+                                        <label for="custom_boolean_field_{{ custom_field.name }}">{{ custom_field.name }}:</label>
+                                        <div class="d-flex align-items-center">
+                                            <input type="hidden" name="custom_boolean_field_{{ custom_field.name }}" value="{{ custom_field.name }}">
+                                            <select name="default_value_boolean_{{ custom_field.name }}" class="form-control ml-2" id="default_value_boolean_{{ custom_field.name }}">
+                                                <option value="" {% if not custom_field.default_value %}selected{% endif %}>No default value</option>
+                                                <option value="true" {% if custom_field.default_value == "true" %}selected{% endif %}>True</option>
+                                                <option value="false" {% if custom_field.default_value == "false" %}selected{% endif %}>False</option>
+                                            </select>
+                                            <select name="preset_value_boolean_{{ custom_field.name }}" class="form-control ml-2" id="preset_value_boolean_{{ custom_field.name }}">
+                                                <option value="" {% if not custom_field.preset_value %}selected{% endif %}>No preset value</option>
+                                                <option value="true" {% if custom_field.preset_value == "true" %}selected{% endif %}>True</option>
+                                                <option value="false" {% if custom_field.preset_value == "false" %}selected{% endif %}>False</option>
+                                            </select>
+                                            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                        </div>
+                                    </div>
+                                {% endif %}
                             {% endif %}
                         {% endfor %}
                         <div class="dropdown">
@@ -71,7 +246,7 @@
                 </div>
             {% endfor %}
         </div>
-        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button type="submit" class="btn btn-primary ml-2">Save Changes</button>
     </form>
 </div>
 

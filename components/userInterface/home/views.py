@@ -2107,7 +2107,6 @@ def create_tool(request):
                         'sections': sections,
                     })
                 field_names.add(field_name)
-
                 if 'boolean' in field_key:
                     type = 'boolean'
                     index = field_key.split('_')[3]
@@ -2128,13 +2127,11 @@ def create_tool(request):
                 else:
                     type = 'text'
                     index = field_key.split('_')[2]
-
                     default_value = request.POST.get(f'default_value_{index}',
                                                      None)
                     preset_value = request.POST.get(f'preset_value_{index}', None)
                     section = request.POST.get(f'section_{index}',
                                                None)
-
                 if default_value == 'None' or default_value == '':
                     default_value = None
                 if preset_value == 'None' or preset_value == '':
