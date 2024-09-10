@@ -35,20 +35,53 @@
                         {% if section == "setup" %}
                             <div class="form-group" id="setup-section">
                                 <label for="id_github_repo">{{ form.github_repo.label }}:</label>
-                                <div class="d-flex align-items-center">
-                                    <input type="text" name="github_repo" class="form-control flex-grow-1 mr-2" id="id_github_repo" value="{{ form.github_repo.value|default_if_none:'' }}" placeholder="Repo Name">
+                                <div class="d-flex align-items-center mb-2">
+                                    <input type="text" name="github_repo" class="form-control flex-grow-1 mr-2" id="id_github_repo" value="{{ form.github_repo.value|default_if_none:'' }}" placeholder="Repo URL">
                                     <input type="text" name="github_branch" class="form-control flex-grow-1" id="id_github_branch" value="{{ form.github_branch.value|default_if_none:'' }}" placeholder="Branch Name">
                                     <button type="button" id="add-repo" class="btn btn-success feather icon-plus-circle ml-2"></button>
                                 </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <label class="mr-2">Requires installation:</label>
+                                    <input type="checkbox" name="github_install" id="id_github_install"
+                                           {% if existing_repos.0.install %} checked {% endif %}
+                                           onchange="toggleInstallDir(0)">
+                                    <input type="text" name="github_install_dir" class="form-control flex-grow-1 ml-2"
+                                           value="{{ existing_repos.0.install_dir|default:'' }}"
+                                           id="id_github_install_dir" placeholder="Install Dir">
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <label class="mr-2">Install in editable mode:</label>
+                                    <input type="checkbox" name="github_editable" id="id_github_editable"
+                                    {% if existing_repos.0.editable %} checked {% endif %}>
+                                    <label class="ml-2 mr-2">Install requirements:</label>
+                                    <input type="checkbox" name="github_requirements" id="id_github_requirements"
+                                    {% if existing_repos.0.requirements %} checked {% endif %}>
+                                </div>
                             </div>
-                            {% for repo, branch in existing_repos.items %}
+
+                            {% for repo in existing_repos %}
                                 {% if not forloop.first %}
                                     <div class="form-group">
                                         <label for="github_repo_{{ forloop.counter }}">GitHub Repo {{ forloop.counter }}:</label>
-                                        <div class="d-flex align-items-center">
-                                            <input type="text" name="github_repo_{{ forloop.counter }}" class="form-control flex-grow-1 mr-2" id="github_repo_{{ forloop.counter }}" value="{{ repo }}" placeholder="Repo Name">
-                                            <input type="text" name="github_branch_{{ forloop.counter }}" class="form-control flex-grow-1" id="id_github_branch_{{ forloop.counter }}" value="{{ branch }}" placeholder="Branch Name">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <input type="text" name="github_repo_{{ forloop.counter }}" class="form-control flex-grow-1 mr-2" id="github_repo_{{ forloop.counter }}" value="{{ repo.url }}" placeholder="Repo Name">
+                                            <input type="text" name="github_branch_{{ forloop.counter }}" class="form-control flex-grow-1" id="id_github_branch_{{ forloop.counter }}" value="{{ repo.branch }}" placeholder="Branch Name">
                                             <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <label class="mr-2">Requires installation:</label>
+                                            <input type="checkbox" name="github_install_{{ forloop.counter }}" id="id_github_install_{{ forloop.counter }}"
+                                                   {% if repo.install %} checked {% endif %}
+                                                   onchange="toggleInstallDir({{ forloop.counter }})">
+                                            <input type="text" name="github_install_dir_{{ forloop.counter }}" class="form-control flex-grow-1 ml-2" id="id_github_install_dir_{{ forloop.counter }}" value="{{ repo.install_dir|default:'' }}" placeholder="Install Dir">
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <label class="mr-2">Install in editable mode:</label>
+                                            <input type="checkbox" name="github_editable_{{ forloop.counter }}" id="id_github_editable_{{ forloop.counter }}"
+                                            {% if repo.editable %} checked {% endif %}>
+                                            <label class="ml-2 mr-2">Install requirements:</label>
+                                            <input type="checkbox" name="github_requirements_{{ forloop.counter }}" id="id_github_requirements_{{ forloop.counter }}"
+                                            {% if repo.requirements %} checked {% endif %}>
                                         </div>
                                     </div>
                                 {% endif %}
@@ -91,6 +124,7 @@
                                 {% endif %}
                             {% endif %}
                         {% endfor %}
+
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Add Custom Field to {{ section|capfirst }}
@@ -103,6 +137,7 @@
                     </div>
                 </div>
             {% endfor %}
+
         </div>
         <button type="submit" class="btn btn-primary ml-2">Save Changes</button>
     </form>
@@ -111,6 +146,8 @@
 <script>
     let fieldCounter = {{ existing_fields|length }};
     let repoCounter = {{ existing_repos|length }};
+    let existing_repos = {{ existing_repos }}
+    let existing_fields = {{ existing_fields }}
 
     document.querySelectorAll('.add-text-field').forEach(button => {
         button.addEventListener('click', function() {
@@ -268,12 +305,22 @@
         const newRepoDiv = document.createElement('div');
         newRepoDiv.classList.add('form-group');
         newRepoDiv.innerHTML = `
-            <label for="github_repo_${repoCounter}">GitHub Repo ${repoCounter}:</label>
-            <div class="d-flex align-items-center">
-                <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2" id="github_repo_${repoCounter}" placeholder="Repo Name">
-                <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1" id="id_github_branch_${repoCounter}" placeholder="Branch Name">
-                <input type="hidden" name="section_github_repo_${repoCounter}" value="setup">
+            <label for="github_repo_${repoCounter}" style="font-weight: bold;">GitHub Repo ${repoCounter}:</label>
+            <div class="d-flex align-items-center mb-2">
+                <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2" id="github_repo_${repoCounter}" placeholder="Repo URL">
+                <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1" id="github_branch_${repoCounter}" placeholder="Branch Name">
                 <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+            </div>
+            <div class="d-flex align-items-center mb-2">
+                <label class="mr-2">Requires installation:</label>
+                <input type="checkbox" name="github_install_${repoCounter}" id="github_install_${repoCounter}" onchange="toggleInstallDir(${repoCounter})">
+                <input type="text" name="github_install_dir_${repoCounter}" class="form-control flex-grow-1 ml-2" id="github_install_dir_${repoCounter}" placeholder="Install Dir" disabled>
+            </div>
+            <div class="d-flex align-items-center">
+                <label class="mr-2">Install in editable mode:</label>
+                <input type="checkbox" name="github_editable_${repoCounter}" id="github_editable_${repoCounter}">
+                <label class="ml-2 mr-2">Install requirements:</label>
+                <input type="checkbox" name="github_requirements_${repoCounter}" id="github_requirements_${repoCounter}">
             </div>
         `;
         setupSection.appendChild(newRepoDiv);
@@ -282,6 +329,26 @@
     function toggleFieldState(fieldToToggle, currentField) {
         const field = document.getElementById(fieldToToggle);
         field.disabled = currentField.value.length > 0;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        for (let i = 0; i <= repoCounter; i++) {
+            toggleInstallDir(i);
+        }
+    });
+
+    function toggleInstallDir(counter) {
+        let installCheckbox, installDirInput;
+
+        if (counter === 0) {
+            installCheckbox = document.getElementById('id_github_install');
+            installDirInput = document.getElementById('id_github_install_dir');
+        } else {
+            installCheckbox = document.getElementById('id_github_install_${counter}');
+            installDirInput = document.getElementById('id_github_install_dir_${counter}');
+        }
+
+        installDirInput.disabled = !installCheckbox.checked;
     }
 
     function removeField(element) {

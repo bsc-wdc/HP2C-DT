@@ -681,7 +681,7 @@ def extract_tool_data(request, tool_name):
     tool = Tool.objects.get(name=tool_name)
     tool_data['tool_name'] = tool.name
     tool_data['setup'] = {}
-    tool_data['setup']['github'] = tool.get_repos_dict()
+    tool_data['setup']['github'] = tool.repos_json()
 
     for field_key, field_value in request.POST.items():
         if 'section' in field_key:
@@ -2098,12 +2098,12 @@ def create_tool(request):
                     errors[field_key] = [
                         f'The field name "{field_name}" is duplicated. Please '
                         f'use unique names.']
-                    return render(request, 'pages/edit_tool.html', {
+                    return render(request, 'pages/create_tool.html', {
                         'form': form,
                         'errors': errors,
                         'tool': tool,
                         'existing_fields': tool.get_fields(),
-                        'existing_repos': tool.get_repos_dict(),
+                        'existing_repos': tool.get_repos(),
                         'sections': sections,
                     })
                 field_names.add(field_name)
@@ -2141,15 +2141,25 @@ def create_tool(request):
                                preset_value=preset_value, section=section,
                                type=type)
 
-            tool.append_to_repos_dict(request.POST.get('github_repo'),
-                                      request.POST.get('github_branch'))
+            tool.add_repo(request.POST.get('github_repo'),
+                          request.POST.get('github_branch'),
+                          request.POST.get('github_install') == 'on',
+                          request.POST.get('github_install_dir'),
+                          request.POST.get('github_editable') == 'on',
+                          request.POST.get('github_requirements') == 'on')
+
             additional_repos = {k: v for k, v in request.POST.items() if
                                 k.startswith('github_repo_')}
+
             for repo_name, repo_value in additional_repos.items():
                 if "branch" not in repo_name:
                     number = repo_name.split('github_repo_')[1]
-                    branch = request.POST.get('github_branch_' + number)
-                    tool.append_to_repos_dict(repo_value, branch)
+                    tool.add_repo(repo_value,
+                                  request.POST.get('github_branch_' + number),
+                                  request.POST.get('github_install_' + + number) == 'on',
+                                  request.POST.get('github_install_dir_' + + number),
+                                  request.POST.get('github_editable_' + + number) == 'on',
+                                  request.POST.get('github_requirements_' + + number) == 'on')
 
             request.session['tool_created'] = tool.name
             return redirect('tools')
@@ -2181,7 +2191,7 @@ def edit_tool(request, tool_name):
                                  k.startswith('custom_field_') or
                                  k.startswith('custom_boolean_field')}
 
-            field_names = set(field.name for field in tool.get_fields())
+            field_names = set()
             for field_key, field_name in additional_fields.items():
                 if not field_name:
                     errors[field_key] = ['This field cannot be empty.']
@@ -2190,7 +2200,7 @@ def edit_tool(request, tool_name):
                         'errors': errors,
                         'tool': tool,
                         'existing_fields': tool.get_fields(),
-                        'existing_repos': tool.get_repos_dict(),
+                        'existing_repos': tool.get_repos(),
                         'sections': sections,
                     })
 
@@ -2203,7 +2213,7 @@ def edit_tool(request, tool_name):
                         'errors': errors,
                         'tool': tool,
                         'existing_fields': tool.get_fields(),
-                        'existing_repos': tool.get_repos_dict(),
+                        'existing_repos': tool.get_repos(),
                         'sections': sections,
                     })
                 field_names.add(field_name)
@@ -2244,14 +2254,31 @@ def edit_tool(request, tool_name):
                                preset_value=preset_value, section=section,
                                type=type)
 
-            tool.set_repos_dict({})
-            tool.append_to_repos_dict(request.POST.get('github_repo'), request.POST.get('github_branch'))
+            tool.remove_repos()
+
+            tool.add_repo(request.POST.get('github_repo'),
+                          request.POST.get('github_branch'),
+                          request.POST.get('github_install') == 'on',
+                          request.POST.get('github_install_dir'),
+                          request.POST.get('github_editable') == 'on',
+                          request.POST.get('github_requirements') == 'on')
+
             additional_repos = {k: v for k, v in request.POST.items() if k.startswith('github_repo_')}
             for repo_name, repo_value in additional_repos.items():
                 if "branch" not in repo_name:
                     number = repo_name.split('github_repo_')[1]
                     branch = request.POST.get('github_branch_' + number)
-                    tool.append_to_repos_dict(repo_value, branch)
+
+                    tool.add_repo(repo_value,
+                                  request.POST.get('github_branch_' + number),
+                                  request.POST.get(
+                                      'github_install_' + + number) == 'on',
+                                  request.POST.get('github_install_dir_' + + number),
+                                  request.POST.get(
+                                      'github_editable_' + + number) == 'on',
+                                  request.POST.get(
+                                      'github_requirements_' + + number) == 'on')
+
                     if branch == '' or repo_value == '':
                         if branch == '':
                             errors['github_branch_' + number] = \
@@ -2264,7 +2291,7 @@ def edit_tool(request, tool_name):
                             'errors': errors,
                             'tool': tool,
                             'existing_fields': tool.get_fields(),
-                            'existing_repos': tool.get_repos_dict(),
+                            'existing_repos': tool.get_repos(),
                             'sections': sections,
                         })
 
@@ -2278,13 +2305,13 @@ def edit_tool(request, tool_name):
     else:
         # Pass the custom fields and repos to the template for display
         existing_fields = tool.get_fields()
-        existing_repos = tool.get_repos_dict()
+        existing_repos = tool.get_repos()
 
         first_repo = ''
         first_branch = ''
-        for k, v in existing_repos.items():
-            first_repo = k
-            first_branch = v
+        for repo in existing_repos:
+            first_repo = repo.url
+            first_branch = repo.branch
             break
 
         form = CreateToolForm(instance=tool, initial={

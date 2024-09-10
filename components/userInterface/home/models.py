@@ -97,11 +97,11 @@ STATUS_CONN = [
 
 class Tool(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    github_repos = models.JSONField(default=dict, blank=True, null=True)
 
     def __str__(self):
         return self.name
 
+    # Field-related methods
     def get_fields(self):
         return list(self.field_set.all())
 
@@ -114,17 +114,39 @@ class Tool(models.Model):
     def remove_field(self, field_name):
         Field.objects.filter(tool=self, name=field_name).delete()
 
-    def set_repos_dict(self, repos_dict):
-        self.github_repos = repos_dict
-        self.save()
+    # Repo-related methods
+    def get_repos(self):
+        return list(self.repo_set.all())
 
-    def get_repos_dict(self):
-        return self.github_repos or {}
+    def add_repo(self, url, branch, install=False, install_dir=None, editable=False, requirements=None):
+        repo = Repo.objects.create(url=url, branch=branch, install=install, install_dir=install_dir,
+                                   editable=editable, requirements=requirements, tool=self)
+        return repo
 
-    def append_to_repos_dict(self, repo_name, branch_name):
-        repos_dict = self.get_repos_dict()
-        repos_dict[repo_name] = branch_name
-        self.set_repos_dict(repos_dict)
+    def remove_repo(self, repo_url):
+        Repo.objects.filter(tool=self, url=repo_url).delete()
+
+    def remove_repos(self):
+        Repo.objects.filter(tool=self).delete()
+
+    def repos_json(self):
+        repos = self.get_repos()
+        repo_list = []
+
+        for repo in repos:
+            repo_data = {
+                "url": repo.url,
+                "branch": repo.branch,
+                "install": repo.install,
+                "install_dir": repo.install_dir,
+                "editable": repo.editable,
+                "requirements": repo.requirements
+            }
+            repo_list.append(repo_data)
+
+        repos_json = json.dumps(repo_list,
+                                indent=4)
+        return repos_json
 
 
 class Field(models.Model):
@@ -137,6 +159,19 @@ class Field(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Repo(models.Model):
+    url = models.CharField(max_length=255, null=True, blank=True, default=None)
+    branch = models.CharField(max_length=255, null=True, blank=True, default=None)
+    install = models.BooleanField(default=False)
+    install_dir = models.CharField(max_length=255, null=True, blank=True, default=None)
+    editable = models.BooleanField(default=False)
+    requirements = models.BooleanField(default=False)
+    tool = models.ForeignKey(Tool, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.url} - {self.tool.name}"
 
 
 class Connection(models.Model):
