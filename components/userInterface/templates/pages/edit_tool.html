@@ -43,8 +43,7 @@
                                 <div class="d-flex align-items-center mb-2">
                                     <label class="mr-2">Requires installation:</label>
                                     <input type="checkbox" name="github_install" id="id_github_install"
-                                           {% if existing_repos.0.install %} checked {% endif %}
-                                           onchange="toggleInstallDir(0)">
+                                           {% if existing_repos.0.install %} checked {% endif %}>
                                     <input type="text" name="github_install_dir" class="form-control flex-grow-1 ml-2"
                                            value="{{ existing_repos.0.install_dir|default:'' }}"
                                            id="id_github_install_dir" placeholder="Install Dir">
@@ -71,8 +70,7 @@
                                         <div class="d-flex align-items-center mb-2">
                                             <label class="mr-2">Requires installation:</label>
                                             <input type="checkbox" name="github_install_{{ forloop.counter }}" id="id_github_install_{{ forloop.counter }}"
-                                                   {% if repo.install %} checked {% endif %}
-                                                   onchange="toggleInstallDir({{ forloop.counter }})">
+                                                   {% if repo.install %} checked {% endif %}>
                                             <input type="text" name="github_install_dir_{{ forloop.counter }}" class="form-control flex-grow-1 ml-2" id="id_github_install_dir_{{ forloop.counter }}" value="{{ repo.install_dir|default:'' }}" placeholder="Install Dir">
                                         </div>
                                         <div class="d-flex align-items-center">
@@ -146,8 +144,35 @@
 <script>
     let fieldCounter = {{ existing_fields|length }};
     let repoCounter = {{ existing_repos|length }};
-    let existing_repos = {{ existing_repos }}
-    let existing_fields = {{ existing_fields }}
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var sectionHeaders = document.querySelectorAll('.card-header h5');
+        sectionHeaders.forEach(function(header) {
+            header.addEventListener('click', function() {
+                var sectionContent = this.closest('.card-header').nextElementSibling.querySelector('.section-content');
+                if (sectionContent) {
+                    sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+                }
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var sectionHeaders = document.querySelectorAll('.clickable-header');
+        sectionHeaders.forEach(function(header) {
+            header.addEventListener('click', function() {
+                var sectionContent = this.nextElementSibling.querySelector('.section-content');
+                if (sectionContent) {
+                    sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+                    var icon = this.querySelector('.toggle-icon');
+                    if (icon) {
+                        icon.textContent = sectionContent.style.display === 'none' ? '▼' : '▲';
+                    }
+                }
+            });
+        });
+    });
 
     document.querySelectorAll('.add-text-field').forEach(button => {
         button.addEventListener('click', function() {
@@ -262,45 +287,14 @@
         });
     });
 
-    function removeField(element) {
-        element.parentElement.parentElement.remove();
-    }
 
     function toggleFieldState(fieldToToggle, currentField) {
         const field = document.getElementById(fieldToToggle);
         field.disabled = currentField.value.length > 0;
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        var sectionHeaders = document.querySelectorAll('.card-header h5');
-        sectionHeaders.forEach(function(header) {
-            header.addEventListener('click', function() {
-                var sectionContent = this.closest('.card-header').nextElementSibling.querySelector('.section-content');
-                if (sectionContent) {
-                    sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
-                }
-            });
-        });
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        var sectionHeaders = document.querySelectorAll('.clickable-header');
-        sectionHeaders.forEach(function(header) {
-            header.addEventListener('click', function() {
-                var sectionContent = this.nextElementSibling.querySelector('.section-content');
-                if (sectionContent) {
-                    sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
-                    var icon = this.querySelector('.toggle-icon');
-                    if (icon) {
-                        icon.textContent = sectionContent.style.display === 'none' ? '▼' : '▲';
-                    }
-                }
-            });
-        });
-    });
 
     document.getElementById('add-repo').onclick = function() {
-        repoCounter++;
         const setupSection = document.getElementById('setup-section');
         const newRepoDiv = document.createElement('div');
         newRepoDiv.classList.add('form-group');
@@ -313,8 +307,8 @@
             </div>
             <div class="d-flex align-items-center mb-2">
                 <label class="mr-2">Requires installation:</label>
-                <input type="checkbox" name="github_install_${repoCounter}" id="github_install_${repoCounter}" onchange="toggleInstallDir(${repoCounter})">
-                <input type="text" name="github_install_dir_${repoCounter}" class="form-control flex-grow-1 ml-2" id="github_install_dir_${repoCounter}" placeholder="Install Dir" disabled>
+                <input type="checkbox" name="github_install_${repoCounter}" id="github_install_${repoCounter}">
+                <input type="text" name="github_install_dir_${repoCounter}" class="form-control flex-grow-1 ml-2" id="github_install_dir_${repoCounter}" placeholder="Install Dir">
             </div>
             <div class="d-flex align-items-center">
                 <label class="mr-2">Install in editable mode:</label>
@@ -324,35 +318,12 @@
             </div>
         `;
         setupSection.appendChild(newRepoDiv);
+        repoCounter++;
     };
 
     function toggleFieldState(fieldToToggle, currentField) {
         const field = document.getElementById(fieldToToggle);
         field.disabled = currentField.value.length > 0;
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        for (let i = 0; i <= repoCounter; i++) {
-            toggleInstallDir(i);
-        }
-    });
-
-    function toggleInstallDir(counter) {
-        let installCheckbox, installDirInput;
-
-        if (counter === 0) {
-            installCheckbox = document.getElementById('id_github_install');
-            installDirInput = document.getElementById('id_github_install_dir');
-        } else {
-            installCheckbox = document.getElementById('id_github_install_${counter}');
-            installDirInput = document.getElementById('id_github_install_dir_${counter}');
-        }
-
-        installDirInput.disabled = !installCheckbox.checked;
-    }
-
-    function removeField(element) {
-        element.parentElement.parentElement.remove();
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -388,6 +359,16 @@
             });
         });
     });
+
+    function removeField(element) {
+        element.parentElement.parentElement.remove();
+    }
+
+    function toggleFieldState(fieldToToggle, currentField) {
+        const field = document.getElementById(fieldToToggle);
+        field.disabled = currentField.value.length > 0;
+    }
+
 </script>
 <style>
     .clickable-header:hover {

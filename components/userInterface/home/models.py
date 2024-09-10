@@ -144,8 +144,7 @@ class Tool(models.Model):
             }
             repo_list.append(repo_data)
 
-        repos_json = json.dumps(repo_list,
-                                indent=4)
+        repos_json = json.dumps(repo_list)
         return repos_json
 
 
