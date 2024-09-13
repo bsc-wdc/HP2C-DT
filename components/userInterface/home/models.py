@@ -161,7 +161,7 @@ class Field(models.Model):
 
 
 class Repo(models.Model):
-    url = models.CharField(max_length=255, null=True, blank=True, default=None)
+    url = models.URLField(max_length=255, null=True, blank=True, default=None)  # Changed to URLField
     branch = models.CharField(max_length=255, null=True, blank=True, default=None)
     install = models.BooleanField(default=False)
     install_dir = models.CharField(max_length=255, null=True, blank=True, default=None)

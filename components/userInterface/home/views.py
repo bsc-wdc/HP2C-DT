@@ -736,10 +736,48 @@ def extract_tool_data(request, tool_name):
     return tool_data
 
 
+def init_exec(tool_data, request):
+    machine_found = Machine.objects.get(id=request.session['machine_chosen'])
+    user_machine = machine_found.user
+    execution = Execution()
+    setup = tool_data['setup']
+    slurm = tool_data['slurm']
+    compss = tool_data['COMPSs']
+
+    execution.machine = machine_found
+    execution.author = request.user
+    execution.user = user_machine
+    execution.status = "INITIALIZING"
+    execution.checkpoint = 0
+    execution.time = "00:00:00"
+    execution.wdir = ""
+    execution.setup_path = ""
+    execution.execution_time = 0
+    execution.jobID = 0
+    execution.eID = uuid.uuid4()
+    execution.nodes = slurm['Number of Nodes']
+    name_sim = setup['Simulation Name']
+    execution.name_sim = name_sim
+    execution.exec_time = slurm['Time Limit']
+    execution.qos = slurm['QOS']
+    unique_id = uuid.uuid4()
+    execution.name_e = (name_sim + "_" + str(unique_id) + "." + "yaml")
+    execution.auto_restart_bool = compss["Autorestart"]
+    execution.checkpointBool = compss["Checkpointing"]
+    execution.d_bool = compss["Debug"]
+    execution.t_bool = compss["Trace"]
+    execution.g_bool = compss["Graph"]
+    execution.tool = tool_data["tool_name"]
+    execution.results_ftp_path = ""
+    execution.save()
+
+    return execution.eID
+
+
 @login_required
 def tools(request):
     check_conn_bool = check_connection(request)
-    sections = ['application', 'setup', 'slurm', 'COMPSs','environment']
+    sections = ['application', 'setup', 'slurm', 'COMPSs', 'environment']
     if not check_conn_bool:
         request.session['original_request'] = request.POST
         request.session['redirect_to_tools'] = True
@@ -757,7 +795,9 @@ def tools(request):
             if bool(match):
                 tool_name = match.group(1)
                 tool_data = extract_tool_data(request, tool_name)
-                print(tool_data)
+                e_id = init_exec(tool_data, request)
+                run_sim = RunSimulation(tool_data, request, e_id)
+                run_sim.start()
                 return redirect('tools')
 
         if 'stAnalysisButton' in request.POST:
@@ -907,6 +947,7 @@ def tools(request):
                                               machine=machine_connected).filter(
             Q(status="PENDING") | Q(status="RUNNING") | Q(
                 status="INITIALIZING"))
+
         executionsDone = Execution.objects.filter(author=request.user,
                                                   machine=machine_connected,
                                                   status="COMPLETED")
@@ -1660,6 +1701,153 @@ class updateExecutions(threading.Thread):
         render_right(self.request)
         return
 
+class RunSimulation(threading.Thread):
+    def __init__(self, tool_data, request, e_id):
+        threading.Thread.__init__(self)
+        self.e_id = e_id
+        self.request = request
+        self.tool_data = tool_data
+
+        for key in tool_data.keys():
+            if isinstance(tool_data.get(key), str):
+                try:
+                    self.tool_data[key] = json.loads(tool_data[key])
+                except json.JSONDecodeError:
+                    pass
+
+        self.application = self.tool_data["application"]
+        self.setup = self.tool_data["setup"]
+        self.slurm = self.tool_data["slurm"]
+        self.compss = self.tool_data["COMPSs"]
+        self.environment = self.tool_data["environment"]
+
+
+    def run(self):
+        execution = Execution.objects.get(eID=self.e_id)
+        machine_found = Machine.objects.get(
+            id=self.request.session['machine_chosen'])
+        fqdn = machine_found.fqdn
+        machine_folder = extract_substring(fqdn)
+        userMachine = machine_found.user
+        principal_folder = self.setup["Working Dir"]
+        wdirPath, nameWdir = wdir_folder(principal_folder)
+        setup_file = execution.name_sim.replace(" ", "_") + ".yaml"
+        setup_path = f"{principal_folder}/{nameWdir}/setup/{setup_file}"
+
+        tool_data_yaml = yaml.dump(self.tool_data)
+        cmd1 = (
+            f"source /etc/profile; mkdir -p {principal_folder}/{nameWdir}/setup/; "
+            f"echo {shlex.quote(tool_data_yaml)} > {setup_path};"
+            f"cd {principal_folder}; BACKUPDIR=$(ls -td ./*/ | head -1); "
+            f"echo EXECUTION_FOLDER:$BACKUPDIR;")
+        print(f"cmd1 : {cmd1}")
+
+        ssh = connection_ssh(self.request.session["private_key_decrypted"],
+                             machine_found.id)
+
+        stdin, stdout, stderr = ssh.exec_command(cmd1)
+        stdout = stdout.readlines()
+        stderr = stderr.readlines()
+        print("-------------START STDOUT--------------")
+        print("".join(stdout))
+        print("---------------END STDOUT--------------")
+        print("-------------START STDERR--------------")
+        print("".join(stderr))
+        print("---------------END STDERR--------------")
+
+
+        execution_folder = wdirPath + "/execution"
+        setup_folder = wdirPath + "/setup"
+        local_path = os.path.join(os.getenv("HOME"), "ui-hp2cdt",
+                                  self.tool_data["tool_name"])
+
+        Execution.objects.filter(eID=self.e_id).update(wdir=execution_folder, setup_path=setup_folder)
+
+        github_setup = json.loads(self.setup["github"])
+        for repo in github_setup:
+            sftp_upload_repository(local_path=local_path,
+                                   remote_path=self.setup["Install Dir"],
+                                   private_key_decrypted=self.request.session[
+                                       "private_key_decrypted"],
+                                   machine_id=machine_found.id,
+                                   branch=repo["branch"],
+                                   url=repo["url"], install=repo["install"],
+                                   install_dir=repo["install_dir"],
+                                   editable=repo["editable"],
+                                   requirements=repo["requirements"])
+
+
+def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
+                           machine_id, branch, url, install, install_dir,
+                                   editable, requirements, retry=False):
+    repo_name = url.split("/")[4]
+    res = get_github_code(repo_name, url, branch, local_path)
+    ssh = paramiko.SSHClient()
+    pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
+    machine_found = Machine.objects.get(id=machine_id)
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
+    sftp = ssh.open_sftp()
+    #TODO: execute commands (install, install_dir, editable, requirements)
+    #TODO: create script git_clone.sh
+
+    # Check and create remote folder if it doesn't exist
+    if not remote_path.startswith('/'):
+        stdin, stdout, stderr = ssh.exec_command("echo $HOME")
+        stdout = "".join(stdout.readlines()).strip()
+        remote_path = stdout + "/" + remote_path
+
+    remote_dirs = remote_path.split('/')
+    current_dir = ''
+    emptyDir = False
+    for dir in remote_dirs:
+        if dir:
+            current_dir += '/' + dir
+            try:
+                sftp.stat(current_dir)
+            except FileNotFoundError:
+                print("Creating directory " + str(current_dir))
+                sftp.mkdir(current_dir)
+                emptyDir = True
+
+    if res or emptyDir or retry:
+        # Recursively upload the local folder and its contents
+        for root, dirs, files in os.walk(
+                local_path + f"/{repo_name}/" + branch):
+            if '.git' in dirs:
+                dirs.remove('.git')
+
+            if '.idea' in dirs:
+                dirs.remove('.idea')
+
+            # Calculate the relative path from local_path to root
+            relative_root = os.path.relpath(root,
+                                            local_path + f"/{repo_name}/" + branch)
+
+            # Determine the remote directory
+            if relative_root == '.':
+                remote_dir = remote_path
+            else:
+                remote_dir = os.path.join(remote_path, relative_root)
+
+            # Ensure the remote directory exists
+            try:
+                sftp.stat(remote_dir)
+            except FileNotFoundError:
+                print(f"{remote_dir} does not exist. Creating it.")
+                sftp.mkdir(remote_dir)
+
+            for file in files:
+                local_file = os.path.join(root, file)
+                remote_file = os.path.join(remote_dir, file)
+                try:
+                    sftp.put(local_file, remote_file)
+                except Exception as e:
+                    print(
+                        f"Failed to upload {local_file} to {remote_file}: {e}")
+
+    sftp.close()
+    return
 
 class run_sim_async(threading.Thread):
     def __init__(self, request, name, num_nodes, name_sim, execTime, qos,
@@ -1946,11 +2134,13 @@ def get_files(remote_path, results_dir, private_key_decrypted, machineID):
     return files, remote_path
 
 
-def get_github_code(repository, branch_name, local_folder):
+def get_github_code(repository, url, branch, local_folder):
     local_path = os.path.dirname(__file__)
-    script_path = f"{local_path}/../scripts/git_clone_{repository}.sh"
+    script_path = f"{local_path}/../scripts/git_clone.sh"
     try:
-        result = subprocess.run([script_path, branch_name, local_folder], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        result = subprocess.run(
+            [script_path, repository, url, branch, local_folder],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         # Check the output
         if "Repository not found. Cloning repository..." in result.stdout:
             return True
@@ -2098,6 +2288,7 @@ def create_tool(request):
                     errors[field_key] = [
                         f'The field name "{field_name}" is duplicated. Please '
                         f'use unique names.']
+
                     return render(request, 'pages/create_tool.html', {
                         'form': form,
                         'errors': errors,
@@ -2272,12 +2463,12 @@ def edit_tool(request, tool_name):
                     tool.add_repo(repo_value,
                                   request.POST.get('github_branch_' + number),
                                   request.POST.get(
-                                      'github_install_' + + number) == 'on',
-                                  request.POST.get('github_install_dir_' + + number),
+                                      'github_install_' + number) == 'on',
+                                  request.POST.get('github_install_dir_' + number),
                                   request.POST.get(
-                                      'github_editable_' + + number) == 'on',
+                                      'github_editable_' + number) == 'on',
                                   request.POST.get(
-                                      'github_requirements_' + + number) == 'on')
+                                      'github_requirements_' + number) == 'on')
 
                     if branch == '' or repo_value == '':
                         if branch == '':
