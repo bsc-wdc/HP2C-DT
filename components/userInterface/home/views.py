@@ -1764,6 +1764,7 @@ class RunSimulation(threading.Thread):
         Execution.objects.filter(eID=self.e_id).update(wdir=execution_folder, setup_path=setup_folder)
 
         github_setup = json.loads(self.setup["github"])
+
         for repo in github_setup:
             sftp_upload_repository(local_path=local_path,
                                    remote_path=self.setup["Install Dir"],
@@ -1775,12 +1776,16 @@ class RunSimulation(threading.Thread):
                                    install_dir=repo["install_dir"],
                                    editable=repo["editable"],
                                    requirements=repo["requirements"])
+            print()
+            print("UPLOADED REPO", repo["url"])
+            print()
 
 
 def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
                            machine_id, branch, url, install, install_dir,
                                    editable, requirements, retry=False):
     repo_name = url.split("/")[4]
+    remote_path = os.path.join(remote_path, repo_name)
     res = get_github_code(repo_name, url, branch, local_path)
     ssh = paramiko.SSHClient()
     pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
@@ -2134,12 +2139,27 @@ def get_files(remote_path, results_dir, private_key_decrypted, machineID):
     return files, remote_path
 
 
+def https_to_ssh(git_url):
+    if git_url.startswith("https://"):
+        git_url = git_url.replace("https://", "")
+        parts = git_url.split('/')
+        if len(parts) < 2:
+            raise ValueError("Invalid Git URL")
+
+        domain = parts[0]
+        user_repo = "/".join(parts[1:])
+        return f"git@{domain}:{user_repo}.git"
+
+    raise ValueError("URL is not in HTTPS format")
+
+
 def get_github_code(repository, url, branch, local_folder):
+    ssh_url = https_to_ssh(url)
     local_path = os.path.dirname(__file__)
     script_path = f"{local_path}/../scripts/git_clone.sh"
     try:
         result = subprocess.run(
-            [script_path, repository, url, branch, local_folder],
+            [script_path, repository, ssh_url, branch, local_folder],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         # Check the output
         if "Repository not found. Cloning repository..." in result.stdout:
