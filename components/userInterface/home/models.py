@@ -97,6 +97,13 @@ STATUS_CONN = [
 
 class Tool(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    modules_list = models.TextField(blank=True, null=True)
+
+    def get_modules_list(self):
+        return self.modules_list.split(',') if self.modules_list else []
+
+    def set_modules_list(self, modules_list):
+        self.modules_list = ','.join(modules_list)
 
     def __str__(self):
         return self.name

@@ -1766,8 +1766,10 @@ class RunSimulation(threading.Thread):
         github_setup = json.loads(self.setup["github"])
 
         for repo in github_setup:
+            repo_name = repo["url"].split("/")[4]
+            remote_path = os.path.join(self.setup["Install Dir"], repo_name)
             sftp_upload_repository(local_path=local_path,
-                                   remote_path=self.setup["Install Dir"],
+                                   remote_path=remote_path,
                                    private_key_decrypted=self.request.session[
                                        "private_key_decrypted"],
                                    machine_id=machine_found.id,
@@ -1784,8 +1786,7 @@ class RunSimulation(threading.Thread):
 def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
                            machine_id, branch, url, install, install_dir,
                                    editable, requirements, retry=False):
-    repo_name = url.split("/")[4]
-    remote_path = os.path.join(remote_path, repo_name)
+    repo_name = remote_path.split("/")[-1]
     res = get_github_code(repo_name, url, branch, local_path)
     ssh = paramiko.SSHClient()
     pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
@@ -1794,7 +1795,6 @@ def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
     ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
     sftp = ssh.open_sftp()
     #TODO: execute commands (install, install_dir, editable, requirements)
-    #TODO: create script git_clone.sh
 
     # Check and create remote folder if it doesn't exist
     if not remote_path.startswith('/'):
@@ -1851,6 +1851,20 @@ def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
                     print(
                         f"Failed to upload {local_file} to {remote_file}: {e}")
 
+    if install:
+        installation_dir = os.path.join(remote_path, install_dir) # install_dir can be empty
+        editable_option = ""
+        if editable:
+            editable_option = "-e"
+
+        print(f"Executing command: pip install {editable_option} {installation_dir}")
+        stdin, stdout, stderr = ssh.exec_command(f"pip install {editable_option} {installation_dir}")
+        print("-------------START STDOUT--------------")
+        print("".join(stdout))
+        print("---------------END STDOUT--------------")
+        print("-------------START STDERR--------------")
+        print("".join(stderr))
+        print("---------------END STDERR--------------")
     sftp.close()
     return
 
@@ -2352,6 +2366,11 @@ def create_tool(request):
                                preset_value=preset_value, section=section,
                                type=type)
 
+            modules = {k: v for k, v in request.POST.items()
+                       if k.startswith(f'module_')}
+
+            tool.set_modules_list(modules)
+
             tool.add_repo(request.POST.get('github_repo'),
                           request.POST.get('github_branch'),
                           request.POST.get('github_install') == 'on',
@@ -2465,8 +2484,12 @@ def edit_tool(request, tool_name):
                                preset_value=preset_value, section=section,
                                type=type)
 
-            tool.remove_repos()
+            modules = {k: v for k, v in request.POST.items()
+                       if k.startswith(f'module_')}
 
+            tool.set_modules_list(modules.values())
+
+            tool.remove_repos()
             tool.add_repo(request.POST.get('github_repo'),
                           request.POST.get('github_branch'),
                           request.POST.get('github_install') == 'on',
@@ -2505,8 +2528,8 @@ def edit_tool(request, tool_name):
                             'existing_repos': tool.get_repos(),
                             'sections': sections,
                         })
-
             request.session['tool_edited'] = tool_name
+            tool.save()
             return redirect('tools')
         else:
             return render(request, 'pages/create_tool.html',
@@ -2517,6 +2540,7 @@ def edit_tool(request, tool_name):
         # Pass the custom fields and repos to the template for display
         existing_fields = tool.get_fields()
         existing_repos = tool.get_repos()
+        existing_modules = tool.get_modules_list()
 
         first_repo = ''
         first_branch = ''
@@ -2542,6 +2566,7 @@ def edit_tool(request, tool_name):
             'tool': tool,
             'existing_fields': existing_fields,
             'existing_repos': existing_repos,
+            'existing_modules': existing_modules,
             'sections': sections,
         })
 

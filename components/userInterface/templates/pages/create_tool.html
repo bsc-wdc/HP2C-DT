@@ -36,14 +36,17 @@
                             <div class="form-group" id="setup-section">
                                 <label for="id_github_repo" style="font-weight: bold;">{{ form.github_repo.label }}:</label>
                                 <div class="d-flex align-items-center mb-2">
-                                    <input type="text" name="github_repo" class="form-control flex-grow-1 mr-2" id="id_github_repo" value="{{ form.github_repo.value|default_if_none:'' }}" placeholder="Repo URL">
-                                    <input type="text" name="github_branch" class="form-control flex-grow-1" id="id_github_branch" value="{{ form.github_branch.value|default_if_none:'' }}" placeholder="Branch Name">
+                                    <input type="text" name="github_repo" class="form-control flex-grow-1 mr-2"
+                                           id="id_github_repo" value="{{ form.github_repo.value|default_if_none:'' }}" placeholder="Repo URL">
+                                    <input type="text" name="github_branch" class="form-control flex-grow-1"
+                                           id="id_github_branch" value="{{ form.github_branch.value|default_if_none:'' }}" placeholder="Branch Name">
                                     <button type="button" id="add-repo" class="btn btn-success feather icon-plus-circle ml-2"></button>
                                 </div>
                                 <div class="d-flex align-items-center mb-2">
                                     <label class="mr-2">Requires installation:</label>
                                     <input type="checkbox" name="github_install" id="id_github_install">
-                                    <input type="text" name="github_install_dir" class="form-control flex-grow-1 ml-2" id="id_github_install_dir" placeholder="Install Dir">
+                                    <input type="text" name="github_install_dir" class="form-control flex-grow-1 ml-2"
+                                           id="id_github_install_dir" placeholder="Install Dir">
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <label class="mr-2">Install in editable mode:</label>
@@ -58,8 +61,10 @@
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Data Dir" value="{{section}}">
                                     <input type="hidden" name="custom_field_Data Dir" value="Data Dir">
-                                    <input type="text" name="default_value_Data Dir" class="form-control ml-2" id="default_value_Data Dir" placeholder="Default Value (optional)">
-                                    <input type="text" name="preset_value_Data Dir" class="form-control ml-2" id="preset_value_Data Dir" placeholder="Preset Value (optional)">
+                                    <input type="text" name="default_value_Data Dir" class="form-control ml-2"
+                                           id="default_value_Data Dir" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Data Dir" class="form-control ml-2"
+                                           id="preset_value_Data Dir" placeholder="Preset Value (optional)">
                                 </div>
                             </div>
 
@@ -68,8 +73,10 @@
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Install Dir" value="{{section}}">
                                     <input type="hidden" name="custom_field_Install Dir" value="Install Dir">
-                                    <input type="text" name="default_value_Install Dir" class="form-control ml-2" id="default_value_Install Dir" placeholder="Default Value (optional)">
-                                    <input type="text" name="preset_value_Install Dir" class="form-control ml-2" id="preset_value_Install Dir" placeholder="Preset Value (optional)">
+                                    <input type="text" name="default_value_Install Dir" class="form-control ml-2"
+                                           id="default_value_Install Dir" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Install Dir" class="form-control ml-2"
+                                           id="preset_value_Install Dir" placeholder="Preset Value (optional)">
                                 </div>
                             </div>
 
@@ -78,8 +85,10 @@
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Working Dir" value="{{section}}">
                                     <input type="hidden" name="custom_field_Working Dir" value="Working Dir">
-                                    <input type="text" name="default_value_Working Dir" class="form-control ml-2" id="default_value_Working Dir" placeholder="Default Value (optional)">
-                                    <input type="text" name="preset_value_Working Dir" class="form-control ml-2" id="preset_value_Working Dir" placeholder="Preset Value (optional)">
+                                    <input type="text" name="default_value_Working Dir" class="form-control ml-2"
+                                           id="default_value_Working Dir" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Working Dir" class="form-control ml-2"
+                                           id="preset_value_Working Dir" placeholder="Preset Value (optional)">
                                 </div>
                             </div>
 
@@ -88,8 +97,10 @@
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Simulation Name" value="{{section}}">
                                     <input type="hidden" name="custom_field_Simulation Name" value="Simulation Name">
-                                    <input type="text" name="default_value_Simulation Name" class="form-control ml-2" id="default_value_Simulation Name" placeholder="Default Value (optional)">
-                                    <input type="text" name="preset_value_Simulation Name" class="form-control ml-2" id="preset_value_Simulation Name" placeholder="Preset Value (optional)">
+                                    <input type="text" name="default_value_Simulation Name" class="form-control ml-2"
+                                           id="default_value_Simulation Name" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Simulation Name" class="form-control ml-2"
+                                           id="preset_value_Simulation Name" placeholder="Preset Value (optional)">
                                 </div>
                             </div>
                         {% endif %}
@@ -100,8 +111,10 @@
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Computing Units" value="{{section}}">
                                     <input type="hidden" name="custom_field_Computing Units" value="Computing Units">
-                                    <input type="text" name="default_value_Computing Units" class="form-control ml-2" id="default_value_Computing Units" placeholder="Default Value (optional)">
-                                    <input type="text" name="preset_value_Computing Units" class="form-control ml-2" id="preset_value_Computing Units" placeholder="Preset Value (optional)">
+                                    <input type="text" name="default_value_Computing Units" class="form-control ml-2"
+                                           id="default_value_Computing Units" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Computing Units" class="form-control ml-2"
+                                           id="preset_value_Computing Units" placeholder="Preset Value (optional)">
                                 </div>
                             </div>
                         {% endif %}
@@ -112,8 +125,10 @@
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Number of Nodes" value="{{section}}">
                                     <input type="hidden" name="custom_field_Number of Nodes" value="Number of Nodes">
-                                    <input type="text" name="default_value_Number of Nodes" class="form-control ml-2" id="default_value_Number of Nodes" placeholder="Default Value (optional)">
-                                    <input type="text" name="preset_value_Number of Nodes" class="form-control ml-2" id="preset_value_Number of Nodes" placeholder="Preset Value (optional)">
+                                    <input type="text" name="default_value_Number of Nodes" class="form-control ml-2"
+                                           id="default_value_Number of Nodes" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Number of Nodes" class="form-control ml-2"
+                                           id="preset_value_Number of Nodes" placeholder="Preset Value (optional)">
                                 </div>
                             </div>
 
@@ -122,8 +137,10 @@
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Time Limit" value="{{section}}">
                                     <input type="hidden" name="custom_field_Time Limit" value="Time Limit">
-                                    <input type="text" name="default_value_Time Limit" class="form-control ml-2" id="default_value_Time Limit" placeholder="Default Value (optional)">
-                                    <input type="text" name="preset_value_Time Limit" class="form-control ml-2" id="preset_value_Time Limit" placeholder="Preset Value (optional)">
+                                    <input type="text" name="default_value_Time Limit" class="form-control ml-2"
+                                           id="default_value_Time Limit" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Time Limit" class="form-control ml-2"
+                                           id="preset_value_Time Limit" placeholder="Preset Value (optional)">
                                 </div>
                             </div>
 
@@ -132,8 +149,10 @@
                                 <div class="d-flex">
                                     <input type="hidden" name="section_QOS" value="{{section}}">
                                     <input type="hidden" name="custom_field_QOS" value="QOS">
-                                    <input type="text" name="default_value_QOS" class="form-control ml-2" id="default_value_QOS" placeholder="Default Value (optional)">
-                                    <input type="text" name="preset_value_QOS" class="form-control ml-2" id="preset_value_QOS" placeholder="Preset Value (optional)">
+                                    <input type="text" name="default_value_QOS" class="form-control ml-2"
+                                           id="default_value_QOS" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_QOS" class="form-control ml-2"
+                                           id="preset_value_QOS" placeholder="Preset Value (optional)">
                                 </div>
                             </div>
 
@@ -142,9 +161,17 @@
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Project Name" value="{{section}}">
                                     <input type="hidden" name="custom_field_Project Name" value="Project Name">
-                                    <input type="text" name="default_value_Project Name" class="form-control ml-2" id="default_value_Project Name" placeholder="Default Value (optional)">
-                                    <input type="text" name="preset_value_Project Name" class="form-control ml-2" id="preset_value_Project Name" placeholder="Preset Value (optional)">
+                                    <input type="text" name="default_value_Project Name" class="form-control ml-2"
+                                           id="default_value_Project Name" placeholder="Default Value (optional)">
+                                    <input type="text" name="preset_value_Project Name" class="form-control ml-2"
+                                           id="preset_value_Project Name" placeholder="Preset Value (optional)">
                                 </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="custom_field_Modules">Modules:</label>
+                                <div id="module-fields-container-slurm" class="d-flex flex-column">
+                                </div>
+                                <button type="button" class="btn btn-primary mt-2 add-module-btn" data-section="slurm">Add Module</button>
                             </div>
                         {% endif %}
 
@@ -154,12 +181,14 @@
                                 <div class="d-flex align-items-center">
                                     <input type="hidden" name="boolean_section_Checkpointing" value="{{section}}">
                                     <input type="hidden" name="custom_boolean_field_Checkpointing" value="Checkpointing">
-                                    <select name="default_value_boolean_Checkpointing" class="form-control ml-2" id="default_value_boolean_Checkpointing">
+                                    <select name="default_value_boolean_Checkpointing" class="form-control ml-2"
+                                            id="default_value_boolean_Checkpointing">
                                         <option value="" selected>No default value</option>
                                         <option value="true">True</option>
                                         <option value="false">False</option>
                                     </select>
-                                    <select name="preset_value_boolean_Checkpointing" class="form-control ml-2" id="preset_value_boolean_Checkpointing">
+                                    <select name="preset_value_boolean_Checkpointing" class="form-control ml-2"
+                                            id="preset_value_boolean_Checkpointing">
                                         <option value="" selected>No preset value</option>
                                         <option value="true">True</option>
                                         <option value="false">False</option>
@@ -172,12 +201,14 @@
                                 <div class="d-flex align-items-center">
                                     <input type="hidden" name="boolean_section_Autorestart" value="{{section}}">
                                     <input type="hidden" name="custom_boolean_field_Autorestart" value="Autorestart">
-                                    <select name="default_value_boolean_Autorestart" class="form-control ml-2" id="default_value_boolean_Autorestart">
+                                    <select name="default_value_boolean_Autorestart" class="form-control ml-2"
+                                            id="default_value_boolean_Autorestart">
                                         <option value="" selected>No default value</option>
                                         <option value="true">True</option>
                                         <option value="false">False</option>
                                     </select>
-                                    <select name="preset_value_boolean_Autorestart" class="form-control ml-2" id="preset_value_boolean_Autorestart">
+                                    <select name="preset_value_boolean_Autorestart" class="form-control ml-2"
+                                            id="preset_value_boolean_Autorestart">
                                         <option value="" selected>No preset value</option>
                                         <option value="true">True</option>
                                         <option value="false">False</option>
@@ -241,14 +272,18 @@
                         {% endif %}
 
                         <div class="dropdown">
-                            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Add Custom Field to {{ section|capfirst }}
                             </button>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                <a class="dropdown-item add-text-field" data-section="{{ section }}" href="#">Text Field</a>
-                                <a class="dropdown-item add-boolean-field" data-section="{{ section }}" href="#">Boolean Field</a>
+                                <button class="dropdown-item add-text-field" data-section="{{ section }}" type="button">
+                                    Text Field</button>
+                                <button class="dropdown-item add-boolean-field" data-section="{{ section }}" type="button">
+                                    Boolean Field</button>
                             </div>
                         </div>
+
                     </div>
                 </div>
             {% endfor %}
@@ -297,14 +332,18 @@ document.getElementById('add-repo').onclick = function() {
     newRepoDiv.innerHTML = `
         <label for="github_repo_${repoCounter}" style="font-weight: bold;">GitHub Repo ${repoCounter}:</label>
         <div class="d-flex align-items-center mb-2">
-            <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2" id="github_repo_${repoCounter}" placeholder="Repo URL">
-            <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1" id="github_branch_${repoCounter}" placeholder="Branch Name">
+            <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2"
+            id="github_repo_${repoCounter}" placeholder="Repo URL">
+            <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1"
+            id="github_branch_${repoCounter}" placeholder="Branch Name">
             <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
         </div>
         <div class="d-flex align-items-center mb-2">
             <label class="mr-2">Requires installation:</label>
-            <input type="checkbox" name="github_install_${repoCounter}" id="github_install_${repoCounter}" onchange="toggleInstallDir(${repoCounter})">
-            <input type="text" name="github_install_dir_${repoCounter}" class="form-control flex-grow-1 ml-2" id="github_install_dir_${repoCounter}" placeholder="Install Dir" disabled>
+            <input type="checkbox" name="github_install_${repoCounter}" id="github_install_${repoCounter}"
+            onchange="toggleInstallDir(${repoCounter})">
+            <input type="text" name="github_install_dir_${repoCounter}" class="form-control flex-grow-1 ml-2"
+            id="github_install_dir_${repoCounter}" placeholder="Install Dir" disabled>
         </div>
         <div class="d-flex align-items-center">
             <label class="mr-2">Install in editable mode:</label>
@@ -341,8 +380,10 @@ document.querySelectorAll('.add-text-field').forEach(button => {
             <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
             <div class="d-flex">
                 <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
-                <input type="text" name="default_value_${fieldCounter}" class="form-control ml-2" id="default_value_${fieldCounter}" placeholder="Default Value (optional)">
-                <input type="text" name="preset_value_${fieldCounter}" class="form-control ml-2" id="preset_value_${fieldCounter}" placeholder="Preset Value (optional)">
+                <input type="text" name="default_value_${fieldCounter}" class="form-control ml-2" id="default_value_${fieldCounter}"
+                placeholder="Default Value (optional)">
+                <input type="text" name="preset_value_${fieldCounter}" class="form-control ml-2" id="preset_value_${fieldCounter}"
+                placeholder="Preset Value (optional)">
                 <input type="hidden" name="section_${fieldCounter}" value="${section}">
                 <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
             </div>
@@ -369,7 +410,8 @@ document.querySelectorAll('.add-boolean-field').forEach(button => {
         newFieldDiv.innerHTML = `
             <label for="custom_boolean_field_${fieldCounter}">Custom Boolean Field ${fieldCounter}:</label>
             <div class="d-flex align-items-center">
-                <input type="text" name="custom_boolean_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_boolean_field_${fieldCounter}" placeholder="Field Name">
+                <input type="text" name="custom_boolean_field_${fieldCounter}" class="form-control flex-grow-1"
+                id="custom_boolean_field_${fieldCounter}" placeholder="Field Name">
                 <select name="default_value_boolean_${fieldCounter}" class="form-control ml-2" id="default_value_boolean_${fieldCounter}">
                     <option value="" selected>No default value</option>
                     <option value="true">True</option>
@@ -451,6 +493,26 @@ function toggleFieldState(fieldToToggle, currentField) {
 function removeField(element) {
     element.parentElement.parentElement.remove();
 }
+
+document.querySelectorAll('.add-module-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        fieldCounter++;
+        const section = button.getAttribute('data-section');
+        const sectionContent = document.getElementById('module-fields-container-' + section);
+
+        const newFieldDiv = document.createElement('div');
+        newFieldDiv.classList.add('form-group');
+        newFieldDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <input type="text" name="module_${fieldCounter}" class="form-control flex-grow-1" id="module_${fieldCounter}"
+                placeholder="Insert module to load (format: module/version)">
+                <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+            </div>
+        `;
+
+        sectionContent.prepend(newFieldDiv);
+    });
+});
 </script>
 <style>
 .clickable-header:hover {
