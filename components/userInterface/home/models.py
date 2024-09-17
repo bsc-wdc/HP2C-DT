@@ -125,9 +125,9 @@ class Tool(models.Model):
     def get_repos(self):
         return list(self.repo_set.all())
 
-    def add_repo(self, url, branch, install=False, install_dir=None, editable=False, requirements=None):
+    def add_repo(self, url, branch, install=False, install_dir=None, editable=False, requirements=False, target=False):
         repo = Repo.objects.create(url=url, branch=branch, install=install, install_dir=install_dir,
-                                   editable=editable, requirements=requirements, tool=self)
+                                   editable=editable, requirements=requirements, target=target, tool=self)
         return repo
 
     def remove_repo(self, repo_url):
@@ -147,7 +147,8 @@ class Tool(models.Model):
                 "install": repo.install,
                 "install_dir": repo.install_dir,
                 "editable": repo.editable,
-                "requirements": repo.requirements
+                "requirements": repo.requirements,
+                "target": repo.target
             }
             repo_list.append(repo_data)
 
@@ -174,6 +175,7 @@ class Repo(models.Model):
     install_dir = models.CharField(max_length=255, null=True, blank=True, default=None)
     editable = models.BooleanField(default=False)
     requirements = models.BooleanField(default=False)
+    target = models.BooleanField(default=False)
     tool = models.ForeignKey(Tool, on_delete=models.CASCADE)
 
     def __str__(self):

@@ -682,6 +682,8 @@ def extract_tool_data(request, tool_name):
     tool_data['tool_name'] = tool.name
     tool_data['setup'] = {}
     tool_data['setup']['github'] = tool.repos_json()
+    tool_data['slurm'] = {}
+    tool_data['slurm']['modules'] = tool.get_modules_list()
 
     for field_key, field_value in request.POST.items():
         if 'section' in field_key:
@@ -1674,6 +1676,22 @@ def render_right(request):
                        request.session['check_existence_machines']})
 
 
+def execute_command(ssh, cmd):
+    print()
+    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+    print("EXECUTING COMMAND:")
+    print(cmd)
+    stdin, stdout, stderr = ssh.exec_command("source /etc/profile; " + cmd)
+    print("-------------START STDOUT--------------")
+    print("".join(stdout))
+    print("---------------END STDOUT--------------")
+    print("-------------START STDERR--------------")
+    print("".join(stderr))
+    print("---------------END STDERR--------------")
+    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+    print()
+
+
 class updateExecutions(threading.Thread):
     def __init__(self, request, connectionID):
         threading.Thread.__init__(self)
@@ -1735,26 +1753,17 @@ class RunSimulation(threading.Thread):
         setup_path = f"{principal_folder}/{nameWdir}/setup/{setup_file}"
 
         tool_data_yaml = yaml.dump(self.tool_data)
-        cmd1 = (
-            f"source /etc/profile; mkdir -p {principal_folder}/{nameWdir}/setup/; "
-            f"echo {shlex.quote(tool_data_yaml)} > {setup_path};"
-            f"cd {principal_folder}; BACKUPDIR=$(ls -td ./*/ | head -1); "
-            f"echo EXECUTION_FOLDER:$BACKUPDIR;")
-        print(f"cmd1 : {cmd1}")
 
         ssh = connection_ssh(self.request.session["private_key_decrypted"],
                              machine_found.id)
 
-        stdin, stdout, stderr = ssh.exec_command(cmd1)
-        stdout = stdout.readlines()
-        stderr = stderr.readlines()
-        print("-------------START STDOUT--------------")
-        print("".join(stdout))
-        print("---------------END STDOUT--------------")
-        print("-------------START STDERR--------------")
-        print("".join(stderr))
-        print("---------------END STDERR--------------")
-
+        cmd1 = Script(ssh)
+        cmd1.append(f"mkdir -p {principal_folder}/{nameWdir}/setup/")
+        cmd1.append(f"echo {shlex.quote(tool_data_yaml)} > {setup_path}")
+        cmd1.append(f"cd {principal_folder}")
+        cmd1.append("BACKUPDIR=$(ls -td ./*/ | head -1)")
+        cmd1.append(f"echo EXECUTION_FOLDER:$BACKUPDIR")
+        cmd1.execute()
 
         execution_folder = wdirPath + "/execution"
         setup_folder = wdirPath + "/setup"
@@ -1777,7 +1786,9 @@ class RunSimulation(threading.Thread):
                                    url=repo["url"], install=repo["install"],
                                    install_dir=repo["install_dir"],
                                    editable=repo["editable"],
-                                   requirements=repo["requirements"])
+                                   requirements=repo["requirements"],
+                                   target=repo["target"],
+                                   modules=self.slurm["modules"])
             print()
             print("UPLOADED REPO", repo["url"])
             print()
@@ -1785,7 +1796,7 @@ class RunSimulation(threading.Thread):
 
 def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
                            machine_id, branch, url, install, install_dir,
-                                   editable, requirements, retry=False):
+                           editable, requirements, target, modules, retry=False):
     repo_name = remote_path.split("/")[-1]
     res = get_github_code(repo_name, url, branch, local_path)
     ssh = paramiko.SSHClient()
@@ -1794,7 +1805,6 @@ def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
     sftp = ssh.open_sftp()
-    #TODO: execute commands (install, install_dir, editable, requirements)
 
     # Check and create remote folder if it doesn't exist
     if not remote_path.startswith('/'):
@@ -1851,22 +1861,54 @@ def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
                     print(
                         f"Failed to upload {local_file} to {remote_file}: {e}")
 
+    script = Script(ssh)
+    for module in modules:
+        script.append(f"module load {module}")
+
     if install:
         installation_dir = os.path.join(remote_path, install_dir) # install_dir can be empty
         editable_option = ""
         if editable:
             editable_option = "-e"
 
-        print(f"Executing command: pip install {editable_option} {installation_dir}")
-        stdin, stdout, stderr = ssh.exec_command(f"pip install {editable_option} {installation_dir}")
+        script.append(f"pip install {editable_option} {installation_dir}")
+
+    if requirements:
+        target_option = ""
+        if target:
+            target_option = f"--target={remote_path}/packages"
+
+        script.append(
+            f"pip install -r {remote_path}/requirements.txt {target_option}")
+
+    script.execute()
+    sftp.close()
+    return
+
+
+class Script():
+    def __init__(self, ssh):
+        self.script = ""
+        self.ssh = ssh
+
+    def append(self, cmd):
+        self.script += f"{cmd}; "
+
+    def execute(self):
+        self.script = "source /etc/profile; " + self.script
+        print()
+        print("EXECUTING COMMAND:")
+        print(self.script)
+        stdin, stdout, stderr = self.ssh.exec_command(self.script)
+        stdout = stdout.readlines()
+        stderr = stderr.readlines()
         print("-------------START STDOUT--------------")
         print("".join(stdout))
         print("---------------END STDOUT--------------")
         print("-------------START STDERR--------------")
         print("".join(stderr))
         print("---------------END STDERR--------------")
-    sftp.close()
-    return
+
 
 class run_sim_async(threading.Thread):
     def __init__(self, request, name, num_nodes, name_sim, execTime, qos,
@@ -1900,14 +1942,14 @@ class run_sim_async(threading.Thread):
         # command to create all the folders and copy the yaml file passed through the service
         setup_path = f"{principal_folder}/{nameWdir}/setup/{str(self.name)}"
         cmd1 = (
-            f"source /etc/profile; mkdir -p {principal_folder}/{nameWdir}/setup/; "
+            f"mkdir -p {principal_folder}/{nameWdir}/setup/; "
             f"echo {shlex.quote(str(setup))} > {setup_path};"
             f"cd {principal_folder}; BACKUPDIR=$(ls -td ./*/ | head -1); echo EXECUTION_FOLDER:$BACKUPDIR;")
         print(f"cmd1 : {cmd1}")
 
         ssh = connection_ssh(self.request.session["private_key_decrypted"], machine_found.id)
 
-        stdin, stdout, stderr = ssh.exec_command(cmd1)
+        execute_command(ssh, cmd1)
 
         execution_folder = wdirPath + "/execution"
         setup_folder = wdirPath + "/setup"
@@ -1976,7 +2018,6 @@ class run_sim_async(threading.Thread):
                                                path_install_dir_stability_analysis,
                                                setup, setup_folder, ssh,
                                                userMachine)
-
 
         s = "Submitted batch job"
         var = ""
@@ -2376,7 +2417,8 @@ def create_tool(request):
                           request.POST.get('github_install') == 'on',
                           request.POST.get('github_install_dir'),
                           request.POST.get('github_editable') == 'on',
-                          request.POST.get('github_requirements') == 'on')
+                          request.POST.get('github_requirements') == 'on',
+                          request.POST.get('github_target') == 'on')
 
             additional_repos = {k: v for k, v in request.POST.items() if
                                 k.startswith('github_repo_')}
@@ -2386,10 +2428,11 @@ def create_tool(request):
                     number = repo_name.split('github_repo_')[1]
                     tool.add_repo(repo_value,
                                   request.POST.get('github_branch_' + number),
-                                  request.POST.get('github_install_' + + number) == 'on',
-                                  request.POST.get('github_install_dir_' + + number),
-                                  request.POST.get('github_editable_' + + number) == 'on',
-                                  request.POST.get('github_requirements_' + + number) == 'on')
+                                  request.POST.get('github_install_' + number) == 'on',
+                                  request.POST.get('github_install_dir_' + number),
+                                  request.POST.get('github_editable_' + number) == 'on',
+                                  request.POST.get('github_requirements_' + number) == 'on',
+                                  request.POST.get('github_target_' + number) == 'on')
 
             request.session['tool_created'] = tool.name
             return redirect('tools')
@@ -2495,7 +2538,8 @@ def edit_tool(request, tool_name):
                           request.POST.get('github_install') == 'on',
                           request.POST.get('github_install_dir'),
                           request.POST.get('github_editable') == 'on',
-                          request.POST.get('github_requirements') == 'on')
+                          request.POST.get('github_requirements') == 'on',
+                          request.POST.get('github_target') == 'on')
 
             additional_repos = {k: v for k, v in request.POST.items() if k.startswith('github_repo_')}
             for repo_name, repo_value in additional_repos.items():
@@ -2511,7 +2555,8 @@ def edit_tool(request, tool_name):
                                   request.POST.get(
                                       'github_editable_' + number) == 'on',
                                   request.POST.get(
-                                      'github_requirements_' + number) == 'on')
+                                      'github_requirements_' + number) == 'on',
+                                  request.POST.get('github_target_' + number) == 'on')
 
                     if branch == '' or repo_value == '':
                         if branch == '':
