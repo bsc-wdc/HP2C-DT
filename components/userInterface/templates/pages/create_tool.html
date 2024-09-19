@@ -83,6 +83,18 @@
                             </div>
 
                             <div class="form-group">
+                                <label for="custom_field_Entry Point">Entry Point:</label>
+                                <div class="d-flex">
+                                    <input type="hidden" name="section_Entry Point" value="{{section}}">
+                                    <input type="hidden" name="custom_field_Entry Point" value="Entry Point">
+                                    <input type="text" name="default_value_Entry Point" class="form-control ml-2"
+                                           id="default_value_Entry Point" placeholder="Default Value (optional). Format: repo_name/path_to_entrypoint_from_repo_root.py">
+                                    <input type="text" name="preset_value_Entry Point" class="form-control ml-2"
+                                           id="preset_value_Entry Point" placeholder="Preset Value (optional). Format: repo_name/path_to_entrypoint_from_repo_root.py">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
                                 <label for="custom_field_Working Dir">Working Dir:</label>
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Working Dir" value="{{section}}">

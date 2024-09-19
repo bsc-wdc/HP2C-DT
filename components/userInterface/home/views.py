@@ -1678,7 +1678,7 @@ def render_right(request):
 
 def execute_command(ssh, cmd):
     print()
-    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
     print("EXECUTING COMMAND:")
     print(cmd)
     stdin, stdout, stderr = ssh.exec_command("source /etc/profile; " + cmd)
@@ -1688,7 +1688,7 @@ def execute_command(ssh, cmd):
     print("-------------START STDERR--------------")
     print("".join(stderr))
     print("---------------END STDERR--------------")
-    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
     print()
 
 
@@ -1744,18 +1744,23 @@ class RunSimulation(threading.Thread):
         execution = Execution.objects.get(eID=self.e_id)
         machine_found = Machine.objects.get(
             id=self.request.session['machine_chosen'])
-        fqdn = machine_found.fqdn
-        machine_folder = extract_substring(fqdn)
-        userMachine = machine_found.user
-        principal_folder = self.setup["Working Dir"]
-        wdirPath, nameWdir = wdir_folder(principal_folder)
-        setup_file = execution.name_sim.replace(" ", "_") + ".yaml"
-        setup_path = f"{principal_folder}/{nameWdir}/setup/{setup_file}"
-
-        tool_data_yaml = yaml.dump(self.tool_data)
 
         ssh = connection_ssh(self.request.session["private_key_decrypted"],
                              machine_found.id)
+        fqdn = machine_found.fqdn
+        machine_folder = extract_substring(fqdn)
+        userMachine = machine_found.user
+
+        principal_folder = self.setup["Working Dir"]
+        principal_folder = absolut(principal_folder, ssh)
+
+        wdirPath, nameWdir = wdir_folder(principal_folder)
+        setup_file = execution.name_sim.replace(" ", "_") + ".yaml"
+        setup_path = f"{principal_folder}/{nameWdir}/setup/{setup_file}"
+        install_dir = self.setup["Install Dir"]
+        install_dir = absolut(install_dir, ssh)
+
+        tool_data_yaml = yaml.dump(self.tool_data)
 
         cmd1 = Script(ssh)
         cmd1.append(f"mkdir -p {principal_folder}/{nameWdir}/setup/")
@@ -1773,25 +1778,97 @@ class RunSimulation(threading.Thread):
         Execution.objects.filter(eID=self.e_id).update(wdir=execution_folder, setup_path=setup_folder)
 
         github_setup = json.loads(self.setup["github"])
-
+        entrypoint = self.setup["Entry Point"]
         for repo in github_setup:
             repo_name = repo["url"].split("/")[4]
-            remote_path = os.path.join(self.setup["Install Dir"], repo_name)
+            remote_path = os.path.join(install_dir, repo_name)
+            if repo_name == entrypoint.split("/")[0]:
+                # entry point format: repo_name/path_to_entrypoint_from_repo_root.py
+                # install_dir is the absolute path where the repos are installed
+                # the repos are installed within a directory named {repo_name}
+                entrypoint = os.path.join(install_dir, entrypoint)
+            editable = repo["editable"]
+            install = repo["install"]
+            run_install_dir = repo["install_dir"] # path where to execute pip install
+            requirements = repo["requirements"]
+            target = repo["target"]
+            modules = self.slurm["modules"]
             sftp_upload_repository(local_path=local_path,
                                    remote_path=remote_path,
                                    private_key_decrypted=self.request.session[
                                        "private_key_decrypted"],
                                    machine_id=machine_found.id,
                                    branch=repo["branch"],
-                                   url=repo["url"], install=repo["install"],
-                                   install_dir=repo["install_dir"],
-                                   editable=repo["editable"],
-                                   requirements=repo["requirements"],
-                                   target=repo["target"],
-                                   modules=self.slurm["modules"])
+                                   url=repo["url"],
+                                   install_dir=run_install_dir,
+                                   editable=editable, install=install,
+                                   requirements=requirements,
+                                   target=target,
+                                   modules=modules)
             print()
             print("UPLOADED REPO", repo["url"])
             print()
+
+            script = Script(ssh)
+            script = load_and_install(script, editable, install, install_dir, modules,
+                                      remote_path, requirements, ssh, target)
+
+            script = export_variables(script, self.tool_data)
+
+            machine_name = remove_numbers(machine_found.fqdn)
+            script = run_execution(script, execution_folder, self.tool_data, entrypoint)
+
+
+def absolut(principal_folder, ssh):
+    if not principal_folder.startswith('/'):
+        stdin, stdout, stderr = ssh.exec_command("echo $HOME")
+        stdout = "".join(stdout.readlines()).strip()
+        principal_folder = stdout + "/" + principal_folder
+    return principal_folder
+
+
+def run_execution(script, execution_folder, tool_data, entrypoint):
+    script.append(f"mkdir -p {execution_folder}")
+
+    slurm_args = ""
+    slurm = tool_data["slurm"]
+
+    for arg, value in slurm.items():
+        if arg == "Number of Nodes":
+            slurm_args += f"--num_nodes={value} "
+        if arg == "Project Name":
+            slurm_args += f"--project_name={value} "
+        if arg == "QOS":
+            slurm_args += f"--qos={value} "
+        if arg == "Time Limit":
+            slurm_args += f"--exec_time={value} "
+
+    compss_args = ""
+    compss = tool_data["COMPSs"]
+
+    for arg, value in compss.items():
+        if arg == "Debug":
+            if value is True:
+                compss_args += f"--debug "
+        if arg == "Graph":
+            compss_args += f"--graph={value} "
+        if arg == "Trace":
+            compss_args += f"--tracing={value} "
+
+    job_name = tool_data["setup"]["Simulation Name"] or None
+    job_name = job_name.replace(" ", "_")
+
+    script.append(f"enqueue_compss {slurm_args} {compss_args} --job_name={job_name} "
+                  f"--keep_workingdir --log_dir={execution_folder} "
+                  f"--job_execution_dir={execution_folder} {entrypoint} {tool_data}")
+    return script
+
+
+def export_variables(script, tool_data):
+    exported_variables = get_environment_variables(tool_data)
+    for key, value in exported_variables.items():
+        script.append(f"export {key}={value}")
+    return script
 
 
 def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
@@ -1861,18 +1938,22 @@ def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
                     print(
                         f"Failed to upload {local_file} to {remote_file}: {e}")
 
-    script = Script(ssh)
+    sftp.close()
+    return
+
+
+def load_and_install(script, editable, install, install_dir, modules, remote_path,
+                     requirements, ssh, target):
     for module in modules:
         script.append(f"module load {module}")
-
     if install:
-        installation_dir = os.path.join(remote_path, install_dir) # install_dir can be empty
+        installation_dir = os.path.join(remote_path,
+                                        install_dir)  # install_dir can be empty
         editable_option = ""
         if editable:
             editable_option = "-e"
 
         script.append(f"pip install {editable_option} {installation_dir}")
-
     if requirements:
         target_option = ""
         if target:
@@ -1880,16 +1961,16 @@ def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
 
         script.append(
             f"pip install -r {remote_path}/requirements.txt {target_option}")
-
-    script.execute()
-    sftp.close()
-    return
+    return script
 
 
 class Script():
     def __init__(self, ssh):
         self.script = ""
         self.ssh = ssh
+
+    def __str__(self):
+        return self.script
 
     def append(self, cmd):
         self.script += f"{cmd}; "
@@ -1898,7 +1979,7 @@ class Script():
         self.script = "source /etc/profile; " + self.script
         print()
         print("EXECUTING COMMAND:")
-        print(self.script)
+        print(self.script.replace(';', ';\n'))
         stdin, stdout, stderr = self.ssh.exec_command(self.script)
         stdout = stdout.readlines()
         stderr = stderr.readlines()
@@ -1981,13 +2062,42 @@ class run_sim_async(threading.Thread):
                                  repositories=["datagen", "stability_analysis",
                                                "new-GridCal"])
 
-        stderr, stdout = self.execute_cmds(execution_folder, machine_found,
-                                           machine_name, machine_node,
-                                           path_install_dir,
-                                           path_install_dir_gridcal,
-                                           path_install_dir_stability_analysis,
-                                           setup, setup_folder, ssh,
-                                           userMachine)
+        exported_variables = get_environment_variables(setup)
+        if self.checkpoint_bool:
+            cmd2 = (
+                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
+                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
+                f"{get_variables_exported(exported_variables)} mkdir -p {execution_folder}; "
+                f"cd {path_install_dir}/scripts/{machine_name}/; source app-checkpoint.sh {userMachine} {str(self.name)} {setup_folder} "
+                f"{execution_folder} {self.numNodes} {self.execTime} {self.qos} {machine_found.installDir} {self.branch} {machine_found.dataDir} "
+                f"{self.gOPTION} {self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
+            cmd_writeFile_checkpoint = (
+                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
+                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
+                f"{get_variables_exported(exported_variables)} cd {path_install_dir}/scripts/{machine_name}/; "
+                f"source app-checkpoint.sh {userMachine} {str(self.name)} {setup_folder} {execution_folder} {self.numNodes} "
+                f"{self.execTime} {self.qos} {machine_found.installDir} {self.branch} {machine_found.dataDir} {self.gOPTION} "
+                f"{self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
+            cmd2 += write_checkpoint_file(execution_folder,
+                                          cmd_writeFile_checkpoint)
+        else:
+            cmd2 = (
+                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
+                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
+                f"{get_variables_exported(exported_variables)} mkdir -p {execution_folder}; "
+                f"cd {path_install_dir}/scripts/{machine_name}/; source app.sh {userMachine} {str(self.name)} {setup_folder} "
+                f"{execution_folder} {self.numNodes} {self.execTime} {self.qos} {path_install_dir} {self.branch} {machine_found.dataDir} "
+                f"{self.gOPTION} {self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
+        print(f"run_sim : {cmd2} ")
+        stdin, stdout, stderr = ssh.exec_command(cmd2)
+        stdout = stdout.readlines()
+        stderr = stderr.readlines()
+        print("-------------START STDOUT--------------")
+        print("".join(stdout))
+        print("---------------END STDOUT--------------")
+        print("-------------START STDERR--------------")
+        print("".join(stderr))
+        print("---------------END STDERR--------------")
 
         retry_repositories = set()
         for s in stderr:
@@ -2032,48 +2142,6 @@ class run_sim_async(threading.Thread):
         self.request.session['execution_folder'] = execution_folder
         os.remove("documents/" + str(self.name))
         return
-
-    def execute_cmds(self, execution_folder, machine_found, machine_name,
-                     machine_node, path_install_dir, path_install_dir_gridcal,
-                     path_install_dir_stability_analysis, setup, setup_folder,
-                     ssh, userMachine):
-        exported_variables = set_environment_variables(setup)
-        if self.checkpoint_bool:
-            cmd2 = (
-                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
-                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
-                f"{get_variables_exported(exported_variables)} mkdir -p {execution_folder}; "
-                f"cd {path_install_dir}/scripts/{machine_name}/; source app-checkpoint.sh {userMachine} {str(self.name)} {setup_folder} "
-                f"{execution_folder} {self.numNodes} {self.execTime} {self.qos} {machine_found.installDir} {self.branch} {machine_found.dataDir} "
-                f"{self.gOPTION} {self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
-            cmd_writeFile_checkpoint = (
-                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
-                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
-                f"{get_variables_exported(exported_variables)} cd {path_install_dir}/scripts/{machine_name}/; "
-                f"source app-checkpoint.sh {userMachine} {str(self.name)} {setup_folder} {execution_folder} {self.numNodes} "
-                f"{self.execTime} {self.qos} {machine_found.installDir} {self.branch} {machine_found.dataDir} {self.gOPTION} "
-                f"{self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
-            cmd2 += write_checkpoint_file(execution_folder,
-                                          cmd_writeFile_checkpoint)
-        else:
-            cmd2 = (
-                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
-                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
-                f"{get_variables_exported(exported_variables)} mkdir -p {execution_folder}; "
-                f"cd {path_install_dir}/scripts/{machine_name}/; source app.sh {userMachine} {str(self.name)} {setup_folder} "
-                f"{execution_folder} {self.numNodes} {self.execTime} {self.qos} {path_install_dir} {self.branch} {machine_found.dataDir} "
-                f"{self.gOPTION} {self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
-        print(f"run_sim : {cmd2} ")
-        stdin, stdout, stderr = ssh.exec_command(cmd2)
-        stdout = stdout.readlines()
-        stderr = stderr.readlines()
-        print("-------------START STDOUT--------------")
-        print("".join(stdout))
-        print("---------------END STDOUT--------------")
-        print("-------------START STDERR--------------")
-        print("".join(stderr))
-        print("---------------END STDERR--------------")
-        return stderr, stdout
 
     def upload_repositories(self, gridcal_branch, local_folder, machine_found,
                             path_install_dir, path_install_dir_gridcal,
@@ -2239,14 +2307,13 @@ def write_checkpoint_file(execution_folder, cmd2):
 
 def get_variables_exported(exported_variables):
     export_string = ""
-
     for key, value in exported_variables.items():
         export_string += f"export {key}={value}; "
 
     return export_string
 
 
-def set_environment_variables(setup):
+def get_environment_variables(setup):
     exported_variables = {}
 
     if 'environment' in setup and isinstance(setup['environment'], dict):
