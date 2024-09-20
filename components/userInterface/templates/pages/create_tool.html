@@ -191,6 +191,26 @@
 
                         {% if section == "COMPSs" %}
                             <div class="form-group">
+                                <label for="custom_boolean_field_Agents">Agents:</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="hidden" name="boolean_section_Agents" value="{{section}}">
+                                    <input type="hidden" name="custom_boolean_field_Agents" value="Agents">
+                                    <select name="default_value_boolean_Agents" class="form-control ml-2"
+                                            id="default_value_boolean_Agents">
+                                        <option value="" selected>No default value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                    <select name="preset_value_boolean_Agents" class="form-control ml-2"
+                                            id="preset_value_boolean_Agents">
+                                        <option value="" selected>No preset value</option>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
                                 <label for="custom_boolean_field_Checkpointing">Checkpointing:</label>
                                 <div class="d-flex align-items-center">
                                     <input type="hidden" name="boolean_section_Checkpointing" value="{{section}}">
@@ -307,8 +327,8 @@
 </div>
 
 <script>
-let fieldCounter = {{ existing_fields|length }};
-let repoCounter = {{ existing_repos|length }};
+let fieldCounter = 1;
+let repoCounter = 1;
 
 document.addEventListener('DOMContentLoaded', function() {
     var sectionHeaders = document.querySelectorAll('.card-header h5');
@@ -339,36 +359,31 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 document.getElementById('add-repo').onclick = function() {
-    repoCounter++;
     const setupSection = document.getElementById('setup-section');
     const newRepoDiv = document.createElement('div');
     newRepoDiv.classList.add('form-group');
     newRepoDiv.innerHTML = `
-        <label for="github_repo_${repoCounter}" style="font-weight: bold;">GitHub Repo ${repoCounter}:</label>
+        <label for="github_repo_${repoCounter}" style="font-weight: bold;">GitHub Repo:</label>
         <div class="d-flex align-items-center mb-2">
-            <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2"
-            id="github_repo_${repoCounter}" placeholder="Repo URL">
-            <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1"
-            id="github_branch_${repoCounter}" placeholder="Branch Name">
+            <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2" id="github_repo_${repoCounter}" placeholder="Repo URL">
+            <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1" id="github_branch_${repoCounter}" placeholder="Branch Name">
             <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
         </div>
         <div class="d-flex align-items-center mb-2">
             <label class="mr-2">Requires installation:</label>
-            <input type="checkbox" name="github_install_${repoCounter}" id="github_install_${repoCounter}"
-            onchange="toggleInstallDir(${repoCounter})">
+            <input type="checkbox" name="github_install_${repoCounter}" id="github_install_${repoCounter}">
             <input type="text" name="github_install_dir_${repoCounter}" class="form-control flex-grow-1 ml-2"
-            id="github_install_dir_${repoCounter}" placeholder="Install Dir (From repo root)" disabled>
+            id="github_install_dir_${repoCounter}" placeholder="Install Dir (from repo root)">
         </div>
         <div class="d-flex align-items-center">
             <label class="mr-2">Install in editable mode:</label>
             <input type="checkbox" name="github_editable_${repoCounter}" id="github_editable_${repoCounter}">
             <label class="ml-2 mr-2">Install requirements:</label>
             <input type="checkbox" name="github_requirements_${repoCounter}" id="github_requirements_${repoCounter}">
-            <label class="ml-2 mr-2">Target ("${install_dir}/packages"):</label>
-            <input type="checkbox" name="github_target_${repoCounter}" id="github_target_${repoCounter}">
         </div>
     `;
     setupSection.appendChild(newRepoDiv);
+    repoCounter++;
 };
 
 function toggleInstallDir(counter) {
@@ -393,7 +408,7 @@ document.querySelectorAll('.add-text-field').forEach(button => {
         const newFieldDiv = document.createElement('div');
         newFieldDiv.classList.add('form-group');
         newFieldDiv.innerHTML = `
-            <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
+            <label for="custom_field_${fieldCounter}">Custom Field:</label>
             <div class="d-flex">
                 <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
                 <input type="text" name="default_value_${fieldCounter}" class="form-control ml-2" id="default_value_${fieldCounter}"
@@ -424,7 +439,7 @@ document.querySelectorAll('.add-boolean-field').forEach(button => {
         const newFieldDiv = document.createElement('div');
         newFieldDiv.classList.add('form-group');
         newFieldDiv.innerHTML = `
-            <label for="custom_boolean_field_${fieldCounter}">Custom Boolean Field ${fieldCounter}:</label>
+            <label for="custom_boolean_field_${fieldCounter}">Custom Boolean Field:</label>
             <div class="d-flex align-items-center">
                 <input type="text" name="custom_boolean_field_${fieldCounter}" class="form-control flex-grow-1"
                 id="custom_boolean_field_${fieldCounter}" placeholder="Field Name">

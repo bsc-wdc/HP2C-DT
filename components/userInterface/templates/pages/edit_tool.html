@@ -34,7 +34,7 @@
                     <div class="section-content" id="section-{{ section }}" style="display: block;">
                         {% if section == "setup" %}
                             <div class="form-group" id="setup-section">
-                                <label for="id_github_repo">{{ form.github_repo.label }}:</label>
+                                <label for="id_github_repo" style="font-weight: bold;">{{ form.github_repo.label }}:</label>
                                 <div class="d-flex align-items-center mb-2">
                                     <input type="text" name="github_repo" class="form-control flex-grow-1 mr-2" id="id_github_repo" value="{{ form.github_repo.value|default_if_none:'' }}" placeholder="Repo URL">
                                     <input type="text" name="github_branch" class="form-control flex-grow-1" id="id_github_branch" value="{{ form.github_branch.value|default_if_none:'' }}" placeholder="Branch Name">
@@ -64,15 +64,21 @@
                             {% for repo in existing_repos %}
                                 {% if not forloop.first %}
                                     <div class="form-group">
-                                        <label for="github_repo_{{ forloop.counter }}">GitHub Repo {{ forloop.counter }}:</label>
+                                        <label for="github_repo_{{ forloop.counter }}" style="font-weight: bold;">
+                                            GitHub Repo:</label>
                                         <div class="d-flex align-items-center mb-2">
-                                            <input type="text" name="github_repo_{{ forloop.counter }}" class="form-control flex-grow-1 mr-2" id="github_repo_{{ forloop.counter }}" value="{{ repo.url }}" placeholder="Repo Name">
-                                            <input type="text" name="github_branch_{{ forloop.counter }}" class="form-control flex-grow-1" id="id_github_branch_{{ forloop.counter }}" value="{{ repo.branch }}" placeholder="Branch Name">
+                                            <input type="text" name="github_repo_{{ forloop.counter }}"
+                                                   class="form-control flex-grow-1 mr-2" id="github_repo_{{ forloop.counter }}"
+                                                   value="{{ repo.url }}" placeholder="Repo Name">
+                                            <input type="text" name="github_branch_{{ forloop.counter }}"
+                                                   class="form-control flex-grow-1" id="id_github_branch_{{ forloop.counter }}"
+                                                   value="{{ repo.branch }}" placeholder="Branch Name">
                                             <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
                                         </div>
                                         <div class="d-flex align-items-center mb-2">
                                             <label class="mr-2">Requires installation:</label>
-                                            <input type="checkbox" name="github_install_{{ forloop.counter }}" id="id_github_install_{{ forloop.counter }}"
+                                            <input type="checkbox" name="github_install_{{ forloop.counter }}"
+                                                   id="id_github_install_{{ forloop.counter }}"
                                                    {% if repo.install %} checked {% endif %}>
                                             <input type="text" name="github_install_dir_{{ forloop.counter }}"
                                                    class="form-control flex-grow-1 ml-2" id="id_github_install_dir_{{ forloop.counter }}"
@@ -80,13 +86,16 @@
                                         </div>
                                         <div class="d-flex align-items-center">
                                             <label class="mr-2">Install in editable mode:</label>
-                                            <input type="checkbox" name="github_editable_{{ forloop.counter }}" id="id_github_editable_{{ forloop.counter }}"
+                                            <input type="checkbox" name="github_editable_{{ forloop.counter }}"
+                                                   id="id_github_editable_{{ forloop.counter }}"
                                             {% if repo.editable %} checked {% endif %}>
                                             <label class="ml-2 mr-2">Install requirements:</label>
-                                            <input type="checkbox" name="github_requirements_{{ forloop.counter }}" id="id_github_requirements_{{ forloop.counter }}"
+                                            <input type="checkbox" name="github_requirements_{{ forloop.counter }}"
+                                                   id="id_github_requirements_{{ forloop.counter }}"
                                             {% if repo.requirements %} checked {% endif %}>
                                             <label class="ml-2 mr-2">Target ("${install_dir}/packages"):</label>
-                                            <input type="checkbox" name="github_target_{{ forloop.counter }}" id="github_target_{{ forloop.counter }}"
+                                            <input type="checkbox" name="github_target_{{ forloop.counter }}"
+                                                   id="github_target_{{ forloop.counter }}"
                                             {% if repo.target %} checked {% endif %}>
                                         </div>
                                     </div>
@@ -101,12 +110,14 @@
                                     {% for module in existing_modules %}
                                     <div class="module-field d-flex align-items-center mt-2">
                                         <input type="text" name="module_{{ forloop.counter }}" class="form-control flex-grow-1"
-                                               id="module_{{ forloop.counter }}" placeholder="Insert module to load (format: module/version)"
+                                               id="module_{{ forloop.counter }}"
+                                               placeholder="Insert module to load (format: module/version)"
                                                value="{{ module }}">
                                         <button type="button" class="btn btn-danger ml-2" onclick="removeModule(this)">-</button>
                                     </div>
                                     {% endfor %}
-                                    <button type="button" class="btn btn-primary mt-2 add-module-btn" data-section="slurm">Add Module</button>
+                                    <button type="button" class="btn btn-primary mt-2 add-module-btn" data-section="slurm">
+                                        Add Module</button>
                                 </div>
                             </div>
                         {% endif %}
@@ -118,9 +129,17 @@
                                     <div class="form-group">
                                         <label for="custom_field_{{ custom_field.id }}">{{ custom_field.name }}:</label>
                                         <div class="d-flex">
-                                            <input type="text" name="custom_field_{{ custom_field.id }}" class="form-control flex-grow-1" id="custom_field_{{ custom_field.id }}" value="{{ custom_field.name }}">
-                                            <input type="text" name="default_value_{{ custom_field.id }}" class="form-control ml-2" id="default_value_{{ custom_field.id }}" value="{{ custom_field.default_value|default_if_none:'' }}" placeholder="Default Value (optional)">
-                                            <input type="text" name="preset_value_{{ custom_field.id }}" class="form-control ml-2" id="preset_value_{{ custom_field.id }}" value="{{ custom_field.preset_value|default_if_none:'' }}" placeholder="Preset Value (optional)">
+                                            <input type="text" name="custom_field_{{ custom_field.id }}"
+                                                   class="form-control flex-grow-1" id="custom_field_{{ custom_field.id }}"
+                                                   value="{{ custom_field.name }}">
+                                            <input type="text" name="default_value_{{ custom_field.id }}"
+                                                   class="form-control ml-2" id="default_value_{{ custom_field.id }}"
+                                                   value="{{ custom_field.default_value|default_if_none:'' }}"
+                                                   placeholder="Default Value (optional)">
+                                            <input type="text" name="preset_value_{{ custom_field.id }}"
+                                                   class="form-control ml-2" id="preset_value_{{ custom_field.id }}"
+                                                   value="{{ custom_field.preset_value|default_if_none:'' }}"
+                                                   placeholder="Preset Value (optional)">
                                             <input type="hidden" name="section_{{ custom_field.id }}" value="{{ section }}">
                                             <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
                                         </div>
@@ -130,16 +149,27 @@
                                     <div class="form-group">
                                         <label for="custom_boolean_field_{{ custom_field.id }}">{{ custom_field.name }}:</label>
                                         <div class="d-flex align-items-center">
-                                            <input type="text" name="custom_boolean_field_{{ custom_field.id }}" class="form-control flex-grow-1 mr-2" id="custom_boolean_field_{{ custom_field.id }}" value="{{ custom_field.name }}" placeholder="Field Name">
-                                            <select name="default_value_boolean_{{ custom_field.id }}" class="form-control ml-2" id="default_value_boolean_{{ custom_field.id }}">
-                                                <option value="" {% if not custom_field.default_value %}selected{% endif %}>No default value</option>
-                                                <option value="true" {% if custom_field.default_value == 'true' %}selected{% endif %}>True</option>
-                                                <option value="false" {% if custom_field.default_value == 'false' %}selected{% endif %}>False</option>
+                                            <input type="text" name="custom_boolean_field_{{ custom_field.id }}"
+                                                   class="form-control flex-grow-1 mr-2"
+                                                   id="custom_boolean_field_{{ custom_field.id }}"
+                                                   value="{{ custom_field.name }}" placeholder="Field Name">
+                                            <select name="default_value_boolean_{{ custom_field.id }}"
+                                                    class="form-control ml-2" id="default_value_boolean_{{ custom_field.id }}">
+                                                <option value="" {% if not custom_field.default_value %}selected{% endif %}>
+                                                    No default value</option>
+                                                <option value="true" {% if custom_field.default_value == 'true' %}selected{% endif %}>
+                                                True</option>
+                                                <option value="false" {% if custom_field.default_value == 'false' %}selected{% endif %}>
+                                                False</option>
                                             </select>
-                                            <select name="preset_value_boolean_{{ custom_field.id }}" class="form-control ml-2" id="preset_value_boolean_{{ custom_field.id }}">
-                                                <option value="" {% if not custom_field.preset_value %}selected{% endif %}>No preset value</option>
-                                                <option value="true" {% if custom_field.preset_value == 'true' %}selected{% endif %}>True</option>
-                                                <option value="false" {% if custom_field.preset_value == 'false' %}selected{% endif %}>False</option>
+                                            <select name="preset_value_boolean_{{ custom_field.id }}" class="form-control ml-2"
+                                                    id="preset_value_boolean_{{ custom_field.id }}">
+                                                <option value="" {% if not custom_field.preset_value %}selected{% endif %}>
+                                                    No preset value</option>
+                                                <option value="true" {% if custom_field.preset_value == 'true' %}selected{% endif %}>
+                                                True</option>
+                                                <option value="false" {% if custom_field.preset_value == 'false' %}selected{% endif %}>
+                                                False</option>
                                             </select>
                                             <input type="hidden" name="boolean_section_{{ custom_field.id }}" value="{{ section }}">
                                             <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
@@ -211,7 +241,7 @@ document.querySelectorAll('.add-text-field').forEach(button => {
         const newFieldDiv = document.createElement('div');
         newFieldDiv.classList.add('form-group');
         newFieldDiv.innerHTML = `
-            <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
+            <label for="custom_field_${fieldCounter}">Custom Field:</label>
             <div class="d-flex">
                 <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
                 <input type="text" name="default_value_${fieldCounter}" class="form-control ml-2" id="default_value_${fieldCounter}" placeholder="Default Value (optional)">
@@ -240,7 +270,7 @@ document.querySelectorAll('.add-boolean-field').forEach(button => {
         const newFieldDiv = document.createElement('div');
         newFieldDiv.classList.add('form-group');
         newFieldDiv.innerHTML = `
-            <label for="custom_boolean_field_${fieldCounter}">Custom Boolean Field ${fieldCounter}:</label>
+            <label for="custom_boolean_field_${fieldCounter}">Custom Boolean Field:</label>
             <div class="d-flex align-items-center">
                 <input type="text" name="custom_boolean_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_boolean_field_${fieldCounter}" placeholder="Field Name">
                 <select name="default_value_boolean_${fieldCounter}" class="form-control ml-2" id="default_value_boolean_${fieldCounter}">
@@ -328,7 +358,7 @@ document.getElementById('add-repo').onclick = function() {
     const newRepoDiv = document.createElement('div');
     newRepoDiv.classList.add('form-group');
     newRepoDiv.innerHTML = `
-        <label for="github_repo_${repoCounter}" style="font-weight: bold;">GitHub Repo ${repoCounter}:</label>
+        <label for="github_repo_${repoCounter}" style="font-weight: bold;">GitHub Repo:</label>
         <div class="d-flex align-items-center mb-2">
             <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2" id="github_repo_${repoCounter}" placeholder="Repo URL">
             <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1" id="github_branch_${repoCounter}" placeholder="Branch Name">

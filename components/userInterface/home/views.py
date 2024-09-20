@@ -1733,12 +1733,11 @@ class RunSimulation(threading.Thread):
                 except json.JSONDecodeError:
                     pass
 
-        self.application = self.tool_data["application"]
-        self.setup = self.tool_data["setup"]
-        self.slurm = self.tool_data["slurm"]
-        self.compss = self.tool_data["COMPSs"]
-        self.environment = self.tool_data["environment"]
-
+        self.application = self.tool_data.get("application", {})
+        self.setup = self.tool_data.get("setup", {})
+        self.slurm = self.tool_data.get("slurm", {})
+        self.compss = self.tool_data.get("COMPSs", {})
+        self.environment = self.tool_data.get("environment", {})
 
     def run(self):
         execution = Execution.objects.get(eID=self.e_id)
@@ -1799,12 +1798,7 @@ class RunSimulation(threading.Thread):
                                        "private_key_decrypted"],
                                    machine_id=machine_found.id,
                                    branch=repo["branch"],
-                                   url=repo["url"],
-                                   install_dir=run_install_dir,
-                                   editable=editable, install=install,
-                                   requirements=requirements,
-                                   target=target,
-                                   modules=modules)
+                                   url=repo["url"])
             print()
             print("UPLOADED REPO", repo["url"])
             print()
@@ -1817,6 +1811,7 @@ class RunSimulation(threading.Thread):
 
             machine_name = remove_numbers(machine_found.fqdn)
             script = run_execution(script, execution_folder, self.tool_data, entrypoint)
+            script.execute()
 
 
 def absolut(principal_folder, ssh):
@@ -1850,6 +1845,9 @@ def run_execution(script, execution_folder, tool_data, entrypoint):
         if arg == "Debug":
             if value is True:
                 compss_args += f"--debug "
+        if arg == "Agents":
+            if value is True:
+                compss_args += f"--agents "
         if arg == "Graph":
             compss_args += f"--graph={value} "
         if arg == "Trace":
@@ -1872,8 +1870,7 @@ def export_variables(script, tool_data):
 
 
 def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
-                           machine_id, branch, url, install, install_dir,
-                           editable, requirements, target, modules, retry=False):
+                           machine_id, branch, url, retry=False):
     repo_name = remote_path.split("/")[-1]
     res = get_github_code(repo_name, url, branch, local_path)
     ssh = paramiko.SSHClient()
