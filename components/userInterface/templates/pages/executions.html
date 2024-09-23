@@ -12,6 +12,13 @@
         </div>
       </div>
     {% endif %}
+    {% if initializing %}
+      <div>
+        <div class="alert alert-danger" role="alert">
+          The execution of simulation {{initializing}} has not started
+        </div>
+      </div>
+    {% endif %}
     {% if machine_chosen %}
         <h2 class="text-center mb-5" style="text-decoration: underline;">
             <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
@@ -94,7 +101,8 @@
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
-                                            <input type="hidden" value="{{ e.jobID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.eID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.jobID }}" name="jobIDValue">
                                             <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
                                         </form>
                                     </td>

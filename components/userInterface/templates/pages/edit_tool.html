@@ -354,6 +354,7 @@ function toggleFieldState(fieldToToggle, currentField) {
 
 
 document.getElementById('add-repo').onclick = function() {
+    repoCounter++;
     const setupSection = document.getElementById('setup-section');
     const newRepoDiv = document.createElement('div');
     newRepoDiv.classList.add('form-group');
@@ -378,7 +379,6 @@ document.getElementById('add-repo').onclick = function() {
         </div>
     `;
     setupSection.appendChild(newRepoDiv);
-    repoCounter++;
 };
 
 function toggleFieldState(fieldToToggle, currentField) {

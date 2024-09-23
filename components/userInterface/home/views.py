@@ -858,8 +858,9 @@ def tools(request):
                 return redirect('tools')
 
         if 'resultExecution' in request.POST:
-            request.session['jobIDdone'] = request.POST.get(
-                "resultExecutionValue")
+            request.session['eIDdone'] = request.POST.get(
+                "resultExecutionValue")# TODO: change jobid for eid
+            request.session['jobIDdone'] = request.POST.get("jobIDValue")
             return redirect('results')
 
         elif 'failedExecution' in request.POST:
@@ -986,6 +987,7 @@ def tools(request):
         tool_created = request.session.pop('tool_created', None)
         tool_edited = request.session.pop('tool_edited', None)
         tool_deleted = request.session.pop('tool_deleted', None)
+        initializing = request.session.pop('initializing', None)
 
         tool_forms = {}
         for tool in Tool.objects.all():
@@ -1014,6 +1016,7 @@ def tools(request):
             'tool_edited': tool_edited,
             'tool_deleted': tool_deleted,
             'sections': sections,
+            'initializing': initializing
         })
 
 
@@ -1560,11 +1563,17 @@ def results(request):
     if request.method == 'POST':
         pass
     else:
+        eID = request.session['eIDdone']
         jobID = request.session['jobIDdone']
+        if Execution.objects.get(eID=eID).status == "INITIALIZING":
+            request.session["initializing"] = Execution.objects.get(eID=eID).name_sim
+            return redirect('tools')
+
         ssh = connection_ssh(request.session['private_key_decrypted'], request.session['machine_chosen'])
         stdin, stdout, stderr = ssh.exec_command(
             "sacct -j " + str(jobID) + " --format=jobId,user,nnodes,elapsed,state | sed -n 3,3p")
         stdout = stdout.readlines()
+        print(stdout)
         values = str(stdout).split()
         Execution.objects.filter(jobID=jobID).update(status=values[4], time=values[3], nodes=int(values[2]))
         execUpdate = Execution.objects.get(jobID=jobID)
@@ -1778,6 +1787,7 @@ class RunSimulation(threading.Thread):
 
         github_setup = json.loads(self.setup["github"])
         entrypoint = self.setup["Entry Point"]
+        script = Script(ssh)
         for repo in github_setup:
             repo_name = repo["url"].split("/")[4]
             remote_path = os.path.join(install_dir, repo_name)
@@ -1803,15 +1813,14 @@ class RunSimulation(threading.Thread):
             print("UPLOADED REPO", repo["url"])
             print()
 
-            script = Script(ssh)
-            script = load_and_install(script, editable, install, install_dir, modules,
+            script = load_and_install(script, editable, install, run_install_dir, modules,
                                       remote_path, requirements, ssh, target)
 
-            script = export_variables(script, self.tool_data)
+        script = export_variables(script, self.tool_data)
 
-            machine_name = remove_numbers(machine_found.fqdn)
-            script = run_execution(script, execution_folder, self.tool_data, entrypoint)
-            script.execute()
+        machine_name = remove_numbers(machine_found.fqdn)
+        script = run_execution(script, execution_folder, self.tool_data, entrypoint)
+        script.execute()
 
 
 def absolut(principal_folder, ssh):
@@ -1849,16 +1858,18 @@ def run_execution(script, execution_folder, tool_data, entrypoint):
             if value is True:
                 compss_args += f"--agents "
         if arg == "Graph":
-            compss_args += f"--graph={value} "
+            if value is True:
+                compss_args += f"--graph "
         if arg == "Trace":
-            compss_args += f"--tracing={value} "
+            if value is True:
+                compss_args += f"--tracing "
 
     job_name = tool_data["setup"]["Simulation Name"] or None
     job_name = job_name.replace(" ", "_")
 
     script.append(f"enqueue_compss {slurm_args} {compss_args} --job_name={job_name} "
                   f"--keep_workingdir --log_dir={execution_folder} "
-                  f"--job_execution_dir={execution_folder} {entrypoint} {tool_data}")
+                  f"--job_execution_dir={execution_folder} {entrypoint}")
     return script
 
 
@@ -1943,9 +1954,11 @@ def load_and_install(script, editable, install, install_dir, modules, remote_pat
                      requirements, ssh, target):
     for module in modules:
         script.append(f"module load {module}")
+
     if install:
         installation_dir = os.path.join(remote_path,
                                         install_dir)  # install_dir can be empty
+
         editable_option = ""
         if editable:
             editable_option = "-e"
@@ -2606,6 +2619,7 @@ def edit_tool(request, tool_name):
                           request.POST.get('github_target') == 'on')
 
             additional_repos = {k: v for k, v in request.POST.items() if k.startswith('github_repo_')}
+            
             for repo_name, repo_value in additional_repos.items():
                 if "branch" not in repo_name:
                     number = repo_name.split('github_repo_')[1]
