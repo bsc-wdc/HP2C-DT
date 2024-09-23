@@ -1,6 +1,6 @@
 #!/bin/bash
 HP2C_VERSION=1.0
-COMPSS_VERSION=3.2
+COMPSS_VERSION=trunk
 ORG_NAME="hp2c"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )

@@ -1,4 +1,6 @@
-FROM compss/compss:3.2 as framework
+ARG COMPSS_VERSION
+
+FROM compss/compss:${COMPSS_VERSION} as framework
 
 
 ##################
