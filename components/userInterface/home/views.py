@@ -1788,6 +1788,12 @@ class RunSimulation(threading.Thread):
         github_setup = json.loads(self.setup["github"])
         entrypoint = self.setup["Entry Point"]
         script = Script(ssh)
+
+        # LOAD MODULES
+        modules = self.slurm["modules"]
+        for module in modules:
+            script.append(f"module load {module}")
+
         for repo in github_setup:
             repo_name = repo["url"].split("/")[4]
             remote_path = os.path.join(install_dir, repo_name)
@@ -1801,7 +1807,6 @@ class RunSimulation(threading.Thread):
             run_install_dir = repo["install_dir"] # path where to execute pip install
             requirements = repo["requirements"]
             target = repo["target"]
-            modules = self.slurm["modules"]
             sftp_upload_repository(local_path=local_path,
                                    remote_path=remote_path,
                                    private_key_decrypted=self.request.session[
@@ -1813,13 +1818,13 @@ class RunSimulation(threading.Thread):
             print("UPLOADED REPO", repo["url"])
             print()
 
-            script = load_and_install(script, editable, install, run_install_dir, modules,
-                                      remote_path, requirements, ssh, target)
+            script = install_repos(script, editable, install, run_install_dir,
+                                   remote_path, requirements, ssh, target)
 
         script = export_variables(script, self.tool_data)
 
         machine_name = remove_numbers(machine_found.fqdn)
-        script = run_execution(script, execution_folder, self.tool_data, entrypoint)
+        script = run_execution(script, execution_folder, self.tool_data, entrypoint, setup_path)
         script.execute()
 
 
@@ -1831,7 +1836,7 @@ def absolut(principal_folder, ssh):
     return principal_folder
 
 
-def run_execution(script, execution_folder, tool_data, entrypoint):
+def run_execution(script, execution_folder, tool_data, entrypoint, setup_path):
     script.append(f"mkdir -p {execution_folder}")
 
     slurm_args = ""
@@ -1869,7 +1874,7 @@ def run_execution(script, execution_folder, tool_data, entrypoint):
 
     script.append(f"enqueue_compss {slurm_args} {compss_args} --job_name={job_name} "
                   f"--keep_workingdir --log_dir={execution_folder} "
-                  f"--job_execution_dir={execution_folder} {entrypoint}")
+                  f"--job_execution_dir={execution_folder} {entrypoint} {setup_path}")
     return script
 
 
@@ -1950,10 +1955,8 @@ def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
     return
 
 
-def load_and_install(script, editable, install, install_dir, modules, remote_path,
-                     requirements, ssh, target):
-    for module in modules:
-        script.append(f"module load {module}")
+def install_repos(script, editable, install, install_dir, remote_path,
+                  requirements, ssh, target):
 
     if install:
         installation_dir = os.path.join(remote_path,
