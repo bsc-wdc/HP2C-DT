@@ -927,18 +927,8 @@ def tools(request):
         document_form = DocumentForm()
         branches = get_github_repo_branches()
 
-        return render(request, 'pages/tools.html',
-                      {'executions': executions,
-                       'executionsDone': executionsDone,
-                       'executionsFailed': executionsFailed,
-                       'executionsTimeout': executionTimeout,
-                       'checkConn': "yes",
-                       'machine_chosen': request.session[
-                           'nameConnectedMachine'],
-                       'document_form': document_form,
-                       'machines': populate_executions_machines(request),
-                       'branches': branches, 'sections': sections,
-                       })
+
+        return redirect('tools')
     else:
         execution_form = ExecutionForm()
 
