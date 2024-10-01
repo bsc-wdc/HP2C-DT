@@ -1,14 +1,50 @@
 #!/bin/bash
 
-# Verify I am in the right folder and move one level down otherwise
+# Verify if the "src" folder exists, if not, move one level up
 if [ ! -d "src" ]; then
     cd ..
 fi
 
-export ARGS=`echo "$@"`
+cd ../common || exit
+mvn clean install
+
+cd ../edge || exit
+mvn clean install
+
+cd ../opalSimulator || exit
+
+deploymentName="testbed"
+timeStep="1000"
+simulationName=""
+
+# Parse command line arguments
+for arg in "$@"; do
+    case $arg in
+        -deploymentName=*)
+            deploymentName="${arg#*=}"
+            ;;
+        -simulationName=*)
+            simulationName="${arg#*=}"
+            ;;
+        -timeStep=*)
+            timeStep="${arg#*=}"
+            ;;
+        *)
+            echo "Error: Unknown option or argument: $arg"
+            exit 1
+            ;;
+    esac
+done
+
+# If simulationName is provided, pass deploymentName, time and simulationName to OpalSimulator
+if [ -n "$simulationName" ]; then
+    otherArgs="$deploymentName $timeStep $simulationName"
+else
+    otherArgs="$deploymentName $timeStep"
+fi
+
+
 
 # Compile and run
 mvn clean package
-mvn exec:java -Dexec.mainClass="es.bsc.hp2c.opalSimulator.OpalSimulator" -Dexec.args="$ARGS"
-
-
+mvn exec:java -Dexec.mainClass="es.bsc.hp2c.opalSimulator.OpalSimulator" -Dexec.args="$otherArgs"

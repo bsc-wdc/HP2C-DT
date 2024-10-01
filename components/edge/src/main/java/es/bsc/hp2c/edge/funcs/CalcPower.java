@@ -3,6 +3,7 @@ package es.bsc.hp2c.edge.funcs;
 import es.bsc.hp2c.common.generic.Ammeter;
 import es.bsc.hp2c.common.generic.Voltmeter;
 import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Func;
 import es.bsc.hp2c.common.types.Sensor;
 
 import java.util.ArrayList;
@@ -50,9 +51,20 @@ public class CalcPower extends Func {
 
     @Override
     public void run() {
+        boolean voltmeterIsAvailable = voltmeter.isSensorAvailable();
+        boolean ammeterIsAvailable = ammeter.isSensorAvailable();
         Float[] voltage = this.voltmeter.getCurrentValues();
         Float[] current = this.ammeter.getCurrentValues();
-        System.out.println("Calculating power: ");
-        System.out.println("    Power is: " + voltage[0] * current[0] + " W");
+        if (!voltmeterIsAvailable || !ammeterIsAvailable){
+            System.err.println("Warning in function CalcPower: ");
+            if (!voltmeterIsAvailable) System.err.println("Voltmeter is not available");
+            else if (voltage == null) System.err.println("Voltmeter has no value");
+            if (!ammeterIsAvailable) System.err.println("Ammeter is not available");
+            else if (current == null) System.err.println("Ammeter has no value");
+        }
+        if (voltage != null && current != null) {
+            System.out.println("Calculating power: ");
+            System.out.println("    Power is: " + voltage[0] * current[0] + " W");
+        }
     }
 }

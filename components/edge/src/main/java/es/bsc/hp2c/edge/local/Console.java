@@ -19,6 +19,8 @@ package es.bsc.hp2c.edge.local;
 import es.bsc.hp2c.common.generic.MsgAlert;
 import org.json.JSONObject;
 
+import java.io.IOException;
+
 /**
  *
  */
@@ -34,4 +36,11 @@ public class Console extends MsgAlert {
     public void actuate(String message) {
         System.out.println(message);
     }
+
+    @Override
+    public void actuate(byte[] byteValues) throws IOException { }
+
+    @Override
+    public String decodeValuesActuator(byte[] messageBytes) { return null; }
+
 }

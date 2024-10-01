@@ -56,25 +56,33 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
         }
 
         String commType = jProperties.getString("comm-type");
-        OpalComm.registerSensor(this, commType);
-        OpalComm.registerActuator(this);
-        OpalComm.init(jGlobalProperties);
+        if (jGlobalProperties.getBoolean("executeOpalComm")) {
+            OpalComm.registerSensor(this, commType);
+            OpalComm.registerActuator(this);
+            OpalComm.init(jGlobalProperties);
+        }
     }
 
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
         System.out.println("Device " + getLabel() + " voltage set point is " + this.voltageSetpoint[0] + " V");
-        System.out.println("Device " + getLabel() + " power set point is " + this.powerSetpoint[0] + " V");
+        System.out.println("Device " + getLabel() + " power set point is " + this.powerSetpoint[0] + " W");
     }
 
     @Override
     public void actuate(Float[] values) throws IOException {
-        Float[] rawValues = actuateValues(values);
+        // Check length of input values
+        if (values.length != this.indexes.length) {
+            throw new IOException("OpalGenerator.actuate: Wrong input length " +
+                    "(actual: " + values.length + ", expected: " + this.indexes.length + ").");
+        }
+        // Actuate
+        Float[] rawValues = actuatedValues(values);
         OpalComm.commitActuation(this, rawValues);
     }
 
-    protected Float[] actuateValues(Float[] values){
+    protected Float[] actuatedValues(Float[] values){
         return values;
     }
 
@@ -89,7 +97,12 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     }
 
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
+        return BytesToFloatArray(message);
+    }
+
+    @Override
+    public final Float[] decodeValuesActuator(byte[] message) {
         return BytesToFloatArray(message);
     }
 }

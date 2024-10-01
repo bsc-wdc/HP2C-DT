@@ -15,26 +15,24 @@
  */
 package es.bsc.hp2c;
 
+import es.bsc.hp2c.common.utils.CommUtils;
 import es.bsc.hp2c.edge.opalrt.OpalComm;
 import es.bsc.hp2c.common.types.Device;
-import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
 
-import es.bsc.hp2c.edge.funcs.Func;
-import es.bsc.hp2c.edge.funcs.Func.FunctionInstantiationException;
+import es.bsc.hp2c.common.types.Func;
 
 import com.rabbitmq.client.*;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.concurrent.TimeoutException;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.JSONTokener;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import static es.bsc.hp2c.common.utils.FileUtils.*;
 
 /**
  * Contains the main method and two additional methods useful for parsing and
@@ -43,16 +41,17 @@ import org.json.JSONTokener;
 public class HP2CEdge {
     private static String edgeLabel;
     private static final String EXCHANGE_NAME = "measurements";
+    private static final long HEARTBEAT_RATE = 10000;
     private static Connection connection;
     private static Channel channel;
-    private static boolean amqpOn = true;
+    private static Map<String, Device> devices;
 
     /**
      * Obtain map of devices and load functions.
      * 
      * @param args Setup file.
      */
-    public static void main(String[] args) throws FileNotFoundException{
+    public static void main(String[] args) throws IOException {
         // Get input data
         String setupFile;
         if (args.length == 1) {
@@ -60,98 +59,50 @@ public class HP2CEdge {
         } else {
             setupFile = "../../deployments/testbed/setup/edge1.json";
         }
-        String localIP = System.getenv("LOCAL_IP");
+        // Get defaults file
+        String defaultsPath = "/data/edge_default.json";
+        File defaultsFile = new File(defaultsPath);
+        if (!defaultsFile.isFile()) {
+            defaultsPath = "../../deployments/defaults/setup/edge_default.json";
+        }
+        edgeLabel = readEdgeLabel(setupFile);
 
-        // Set up AMQP connections
-        setUpMessaging(localIP);
+        // Get IP address
+        String localIp = System.getenv("LOCAL_IP");
+        HashMap<String, Object> brokerConnections = CommUtils.parseRemoteIp("broker", localIp);
+        String brokerIp = (String) brokerConnections.get("ip");
+        int brokerPort = (int) brokerConnections.get("port");
 
-        // Load devices and functions
-        Map<String, Device> devices = loadDevices(setupFile);
+        devices = loadDevices(setupFile, "driver", true);
+
+        // Set up AMQP messaging
+        boolean amqpOn = setUpMessaging(brokerIp, brokerPort);
+        if (amqpOn) {
+            JSONObject jEdgeSetup = getJsonObject(setupFile);
+            Timer timer = new Timer();
+            Heartbeat heartbeat = new Heartbeat(jEdgeSetup, edgeLabel);
+            timer.scheduleAtFixedRate(heartbeat, 0, HEARTBEAT_RATE);
+        } else {
+            System.out.println("Heartbeat could not start. AMQP not available");
+        }
         OpalComm.setLoadedDevices(true);
-        loadFunctions(setupFile, devices);
+        Func.loadFunctions(setupFile, devices);
+        Func.loadGlobalFunctions(defaultsPath, devices, amqpOn);
     }
 
-    private static void setUpMessaging(String ip) {
+    private static boolean setUpMessaging(String ip, int port) {
+        // Try connecting to a RabbitMQ server until success
+        connection = CommUtils.AmqpConnectAndRetry(ip, port);
+        // After establishing a connection, set up channel and exchange
         try {
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost(ip);
-            connection = factory.newConnection();
             channel = connection.createChannel();
             channel.exchangeDeclare(EXCHANGE_NAME, "topic");
-            System.out.println("AMQP connection started.");
-        } catch (IOException | TimeoutException e) {
-            amqpOn = false;
-            System.err.println("Error initializing messaging: " + e.getMessage());
-            System.err.println("Continuing without AMQP connection.");
+        } catch (IOException e) {
+            System.err.println("Error setting up RabbitMQ channel and exchange: " + e.getMessage());
+            throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * Parse functions from JSON and, for each one, parse and check its triggers.
-     * 
-     * @param setupFile String containing JSON file.
-     * @param devices   map of the devices within the edge.
-     */
-    public static void loadFunctions(String setupFile, Map<String, Device> devices) throws FileNotFoundException {
-        InputStream is = new FileInputStream(setupFile);
-
-        JSONTokener tokener = new JSONTokener(is);
-        JSONObject object = new JSONObject(tokener);
-
-        // Load specific functions
-        try {
-            JSONArray funcs = object.getJSONArray("funcs");
-            for (Object jo : funcs) {
-                JSONObject jFunc = (JSONObject) jo;
-                String funcLabel = jFunc.optString("label", "");
-                // Perform Func initialization
-                try {
-                    Runnable action = Func.functionParseJSON(jFunc, devices, funcLabel);
-                    Func.setupTrigger(jFunc, devices, action);
-                } catch (FunctionInstantiationException e) {
-                    System.err.println("Error loading function. " + e.getMessage());
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Warning: Specific funcs might not be available in setup: " + e.getMessage());
-        }
-
-        // Load generic functions
-        JSONObject jGlobProp = object.getJSONObject("global-properties");
-        edgeLabel = jGlobProp.optString("label");
-        if (edgeLabel.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Parameter 'label' is missing from the 'global-properties' block or not set in the setup file.");
-        }
-        JSONObject jGlobalFuncs = jGlobProp.getJSONObject("funcs");
-        // Loop all-sensors functions that apply to all sensors available
-        JSONArray jAllSensorFuncs = jGlobalFuncs.getJSONArray("all-sensors");
-        for (Object jo: jAllSensorFuncs) {
-            JSONObject jGlobalFunc = (JSONObject) jo;
-            String funcLabel = jGlobalFunc.optString("label");
-            if (funcLabel.equals("AMQPPublish") && !amqpOn) {
-                continue;
-            }
-            // Skip device if not a sensor
-            for (Device device: devices.values()) {
-                if (!device.isSensitive()) {
-                    continue;
-                }
-                // Create ArrayList of a single sensor and set it to the JSONObject
-                ArrayList<String> sensorList = new ArrayList<>();
-                sensorList.add(device.getLabel());
-                jGlobalFunc.getJSONObject("parameters").put("sensors", sensorList);
-                // Do same modification to triggers in JSON
-                jGlobalFunc.getJSONObject("trigger").put("parameters", sensorList);
-                // Perform Func initialization
-                try {
-                    Runnable action = Func.functionParseJSON(jGlobalFunc, devices, funcLabel);
-                    Func.setupTrigger(jGlobalFunc, devices, action);
-                } catch (FunctionInstantiationException e) {
-                    System.err.println("Error initializing general function: " + e.getMessage());
-                }
-            }
-        }
+        System.out.println("[setUpMessaging] AMQP connection started.");
+        return true;
     }
 
     public static String getEdgeLabel() {
@@ -168,5 +119,55 @@ public class HP2CEdge {
 
     public static String getExchangeName() {
         return EXCHANGE_NAME;
+    }
+
+    /**
+     * TimerTask that sends a periodic heartbeat message to the server.
+     */
+    static class Heartbeat extends TimerTask {
+        private final JSONObject jEdgeSetup;
+        private final String routingKey;
+        public Heartbeat(JSONObject jEdgeSetup, String edgeLabel) {
+            this.jEdgeSetup = jEdgeSetup;
+            this.routingKey = "edge" + "." + edgeLabel + "." + "heartbeat";
+            System.out.println("[Heartbeat] Instantiating heartbeat scheduler for edge " + edgeLabel);
+        }
+        @Override
+        public void run() {
+            try {
+                // Add timestamp and status to the JSON object
+                JSONObject jGlobalProps = jEdgeSetup.getJSONObject("global-properties");
+                JSONArray jDevices = jEdgeSetup.getJSONArray("devices");
+                int index = 0;
+                for (Object d : jDevices) {
+                    JSONObject jD = (JSONObject) d;
+                    boolean availability = true;
+                    String deviceLabel = jD.optString("label", "").replace(" ", "").replace("-", "");
+                    Device device = devices.get(deviceLabel);
+                    if (device.isSensitive() && !device.isSensorAvailable()) {
+                        availability = false;
+                    }
+                    if (device.isActionable() && !device.isActuatorAvailable()) {
+                        availability = false;
+                    }
+                    jD.put("availability", availability);
+                    jDevices.put(index, jD);
+                    index += 1;
+                }
+                jGlobalProps.put("heartbeat", System.currentTimeMillis());
+                jGlobalProps.put("available", true);
+
+                // Convert the string to bytes
+                byte[] message = jEdgeSetup.toString().getBytes();
+                try {
+                    channel.basicPublish(EXCHANGE_NAME, routingKey, null, message);
+                } catch (IOException e) {
+                    System.err.println("Exception in " + edgeLabel + " edge heartbeat: " + e.getMessage());
+                }
+                System.out.println("[Heartbeat] Sent JSON message to routing key " + routingKey);
+            } catch (Exception e) {
+                System.err.println("[Heartbeat] Exception in Heartbeat task: " + e.getMessage());
+            }
+        }
     }
 }

@@ -1,23 +1,30 @@
+/*
+ *  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
 package es.bsc.hp2c;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DeliverCallback;
 import es.bsc.hp2c.common.types.Device;
-import es.bsc.hp2c.common.types.Sensor;
-import org.influxdb.BatchOptions;
-import org.influxdb.InfluxDB;
-import org.influxdb.InfluxDBFactory;
-import org.influxdb.dto.Point;
-import org.influxdb.dto.Query;
+import es.bsc.hp2c.server.device.VirtualComm;
+import es.bsc.hp2c.server.edge.VirtualEdge;
+import es.bsc.hp2c.server.modules.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
@@ -25,31 +32,64 @@ import static es.bsc.hp2c.common.utils.FileUtils.readEdgeLabel;
 
 /**
  * Implementation of the server logic interacting with an InfluxDB database and
- * with edge devices via AMQP.
+ * with edge devices via AmqpManager.
  */
-public class HP2CServer implements AutoCloseable {
-    private final Connection connection;
-    private Channel channel;
-    private InfluxDB influxDB;
-    private final String EXCHANGE_NAME = "measurements";
-    private final long dbPort = 8086;
-    private final String username = "root", password = "root";
-    private static Map<String, Map<String, Device>> deviceMap = new HashMap<>();
+public class HP2CServer {
+    public static AmqpManager amqp;
+    public static DatabaseHandler db;
+    public static RestListener restServer;
+    public static CLI cli;
+    private static EdgeHeartbeat heartbeat;
+    private static final Map<String, VirtualEdge> edgeMap = new HashMap<>();
+    private static boolean verbose = true;
 
-    public HP2CServer(String hostIp) throws IOException, TimeoutException {
-        // Init RabbitMQ
-        System.out.println("Connecting to AMQP broker at host IP " + hostIp + "...");
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(hostIp);
-        connection = factory.newConnection();
-        channel = connection.createChannel();
-        System.out.println("AMQP Connection successful");
-        // Init InfluxDB
-        initDB(hostIp, dbPort);
+    /** Start and run Server modules. */
+    public static void main(String[] args) {
+        // Load setup files
+        String hostIp = getHostIp();
+        // Deploy listener
+        try {
+            init(hostIp);
+            start();
+        } catch (IOException | TimeoutException | InterruptedException e) {
+            System.err.println("Server error: " + e.getMessage());
+        }
     }
 
-    public static void main(String[] args) throws FileNotFoundException {
-        // Load setup files
+    /**
+     * Initialize AmqpManager, InfluxDB, and CLI connections.
+     * @param hostIp IP of AmqpManager broker and database. TODO: use custom IPs for each module
+     */
+    public static void init(String hostIp) throws IOException, TimeoutException {
+        // Initialize modules
+        db = new DatabaseHandler(hostIp);
+        amqp = new AmqpManager(hostIp, edgeMap, db);
+        heartbeat = new EdgeHeartbeat(amqp, edgeMap);
+        restServer = new RestListener(edgeMap);
+        cli = new CLI(edgeMap);
+    }
+
+    private static void start() throws IOException, InterruptedException {
+        // Start Server modules
+        heartbeat.start();
+        db.start();
+        amqp.startListener();
+        restServer.start();
+        cli.start();
+    }
+
+    private static String getHostIp() {
+        // Get IP and setup directory
+        String hostIp = System.getenv("LOCAL_IP");
+        if (hostIp == null) {
+            hostIp = "0.0.0.0";
+        }
+        return hostIp;
+    }
+
+    /** Parse edge nodes files and configure the edge-device map. */
+    private static String parseSetupFiles(String[] args) throws IOException {
+        // Get IP and setup directory
         String hostIp;
         File setupDir;
         if (args.length == 1) {
@@ -60,143 +100,84 @@ public class HP2CServer implements AutoCloseable {
             hostIp = "0.0.0.0";
         }
         File[] setupFiles = setupDir.listFiles();
-        assert setupFiles != null;
-
+        if (setupFiles == null) {
+            throw new FileNotFoundException("No setup files found in " + setupDir);
+        }
         // Fill in edge-devices map
         for (File setupFile: setupFiles) {
             String filePath = setupFile.toString();
             System.out.println("Loading setup configuration for file " + filePath);
             String edgeLabel = readEdgeLabel(filePath);
-            deviceMap.put(edgeLabel, loadDevices(filePath, "driver-dt"));
-        }
-
-        // Deploy listener
-        try {
-            HP2CServer server = new HP2CServer(hostIp);
-            server.startListener();
-        } catch (IOException | TimeoutException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Start RabbitMQ consumer.
-     * The method will run indefinitely thanks to a DeliverCallback that calls
-     * writeDB to process each message received.
-     * Currently, receiving messages published to any "edge.#" topic.
-     */
-    private void startListener() throws IOException {
-        channel.exchangeDeclare(EXCHANGE_NAME, "topic");
-        String routingKey = "edge.#";
-        String queueName = channel.queueDeclare().getQueue();
-        channel.queueBind(queueName, EXCHANGE_NAME, routingKey);
-
-        System.out.println(" [x] Awaiting requests");
-
-        DeliverCallback callback = (consumerTag, delivery) -> {
-            // Parse message. For instance: routingKey = "edge.edge1.voltmeter1"
-            byte[] message = delivery.getBody();
-            String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
-            long timestampMillis = delivery.getProperties().getTimestamp().getTime();
-            String edgeName = getEdgeName(senderRoutingKey);
-            String deviceName = getDeviceName(senderRoutingKey);
-            // Check existence of pair edge-device
-            if (deviceMap.containsKey(edgeName)){
-                if (!deviceMap.get(edgeName).containsKey(deviceName)) {
-                    System.err.println("Edge " + edgeName + ", Device " + deviceName
-                            + ": message received but device not listed as " + edgeName + " digital twin devices.");
-                    return;
-                }
-            } else {
-                System.err.println("Edge " + edgeName + ", Device " + deviceName
-                        + ": message received but " + edgeName + " is not listed as digital twin edge.");
-                return;
+            Map<String, Device> devicesMap = loadDevices(filePath, "driver-dt", false);
+            Map <String, VirtualComm.VirtualDevice> devices = new HashMap<>();
+            for (String d : devicesMap.keySet()){
+                devices.put(d, (VirtualComm.VirtualDevice) devicesMap.get(d));
             }
-            // Sense to the corresponding sensor
-            Sensor<?, ?> sensor = (Sensor<?, ?>) deviceMap.get(edgeName).get(deviceName);
-            sensor.sensed(message);
-            // Write entry in database
-            writeDB((Float[]) sensor.decodeValues(message), timestampMillis, edgeName, deviceName);
-        };
-        channel.basicConsume(queueName, true, callback, consumerTag -> { });
+            VirtualEdge edge = new VirtualEdge(edgeLabel, devices, 0L);
+            edgeMap.put(edgeLabel, edge);
+        }
+        return hostIp;
     }
 
-    /**
-     * Write to Influx database.
-     * Use the second field of the routing key (EDGE_ID) as the `measurement`
-     * (time series) and the third field (DEVICE_ID) as the `tag` value.
-     * @param values Message of a measurements as an integer format.
-     * @param timestamp Message timestamp in long integer format.
-     * @param edgeName Name of the Influx measurement (series) where we
-     *                 will write. Typically, the name of the edge node.
-     * @param deviceName Name of the Influx tag where we will write. Typically,
-     *                   the name of the device.
-     */
-    private void writeDB(Float[] values, long timestamp, String edgeName, String deviceName) {
-        for (int i = 0; i < values.length; i++) {
-            String tagName = deviceName + "Sensor" + i;
-            System.out.println(" [ ] Writing DB with '" + edgeName + "." +
-                    deviceName + "':'" + values[i] + "'");
-            influxDB.write(Point.measurement(edgeName)
-                    .time(timestamp, TimeUnit.MILLISECONDS)
-                    .tag("device", tagName)
-                    .addField("value", values[i])
-                    .build());
+    /** Check actuator validity and return a custom error message upon error.*/
+    public static ActuatorValidity checkActuator(String edgeLabel, String actuatorName) {
+        // Check if the provided actuator name exists in the map of edge nodes
+        StringBuilder msg = new StringBuilder();
+        if (!isInMap(edgeLabel, actuatorName, edgeMap)) {
+            msg.append("Edge " + edgeLabel + ", Device " + actuatorName + " not listed.\n");
+            msg.append("Options are:\n");
+            for (VirtualEdge edge : edgeMap.values()) {
+                msg.append("Group: " + edgeLabel + "\n");
+                for (String deviceLabel : edge.getDeviceLabels()) {
+                    Device d = (Device) edge.getDevice(deviceLabel);
+                    if (d.isActionable()) {
+                        msg.append("  Actuator: " + deviceLabel + "\n");
+                    }
+                }
+            }
+            return new ActuatorValidity(false, msg.toString());
+        }
+        // Check if the provided device is an actuator
+        Device device = (Device) edgeMap.get(edgeLabel).getDevice(actuatorName);
+        if (!device.isActionable()) {
+            msg.append("Device " + edgeLabel + "." + actuatorName + " is not an actuator.\n");
+            return new ActuatorValidity(false, msg.toString());
+        }
+        return new ActuatorValidity(true, msg.toString());
+    }
+
+    /** Auxiliary class to use with checkActuator. */
+    public static class ActuatorValidity {
+        boolean isValid;
+        String msg;
+        ActuatorValidity(boolean isValid, String msg) {
+            this.isValid = isValid;
+            this.msg = msg;
+        }
+        public boolean isValid() {
+            return isValid;
+        }
+        public String getMessage() {
+            return msg;
         }
     }
 
     /**
-     * Initializes the "hp2cdt" InfluxDB database instance.
+     * Check if the combination "edgeLabel" and "deviceName" is in the given nested HashMap
      */
-    private void initDB(String ip, long port) {
-        // Create an object to handle the communication with InfluxDB.
-        System.out.println("Connecting to InfluxDB at host IP " + ip + ", port " + port + "...");
-        String serverURL = "http://" + ip + ":" + port;
-        influxDB = InfluxDBFactory.connect(serverURL, username, password);
-        System.out.println("InfluxDB Connection successful");
-
-        // Create a database if it does not already exist
-        String databaseName = "hp2cdt";
-        influxDB.query(new Query("CREATE DATABASE " + databaseName));
-        influxDB.setDatabase(databaseName);
-
-        // Set up retention policy
-        String retentionPolicyName = "one_day_only";
-        influxDB.query(new Query("CREATE RETENTION POLICY " + retentionPolicyName
-                + " ON " + databaseName + " DURATION 1d REPLICATION 1 DEFAULT"));
-        influxDB.setRetentionPolicy(retentionPolicyName);
-
-        // Enable batch writes to get better performance.
-        influxDB.enableBatch(
-            BatchOptions.DEFAULTS
-                .threadFactory(runnable -> {
-                    Thread thread = new Thread(runnable);
-                    thread.setDaemon(true);
-                    return thread;
-                })
-        );
-
-        // Close when application terminates.
-        Runtime.getRuntime().addShutdownHook(new Thread(influxDB::close));
+    public static boolean isInMap(String edgeLabel, String deviceName, Map<String, VirtualEdge> edgeMap) {
+        if (edgeMap.containsKey(edgeLabel)){
+            return edgeMap.get(edgeLabel).containsDevice(deviceName);
+        } else {
+            return false;
+        }
     }
 
-    /*
-     * Parse device name from the routing key in deliverer's message.
-     */
-    public String getEdgeName(String routingKey){
-        String[] routingKeyParts = routingKey.split("\\.");
-        return routingKeyParts[1];
-    }
-    /*
-     * Parse device name from the routing key in deliverer's message.
-     */
-    public String getDeviceName(String routingKey){
-        String[] routingKeyParts = routingKey.split("\\.");
-        return routingKeyParts[2];
+    public static boolean isVerbose() {
+        return verbose;
     }
 
-    @Override
-    public void close() throws IOException {
-        connection.close();
+    public static void setVerbose(boolean verbose) {
+        HP2CServer.verbose = verbose;
     }
 }

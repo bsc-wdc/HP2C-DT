@@ -2,88 +2,85 @@
     "global-properties":{
         "label": "edge1",
         "comms":{
-            "udp": {
-                "ip": "0.0.0.0",
-                "ports": {
-                    "21002": ["Ammeter Gen1", "Voltmeter Gen1"]
+            "opal-udp": {
+                "protocol": "udp",
+                "sensors": {
+                    "ip": "0.0.0.0",
+                    "port": "10102"
                 }
             },
-            "tcp-sensors": {
-                "ip": "0.0.0.0",
-                "ports": {
-                    "11002": ["Switch Gen1", "Generator Gen1"]
-                }
-            },
-            "tcp-actuators": {
-                "ports": {
-                    "31002": ["Switch Gen1", "Generator Gen1"]
+            "opal-tcp": {
+                "protocol": "tcp",
+                "sensors": {
+                    "ip": "0.0.0.0",
+                    "port": "20102"
+                },
+                "actuators": {
+                    "ip": ["$LOCAL_IP", "localhost"],
+                    "port": "30102"
                 }
             }
         },
-        "funcs": {
-            "all-sensors": [
-                {
-                    "label": "AMQPPublish",
-                    "lang": "Java",
-                    "method-name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
-                    "parameters": {
-                        "sensors": ["ALL"],
-                        "actuators": [],
-                        "other": []
-                    },
-                    "trigger": {
-                        "type": "onRead",
-                        "parameters": ["ALL"]
-                    }
-                }
-            ]
+        "geo-data": {
+            "position": {
+                "x": 2.1153889,
+                "y": 41.389917
+            },
+            "connections": ["edge3", "edge7", "edge8"]
         }
     },
-
     "devices": [
         {
             "label": "Ammeter Gen1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalAmmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualAmmeter",
             "position": {
                 "x":20,
                 "y":40
             },
 
             "properties": {
+                "comm-type": "opal-udp",
                 "indexes": [0]
-            }
-        },
-        {
-            "label": "Voltmeter Gen1",
-            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
-            "position": {
-                "x":20,
-                "y":40
-            },
-            "properties": {
-                "indexes": [1]
             }
         },
         {
             "label": "Three-Phase Switch Gen1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalSwitch",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualSwitch",
             "position": {
                 "x":0,
                 "y":0
             },
             "properties": {
-                "indexes": [2,3,4]
+                "comm-type": "opal-tcp",
+                "indexes": [0,1,2]
+            }
+        },
+        {
+            "label": "Voltmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualVoltmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+            "properties": {
+                "comm-type": "opal-udp",
+                "indexes": [1]
             }
         },
         {
             "label": "Generator Gen1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalGenerator",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualGenerator",
             "position": {
                 "x":0,
                 "y":0
             },
             "properties": {
-                "indexes": [5,6]
+                "comm-type": "opal-tcp",
+                "indexes": [3,4]
             }
         }
     ],
@@ -95,7 +92,7 @@
             "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
             "parameters": {
                 "sensors": ["Voltmeter Gen1"],
-                "actuators": ["Switch Gen1"],
+                "actuators": ["Three-Phase Switch Gen1"],
                 "other": [200]
             },
             "trigger": {

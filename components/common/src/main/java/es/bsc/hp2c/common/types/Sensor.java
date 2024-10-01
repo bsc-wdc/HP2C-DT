@@ -64,7 +64,7 @@ public interface Sensor<R, V> {
      *
      * @return Byte array message with the set of current values
      */
-    public byte[] encodeValues();
+    public byte[] encodeValuesSensor();
 
     /**
      * Decode values from a message made of an array of bytes.
@@ -72,5 +72,5 @@ public interface Sensor<R, V> {
      * @param messageBytes contains the values of the sensor.
      * @return The actual values in the corresponding data type.
      */
-    public R decodeValues(byte[] messageBytes);
+    public R decodeValuesSensor(byte[] messageBytes);
 }

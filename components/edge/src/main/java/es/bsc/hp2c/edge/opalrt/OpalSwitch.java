@@ -25,6 +25,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
+import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 
 /**
  * Represent a switch implemented accessible within a local OpalRT.
@@ -54,34 +55,42 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
         }
 
         String commType = jProperties.getString("comm-type");
-        OpalComm.registerSensor(this, commType);
-        OpalComm.registerActuator(this);
-        OpalComm.init(jGlobalProperties);
+        if (jGlobalProperties.getBoolean("executeOpalComm")){
+            OpalComm.registerSensor(this, commType);
+            OpalComm.registerActuator(this);
+            OpalComm.init(jGlobalProperties);
+        }
     }
 
     @Override
     public void sensed(Float[] values) {
         setValues(sensedValues(values));
-        System.out.println(getLabel() + " states are: ");
-        for(int i = 0; i < this.states.length; ++i){
-            System.out.println("Switch " + i + " " + this.states[i]);
-        }
+        System.out.println(getLabel() + " states are: " + printableArray(this.states));
     }
 
     @Override
     public void actuate(State[] values) throws IOException {
-        Float[] rawValues = actuateValues(values);
+        // Check length of input values
+        if (values.length != this.indexes.length) {
+            throw new IOException("OpalSwitch.actuate: Wrong input length " +
+                    "(actual: " + values.length + ", expected: " + this.indexes.length + ").");
+        }
+        // Actuate
+        Float[] rawValues = actuatedValues(values);
         OpalComm.commitActuation(this, rawValues);
     }
 
-    protected Float[] actuateValues(State[] values){
+    protected Float[] actuatedValues(State[] values){
         Float[] outputValues = new Float[values.length];
-        for (int i = 0; i < values.length; ++i){
+        for (int i = 0; i < values.length; ++i) {
             if (values[i] == State.ON){
                 outputValues[i] = 1.0f;
-            }
-            else {
+            } else if (values[i] == State.OFF) {
                 outputValues[i] = 0.0f;
+            } else if (values[i] == State.NULL) {
+                outputValues[i] = Float.NEGATIVE_INFINITY;
+            } else {
+                throw new UnsupportedOperationException("State " + values[i] + " not implemented.");
             }
         }
         return outputValues;
@@ -95,12 +104,14 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     @Override
     protected State[] sensedValues(Float[] input) {
         State[] states = new State[input.length];
-        // check if the number of input values equals the number of phases
-        if (input.length != this.indexes.length) {
-            throw new IllegalArgumentException("Input length must be equal to switch's size");
-        }
         for (int i = 0; i < input.length; ++i) {
-            states[i] = input[i] > 0.5f ? State.ON : State.OFF;
+            if (input[i] == Float.NEGATIVE_INFINITY) {
+                states[i] = State.NULL;
+            } else if (input[i] > 0.5f) {
+                states[i] = State.ON;
+            } else {
+                states[i] = State.OFF;
+            }
         }
         return states;
     }
@@ -108,21 +119,16 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     @Override
     public void setValues(State[] values) {
         this.states = values;
-        if (this.indexes.length > 1){
-            System.out.println("New switch states has been set: ");
-            System.out.println("New states are: ");
-            for(int i = 0; i < this.states.length; ++i){
-                System.out.println("Switch " + i + " " + this.states[i]);
-            }
-        }
-        else{
-            System.out.println("New switch state has been set: ");
-            System.out.println("New state is " + this.states[0]);
-        }
     }
 
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return BytesToFloatArray(message);
+    }
+
+    @Override
+    public final State[] decodeValuesActuator(byte[] message) {
+        Float[] floatArray = BytesToFloatArray(message);
+        return sensedValues(floatArray);
     }
 }

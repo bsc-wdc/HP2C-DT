@@ -1,0 +1,34 @@
+{
+    "global-properties":{
+        "funcs": [
+            {
+                "label": "AMQPPublish",
+                "lang": "Java",
+                "method-name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
+                "parameters": {
+                    "sensors": ["ALL"],
+                    "actuators": [],
+                    "other": []
+                },
+                "trigger": {
+                    "type": "onRead",
+                    "parameters": ["ALL"]
+                }
+            },
+            {
+                "label": "AMQPConsume",
+                "lang": "Java",
+                "method-name": "es.bsc.hp2c.edge.funcs.AmqpConsume",
+                "parameters": {
+                    "sensors": [],
+                    "actuators": ["ALL"],
+                    "other": []
+                },
+                "trigger": {
+                    "type": "onStart",
+                    "parameters": []
+                }
+            }
+        ]
+    }
+}

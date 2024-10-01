@@ -1,0 +1,9 @@
+**/db.sqlite3
+staticfiles/
+.gitignore
+*.md
+*.yaml
+scripts/dashboards/
+scripts/jsons_dashboards/
+**/migrations/
+**/__pycache__/

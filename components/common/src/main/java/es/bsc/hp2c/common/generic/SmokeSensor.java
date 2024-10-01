@@ -30,7 +30,7 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
         SMOKE
     }
 
-    private Smoke status = Smoke.NO_SMOKE;
+    private Smoke status = null;
 
     protected SmokeSensor(String label, float[] position) {
         super(label, position);
@@ -46,7 +46,7 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
     public abstract Smoke sensedValues(R value);
 
     @Override
-    public final byte[] encodeValues() {
+    public final byte[] encodeValuesSensor() {
         Smoke state = this.getCurrentValues();
         Float[] values = new Float[1];
         values[0] = (float) ((state == Smoke.SMOKE) ? 1.0 : 0.0);
@@ -54,7 +54,7 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
     }
 
     @Override
-    public abstract R decodeValues(byte[] message);
+    public abstract R decodeValuesSensor(byte[] message);
 
     @Override
     public boolean isActionable() {
@@ -71,6 +71,6 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
 
     @Override
     public void sensed(byte[] messageBytes) {
-        sensed(decodeValues(messageBytes));
+        sensed(decodeValuesSensor(messageBytes));
     }
 }

@@ -1,4 +1,4 @@
-/**
+/*
  *  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
  * 
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,20 +13,29 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Switch;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
+
+import static es.bsc.hp2c.HP2CServer.amqp;
+import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 
 
 /**
  * Digital twin Switch.
  */
-public class VirtualSwitch extends Switch<Float[]> {
+public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Switch.State[]>, VirtualActuator<Switch.State[]> {
+    private final String edgeLabel;
+    private final int size;
+    private boolean availability;
+
     /**
      * Creates a new instance of VirtualSwitch.
      *
@@ -37,6 +46,8 @@ public class VirtualSwitch extends Switch<Float[]> {
      */
     public VirtualSwitch(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position, properties.getJSONArray("indexes").length());
+        this.edgeLabel = jGlobalProperties.getString("label");
+        this.size = properties.getJSONArray("indexes").length();
     }
 
     /**
@@ -46,20 +57,31 @@ public class VirtualSwitch extends Switch<Float[]> {
     @Override
     public void sensed(Float[] values) {
         Float[] sensedValues = new Float[values.length];
-        for(int i = 0; i < values.length; i++){
+        for (int i = 0; i < values.length; i++){
             sensedValues[i] = values[i];
-            System.out.println("Switch " + i + " " + this.states[i]);
         }
-        try {
-            setValues(sensedValues(sensedValues));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        setValues(sensedValues(sensedValues));
     }
 
     @Override
     public void actuate(State[] values) throws IOException {
+        byte[] byteValues = encodeValuesActuator(values);
+        amqp.virtualActuate(this, edgeLabel, byteValues);
+    }
 
+    @Override
+    public void actuate(String[] stringValues) throws IOException{
+        State[] values = new State[stringValues.length];
+        for (int i = 0; i < stringValues.length; i++) {
+            if (isState(stringValues[i])) {
+                values[i] = State.valueOf(stringValues[i].toUpperCase());
+            } else{
+                throw new IOException("Values passed to Switch " +
+                        "(" + edgeLabel + "." + getLabel() + ") must be of type State.\n" +
+                        "Options are: " + printableArray(State.values()));
+            }
+        }
+        actuate(values);
     }
 
     /**
@@ -79,8 +101,20 @@ public class VirtualSwitch extends Switch<Float[]> {
     }
 
     @Override
-    protected Float[] actuateValues(State[] values) {
-        return new Float[0];
+    public Float[] actuatedValues(State[] values) {
+        Float[] outputValues = new Float[values.length];
+        for (int i = 0; i < values.length; ++i) {
+            if (values[i] == State.ON){
+                outputValues[i] = 1.0f;
+            } else if (values[i] == State.OFF) {
+                outputValues[i] = 0.0f;
+            } else if (values[i] == State.NULL) {
+                outputValues[i] = Float.NEGATIVE_INFINITY;
+            } else {
+                throw new UnsupportedOperationException("State " + values[i] + " not implemented.");
+            }
+        }
+        return outputValues;
     }
 
     /**
@@ -91,7 +125,44 @@ public class VirtualSwitch extends Switch<Float[]> {
     }
 
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
+    }
+
+    @Override
+    public final State[] decodeValuesActuator(byte[] message) {
+        return sensedValues(CommUtils.BytesToFloatArray(message));
+    }
+
+    @Override
+    public String getEdgeLabel() {
+        return this.edgeLabel;
+    }
+
+    @Override
+    public int getSize() { return this.size; }
+
+    @Override
+    public boolean isCategorical() {
+        return true;
+    }
+
+    @Override
+    public ArrayList<String> getCategories() {
+        ArrayList<String> categories = new ArrayList<>();
+        for (State state : Switch.State.values()) {
+            categories.add(state.toString());
+        }
+        return categories;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return availability;
+    }
+
+    @Override
+    public void setAvailability(boolean b){
+        availability = b;
     }
 }

@@ -1,0 +1,14 @@
+FROM python:3.10
+
+COPY ./ /app/
+
+RUN apt-get update
+
+WORKDIR /app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+WORKDIR /app/scripts
+RUN chmod +x run_user_interface.sh
+
+CMD ["./run_user_interface.sh"]
+

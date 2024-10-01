@@ -25,5 +25,20 @@ import java.io.IOException;
 public interface Actuator<V> {
 
     public void actuate(V values) throws IOException;
+    public void actuate(byte[] byteValues) throws IOException;
 
+    /**
+     * Decode values from bytes format.
+     *
+     * @param messageBytes Message encoded as an array of bytes.
+     * @return Actual values in the actuator data type.
+     */
+    public V decodeValuesActuator(byte[] messageBytes);
+
+    /**
+     * Encode values to bytes
+     * @param values Actual values in the actuator data type.
+     * @return Message encoded as an array of bytes
+     */
+    public byte[] encodeValuesActuator(V values);
 }

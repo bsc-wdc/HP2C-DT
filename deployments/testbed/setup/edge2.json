@@ -6,38 +6,27 @@
                 "protocol": "udp",
                 "sensors": {
                     "ip": "0.0.0.0",
-                    "port": "22002"
+                    "port": "10202"
                 }
             },
             "opal-tcp": {
                 "protocol": "tcp",
                 "sensors": {
                     "ip": "0.0.0.0",
-                    "port": "12002"
+                    "port": "20202"
                 },
                 "actuators": {
                     "ip": "$LOCAL_IP",
-                    "port": "32002"
+                    "port": "30202"
                 }
             }
         },
-        "funcs": {
-            "all-sensors": [
-                {
-                    "label": "AMQPPublish",
-                    "lang": "Java",
-                    "method-name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
-                    "parameters": {
-                        "sensors": ["ALL"],
-                        "actuators": [],
-                        "other": []
-                    },
-                    "trigger": {
-                        "type": "onRead",
-                        "parameters": ["ALL"]
-                    }
-                }
-            ]
+        "geo-data": {
+            "position": {
+                "x": -5.9826,
+                "y": 37.3886
+            },
+            "connections": ["edge1"]
         }
     },
 

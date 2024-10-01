@@ -40,4 +40,4 @@ services:
       target: python_agent
     image: compss/python_agents:${COMPSS_VERSION}
 " > ${tmpfile}
-docker-compose -f "${tmpfile}" build
+docker compose -f "${tmpfile}" build

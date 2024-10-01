@@ -29,8 +29,8 @@ import es.bsc.hp2c.common.utils.CommUtils;
  */
 public abstract class Generator<R> extends Device implements Sensor<R, Float[]>, Actuator<Float[]> {
 
-    protected Float[] voltageSetpoint = { 0.0f };
-    protected Float[] powerSetpoint = { 0.0f };
+    protected Float[] voltageSetpoint = null;
+    protected Float[] powerSetpoint = null;
 
     private ArrayList<Runnable> onReadFunctions;
 
@@ -50,11 +50,16 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
 
     @Override
     public void sensed(byte[] messageBytes) {
-        sensed(decodeValues(messageBytes));
+        sensed(decodeValuesSensor(messageBytes));
     }
 
     @Override
     public abstract void actuate(Float[] value) throws IOException;
+
+    @Override
+    public void actuate(byte[] byteValues) throws IOException {
+        actuate(decodeValuesActuator(byteValues));
+    }
 
     /**
      * Adds a runnable to devices "onRead" functions;
@@ -75,42 +80,51 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     }
 
     /**
-     * Converts the sensed input to a known value;
+     * Converts the sensed input to a human-readable value
      *
      * @param input input value sensed
-     * @return corresponding known value
+     * @return human-readable value
      */
     protected abstract Float[] sensedValues(R input);
 
+    /** Converts human-readable action into actionable raw value */
+    protected abstract Float[] actuatedValues(Float[] values);
+
     @Override
     public final Float[] getCurrentValues() {
-        int totalLength = this.voltageSetpoint.length + this.powerSetpoint.length;
-        Float[] combinedValues = new Float[totalLength];
-
-        System.arraycopy(this.voltageSetpoint, 0, combinedValues, 0, this.voltageSetpoint.length);
-        System.arraycopy(this.powerSetpoint, 0, combinedValues, this.voltageSetpoint.length, this.powerSetpoint.length);
-
+        Float[] combinedValues = new Float[2];
+        if (voltageSetpoint == null || powerSetpoint == null) return null;
+        combinedValues[0] = this.voltageSetpoint[0];
+        combinedValues[1] = this.powerSetpoint[0];
         return combinedValues;
     }
 
     protected void setValues(Float[] values) {
-        if (values.length >= this.voltageSetpoint.length + this.powerSetpoint.length) {
-            System.arraycopy(values, 0, this.voltageSetpoint, 0, this.voltageSetpoint.length);
-
-            System.arraycopy(values, this.voltageSetpoint.length, this.powerSetpoint, 0, this.powerSetpoint.length);
+        if (values.length == 2) {
+            voltageSetpoint = new Float[1];
+            powerSetpoint = new Float[1];
+            voltageSetpoint[0] = values[0];
+            powerSetpoint[0] = values[1];
         } else {
-            System.err.println("Values length is not enough to assign to voltageSetpoint and powerSetpoint.");
+            System.err.println("Values length must be 2 (voltageSetpoint and powerSetpoint)");
         }
     }
 
     @Override
-    public final byte[] encodeValues() {
+    public final byte[] encodeValuesSensor() {
         Float[] values = this.getCurrentValues();
-        return CommUtils.FloatArrayToBytes(values);
+        Float[] rawValues = actuatedValues(values);
+        return CommUtils.FloatArrayToBytes(rawValues);
     }
 
     @Override
-    public abstract R decodeValues(byte[] message);
+    public final byte[] encodeValuesActuator(Float[] values) {
+        Float[] rawValues = actuatedValues(values);
+        return CommUtils.FloatArrayToBytes(rawValues);
+    }
+
+    @Override
+    public abstract R decodeValuesSensor(byte[] message);
 
 
     @Override

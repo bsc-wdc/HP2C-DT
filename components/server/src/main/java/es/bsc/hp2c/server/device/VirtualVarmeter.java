@@ -13,17 +13,21 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Varmeter;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 /**
  * Digital twin Varmeter.
  */
-public class VirtualVarmeter extends Varmeter<Float[]> {
+public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<Float[]> {
+    private final String edgeLabel;
+    private final int size;
+    private boolean availability;
+
     /**
      * Creates a new instance of VirtualVarmeter.
      *
@@ -34,12 +38,13 @@ public class VirtualVarmeter extends Varmeter<Float[]> {
      */
     public VirtualVarmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
+        this.edgeLabel = jGlobalProperties.getString("label");
+        this.size = properties.getJSONArray("indexes").length();
     }
 
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        System.out.println("Device " + getLabel() + " sensed " + values[0] + " VAR");
     }
 
     @Override
@@ -48,7 +53,27 @@ public class VirtualVarmeter extends Varmeter<Float[]> {
     }
 
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
+    }
+
+    @Override
+    public String getEdgeLabel() {
+        return this.edgeLabel;
+    }
+
+    @Override
+    public int getSize() {
+        return this.size;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return availability;
+    }
+
+    @Override
+    public void setAvailability(boolean b){
+        availability = b;
     }
 }

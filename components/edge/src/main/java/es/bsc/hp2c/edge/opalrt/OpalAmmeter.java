@@ -50,9 +50,11 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
             this.indexes[i] = (jIndexes.getInt(i));
         }
 
-        String commType = jProperties.getString("comm-type");
-        OpalComm.registerSensor(this, commType);
-        OpalComm.init(jGlobalProperties);
+        if (jGlobalProperties.getBoolean("executeOpalComm")) {
+            String commType = jProperties.getString("comm-type");
+            OpalComm.registerSensor(this, commType);
+            OpalComm.init(jGlobalProperties);
+        }
     }
 
     @Override
@@ -74,7 +76,7 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     }
 
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return BytesToFloatArray(message);
     }
 

@@ -1,0 +1,89 @@
+{
+    "global-properties":{
+        "label": "edge1",
+        "comms":{
+            "opal-udp": {
+                "protocol": "udp",
+                "sensors": {
+                    "ip": "0.0.0.0",
+                    "port": "21002"
+                }
+            },
+            "opal-tcp": {
+                "protocol": "tcp",
+                "sensors": {
+                    "ip": "0.0.0.0",
+                    "port": "11002"
+                },
+                "actuators": {
+                    "ip": "$CUSTOM_IP",
+                    "port": "31002"
+                }
+            }
+        },
+        "geo-data": {
+            "position": {
+                "x": 2.1153889,
+                "y": 41.389917
+            },
+            "connections": ["edge2"]
+        }
+    },
+    "devices": [
+        {
+            "label": "Three-Phase Voltmeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalVoltmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualVoltmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+            "properties": {
+                "comm-type": "opal-udp",
+                "indexes": [0,1,2]
+            }
+        },
+        {
+            "label": "Ammeter Gen1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalAmmeter",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualAmmeter",
+            "position": {
+                "x":20,
+                "y":40
+            },
+            "properties": {
+                "comm-type": "opal-udp",
+                "indexes": [3,4,5]
+            }
+        },
+        {
+            "label": "CB1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalSwitch",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualSwitch",
+            "position": {
+                "x":0,
+                "y":0
+            },
+            "properties": {
+                "comm-type": "opal-tcp",
+                "indexes": [0,1,2]
+            }
+        },
+        {
+            "label": "SM1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalGenerator",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualGenerator",
+            "position": {
+                "x":0,
+                "y":0
+            },
+            "properties": {
+                "comm-type": "opal-tcp",
+                "indexes": [3,4]
+            }
+        }
+    ],
+
+    "funcs":[
+    ]
+}

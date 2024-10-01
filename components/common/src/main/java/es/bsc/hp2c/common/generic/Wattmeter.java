@@ -27,16 +27,14 @@ import es.bsc.hp2c.common.utils.CommUtils;
  */
 public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> {
 
-    private Float[] values = { 0.0f };
+    private Float[] values = null;
     private ArrayList<Runnable> onReadFunctions;
 
     @Override
     public abstract void sensed(R values);
 
     @Override
-    public void sensed(byte[] messageBytes) {
-        sensed(decodeValues(messageBytes));
-    }
+    public void sensed(byte[] messageBytes) { sensed(decodeValuesSensor(messageBytes)); }
 
     /**
      * Creates a new instance of wattmeter;
@@ -54,9 +52,7 @@ public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> 
      *
      * @param action runnable implementing the action
      */
-    public void addOnReadFunction(Runnable action) {
-        this.onReadFunctions.add(action);
-    }
+    public void addOnReadFunction(Runnable action) { this.onReadFunctions.add(action); }
 
     /**
      * Calls actions to be performed in case of a new read
@@ -68,30 +64,29 @@ public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> 
     }
 
     /**
-     * Converts the sensed input to a known value;
+     * Converts the sensed input to a human-readable value
      *
      * @param input input value sensed
-     * @return corresponding known value
+     * @return human-readable value
      */
     protected abstract Float[] sensedValues(R input);
 
     @Override
-    public final Float[] getCurrentValues() {
-        return this.values;
-    }
+    public final Float[] getCurrentValues() { return this.values; }
 
     protected void setValues(Float[] values) {
         this.values = values;
+        this.setLastUpdate();
     }
 
     @Override
-    public final byte[] encodeValues() {
+    public final byte[] encodeValuesSensor() {
         Float[] values = this.getCurrentValues();
         return CommUtils.FloatArrayToBytes(values);
     }
 
     @Override
-    public abstract R decodeValues(byte[] message);
+    public abstract R decodeValuesSensor(byte[] message);
 
     @Override
     public final boolean isActionable() {

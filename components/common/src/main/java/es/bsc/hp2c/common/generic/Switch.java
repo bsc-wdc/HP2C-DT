@@ -31,7 +31,8 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
 
     public enum State {
         ON,
-        OFF
+        OFF,
+        NULL
     }
 
     protected State[] states;
@@ -50,8 +51,18 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
         this.onReadFunctions = new ArrayList<>();
         this.states = new State[size];
         for (int i = 0; i < size; ++i){
-            this.states[i] = State.ON;
+            this.states[i] = null;
         }
+    }
+
+    /** Check if a String can be parsed into one of the enum states */
+    protected boolean isState(String str) {
+        for (State state : State.values()) {
+            if (state.name().equals(str.toUpperCase())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -59,11 +70,16 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
 
     @Override
     public void sensed(byte[] messageBytes) {
-        sensed(decodeValues(messageBytes));
+        sensed(decodeValuesSensor(messageBytes));
     }
 
     @Override
     public abstract void actuate(State[] values) throws IOException;
+
+    @Override
+    public void actuate(byte[] byteValues) throws IOException {
+        actuate(decodeValuesActuator(byteValues));
+    }
 
     /**
      * Adds a runnable to devices "onRead" functions;
@@ -85,33 +101,41 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     }
 
     /**
-     * Converts the sensed input to a known value;
+     * Converts the sensed input to a human-readable value
      *
      * @param input input value sensed
-     * @return corresponding known value
+     * @return human-readable value
      */
     protected abstract State[] sensedValues(R input);
 
-    protected abstract Float[] actuateValues(State[] values);
+    /** Converts human-readable action into actionable raw value */
+    protected abstract Float[] actuatedValues(State[] values);
 
     @Override
-    public final State[] getCurrentValues() {
-        return this.states;
-    }
+    public final State[] getCurrentValues() { return this.states; }
 
     protected void setValues(State[] values) {
         this.states = values;
+        this.setLastUpdate();
     }
     
     @Override
-    public final byte[] encodeValues() {
+    public final byte[] encodeValuesSensor() {
         State[] state = this.getCurrentValues();
-        Float[] values = actuateValues(state);
+        Float[] values = actuatedValues(state);
         return CommUtils.FloatArrayToBytes(values);
+    }
+    @Override
+    public final byte[] encodeValuesActuator(State[] values) {
+        Float[] rawValues = actuatedValues(values);
+        return CommUtils.FloatArrayToBytes(rawValues);
     }
 
     @Override
-    public abstract R decodeValues(byte[] message);
+    public abstract R decodeValuesSensor(byte[] message);
+
+    @Override
+    public abstract State[] decodeValuesActuator(byte[] message);
 
     @Override
     public boolean isActionable() {

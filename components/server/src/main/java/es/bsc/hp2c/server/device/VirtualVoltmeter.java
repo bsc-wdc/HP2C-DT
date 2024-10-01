@@ -1,4 +1,4 @@
-/**
+/*
  *  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
  * 
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,17 +13,21 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Voltmeter;
+import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 /**
  * Digital twin Voltmeter.
  */
-public class VirtualVoltmeter extends Voltmeter<Float[]> {
+public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSensor<Float[]> {
+    private final String edgeLabel;
+    private final int size;
+    private boolean availability;
+
     /**
      * Creates a new instance of VirtualVoltmeter.
      *
@@ -34,6 +38,8 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> {
      * */
     public VirtualVoltmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position);
+        this.edgeLabel = jGlobalProperties.getString("label");
+        this.size = properties.getJSONArray("indexes").length();
     }
 
     /**
@@ -43,9 +49,6 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> {
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        for (Float value: values) {
-            System.out.println("Device " + getLabel() + " sensed " + value + " V");
-        }
     }
 
     /**
@@ -57,7 +60,27 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> {
     }
 
     @Override
-    public final Float[] decodeValues(byte[] message) {
+    public final Float[] decodeValuesSensor(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
+    }
+
+    @Override
+    public String getEdgeLabel() {
+        return this.edgeLabel;
+    }
+
+    @Override
+    public int getSize() {
+        return this.size;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return availability;
+    }
+
+    @Override
+    public void setAvailability(boolean b){
+        availability = b;
     }
 }
