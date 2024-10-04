@@ -53,7 +53,7 @@
                                     <input type="checkbox" name="github_editable" id="id_github_editable">
                                     <label class="ml-2 mr-2">Install requirements:</label>
                                     <input type="checkbox" name="github_requirements" id="id_github_requirements">
-                                    <label class="ml-2 mr-2">Target ("${install_dir}/packages"):</label>
+                                    <label class="ml-2 mr-2">Target ("repo_root/packages"):</label>
                                     <input type="checkbox" name="github_target" id="github_target">
                                 </div>
                             </div>
@@ -88,9 +88,9 @@
                                     <input type="hidden" name="section_Entry Point" value="{{section}}">
                                     <input type="hidden" name="custom_field_Entry Point" value="Entry Point">
                                     <input type="text" name="default_value_Entry Point" class="form-control ml-2"
-                                           id="default_value_Entry Point" placeholder="Default Value (optional). Format: repo_name/path_to_entrypoint_from_repo_root.py">
+                                           id="default_value_Entry Point" placeholder="Default Value (optional). Only the module name needed (unique across the repositories)">
                                     <input type="text" name="preset_value_Entry Point" class="form-control ml-2"
-                                           id="preset_value_Entry Point" placeholder="Preset Value (optional). Format: repo_name/path_to_entrypoint_from_repo_root.py">
+                                           id="preset_value_Entry Point" placeholder="Preset Value (optional). Only the module name needed (unique across the repositories)">
                                 </div>
                             </div>
 

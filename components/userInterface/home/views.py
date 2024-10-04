@@ -676,6 +676,14 @@ def ssh_keys_generation(request):
         return render('/')
 
 
+def auto_convert(value):
+    try:
+        return yaml.safe_load(value)
+    except:
+        return value
+
+
+
 def extract_tool_data(request, tool_name):
     tool_data = {}
     tool = Tool.objects.get(name=tool_name)
@@ -700,24 +708,11 @@ def extract_tool_data(request, tool_name):
                 if section not in tool_data:
                     tool_data[section] = {}
                 if field_model.preset_value:
-                    value = request.POST.get(
-                        f'preset_value_boolean_id_{field_form}', None)
-                    if value == "true":
-                        value = True
-                    if value == "on":
-                        value = True
-                    if value == "false":
-                        value = False
-                    tool_data[section][field_model.name] = value
+                    value = request.POST.get(f'preset_value_boolean_id_{field_form}', None)
+                    tool_data[section][field_model.name] = auto_convert(value)
                 else:
                     value = request.POST.get(field_form, False)
-                    if value == "true":
-                        value = True
-                    if value == "on":
-                        value = True
-                    if value == "false":
-                        value = False
-                    tool_data[section][field_model.name] = value
+                    tool_data[section][field_model.name] = auto_convert(value)
             else:
                 field_form = field_key.split("section_id_")[1]
                 section = None
@@ -731,9 +726,11 @@ def extract_tool_data(request, tool_name):
                 if section not in tool_data:
                     tool_data[section] = {}
                 if field_model.preset_value:
-                    tool_data[section][field_model.name] = request.POST.get(f'preset_value_id_{field_form}', None)
+                    value = request.POST.get(f'preset_value_id_{field_form}', None)
+                    tool_data[section][field_model.name] = auto_convert(value)
                 else:
-                    tool_data[section][field_model.name] = request.POST.get(field_form, None)
+                    value = request.POST.get(field_form, None)
+                    tool_data[section][field_model.name] = auto_convert(value)
 
     return tool_data
 
@@ -1784,14 +1781,10 @@ class RunSimulation(threading.Thread):
         for module in modules:
             script.append(f"module load {module}")
 
+        pythonpath_list = []
         for repo in github_setup:
             repo_name = repo["url"].split("/")[4]
             remote_path = os.path.join(install_dir, repo_name)
-            if repo_name == entrypoint.split("/")[0]:
-                # entry point format: repo_name/path_to_entrypoint_from_repo_root.py
-                # install_dir is the absolute path where the repos are installed
-                # the repos are installed within a directory named {repo_name}
-                entrypoint = os.path.join(install_dir, entrypoint)
             editable = repo["editable"]
             install = repo["install"]
             run_install_dir = repo["install_dir"] # path where to execute pip install
@@ -1808,13 +1801,17 @@ class RunSimulation(threading.Thread):
             print("UPLOADED REPO", repo["url"])
             print()
 
-            script = install_repos(script, editable, install, run_install_dir,
+            script, pythonpath_repo = install_repos(script, editable, install, run_install_dir,
                                    remote_path, requirements, ssh, target)
+            pythonpath_list += pythonpath_repo
 
         script = export_variables(script, self.tool_data)
 
-        machine_name = remove_numbers(machine_found.fqdn)
-        script = run_execution(script, execution_folder, self.tool_data, entrypoint, setup_path)
+        pythonpath_list.append("$PYTHONPATH")
+        pythonpath = ":".join(pythonpath_list)
+
+        script = run_execution(script, execution_folder, self.tool_data, entrypoint,
+                               setup_path, pythonpath)
         script.execute()
 
 
@@ -1826,7 +1823,8 @@ def absolut(principal_folder, ssh):
     return principal_folder
 
 
-def run_execution(script, execution_folder, tool_data, entrypoint, setup_path):
+def run_execution(script, execution_folder, tool_data, entrypoint, setup_path,
+                  pythonpath):
     script.append(f"mkdir -p {execution_folder}")
 
     slurm_args = ""
@@ -1862,9 +1860,14 @@ def run_execution(script, execution_folder, tool_data, entrypoint, setup_path):
     job_name = tool_data["setup"]["Simulation Name"] or None
     job_name = job_name.replace(" ", "_")
 
+    if entrypoint.endswith("py"):
+        compss_args += "--lang=python"
+
     script.append(f"enqueue_compss {slurm_args} {compss_args} --job_name={job_name} "
                   f"--keep_workingdir --log_dir={execution_folder} "
-                  f"--job_execution_dir={execution_folder} {entrypoint} {setup_path}")
+                  f"--job_execution_dir={execution_folder} "
+                  f"--pythonpath={pythonpath} {entrypoint} {setup_path} "
+                  f"--results_dir={execution_folder}/results")
     return script
 
 
@@ -1947,7 +1950,7 @@ def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
 
 def install_repos(script, editable, install, install_dir, remote_path,
                   requirements, ssh, target):
-
+    pythonpath = [remote_path]
     if install:
         installation_dir = os.path.join(remote_path,
                                         install_dir)  # install_dir can be empty
@@ -1961,10 +1964,10 @@ def install_repos(script, editable, install, install_dir, remote_path,
         target_option = ""
         if target:
             target_option = f"--target={remote_path}/packages"
-
+            pythonpath.append(f"{remote_path}/packages")
         script.append(
             f"pip install -r {remote_path}/requirements.txt {target_option}")
-    return script
+    return script, pythonpath
 
 
 class Script():
@@ -2283,10 +2286,18 @@ def get_github_code(repository, url, branch, local_folder):
     ssh_url = https_to_ssh(url)
     local_path = os.path.dirname(__file__)
     script_path = f"{local_path}/../scripts/git_clone.sh"
+    print("")
+    print(f"Getting code from github repo {repository}...")
     try:
         result = subprocess.run(
             [script_path, repository, ssh_url, branch, local_folder],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        print("Standard Output:")
+        print(result.stdout)
+
+        # Print standard error
+        print("Standard Error:")
+        print(result.stderr)
         # Check the output
         if "Repository not found. Cloning repository..." in result.stdout:
             return True

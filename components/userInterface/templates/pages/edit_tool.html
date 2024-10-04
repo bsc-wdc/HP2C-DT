@@ -55,7 +55,7 @@
                                     <label class="ml-2 mr-2">Install requirements:</label>
                                     <input type="checkbox" name="github_requirements" id="id_github_requirements"
                                     {% if existing_repos.0.requirements %} checked {% endif %}>
-                                    <label class="ml-2 mr-2">Target ("${install_dir}/packages"):</label>
+                                    <label class="ml-2 mr-2">Target ("repo_root/packages"):</label>
                                     <input type="checkbox" name="github_target" id="github_target"
                                     {% if existing_repos.0.target %} checked {% endif %}>
                                 </div>
@@ -93,7 +93,7 @@
                                             <input type="checkbox" name="github_requirements_{{ forloop.counter }}"
                                                    id="id_github_requirements_{{ forloop.counter }}"
                                             {% if repo.requirements %} checked {% endif %}>
-                                            <label class="ml-2 mr-2">Target ("${install_dir}/packages"):</label>
+                                            <label class="ml-2 mr-2">Target ("repo_root/packages"):</label>
                                             <input type="checkbox" name="github_target_{{ forloop.counter }}"
                                                    id="github_target_{{ forloop.counter }}"
                                             {% if repo.target %} checked {% endif %}>
