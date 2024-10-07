@@ -195,7 +195,8 @@
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
-                                            <input type="hidden" value="{{ e.jobID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.eID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.jobID }}" name="jobIDValue">
                                             <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
                                         </form>
                                     </td>
@@ -287,7 +288,8 @@
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
-                                            <input type="hidden" value="{{ e.jobID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.eID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.jobID }}" name="jobIDValue">
                                             <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
                                         </form>
                                     </td>
@@ -371,7 +373,8 @@
                                     <td>
                                         <form method="POST">
                                             {% csrf_token %}
-                                            <input type="hidden" value="{{ e.jobID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.eID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.jobID }}" name="jobIDValue">
                                             <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
                                         </form>
                                     </td>
