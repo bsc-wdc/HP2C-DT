@@ -38,6 +38,13 @@ from django import forms
 
 @login_required
 def edge_detail(request, edge_name):
+    """
+    View for displaying edge info (live chart and graph)
+
+    :param request: request
+    :param edge_name: Name of the edge involved
+    :return: HTML render
+    """
     edgeDevices = {}
     forms = []
     try:
@@ -454,6 +461,12 @@ def device_detail(request, edge_name, device_name):
 #################### MACHINES ######################
 @login_required
 def new_machine(request):
+    """
+    View for creating new machine.
+
+    :param request: request
+    :return: HTML render
+    """
     if request.method == 'POST':
         form = Machine_Form(request.POST)
         form.data = form.data.copy()
@@ -487,6 +500,12 @@ def new_machine(request):
 
 
 def populate_executions_machines(request):
+    """
+    Get the machines created by the user
+
+    :param request: request
+    :return: created machines
+    """
     machine_connected = get_machine_connected(request)
     machines = Machine.objects.all().filter(author=request.user)
     machines_done = []
@@ -500,6 +519,12 @@ def populate_executions_machines(request):
 
 
 def get_machine_connected(request):
+    """
+    Get machine connected
+
+    :param request: request
+    :return: machine_connected (django model)
+    """
     connection = Connection.objects.filter(user=request.user, status="Active")
     machine_connected = None
     if len(connection) > 0:
@@ -510,6 +535,12 @@ def get_machine_connected(request):
 
 ##################### USERS #########################
 def login_page(request):
+    """
+    Login view
+
+    :param request: request
+    :return: HTML render
+    """
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password1']
@@ -529,6 +560,12 @@ def login_page(request):
 
 
 def register_page(request):
+    """
+    Register page view
+
+    :param request: request
+    :return: HTML render
+    """
     if request.method == 'POST':
         form = CreateUserForm(request.POST)
         if form.is_valid():
@@ -552,6 +589,12 @@ def register_page(request):
 
 @login_required
 def logoutUser(request):
+    """
+    Auxiliary view used for logging out
+
+    :param request: request
+    :return: redirect to login page
+    """
     logout(request)
     messages.info(request, "Logged out successfully!")
     return redirect("login")
@@ -560,6 +603,13 @@ def logoutUser(request):
 ######################## SSH KEYS ####################
 @login_required
 def ssh_keys(request):
+    """
+    View used for creating ssh keys. This will reuse the same keys for every
+    login node within a machine.
+
+    :param request: request
+    :return: HTML render
+    """
     machine_connected = get_machine_connected(request)
     if request.method == 'POST':
         form = Key_Gen_Form(request.POST)
@@ -656,10 +706,26 @@ def ssh_keys(request):
 
 
 def encrypt(message: bytes, key: bytes) -> bytes:
+    """
+    Method used for encrypting the private key (in order to store it in the db)
+    using a token.
+
+    :param message: Message involved
+    :param key: token involved
+    :return: private key encrypted
+    """
     return Fernet(key).encrypt(message)
 
 
 def decrypt(token: bytes, key: bytes) -> bytes:
+    """
+        Method used for decrypting the private key (in order to store it in the db)
+        using a token.
+
+        :param message: Message involved
+        :param key: token involved
+        :return: private key decrypted
+        """
     try:
         res = Fernet(key).decrypt(token)
     except Exception as e:
@@ -677,14 +743,27 @@ def ssh_keys_generation(request):
 
 
 def auto_convert(value):
+    """
+    Convert string values to the appropriate type (list, int, float, bool...)
+
+    :param value: Value involved
+    :return: If possible, converted value
+    """
     try:
         return yaml.safe_load(value)
     except:
         return value
 
 
-
 def extract_tool_data(request, tool_name):
+    """
+    Parse execution form (of a custom tool) and returns a dictionary storing
+    all the information.
+
+    :param request: request
+    :param tool_name: Involved tool name
+    :return: Dictionary with tool info
+    """
     tool_data = {}
     tool = Tool.objects.get(name=tool_name)
     tool_data['tool_name'] = tool.name
@@ -736,6 +815,14 @@ def extract_tool_data(request, tool_name):
 
 
 def init_exec(tool_data, request):
+    """
+    Starts dummy execution (useful for reducing load times). It will give
+    initial values for the executions waiting to be queued.
+
+    :param request: request
+    :param tool_data: Dictionary containing tool info
+    :return: Execution unique identifier (random string)
+    """
     machine_found = Machine.objects.get(id=request.session['machine_chosen'])
     user_machine = machine_found.user
     execution = Execution()
@@ -775,6 +862,13 @@ def init_exec(tool_data, request):
 
 @login_required
 def tools(request):
+    """
+    Display executions log and the forms of the existing tools. It is required
+    to be connected to a machine.
+
+    :param request:
+    :return: HTML render
+    """
     check_conn_bool = check_connection(request)
     sections = ['application', 'setup', 'slurm', 'COMPSs', 'environment']
     if not check_conn_bool:
@@ -1050,6 +1144,13 @@ def get_form_from_tool(tool):
 
 @login_required
 def hpc_machines(request):
+    """
+    Displays the existing machines (for a concrete user) and allows a
+    connection to one of them if the proper token is provided
+
+    :param request: request
+    :return: HTML render
+    """
     machines_done = populate_executions_machines(request)
     stability_connection = check_connection(request)
     if request.method == 'POST':
@@ -1258,12 +1359,25 @@ def hpc_machines(request):
 
 
 def get_name_fqdn(machine):
+    """
+    Receive machine login credentials and return (separately) the user and fqdn
+
+    :param machine: Machine login credentials (format: user@fqdn)
+    :return user: User
+    :return fqdn: FQDN
+    """
     user = machine.split("@")[0]
     fqdn = machine.split("@")[1]
     return user, fqdn
 
 
 def check_connection(request):
+    """
+    Checks if a connection is active for a concrete user.
+
+    :param request: Request
+    :return: Boolean
+    """
     connection = Connection.objects.filter(user=request.user, status="Active")
     if len(connection) > 0:
         return True
@@ -1271,6 +1385,13 @@ def check_connection(request):
 
 
 def connection_ssh(private_key_decrypted, machineID):
+    """
+    Tries to establish a connection to a machine using its private key.
+
+    :param private_key_decrypted: Machine's private key decrypted
+    :param machineID: ID of the machine involved
+    :return: SSH object/error/redirect to tools view
+    """
     try:
         ssh = paramiko.SSHClient()
         pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
@@ -1308,14 +1429,26 @@ def connection_ssh(private_key_decrypted, machineID):
 
 ################### RUN SIMULATIONS ####################
 
-# Generate a random string of specified length
+
 def get_random_string(length):
-    # With combination of lower and upper case
+    """
+    Generate a random string of specified length combining lower and upper case
+    letters.
+
+    :param length: Length of the message
+    :return: random string
+    """
     result_str = ''.join(random.choice(string.ascii_letters) for i in range(length))
     return result_str
 
 
 def run_command(command):
+    """
+    Execute command in the server's machine.
+
+    :param command: command to be executed
+    :return: Command output
+    """
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
     if result.returncode != 0:
         print(f"Error executing command: {command}")
@@ -1325,6 +1458,11 @@ def run_command(command):
 
 
 def get_github_repo_branches():
+    """
+    Get the branches of the datagen repository.
+
+    :return: repository branches
+    """
     try:
         with open(os.path.expanduser('~/keys/github-token-hp2cdt.txt'),
                   'r') as file:
@@ -1352,6 +1490,12 @@ def get_github_repo_branches():
 
 def start_exec(num_nodes, name_sim, execTime, qos, name, request, auto_restart_bool, checkpoint_bool, d_bool, t_bool,
                g_bool, branch, tool=""):
+    """
+        Starts dummy execution (useful for reducing load times). It will give
+        initial values for the executions waiting to be queued.
+
+        :return: Execution unique identifier (random string)
+    """
     machine_found = Machine.objects.get(id=request.session['machine_chosen'])
     user_machine = machine_found.user
     principal_folder = machine_found.wdir
@@ -1430,12 +1574,26 @@ def checkpointing_noAutorestart(jobIDCheckpoint, request):
 
 
 def get_id_from_string(machine, author):
+    """
+    Get machine ID from machine login credentials and author.
+
+    :param machine: Machine login credentials (format user@fqdn)
+    :param author: Creator of the machine
+    :return: Machine ID
+    """
     user, fqdn = get_name_fqdn(machine)
     machine_found = Machine.objects.get(author=author, user=user, fqdn=fqdn)
     return machine_found.id
 
 
 def stopExecution(eIDstop, request):
+    """
+    Stop execution (auxiliary view)
+
+    :param eIDstop: Unique identifyer of the execution to be stopped
+    :param request: request
+    :return: HTML render
+    """
     ssh = connection_ssh(request.session['private_key_decrypted'], request.session['machine_chosen'])
     exec = Execution.objects.filter(eID=eIDstop).get()
     if exec.eID != 0:
@@ -1455,6 +1613,13 @@ def stopExecution(eIDstop, request):
 
 
 def delete_parent_folder(path, ssh):
+    """
+    Remove parent folder (used for deleting an execution and its logs)
+
+    :param path: Path to execution folder
+    :param ssh: SSH connection
+    :return: None
+    """
     parent_folder = os.path.dirname(path)
     command = "rm -rf " + parent_folder + "/"
     stdin, stdout, stderr = ssh.exec_command(command)
@@ -1462,6 +1627,13 @@ def delete_parent_folder(path, ssh):
 
 
 def deleteExecution(eIDdelete, request):
+    """
+    Delete an execution (django model) and its logs
+
+    :param eIDdelete: Unique identifyer of the execution to be deleted
+    :param request: request
+    :return: HTML render
+    """
     try:
         ssh = connection_ssh(request.session['private_key_decrypted'], request.session['machine_chosen'])
         exec = Execution.objects.filter(eID=eIDdelete).get()
@@ -1495,6 +1667,12 @@ def deleteExecution(eIDdelete, request):
 
 
 def update_table(request):
+    """
+    Update table of execution periodically
+
+    :param request: request
+    :return: True
+    """
     machine_found = Machine.objects.get(id=request.session['machine_chosen'])
     machineID = machine_found.id
     date_format = "%Y-%m-%dT%H:%M:%S"
@@ -1506,6 +1684,7 @@ def update_table(request):
             stdin, stdout, stderr = ssh.exec_command(
                 "sacct -j " + str(executionE.jobID) + " --format=jobId,user,nnodes,elapsed,state,submit,start,end | sed -n 3,3p")
             stdout = stdout.readlines()
+        
             values = str(stdout).split()
             Execution.objects.filter(jobID=executionE.jobID).update(time=values[3])
 
@@ -1535,18 +1714,15 @@ def update_table(request):
     return True
 
 
-def get_last_subdirectory(url):
-    # Split the URL by '/' and get the last element
-    return url.rstrip('/').split('/')[-1]
-
-
-def remove_protocol_and_domain(url):
-    # Remove protocol and domain
-    return re.sub(r'^.*?//[^/]+/', '', url)
-
-
 @login_required
 def results(request):
+    """
+    Displays the result of a concrete execution (with a concrete eID).
+    Allows the user to download the log files.
+
+    :param request: request
+    :return: HTML render
+    """
     if request.method == 'POST':
         pass
     else:
@@ -1564,9 +1740,8 @@ def results(request):
         values = str(stdout).split()
         Execution.objects.filter(jobID=jobID).update(status=values[4], time=values[3], nodes=int(values[2]))
         execUpdate = Execution.objects.get(jobID=jobID)
-
-        files, remote_path = get_files(execUpdate.wdir, execUpdate.results_dir,
-                                       request.session['private_key_decrypted'],
+        remote_path = execUpdate.wdir
+        files = get_files(remote_path, request.session['private_key_decrypted'],
                                        request.session['machine_chosen'])
         files = dict(sorted(files.items()))
 
@@ -1576,47 +1751,16 @@ def results(request):
                   {'executionsDone': execUpdate, 'files': files})
 
 
-def copy_folder_hpc_to_service(request, service_local_path, remote_hpc_path):
-    ssh = paramiko.SSHClient()
-    pkey = paramiko.RSAKey.from_private_key(StringIO(request.session["private_key_decrypted"]))
-    machine_found = Machine.objects.get(id=request.session['machine_chosen'])  # Assuming this is your custom code
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
-    sftp = ssh.open_sftp()
-    download_directory(sftp, remote_hpc_path, service_local_path)
-    sftp.close()
-    ssh.close()
-    return
-
-
-def download_directory(sftp, remote_dir, local_dir, depth=0, max_depth=10):
-    if depth > max_depth:
-        print("Maximum recursion depth reached.")
-        return
-    os.makedirs(local_dir, exist_ok=True)
-
-    try:
-        items = sftp.listdir_attr(remote_dir)
-    except Exception as e:
-        print(f"Error listing directory {remote_dir}: {e}")
-        return
-
-    for item in items:
-        remote_item = f"{remote_dir}/{item.filename}"
-        local_item = os.path.join(local_dir, item.filename)
-
-        if S_ISDIR(item.st_mode):
-            download_directory(sftp, remote_item, local_item, depth=depth + 1, max_depth=max_depth)
-        else:
-            try:
-                sftp.get(remote_item, local_item)
-            except Exception as e:
-                print(f"Error downloading {remote_item}: {e}")
-    return
-
-
 @login_required
 def download_file(request, file_name):
+    """
+    Auxiliary view used for downloading a concrete file (a log/result file of
+    an execution).
+
+    :param request: request
+    :param file_name: Name of the file involved
+    :return: HTML render
+    """
     remote_path = request.session['remote_path']
     private_key_decrypted = request.session['private_key_decrypted']
     machineID = request.session['machine_chosen']
@@ -1645,6 +1789,14 @@ def download_file(request, file_name):
 
 
 def find_file_recursively(sftp, remote_path, file_name):
+    """
+    Find a file in the subdirectories of a given path
+
+    :param sftp: SFTP connection object
+    :param remote_path: Root path
+    :param file_name: Name of the file searched
+    :return: None
+    """
     for entry in sftp.listdir_attr(remote_path):
         entry_path = os.path.join(remote_path, entry.filename)
         if S_ISDIR(entry.st_mode):
@@ -1673,6 +1825,13 @@ def render_right(request):
 
 
 def execute_command(ssh, cmd):
+    """
+    Executes a concrete command using a remote ssh connection
+
+    :param ssh: SSH connection
+    :param cmd: Involved command
+    :return: None
+    """
     print()
     print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
     print("EXECUTING COMMAND:")
@@ -1689,6 +1848,10 @@ def execute_command(ssh, cmd):
 
 
 class updateExecutions(threading.Thread):
+    """
+    Class declared in order to keep every execution parameters updated.
+    It is called when a connection with a machine is established.
+    """
     def __init__(self, request, connectionID):
         threading.Thread.__init__(self)
         self.request = request
@@ -1715,7 +1878,13 @@ class updateExecutions(threading.Thread):
         render_right(self.request)
         return
 
+
 class RunSimulation(threading.Thread):
+    """
+    Class created for running executions of custom tools. It will parse the
+    form, download the repositories from GitHub, store them in the appropriate
+    machine (repos and setup files), install every requirement, and run the execution.
+    """
     def __init__(self, tool_data, request, e_id):
         threading.Thread.__init__(self)
         self.e_id = e_id
@@ -1743,8 +1912,6 @@ class RunSimulation(threading.Thread):
         ssh = connection_ssh(self.request.session["private_key_decrypted"],
                              machine_found.id)
         fqdn = machine_found.fqdn
-        machine_folder = extract_substring(fqdn)
-        userMachine = machine_found.user
 
         principal_folder = self.setup["Working Dir"]
         principal_folder = absolut(principal_folder, ssh)
@@ -1830,6 +1997,12 @@ class RunSimulation(threading.Thread):
 
 
 def absolut(principal_folder, ssh):
+    """
+    Convert a relative path into an absolute one.
+
+    :param principal_folder: Path involved
+    :param ssh: SSH conection (needed for getting the path to HOME)
+    """
     if not principal_folder.startswith('/'):
         stdin, stdout, stderr = ssh.exec_command("echo $HOME")
         stdout = "".join(stdout.readlines()).strip()
@@ -1839,6 +2012,19 @@ def absolut(principal_folder, ssh):
 
 def run_execution(script, execution_folder, tool_data, entrypoint, setup_path,
                   pythonpath):
+    """
+    Parse the dictionary (tool_data) in order to retrieve every parameter
+    needed for the execution. The method receives a script with other commands,
+    and adds the new ones (execution) to it.
+
+    :param script: Script object
+    :param execution_folder: Execution folder
+    :param tool_data: Dictionary containing tool info
+    :param entrypoint: Python module to be executed
+    :param setup_path: Path where the setup file (yaml) is stored
+    :param pythonpath: Pythonpath
+    :return: Script modified
+    """
     script.append(f"mkdir -p {execution_folder}")
 
     slurm_args = ""
@@ -1886,6 +2072,13 @@ def run_execution(script, execution_folder, tool_data, entrypoint, setup_path,
 
 
 def export_variables(script, tool_data):
+    """
+    Append to the script commands for exporting the environment variables.
+
+    :param script: Script object
+    :param tool_data: Dictionary containing tool info
+    :return: Script modified
+    """
     exported_variables = get_environment_variables(tool_data)
     for key, value in exported_variables.items():
         script.append(f"export {key}={value}")
@@ -1894,6 +2087,18 @@ def export_variables(script, tool_data):
 
 def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
                            machine_id, branch, url, retry=False):
+    """
+    Upload the codes from a concrete repo from GitHub to the remote machine.
+
+    :param local_path: Local path where the GitHub code is stored
+    :param remote_path: Path where to store the GitHub code
+    :param private_key_decrypted: Private key decrypted
+    :param machine_id: Machine involved's id
+    :param branch: Involved branch
+    :param url: Repo's URL
+    :param retry: Indicates whether the function must be retried or not.
+    :return: None
+    """
     repo_name = remote_path.split("/")[-1]
     res = get_github_code(repo_name, url, branch, local_path)
     ssh = paramiko.SSHClient()
@@ -1964,6 +2169,23 @@ def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
 
 def install_repos(script, editable, install, install_dir, remote_path,
                   requirements, ssh, target):
+    """
+    Append to the script the commands for installing (in the remote machine)
+    the modules and, if needed, the requirements.
+
+    :param script: Script object
+    :param editable: Boolean indicating if the instalation must run in
+    editable mode
+    :param install: Boolean indicating if an instalation must be performed
+    :param install_dir: Directory (from repo root) where the pip install must be performed
+    :param remote_path: Absolute path to the root of the directory
+    :param requirements: Boolean indicating if the requirements must be installed
+    :param ssh: SSH connection
+    :param target: Boolean indicating if the target must be specifyed while
+    installing the module
+    :return script: Script modified
+    :return pythonpath: PYTHONPATH modified
+    """
     pythonpath = [remote_path]
     if install:
         installation_dir = os.path.join(remote_path,
@@ -1985,6 +2207,10 @@ def install_repos(script, editable, install, install_dir, remote_path,
 
 
 class Script():
+    """
+    Class created to store a list of commands, which will be executed with
+    script.execute()
+    """
     def __init__(self, ssh):
         self.script = ""
         self.ssh = ssh
@@ -1996,6 +2222,9 @@ class Script():
         self.script += f"{cmd}; "
 
     def execute(self):
+        """
+        Load profile, execute command, and print output
+        """
         self.script = "source /etc/profile; " + self.script
         print()
         print("EXECUTING COMMAND:")
@@ -2252,6 +2481,13 @@ def scp_upload_code_folder(local_path, remote_path, private_key_decrypted, machi
 
 
 def get_files_r(remote_path, sftp):
+    """
+    Get pairs of file name - file size, in order to display them in the results view
+
+    :param remote_path: Remote root dir
+    :param sftp: SFTP connection
+    :return: Pairs of file name - file size within remote_path subdirectories
+    """
     files = {}
     for fileattr in sftp.listdir_attr(remote_path):
         if S_ISDIR(fileattr.st_mode):
@@ -2262,7 +2498,15 @@ def get_files_r(remote_path, sftp):
     return files
 
 
-def get_files(remote_path, results_dir, private_key_decrypted, machineID):
+def get_files(remote_path, private_key_decrypted, machineID):
+    """
+    Create SFTP connection and get files within remote_path subdirectories.
+
+    :param remote_path: Remote root dir
+    :param private_key_decrypted: Private key decrypted
+    :param machineID: ID of the machine involved
+    :return files: Pairs of file name - file size within remote_path subdirectories
+    """
     ssh = paramiko.SSHClient()
     pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
     machine_found = Machine.objects.get(id=machineID)
@@ -2281,10 +2525,16 @@ def get_files(remote_path, results_dir, private_key_decrypted, machineID):
     sftp.close()
     ssh.close()
 
-    return files, remote_path
+    return files
 
 
 def https_to_ssh(git_url):
+    """
+    Convert https url to ssh url.
+
+    :param git_url: Git URL in http format
+    :return: Git URL in ssh format
+    """
     if git_url.startswith("https://"):
         git_url = git_url.replace("https://", "")
         parts = git_url.split('/')
@@ -2299,6 +2549,9 @@ def https_to_ssh(git_url):
 
 
 def get_github_code(repository, url, branch, local_folder):
+    """
+    Executes a bash script to get the code from GitHub (clone repo locally)
+    """
     ssh_url = https_to_ssh(url)
     local_path = os.path.dirname(__file__)
     script_path = f"{local_path}/../scripts/git_clone.sh"
@@ -2344,6 +2597,13 @@ def get_variables_exported(exported_variables):
 
 
 def get_environment_variables(setup):
+    """
+    Get environment variables from setup-environment section in the setup
+    dictionary.
+
+    :param setup: Dictionary containing the setup info
+    :return: Dictionary with pairs environment variable - value
+    """
     exported_variables = {}
 
     if 'environment' in setup and isinstance(setup['environment'], dict):
@@ -2353,7 +2613,13 @@ def get_environment_variables(setup):
 
 
 def remove_numbers(input_str):
-    # Split the input string by '.' to separate the hostname and domain
+    """
+    Split the input string by '.' to separate the hostname and domain
+
+    :param input_str: hostname and domain of the machine (ex: glogin4)
+    :return: Gets the domain number of the machine
+    """
+
     parts = input_str.split('.')
 
     if len(parts) >= 2:
@@ -2379,6 +2645,12 @@ def extract_substring(s):
 
 
 def get_file_extension(file_path):
+    """
+    Get file extensions
+
+    :param file_path: Path to the file
+    :return: extension
+    """
     _, extension = os.path.splitext(file_path)
     return extension
 
@@ -2394,6 +2666,13 @@ def read_and_write_yaml(name):
 
 
 def wdir_folder(principal_folder):
+    """
+    Obtain an unique ID folder and create an unique execution name
+
+    :param principal_folder: Original folder
+    :return wdirDone: path to execution folder
+    :return nameWdir: execution directory name
+    """
     uniqueIDfolder = uuid.uuid4()
     nameWdir = "execution_" + str(uniqueIDfolder)
     if not principal_folder.endswith("/"):
@@ -2402,38 +2681,16 @@ def wdir_folder(principal_folder):
     return wdirDone, nameWdir
 
 
-def read_and_format_file(file_path):
-    content = ""
-
-    if file_path.endswith('.xlsx'):
-        try:
-            xls = pd.ExcelFile(file_path)
-            content = ""
-            for sheet_name in xls.sheet_names:
-                df = pd.read_excel(file_path, sheet_name=sheet_name)
-                content += f"<h2>{sheet_name}</h2>"
-                content += df.to_html(index=False)
-        except Exception as e:
-            content = f"Failed to read XLSX: {e}"
-
-    elif file_path.endswith('.csv'):
-        try:
-            df = pd.read_csv(file_path)
-            content = df.to_html(index=False)
-        except Exception as e:
-            content = f"Failed to read CSV: {e}"
-    else:
-        try:
-            with open(file_path, 'r') as file:
-                content = file.read()
-        except Exception as e:
-            print("Error reading the file: ", e)
-
-    return content
-
-
 @login_required
 def create_tool(request):
+    """
+    Create tool view. There are mandatory fields to be filled (check
+    pages/create_tool.html) needed for the execution and setup of a generic app.
+    There are 2 types of fields (text/boolean) and different sections.
+
+    :param request: request
+    :return: HTML render
+    """
     sections = ['application', 'setup', 'slurm', 'COMPSs', 'environment']
 
     if request.method == 'POST':
@@ -2545,6 +2802,12 @@ def create_tool(request):
 
 @login_required
 def edit_tool(request, tool_name):
+    """
+        Edit tool view
+
+        :param request: request
+        :return: HTML render
+        """
     tool = get_object_or_404(Tool, name=tool_name)
     errors = {}
     sections = ['application', 'setup', 'slurm', 'COMPSs', 'environment']
