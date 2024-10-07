@@ -1812,7 +1812,21 @@ class RunSimulation(threading.Thread):
 
         script = run_execution(script, execution_folder, self.tool_data, entrypoint,
                                setup_path, pythonpath)
-        script.execute()
+        stdout, stderr = script.execute()
+
+        s = "Submitted batch job"
+        var = ""
+        while (len(stdout) == 0):
+            time.sleep(1)
+        if (len(stdout) > 1):
+            for line in stdout:
+                if s in line:
+                    jobID = int(line.replace(s, ""))
+                    Execution.objects.filter(eID=self.e_id).update(jobID=jobID,
+                                                                  status="PENDING")
+                    self.request.session['jobID'] = jobID
+        self.request.session['execution_folder'] = execution_folder
+        return
 
 
 def absolut(principal_folder, ssh):
@@ -1995,6 +2009,7 @@ class Script():
         print("-------------START STDERR--------------")
         print("".join(stderr))
         print("---------------END STDERR--------------")
+        return stdout, stderr
 
 
 class run_sim_async(threading.Thread):
@@ -2242,7 +2257,8 @@ def get_files_r(remote_path, sftp):
         if S_ISDIR(fileattr.st_mode):
             files.update(get_files_r(remote_path + "/" + fileattr.filename, sftp))
         else:
-            files[fileattr.filename] = fileattr.st_size
+            if "pipe" not in fileattr.filename:
+                files[fileattr.filename] = fileattr.st_size
     return files
 
 
