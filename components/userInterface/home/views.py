@@ -893,6 +893,42 @@ def tools(request):
                 run_sim.start()
                 return redirect('tools')
 
+            match = re.match(rf'^cloneTool(.*)$', key)
+            if bool(match):
+                tool_name = match.group(1)
+                new_name = request.POST.get(f"new_tool_name_{tool_name}")
+
+                tool = Tool.objects.get(name=tool_name)
+
+                cloned_tool = Tool.objects.create(name=new_name,
+                                                  modules_list=tool.modules_list)
+
+                original_fields = tool.field_set.all()
+                for field in original_fields:
+                    Field.objects.create(
+                        name=field.name,
+                        default_value=field.default_value,
+                        preset_value=field.preset_value,
+                        section=field.section,
+                        tool=cloned_tool,
+                        type=field.type
+                    )
+
+                original_repos = tool.repo_set.all()
+                for repo in original_repos:
+                    Repo.objects.create(
+                        url=repo.url,
+                        branch=repo.branch,
+                        install=repo.install,
+                        install_dir=repo.install_dir,
+                        editable=repo.editable,
+                        requirements=repo.requirements,
+                        target=repo.target,
+                        tool=cloned_tool
+                    )
+
+                return redirect('tools')
+
         if 'stAnalysisButton' in request.POST:
             document_form = DocumentForm(request.POST, request.FILES)
             if document_form.is_valid():

@@ -5,15 +5,27 @@
 
 {% block content %}
 <div class="card-body mx-5">
-    <form method="POST">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+        <form method="POST" style="display: inline;">
+            {% csrf_token %}
+            <button name="deleteCustom{{name}}" type="submit" class="btn btn-danger">Delete tool</button>
+        </form>
+
+        <a href="{% url 'edit_tool' tool_name=name %}">
+            <button type="button" class="btn btn-primary">Edit tool</button>
+        </a>
+
+        <button type="button" class="btn btn-secondary" onclick="showCloneField()">Clone tool</button>
+    </div>
+
+    <form method="POST" style="margin-top: 15px;">
         {% csrf_token %}
-        <div>
-            <button name="deleteCustom{{name}}" type="submit" class="btn btn-danger ml-2">Delete tool</button>
-            <a href="{% url 'edit_tool' tool_name=name %}">
-                <button type="button" class="btn btn-primary">Edit tool</button>
-            </a>
+        <div id="clone-tool-field" style="display:none; flex-direction: column; gap: 10px;">
+            <input type="text" name="new_tool_name_{{name}}" placeholder="New tool name" class="form-control" required>
+            <button type="submit" name="cloneTool{{name}}" class="btn btn-success mt-2">Clone</button>
         </div>
-    </form>
+</form>
+
 
     <h2 class="text-center mb-5" style="text-decoration: underline;">
         <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
@@ -125,6 +137,15 @@ document.querySelectorAll('.add-field').forEach(button => {
         sectionContent.appendChild(newFieldDiv);
     });
 });
+
+function showCloneField() {
+    var cloneField = document.getElementById("clone-tool-field");
+    if (cloneField.style.display === "none") {
+        cloneField.style.display = "block";
+    } else {
+        cloneField.style.display = "none";
+    }
+}
 </script>
 
 <style>
