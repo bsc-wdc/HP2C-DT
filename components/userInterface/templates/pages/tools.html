@@ -43,10 +43,6 @@
             <a class="nav-link active show" id="profile-tab" data-toggle="tab" href="#profile" role="tab"
                aria-controls="profile" aria-selected="true">Executions</a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
-               aria-selected="false">Stability analysis</a>
-        </li>
 
         {% for tool_name, tool_data in tool_forms.items %}
         <li class="nav-item">
@@ -59,9 +55,6 @@
     <div class="tab-content" id="myTabContent">
         <div class="tab-pane fade active show" id="profile" role="tabpanel" aria-labelledby="profile-tab">
             {% include 'pages/executions.html' %}
-        </div>
-        <div class="tab-pane fade" id="home" role="tabpanel" aria-labelledby="home-tab">
-            {% include 'pages/run_st_analysis.html' %}
         </div>
 
         {% for tool_name, tool_data in tool_forms.items %}

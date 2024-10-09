@@ -929,61 +929,6 @@ def tools(request):
 
                 return redirect('tools')
 
-        if 'stAnalysisButton' in request.POST:
-            document_form = DocumentForm(request.POST, request.FILES)
-            if document_form.is_valid():
-                branch = request.POST.get('branchChoice')
-                for filename, file in request.FILES.items():
-                    unique_id = uuid.uuid4()
-                    name_e = ((str(file).split(".")[0]) + "_" + str(
-                        unique_id) + "."
-                              + str(file).split(".")[1])
-                name = name_e
-                document = document_form.save(commit=False)
-                document.document.name = name
-                document.save()
-                num_nodes = request.POST.get('numNodes')
-                name_sim = request.POST.get('name_sim')
-                qos = request.POST.get('qos')
-                exec_time = request.POST.get('execTime')
-                checkpoint_flag = request.POST.get("checkpoint_flag")
-                auto_restart = request.POST.get("auto_restart")
-                g_flag = request.POST.get("gSwitch")
-                d_flag = request.POST.get("dSwitch")
-                t_flag = request.POST.get("tSwitch")
-                auto_restart_bool = False
-                checkpoint_bool = False
-                if name_sim is None:
-                    name_sim = get_random_string(8)
-                if checkpoint_flag == "on":
-                    checkpoint_bool = True
-                if auto_restart == "on":
-                    auto_restart_bool = True
-                if auto_restart_bool:
-                    checkpoint_bool = True
-                g_bool = "false"  # graph option
-                if g_flag == "on":
-                    g_bool = "true"
-                t_bool = "false"  # trace option
-                if t_flag == "on":
-                    t_bool = "true"
-                d_bool = "false"  # debug option
-                if d_flag == "on":
-                    d_bool = "true"
-                project_name = request.POST.get('project_name')
-                e_id = start_exec(num_nodes, name_sim, exec_time, qos, name,
-                                  request,
-                                  auto_restart_bool, checkpoint_bool, d_bool,
-                                  t_bool, g_bool, branch, tool="stability_analysis")
-                run_sim = run_sim_async(request, name, num_nodes, name_sim,
-                                        exec_time, qos, checkpoint_bool,
-                                        auto_restart_bool, e_id, branch,
-                                        g_bool,
-                                        t_bool, d_bool, project_name)
-                run_sim.start()
-                request.session['run_job'] = name_sim
-                return redirect('tools')
-
         if 'resultExecution' in request.POST:
             request.session['eIDdone'] = request.POST.get(
                 "resultExecutionValue")# TODO: change jobid for eid
@@ -1522,45 +1467,6 @@ def get_github_repo_branches():
         return [branch['name'] for branch in branches]
     else:
         return f"Unable to access the GitHub repository. Status code: {response.status_code}"
-
-
-def start_exec(num_nodes, name_sim, execTime, qos, name, request, auto_restart_bool, checkpoint_bool, d_bool, t_bool,
-               g_bool, branch, tool=""):
-    """
-        Starts dummy execution (useful for reducing load times). It will give
-        initial values for the executions waiting to be queued.
-
-        :return: Execution unique identifier (random string)
-    """
-    machine_found = Machine.objects.get(id=request.session['machine_chosen'])
-    user_machine = machine_found.user
-    principal_folder = machine_found.wdir
-    uID = uuid.uuid4()
-    form = Execution()
-    form.eID = uID
-    form.jobID = 0
-    form.user = user_machine
-    form.author = request.user
-    form.nodes = num_nodes
-    form.status = "INITIALIZING"
-    form.checkpoint = 0
-    form.checkpointBool = checkpoint_bool
-    form.time = "00:00:00"
-    form.wdir = ""
-    form.setup_path = ""
-    form.execution_time = 0
-    form.qos = qos
-    form.name_sim = name_sim
-    form.autorestart = auto_restart_bool
-    form.machine = machine_found
-    form.d_bool = d_bool
-    form.t_bool = t_bool
-    form.g_bool = g_bool
-    form.branch = branch
-    form.results_ftp_path = ""
-    form.tool = tool
-    form.save()
-    return uID
 
 
 def checkpointing_noAutorestart(jobIDCheckpoint, request):
@@ -2277,245 +2183,6 @@ class Script():
         return stdout, stderr
 
 
-class run_sim_async(threading.Thread):
-    def __init__(self, request, name, num_nodes, name_sim, execTime, qos,
-                 checkpoint_bool, auto_restart_bool,eID,
-                 branch, gOPTION, tOPTION, dOPTION, project_name):
-        threading.Thread.__init__(self)
-        self.request = request
-        self.name = name
-        self.numNodes = num_nodes
-        self.name_sim = name_sim
-        self.execTime = execTime
-        self.qos = qos
-        self.checkpoint_bool = checkpoint_bool
-        self.auto_restart_bool = auto_restart_bool
-        self.eiD = eID
-        self.branch = branch
-        self.gOPTION = gOPTION
-        self.tOPTION = tOPTION
-        self.dOPTION = dOPTION
-        self.project_name = project_name
-
-    def run(self):
-        setup = read_and_write_yaml(self.name)
-        local_path = os.path.join(os.getenv("HOME"), "ui-hp2cdt")
-        machine_found = Machine.objects.get(id=self.request.session['machine_chosen'])
-        fqdn = machine_found.fqdn
-        machine_folder = extract_substring(fqdn)
-        userMachine = machine_found.user
-        principal_folder = machine_found.wdir # folder specified as workind dir in the online service
-        wdirPath, nameWdir = wdir_folder(principal_folder)
-        # command to create all the folders and copy the yaml file passed through the service
-        setup_path = f"{principal_folder}/{nameWdir}/setup/{str(self.name)}"
-        cmd1 = (
-            f"mkdir -p {principal_folder}/{nameWdir}/setup/; "
-            f"echo {shlex.quote(str(setup))} > {setup_path};"
-            f"cd {principal_folder}; BACKUPDIR=$(ls -td ./*/ | head -1); echo EXECUTION_FOLDER:$BACKUPDIR;")
-        print(f"cmd1 : {cmd1}")
-
-        ssh = connection_ssh(self.request.session["private_key_decrypted"], machine_found.id)
-
-        execute_command(ssh, cmd1)
-
-        execution_folder = wdirPath + "/execution"
-        setup_folder = wdirPath + "/setup"
-        results_dir = os.path.join(local_path, "results", nameWdir)
-
-        Execution.objects.filter(eID=self.eiD).update(wdir=execution_folder,
-                                                      setup_path=setup_folder,
-                                                      results_dir=results_dir)
-
-        self.request.session['workflow_path'] = setup_folder
-
-        stability_analysis_branch = "new-GridCal"
-        gridcal_branch = "205_ACOPF"
-
-        path_install_dir = os.path.join(machine_found.installDir,
-                                                "datagen", self.branch)
-        path_install_dir_stability_analysis = os.path.join(
-            machine_found.installDir, "stability_analysis", stability_analysis_branch)
-        path_install_dir_gridcal = os.path.join(machine_found.installDir,
-                                                "new-GridCal", gridcal_branch)
-        machine_name = remove_numbers(machine_found.fqdn)
-        machine_node = machine_found.fqdn.split(".")[0]
-
-        local_folder = os.path.join(local_path, "installDir")
-        self.upload_repositories(gridcal_branch, local_folder, machine_found,
-                                 path_install_dir, path_install_dir_gridcal,
-                                 path_install_dir_stability_analysis,
-                                 stability_analysis_branch,
-                                 repositories=["datagen", "stability_analysis",
-                                               "new-GridCal"])
-
-        exported_variables = get_environment_variables(setup)
-        if self.checkpoint_bool:
-            cmd2 = (
-                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
-                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
-                f"{get_variables_exported(exported_variables)} mkdir -p {execution_folder}; "
-                f"cd {path_install_dir}/scripts/{machine_name}/; source app-checkpoint.sh {userMachine} {str(self.name)} {setup_folder} "
-                f"{execution_folder} {self.numNodes} {self.execTime} {self.qos} {machine_found.installDir} {self.branch} {machine_found.dataDir} "
-                f"{self.gOPTION} {self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
-            cmd_writeFile_checkpoint = (
-                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
-                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
-                f"{get_variables_exported(exported_variables)} cd {path_install_dir}/scripts/{machine_name}/; "
-                f"source app-checkpoint.sh {userMachine} {str(self.name)} {setup_folder} {execution_folder} {self.numNodes} "
-                f"{self.execTime} {self.qos} {machine_found.installDir} {self.branch} {machine_found.dataDir} {self.gOPTION} "
-                f"{self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
-            cmd2 += write_checkpoint_file(execution_folder,
-                                          cmd_writeFile_checkpoint)
-        else:
-            cmd2 = (
-                f"source /etc/profile; source {path_install_dir}/scripts/load.sh "
-                f"{path_install_dir} {path_install_dir_stability_analysis} {path_install_dir_gridcal} {machine_name} {machine_node}; "
-                f"{get_variables_exported(exported_variables)} mkdir -p {execution_folder}; "
-                f"cd {path_install_dir}/scripts/{machine_name}/; source app.sh {userMachine} {str(self.name)} {setup_folder} "
-                f"{execution_folder} {self.numNodes} {self.execTime} {self.qos} {path_install_dir} {self.branch} {machine_found.dataDir} "
-                f"{self.gOPTION} {self.tOPTION} {self.dOPTION} {self.project_name} {self.name_sim};")
-        print(f"run_sim : {cmd2} ")
-        stdin, stdout, stderr = ssh.exec_command(cmd2)
-        stdout = stdout.readlines()
-        stderr = stderr.readlines()
-        print("-------------START STDOUT--------------")
-        print("".join(stdout))
-        print("---------------END STDOUT--------------")
-        print("-------------START STDERR--------------")
-        print("".join(stderr))
-        print("---------------END STDERR--------------")
-
-        retry_repositories = set()
-        for s in stderr:
-            if ("Error submitting script to queue system" or
-                    "Batch job submission failed" in s):
-                Execution.objects.filter(eID=self.eiD).update(status="FAILED")
-            if "No such file or directory" in s:
-                if machine_found.installDir in s:
-                    rest_of_the_string = s.split(machine_found.installDir)[1]
-                    repository = rest_of_the_string.split("/")[1]
-                    retry_repositories.add(repository)
-
-        if len(retry_repositories) > 0:
-            self.upload_repositories(gridcal_branch, local_folder,
-                                     machine_found,
-                                     path_install_dir,
-                                     path_install_dir_gridcal,
-                                     path_install_dir_stability_analysis,
-                                     stability_analysis_branch,
-                                     repositories=retry_repositories,
-                                     retry=True)
-
-            stderr, stdout = self.execute_cmds(execution_folder,
-                                               machine_found,
-                                               machine_name, machine_node,
-                                               path_install_dir,
-                                               path_install_dir_gridcal,
-                                               path_install_dir_stability_analysis,
-                                               setup, setup_folder, ssh,
-                                               userMachine)
-
-        s = "Submitted batch job"
-        var = ""
-        while (len(stdout) == 0):
-            time.sleep(1)
-        if (len(stdout) > 1):
-            for line in stdout:
-                if (s in line):
-                    jobID = int(line.replace(s, ""))
-                    Execution.objects.filter(eID=self.eiD).update(jobID=jobID, status="PENDING")
-                    self.request.session['jobID'] = jobID
-        self.request.session['execution_folder'] = execution_folder
-        os.remove("documents/" + str(self.name))
-        return
-
-    def upload_repositories(self, gridcal_branch, local_folder, machine_found,
-                            path_install_dir, path_install_dir_gridcal,
-                            path_install_dir_stability_analysis,
-                            stability_analysis_branch, repositories,
-                            retry=False):
-        for repo in repositories:
-            install_dir = path_install_dir
-            branch = self.branch
-            if repo == "stability_analysis":
-                branch = stability_analysis_branch
-                install_dir = path_install_dir_stability_analysis
-            if repo == "new-GridCal":
-                branch = gridcal_branch
-                install_dir = path_install_dir_gridcal
-            scp_upload_code_folder(local_folder, install_dir,
-                                   self.request.session["private_key_decrypted"],
-                                   machine_found.id, branch=branch,
-                                   repository=repo, local_folder=local_folder,
-                                   retry=retry)
-
-
-def scp_upload_code_folder(local_path, remote_path, private_key_decrypted, machineID, branch,
-                           repository, local_folder, retry):
-    res = get_github_code(repository, branch, local_folder)
-    ssh = paramiko.SSHClient()
-    pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
-    machine_found = Machine.objects.get(id=machineID)
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
-    sftp = ssh.open_sftp()
-
-    # Check and create remote folder if it doesn't exist
-    if not remote_path.startswith('/'):
-        stdin, stdout, stderr = ssh.exec_command("echo $HOME")
-        stdout = "".join(stdout.readlines()).strip()
-        remote_path = stdout + "/" + remote_path
-
-    remote_dirs = remote_path.split('/')
-    current_dir = ''
-    emptyDir = False
-    for dir in remote_dirs:
-        if dir:
-            current_dir += '/' + dir
-            try:
-                sftp.stat(current_dir)
-            except FileNotFoundError:
-                print("Creating directory " + str(current_dir))
-                sftp.mkdir(current_dir)
-                emptyDir = True
-
-    if res or emptyDir or retry:
-        # Recursively upload the local folder and its contents
-        for root, dirs, files in os.walk(local_path + f"/{repository}/" + branch):
-            if '.git' in dirs:
-                dirs.remove('.git')
-
-            if '.idea' in dirs:
-                dirs.remove('.idea')
-
-            # Calculate the relative path from local_path to root
-            relative_root = os.path.relpath(root, local_path + f"/{repository}/" + branch)
-
-            # Determine the remote directory
-            if relative_root == '.':
-                remote_dir = remote_path
-            else:
-                remote_dir = os.path.join(remote_path, relative_root)
-
-            # Ensure the remote directory exists
-            try:
-                sftp.stat(remote_dir)
-            except FileNotFoundError:
-                print(f"{remote_dir} does not exist. Creating it.")
-                sftp.mkdir(remote_dir)
-
-            for file in files:
-                local_file = os.path.join(root, file)
-                remote_file = os.path.join(remote_dir, file)
-                try:
-                    sftp.put(local_file, remote_file)
-                except Exception as e:
-                    print(f"Failed to upload {local_file} to {remote_file}: {e}")
-
-    sftp.close()
-    return
-
-
 def get_files_r(remote_path, sftp):
     """
     Get pairs of file name - file size, in order to display them in the results view
@@ -2624,14 +2291,6 @@ def write_checkpoint_file(execution_folder, cmd2):
     return cmd
 
 
-def get_variables_exported(exported_variables):
-    export_string = ""
-    for key, value in exported_variables.items():
-        export_string += f"export {key}={value}; "
-
-    return export_string
-
-
 def get_environment_variables(setup):
     """
     Get environment variables from setup-environment section in the setup
@@ -2673,13 +2332,6 @@ def remove_numbers(input_str):
         return input_str
 
 
-def extract_substring(s):
-    match = re.search(r'([a-zA-Z]+)\d\.', s)
-    if match:
-        return match.group(1)
-    return None
-
-
 def get_file_extension(file_path):
     """
     Get file extensions
@@ -2689,16 +2341,6 @@ def get_file_extension(file_path):
     """
     _, extension = os.path.splitext(file_path)
     return extension
-
-
-def read_and_write_yaml(name):
-    with open("documents/" + str(name)) as file:
-        try:
-            workflow = yaml.safe_load(file)
-            return workflow
-        except yaml.YAMLError as exc:
-            print(exc)
-    return None
 
 
 def wdir_folder(principal_folder):
