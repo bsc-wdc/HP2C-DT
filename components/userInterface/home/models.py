@@ -112,10 +112,11 @@ class Tool(models.Model):
     def get_fields(self):
         return list(self.field_set.all())
 
-    def add_field(self, field_name, default_value=None, preset_value=None, section='application', type='text'):
+    def add_field(self, field_name, default_value=None, preset_value=None,
+                  section='application', type='text', placeholder=None):
         field = Field.objects.create(name=field_name, default_value=default_value,
                                      preset_value=preset_value, section=section,
-                                     tool=self, type=type)
+                                     tool=self, type=type, placeholder=placeholder)
         return field
 
     def remove_field(self, field_name):
@@ -163,6 +164,7 @@ class Field(models.Model):
     section = models.CharField(max_length=255, null=True, blank=True, default="application")
     tool = models.ForeignKey(Tool, on_delete=models.CASCADE)
     type = models.CharField(max_length=255, null=True, blank=True, default="text")
+    placeholder = models.CharField(max_length=255, null=True, blank=True, default=None)
 
     def __str__(self):
         return self.name

@@ -2435,9 +2435,11 @@ def create_tool(request):
                 if preset_value == 'None' or preset_value == '':
                     preset_value = None
 
+                placeholder = request.POST.get(f'placeholder_{index}', None)
+
                 tool.add_field(field_name, default_value=default_value,
                                preset_value=preset_value, section=section,
-                               type=type)
+                               type=type, placeholder=placeholder)
 
             modules = {k: v for k, v in request.POST.items()
                        if k.startswith(f'module_')}

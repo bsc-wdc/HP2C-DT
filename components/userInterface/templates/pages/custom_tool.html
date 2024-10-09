@@ -54,7 +54,9 @@
                                             </div>
                                         {% else %}
                                             <label for="{{ f.id_for_label }}">{{ f.label }}:</label>
-                                            {{ f|add_class:"form-control" }}
+                                                <input type="text" name="{{ f.label }}" id="{{ f.id_for_label }}"
+                                                       class="form-control" placeholder="{{ field.placeholder|default_if_none:'' }}">
+                                                <input type="hidden" name="section_{{ f.id_for_label }}" value="{{ section }}">
                                             <input type="hidden" name="preset_value_{{ f.id_for_label }}" value="{{ field.preset_value }}">
                                             <input type="hidden" name="section_{{ f.id_for_label }}" value="{{ section }}">
                                         {% endif %}
