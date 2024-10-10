@@ -31,6 +31,27 @@
                             </div>
                           </div>
                         {% endif %}
+                        {% if status == "Pending" %}
+                          <div title="Some Flag">
+                            <div class="alert alert-warning" role="alert">
+                              Connection status: Pending. Reload the page
+                            </div>
+                          </div>
+                        {% endif %}
+                        {% if status == "Active" %}
+                          <div title="Some Flag">
+                            <div class="alert alert-success" role="alert">
+                              Connection status: Active
+                            </div>
+                          </div>
+                        {% endif %}
+                        {% if status == "Disconnect" %}
+                          <div title="Some Flag">
+                            <div class="alert alert-danger" role="alert">
+                              Connection status: Disconnect
+                            </div>
+                          </div>
+                        {% endif %}
                         {% if show_connected %}
                           <div>
                             <div class="alert alert-success" role="alert">

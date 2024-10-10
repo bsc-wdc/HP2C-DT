@@ -997,9 +997,6 @@ def tools(request):
                 execution.save()
 
         document_form = DocumentForm()
-        branches = get_github_repo_branches()
-
-
         return redirect('tools')
     else:
         execution_form = ExecutionForm()
@@ -1044,7 +1041,6 @@ def tools(request):
         request.session["checkConn"] = "yes"
 
         document_form = DocumentForm()
-        branches = get_github_repo_branches()
         run_job = request.session.pop('run_job', None)
         tool_created = request.session.pop('tool_created', None)
         tool_edited = request.session.pop('tool_edited', None)
@@ -1066,7 +1062,6 @@ def tools(request):
             'document_form': document_form,
             'machines': populate_executions_machines(request),
             'machine_chosen': request.session['nameConnectedMachine'],
-            'branches': branches,
             'executions': executions,
             'executionsDone': executionsDone,
             'executionsFailed': executionsFailed,
@@ -1123,6 +1118,11 @@ def get_form_from_tool(tool):
     return DynamicToolForm
 
 
+def get_connection_status(request):
+    connection = Connection.objects.get(user=request.user)
+    return connection.status
+
+
 @login_required
 def hpc_machines(request):
     """
@@ -1164,22 +1164,13 @@ def hpc_machines(request):
 
             connection, created = Connection.objects.get_or_create(user=request.user)
             connection.machine = machine_found
-            connection.status = 'Active'
+            connection.status = 'Pending'
             connection.save()
 
             request.session["conn_id"] = connection.conn_id
             threadUpdate = updateExecutions(request, connection.conn_id)
             threadUpdate.start()
             stability_connection = check_connection(request)
-            if not stability_connection:
-                if not machines_done:
-                    request.session['check_existence_machines'] = "no"
-                request.session["check_connection_stable"] = "Required"
-                return render(request, 'pages/hpc_machines.html',
-                              {'machines': machines_done,
-                               'check_connection_stable': "no",
-                               'connected': stability_connection})
-
 
             machine_connected = Machine.objects.get(id=request.session["machine_chosen"])
             str_machine_connected = str(machine_connected.user) + "@" + machine_connected.fqdn
@@ -1190,13 +1181,13 @@ def hpc_machines(request):
                     request.method = 'POST'
                     request.POST = request.session.pop('original_request')
                     return redirect('run_sim')
-
             if request.session.get('redirect_to_tools', False):
                 request.session.pop('redirect_to_tools')
                 if 'original_request' in request.session:
                     request.method = 'POST'
                     request.POST = request.session.pop('original_request')
                     return redirect('tools')
+            status = get_connection_status(request)
 
             request.session['firstPhase'] = "yes"
             return render(request, 'pages/hpc_machines.html',
@@ -1205,7 +1196,8 @@ def hpc_machines(request):
                            'check_existence_machines': request.session[
                                'check_existence_machines'],
                            'show_connected': str_machine_connected,
-                           'connected': stability_connection
+                           'connected': stability_connection,
+                           'status': status
                            })
 
         if 'disconnectButton' in request.POST:
@@ -1330,13 +1322,15 @@ def hpc_machines(request):
         tool_created = request.session.get('tool_created', None)
         request.session.pop('tool_created', None)
 
+        status = get_connection_status(request)
+
         return render(request, 'pages/hpc_machines.html',
                       {'machines': machines_done, 'form': form,
                        'firstPhase': request.session['firstPhase'],
                        'check_existence_machines': request.session['check_existence_machines'],
                        'show_warning': show_warning, 'connected': stability_connection,
                        'machine_created': machine_created, 'ssh_keys_error': ssh_keys_error,
-                       'tool_created': tool_created})
+                       'tool_created': tool_created, 'status': status})
 
 
 def get_name_fqdn(machine):
@@ -1382,15 +1376,19 @@ def connection_ssh(private_key_decrypted, machineID):
         return ssh
     except paramiko.AuthenticationException as auth_error:
         print(f"Authentication error: {auth_error}")
+        return None
     except paramiko.BadHostKeyException as host_key_error:
         print(f"Bad host key error: {host_key_error}")
+        return None
     except paramiko.SSHException as ssh_error:
         print(f"SSH error: {ssh_error}")
+        return None
     except Machine.DoesNotExist as not_found_error:
         print(f"Machine not found error: {not_found_error}")
+        return None
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        return redirect("tools")
+        return None
 
 
 """def is_recaptcha_valid(request):
@@ -1436,37 +1434,6 @@ def run_command(command):
         print(result.stderr)
         return None
     return result.stdout.strip()
-
-
-def get_github_repo_branches():
-    """
-    Get the branches of the datagen repository.
-
-    :return: repository branches
-    """
-    try:
-        with open(os.path.expanduser('~/keys/github-token-hp2cdt.txt'),
-                  'r') as file:
-            token = file.read().strip()
-    except FileNotFoundError:
-        return "Unable to read the token from ~/keys/github-token-hp2cdt.txt"
-    except PermissionError:
-        return "Unable to access the file ~/keys/github-token-hp2cdt.txt: PermissionError"
-
-    user_repo = "MauroGarciaLorenzo/hp2c-dt"
-    api_url = f"https://api.github.com/repos/{user_repo}/branches"
-
-    headers = {
-        'Authorization': f'Token {token}'
-    }
-
-    response = requests.get(api_url, headers=headers)
-
-    if response.status_code == 200:
-        branches = response.json()
-        return [branch['name'] for branch in branches]
-    else:
-        return f"Unable to access the GitHub repository. Status code: {response.status_code}"
 
 
 def checkpointing_noAutorestart(jobIDCheckpoint, request):
@@ -1619,6 +1586,8 @@ def update_table(request):
     machineID = machine_found.id
     date_format = "%Y-%m-%dT%H:%M:%S"
     ssh = connection_ssh(request.session["private_key_decrypted"], machineID)
+    if not ssh:
+        return False
     executions = Execution.objects.all().filter(author=request.user, machine=request.session['machine_chosen']).filter(
         Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
     for executionE in executions:
@@ -1802,18 +1771,29 @@ class updateExecutions(threading.Thread):
 
     def run(self):
         timeout_start = time.time()
+        wrong_tries = 0
+        status = False
         while time.time() < timeout_start + self.timeout:
-            if not check_connection(self.request):
-                break
-
             bool_exception = False
             try:
                 bool_exception = update_table(self.request)
             except Exception as e:
                 print("Error updating the table of executions: ", e)
-
             if not bool_exception:
-                break
+                wrong_tries += 1
+                if wrong_tries == 3:
+                    Connection.objects.filter(user=self.request.user).update(
+                        status="Disconnect")
+                    break
+
+            if status != bool_exception:
+                status = bool_exception
+                if status:
+                    st = "Active"
+                else:
+                    st = "Disconnect"
+                Connection.objects.filter(user=self.request.user).update(
+                    status=st)
             time.sleep(5)
 
         Connection.objects.filter(user=self.request.user).update(status="Disconnect", machine=None)
