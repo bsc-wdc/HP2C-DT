@@ -1164,8 +1164,9 @@ def hpc_machines(request):
 
             request.session["private_key_decrypted"] = private_key_decrypted
             request.session['machine_chosen'] = machine_found.id
-
             connection, created = Connection.objects.get_or_create(user=request.user)
+            if connection.status == "Active" or connection.status == "Pending":
+                return redirect('hpc_machines')
             connection.machine = machine_found
             connection.status = 'Pending'
             connection.save()
@@ -1174,24 +1175,24 @@ def hpc_machines(request):
             threadUpdate = updateExecutions(request, connection.conn_id)
             threadUpdate.start()
             stability_connection = check_connection(request)
-
-            machine_connected = Machine.objects.get(id=request.session["machine_chosen"])
-            str_machine_connected = str(machine_connected.user) + "@" + machine_connected.fqdn
-            request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
-            if request.session.get('redirect_to_run_sim', False):
-                request.session.pop('redirect_to_run_sim')
-                if 'original_request' in request.session:
-                    request.method = 'POST'
-                    request.POST = request.session.pop('original_request')
-                    return redirect('run_sim')
-            if request.session.get('redirect_to_tools', False):
-                request.session.pop('redirect_to_tools')
-                if 'original_request' in request.session:
-                    request.method = 'POST'
-                    request.POST = request.session.pop('original_request')
-                    return redirect('tools')
+            str_machine_connected = None
+            if stability_connection:
+                machine_connected = Machine.objects.get(id=request.session["machine_chosen"])
+                str_machine_connected = str(machine_connected.user) + "@" + machine_connected.fqdn
+                request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
+                if request.session.get('redirect_to_run_sim', False):
+                    request.session.pop('redirect_to_run_sim')
+                    if 'original_request' in request.session:
+                        request.method = 'POST'
+                        request.POST = request.session.pop('original_request')
+                        return redirect('run_sim')
+                if request.session.get('redirect_to_tools', False):
+                    request.session.pop('redirect_to_tools')
+                    if 'original_request' in request.session:
+                        request.method = 'POST'
+                        request.POST = request.session.pop('original_request')
+                        return redirect('tools')
             status = get_connection_status(request)
-
             request.session['firstPhase'] = "yes"
             return render(request, 'pages/hpc_machines.html',
                           {'machines': machines_done, 'form': form,
@@ -1204,12 +1205,16 @@ def hpc_machines(request):
                            })
 
         if 'disconnectButton' in request.POST:
+            status = get_connection_status(request)
+            if status == "Disconnect":
+                return redirect("hpc_machines")
             choice = request.POST.get(
                 'machineChoice')
             machine_disconnected = Machine.objects.get(
                 id=request.session["machine_chosen"])
             str_machine_disconnected = str(
                 machine_disconnected.user) + "@" + machine_disconnected.fqdn
+
 
             if choice != str_machine_disconnected:
                 return render(request, 'pages/hpc_machines.html',
@@ -1218,11 +1223,12 @@ def hpc_machines(request):
                                'check_existence_machines': request.session[
                                    'check_existence_machines'],
                                'show_already_connected': str_machine_disconnected,
-                               'connected': stability_connection
+                               'connected': stability_connection,
+                               'status': status
                                })
             Connection.objects.filter(user=request.user).update(
                 status="Disconnect", machine=None)
-
+            status = get_connection_status(request)
             for key in list(request.session.keys()):
                 if not key.startswith("_"):
                     del request.session[key]
@@ -1240,7 +1246,8 @@ def hpc_machines(request):
                            'check_existence_machines': request.session[
                                'check_existence_machines'],
                            'connected': stability_connection,
-                           'show_disconnected': str_machine_disconnected
+                           'show_disconnected': str_machine_disconnected,
+                           'status': status
                            })
 
         if 'detailsButton' in request.POST:
@@ -1303,11 +1310,13 @@ def hpc_machines(request):
                 request.session['machine_created'] = f"{userForm}@{fqdnForm}"
                 return redirect('hpc_machines')
     else:
+        status = get_connection_status(request)
         form = Machine_Form()
         request.session["check_connection_stable"] = "no"
         request.session["check_existence_machines"] = "yes"
-        show_warning = (request.session.get('redirect_to_run_sim', False) or
-                         request.session.get('redirect_to_tools', False))
+        show_warning = (status != "Active" and
+                        (request.session.get('redirect_to_run_sim', False) or
+                         request.session.get('redirect_to_tools', False)))
 
         if not machines_done:
             request.session['check_existence_machines'] = "no"
@@ -1324,8 +1333,6 @@ def hpc_machines(request):
 
         tool_created = request.session.get('tool_created', None)
         request.session.pop('tool_created', None)
-
-        status = get_connection_status(request)
 
         return render(request, 'pages/hpc_machines.html',
                       {'machines': machines_done, 'form': form,
@@ -1799,8 +1806,8 @@ class updateExecutions(threading.Thread):
                     status=st)
             time.sleep(5)
 
-        Connection.objects.filter(user=self.request.user).update(status="Disconnect", machine=None)
-        render_right(self.request)
+            Connection.objects.filter(user=self.request.user).update(status="Disconnect", machine=None)
+            render_right(self.request)
         return
 
 

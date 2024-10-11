@@ -15,7 +15,7 @@
     {% endif %}
     <div class="card" style="border-radius: 15px;">
         <div class="card-body p-5">
-            {% if show_warning %}
+            {% if show_warning and status != "Pending" %}
               <div class="alert alert-warning" role="alert">
                 You must establish a connection to a machine
               </div>
@@ -48,7 +48,7 @@
                         {% if status == "Disconnect" %}
                           <div title="Some Flag">
                             <div class="alert alert-danger" role="alert">
-                              Connection status: Disconnect
+                              Connection status: Disconnected
                             </div>
                           </div>
                         {% endif %}
