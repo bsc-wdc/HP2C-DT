@@ -866,7 +866,7 @@ def tools(request):
     Display executions log and the forms of the existing tools. It is required
     to be connected to a machine.
 
-    :param request:
+    :param request: request
     :return: HTML render
     """
     check_conn_bool = check_connection(request)
@@ -1119,8 +1119,11 @@ def get_form_from_tool(tool):
 
 
 def get_connection_status(request):
-    connection = Connection.objects.get(user=request.user)
-    return connection.status
+    connection = Connection.objects.filter(user=request.user)
+    if len(connection) == 0:
+        return "Disconnect"
+    else:
+        return connection[0].status
 
 
 @login_required
