@@ -1165,7 +1165,8 @@ def hpc_machines(request):
             request.session["private_key_decrypted"] = private_key_decrypted
             request.session['machine_chosen'] = machine_found.id
             connection, created = Connection.objects.get_or_create(user=request.user)
-            if connection.status == "Active" or connection.status == "Pending":
+
+            if connection.status == "Active" or connection.status == "Pending" or connection.status == "Failed":
                 return redirect('hpc_machines')
             connection.machine = machine_found
             connection.status = 'Pending'
@@ -1311,6 +1312,10 @@ def hpc_machines(request):
                 return redirect('hpc_machines')
     else:
         status = get_connection_status(request)
+
+        if status == "Failed":
+            Connection.objects.filter(user=request.user).update(status="Disconnect")
+
         form = Machine_Form()
         request.session["check_connection_stable"] = "no"
         request.session["check_existence_machines"] = "yes"
@@ -1793,8 +1798,8 @@ class updateExecutions(threading.Thread):
                 wrong_tries += 1
                 if wrong_tries == 3:
                     Connection.objects.filter(user=self.request.user).update(
-                        status="Disconnect")
-                    break
+                        status="Failed")
+                    return
 
             if status != bool_exception:
                 status = bool_exception
@@ -1806,8 +1811,8 @@ class updateExecutions(threading.Thread):
                     status=st)
             time.sleep(5)
 
-            Connection.objects.filter(user=self.request.user).update(status="Disconnect", machine=None)
-            render_right(self.request)
+        Connection.objects.filter(user=self.request.user).update(status="Disconnect", machine=None)
+        render_right(self.request)
         return
 
 

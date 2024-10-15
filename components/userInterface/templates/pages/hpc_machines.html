@@ -52,6 +52,13 @@
                             </div>
                           </div>
                         {% endif %}
+                        {% if status == "Failed" %}
+                          <div title="Some Flag">
+                            <div class="alert alert-danger" role="alert">
+                              Connection status: Failed
+                            </div>
+                          </div>
+                        {% endif %}
                         {% if show_connected %}
                           <div>
                             <div class="alert alert-success" role="alert">
