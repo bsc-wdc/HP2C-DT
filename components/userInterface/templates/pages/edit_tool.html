@@ -157,18 +157,18 @@
                                                     class="form-control ml-2" id="default_value_boolean_{{ custom_field.id }}">
                                                 <option value="" {% if not custom_field.default_value %}selected{% endif %}>
                                                     No default value</option>
-                                                <option value="true" {% if custom_field.default_value == 'true' %}selected{% endif %}>
+                                                <option value="true" {% if custom_field.default_value == 'True' %}selected{% endif %}>
                                                 True</option>
-                                                <option value="false" {% if custom_field.default_value == 'false' %}selected{% endif %}>
+                                                <option value="false" {% if custom_field.default_value == 'False' %}selected{% endif %}>
                                                 False</option>
                                             </select>
                                             <select name="preset_value_boolean_{{ custom_field.id }}" class="form-control ml-2"
                                                     id="preset_value_boolean_{{ custom_field.id }}">
                                                 <option value="" {% if not custom_field.preset_value %}selected{% endif %}>
                                                     No preset value</option>
-                                                <option value="true" {% if custom_field.preset_value == 'true' %}selected{% endif %}>
+                                                <option value="true" {% if custom_field.preset_value == 'True' %}selected{% endif %}>
                                                 True</option>
-                                                <option value="false" {% if custom_field.preset_value == 'false' %}selected{% endif %}>
+                                                <option value="false" {% if custom_field.preset_value == 'False' %}selected{% endif %}>
                                                 False</option>
                                             </select>
                                             <input type="hidden" name="boolean_section_{{ custom_field.id }}" value="{{ section }}">
