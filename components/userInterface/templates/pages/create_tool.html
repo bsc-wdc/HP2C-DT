@@ -72,11 +72,11 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="custom_field_Install Dir">Install Dir</label>
+                                <label for="custom_field_Install Dir">Install Dir (Directory where the downloaded repositories are located. Path relative to the home of the remote)</label>
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Install Dir" value="{{section}}">
                                     <input type="hidden" name="custom_field_Install Dir" value="Install Dir">
-                                    <input type="hidden" name="placeholder_Install Dir" value="Insert path from user home (in the remote machine)">
+                                    <input type="hidden" name="placeholder_Install Dir" value="Directory where the downloaded repositories are located. Path relative to the home of the remote">
                                     <input type="text" name="default_value_Install Dir" class="form-control ml-2"
                                            id="default_value_Install Dir" placeholder="Default Value (optional)">
                                     <input type="text" name="preset_value_Install Dir" class="form-control ml-2"
@@ -85,11 +85,11 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="custom_field_Entry Point">Entry Point</label>
+                                <label for="custom_field_Entry Point">Entry Point (Python module that executes the tool. Path relative to the main repository)</label>
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Entry Point" value="{{section}}">
                                     <input type="hidden" name="custom_field_Entry Point" value="Entry Point">
-                                    <input type="hidden" name="placeholder_Entry Point" value="Only the module name needed (unique across the repositories)">
+                                    <input type="hidden" name="placeholder_Entry Point" value="Python module that executes the tool. Path relative to the main repository">
                                     <input type="text" name="default_value_Entry Point" class="form-control ml-2"
                                            id="default_value_Entry Point" placeholder="Default Value (optional). Only the module name needed (unique across the repositories)">
                                     <input type="text" name="preset_value_Entry Point" class="form-control ml-2"
@@ -98,9 +98,10 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="custom_field_Working Dir">Working Dir</label>
+                                <label for="custom_field_Working Dir">Working Dir (Stores the output logs and results for each execution. Path relative to "Install Dir")</label>
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Working Dir" value="{{section}}">
+                                    <input type="hidden" name="placeholder_Working Dir" value="Stores the output logs and results for each execution. Path relative to 'Install Dir'">
                                     <input type="hidden" name="custom_field_Working Dir" value="Working Dir">
                                     <input type="text" name="default_value_Working Dir" class="form-control ml-2"
                                            id="default_value_Working Dir" placeholder="Default Value (optional)">
@@ -110,9 +111,10 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="custom_field_Simulation Name">Simulation Name</label>
+                                <label for="custom_field_Simulation Name">Simulation Name (Name of the executed job in the Slurm queue)</label>
                                 <div class="d-flex">
                                     <input type="hidden" name="section_Simulation Name" value="{{section}}">
+                                    <input type="hidden" name="placeholder_Simulation" value="Name of the executed job in the Slurm queue">
                                     <input type="hidden" name="custom_field_Simulation Name" value="Simulation Name">
                                     <input type="text" name="default_value_Simulation Name" class="form-control ml-2"
                                            id="default_value_Simulation Name" placeholder="Default Value (optional)">
