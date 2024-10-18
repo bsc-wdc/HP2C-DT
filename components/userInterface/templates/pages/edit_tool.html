@@ -34,14 +34,14 @@
                     <div class="section-content" id="section-{{ section }}" style="display: block;">
                         {% if section == "setup" %}
                             <div class="form-group" id="setup-section">
-                                <label for="id_github_repo" style="font-weight: bold;">{{ form.github_repo.label }}:</label>
+                                <label for="id_github_repo" style="font-weight: bold;">{{ form.github_repo.label }}</label>
                                 <div class="d-flex align-items-center mb-2">
                                     <input type="text" name="github_repo" class="form-control flex-grow-1 mr-2" id="id_github_repo" value="{{ form.github_repo.value|default_if_none:'' }}" placeholder="Repo URL">
                                     <input type="text" name="github_branch" class="form-control flex-grow-1" id="id_github_branch" value="{{ form.github_branch.value|default_if_none:'' }}" placeholder="Branch Name">
                                     <button type="button" id="add-repo" class="btn btn-success feather icon-plus-circle ml-2"></button>
                                 </div>
                                 <div class="d-flex align-items-center mb-2">
-                                    <label class="mr-2">Requires installation:</label>
+                                    <label class="mr-2">Requires installation</label>
                                     <input type="checkbox" name="github_install" id="id_github_install"
                                            {% if existing_repos.0.install %} checked {% endif %}>
                                     <input type="text" name="github_install_dir" class="form-control flex-grow-1 ml-2"
@@ -49,13 +49,13 @@
                                            id="id_github_install_dir" placeholder="Install Dir (from repo root)">
                                 </div>
                                 <div class="d-flex align-items-center">
-                                    <label class="mr-2">Install in editable mode:</label>
+                                    <label class="mr-2">Install in editable mode</label>
                                     <input type="checkbox" name="github_editable" id="id_github_editable"
                                     {% if existing_repos.0.editable %} checked {% endif %}>
-                                    <label class="ml-2 mr-2">Install requirements:</label>
+                                    <label class="ml-2 mr-2">Install requirements</label>
                                     <input type="checkbox" name="github_requirements" id="id_github_requirements"
                                     {% if existing_repos.0.requirements %} checked {% endif %}>
-                                    <label class="ml-2 mr-2">Target ("repo_root/packages"):</label>
+                                    <label class="ml-2 mr-2">Target ("repo_root/packages")</label>
                                     <input type="checkbox" name="github_target" id="github_target"
                                     {% if existing_repos.0.target %} checked {% endif %}>
                                 </div>
@@ -65,7 +65,7 @@
                                 {% if not forloop.first %}
                                     <div class="form-group">
                                         <label for="github_repo_{{ forloop.counter }}" style="font-weight: bold;">
-                                            GitHub Repo:</label>
+                                            GitHub Repo</label>
                                         <div class="d-flex align-items-center mb-2">
                                             <input type="text" name="github_repo_{{ forloop.counter }}"
                                                    class="form-control flex-grow-1 mr-2" id="github_repo_{{ forloop.counter }}"
@@ -76,7 +76,7 @@
                                             <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
                                         </div>
                                         <div class="d-flex align-items-center mb-2">
-                                            <label class="mr-2">Requires installation:</label>
+                                            <label class="mr-2">Requires installation</label>
                                             <input type="checkbox" name="github_install_{{ forloop.counter }}"
                                                    id="id_github_install_{{ forloop.counter }}"
                                                    {% if repo.install %} checked {% endif %}>
@@ -85,15 +85,15 @@
                                                    value="{{ repo.install_dir|default:'' }}" placeholder="Install Dir (from repo root)">
                                         </div>
                                         <div class="d-flex align-items-center">
-                                            <label class="mr-2">Install in editable mode:</label>
+                                            <label class="mr-2">Install in editable mode</label>
                                             <input type="checkbox" name="github_editable_{{ forloop.counter }}"
                                                    id="id_github_editable_{{ forloop.counter }}"
                                             {% if repo.editable %} checked {% endif %}>
-                                            <label class="ml-2 mr-2">Install requirements:</label>
+                                            <label class="ml-2 mr-2">Install requirements</label>
                                             <input type="checkbox" name="github_requirements_{{ forloop.counter }}"
                                                    id="id_github_requirements_{{ forloop.counter }}"
                                             {% if repo.requirements %} checked {% endif %}>
-                                            <label class="ml-2 mr-2">Target ("repo_root/packages"):</label>
+                                            <label class="ml-2 mr-2">Target ("repo_root/packages")</label>
                                             <input type="checkbox" name="github_target_{{ forloop.counter }}"
                                                    id="github_target_{{ forloop.counter }}"
                                             {% if repo.target %} checked {% endif %}>
@@ -105,7 +105,7 @@
 
                         {% if section == "slurm" %}
                             <div class="form-group">
-                                <label for="custom_field_Modules">Modules:</label>
+                                <label for="custom_field_Modules">Modules</label>
                                 <div id="module-fields-container-slurm" class="d-flex flex-column">
                                     {% for module in existing_modules %}
                                     <div class="module-field d-flex align-items-center mt-2">
@@ -127,7 +127,7 @@
                             {% if custom_field.section == section %}
                                 {% if custom_field.type == "text" %}
                                     <div class="form-group">
-                                        <label for="custom_field_{{ custom_field.id }}">{{ custom_field.name }}:</label>
+                                        <label for="custom_field_{{ custom_field.id }}">{{ custom_field.name }}</label>
                                         <div class="d-flex">
                                             <input type="text" name="custom_field_{{ custom_field.id }}"
                                                    class="form-control flex-grow-1" id="custom_field_{{ custom_field.id }}"
@@ -147,7 +147,7 @@
                                 {% endif %}
                                 {% if custom_field.type == "boolean" %}
                                     <div class="form-group">
-                                        <label for="custom_boolean_field_{{ custom_field.id }}">{{ custom_field.name }}:</label>
+                                        <label for="custom_boolean_field_{{ custom_field.id }}">{{ custom_field.name }}</label>
                                         <div class="d-flex align-items-center">
                                             <input type="text" name="custom_boolean_field_{{ custom_field.id }}"
                                                    class="form-control flex-grow-1 mr-2"
@@ -241,7 +241,7 @@ document.querySelectorAll('.add-text-field').forEach(button => {
         const newFieldDiv = document.createElement('div');
         newFieldDiv.classList.add('form-group');
         newFieldDiv.innerHTML = `
-            <label for="custom_field_${fieldCounter}">Custom Field:</label>
+            <label for="custom_field_${fieldCounter}">Custom Field</label>
             <div class="d-flex">
                 <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
                 <input type="text" name="default_value_${fieldCounter}" class="form-control ml-2" id="default_value_${fieldCounter}" placeholder="Default Value (optional)">
@@ -270,7 +270,7 @@ document.querySelectorAll('.add-boolean-field').forEach(button => {
         const newFieldDiv = document.createElement('div');
         newFieldDiv.classList.add('form-group');
         newFieldDiv.innerHTML = `
-            <label for="custom_boolean_field_${fieldCounter}">Custom Boolean Field:</label>
+            <label for="custom_boolean_field_${fieldCounter}">Custom Boolean Field</label>
             <div class="d-flex align-items-center">
                 <input type="text" name="custom_boolean_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_boolean_field_${fieldCounter}" placeholder="Field Name">
                 <select name="default_value_boolean_${fieldCounter}" class="form-control ml-2" id="default_value_boolean_${fieldCounter}">
@@ -359,22 +359,22 @@ document.getElementById('add-repo').onclick = function() {
     const newRepoDiv = document.createElement('div');
     newRepoDiv.classList.add('form-group');
     newRepoDiv.innerHTML = `
-        <label for="github_repo_${repoCounter}" style="font-weight: bold;">GitHub Repo:</label>
+        <label for="github_repo_${repoCounter}" style="font-weight: bold;">GitHub Repo</label>
         <div class="d-flex align-items-center mb-2">
             <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2" id="github_repo_${repoCounter}" placeholder="Repo URL">
             <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1" id="github_branch_${repoCounter}" placeholder="Branch Name">
             <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
         </div>
         <div class="d-flex align-items-center mb-2">
-            <label class="mr-2">Requires installation:</label>
+            <label class="mr-2">Requires installation</label>
             <input type="checkbox" name="github_install_${repoCounter}" id="github_install_${repoCounter}">
             <input type="text" name="github_install_dir_${repoCounter}" class="form-control flex-grow-1 ml-2"
             id="github_install_dir_${repoCounter}" placeholder="Install Dir (from repo root)">
         </div>
         <div class="d-flex align-items-center">
-            <label class="mr-2">Install in editable mode:</label>
+            <label class="mr-2">Install in editable mode</label>
             <input type="checkbox" name="github_editable_${repoCounter}" id="github_editable_${repoCounter}">
-            <label class="ml-2 mr-2">Install requirements:</label>
+            <label class="ml-2 mr-2">Install requirements</label>
             <input type="checkbox" name="github_requirements_${repoCounter}" id="github_requirements_${repoCounter}">
         </div>
     `;

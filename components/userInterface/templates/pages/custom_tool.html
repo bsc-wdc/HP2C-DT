@@ -114,7 +114,7 @@ document.getElementById('add-repo').onclick = function() {
     const newRepoDiv = document.createElement('div');
     newRepoDiv.classList.add('form-group');
     newRepoDiv.innerHTML = `
-        <label for="github_repo_${repoCounter}">GitHub Repo ${repoCounter}:</label>
+        <label for="github_repo_${repoCounter}">GitHub Repo ${repoCounter}</label>
         <div class="d-flex align-items-center">
             <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1" id="github_repo_${repoCounter}">
             <input type="hidden" name="section_github_repo_${repoCounter}" value="setup">
@@ -132,7 +132,7 @@ document.querySelectorAll('.add-field').forEach(button => {
         const newFieldDiv = document.createElement('div');
         newFieldDiv.classList.add('form-group');
         newFieldDiv.innerHTML = `
-            <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
+            <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}</label>
             <div class="d-flex">
                 <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
                 <input type="hidden" name="section_${fieldCounter}" value="${section}">
