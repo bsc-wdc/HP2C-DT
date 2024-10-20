@@ -97,9 +97,9 @@ def get_form_from_tool(tool):
         disabled = field.preset_value is not None
 
         if field.type == 'boolean':
-            if initial == "true":
+            if initial == "True":
                 initial = True
-            elif initial == "false":
+            elif initial == "False":
                 initial = False
             form_fields[field.name] = forms.BooleanField(
                 label=field.name.replace("_", " ").lower(),
