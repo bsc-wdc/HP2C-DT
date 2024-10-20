@@ -193,6 +193,7 @@
                                 </div>
                                 <button type="button" class="btn btn-primary mt-2 add-module-btn" data-section="slurm">Add Module</button>
                             </div>
+
                         {% endif %}
 
                         {% if section == "COMPSs" %}
@@ -538,18 +539,17 @@ document.querySelectorAll('.add-module-btn').forEach(button => {
         const sectionContent = document.getElementById('module-fields-container-' + section);
 
         const newFieldDiv = document.createElement('div');
-        newFieldDiv.classList.add('form-group');
+        newFieldDiv.classList.add('module-field', 'd-flex', 'align-items-center', 'mt-2');
         newFieldDiv.innerHTML = `
-            <div class="d-flex align-items-center">
-                <input type="text" name="module_${fieldCounter}" class="form-control flex-grow-1" id="module_${fieldCounter}"
-                placeholder="Insert module to load (format: module/version)">
-                <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
-            </div>
+            <input type="text" name="module_${fieldCounter}" class="form-control flex-grow-1" id="module_${fieldCounter}"
+            placeholder="Insert module to load (format: module/version)">
+            <button type="button" class="btn btn-danger ml-2" onclick="removeModule(this)">-</button>
         `;
 
-        sectionContent.prepend(newFieldDiv);
+        sectionContent.appendChild(newFieldDiv);
     });
 });
+
 </script>
 <style>
 .clickable-header:hover {
