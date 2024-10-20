@@ -343,7 +343,7 @@ def run_execution(script, execution_folder, tool_data, entrypoint, setup_path,
     job_name = job_name.replace(" ", "_")
 
     if entrypoint.endswith("py"):
-        compss_args += "--lang=python"
+        compss_args += "--lang=PYTHON"
 
     script.append(f"enqueue_compss {slurm_args} {compss_args} --job_name={job_name} "
                   f"--keep_workingdir --log_dir={execution_folder} "
