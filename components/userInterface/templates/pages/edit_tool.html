@@ -46,7 +46,7 @@
                                            {% if existing_repos.0.install %} checked {% endif %}>
                                     <input type="text" name="github_install_dir" class="form-control flex-grow-1 ml-2"
                                            value="{{ existing_repos.0.install_dir|default:'' }}"
-                                           id="id_github_install_dir" placeholder="Install Dir (from repo root)">
+                                           id="id_github_install_dir" placeholder="Install Dir (If pip install should be run from a directory within the repository, rather than the root)">
                                 </div>
                                 <div>
                                     <label class="mr-2">Install in editable mode</label>
