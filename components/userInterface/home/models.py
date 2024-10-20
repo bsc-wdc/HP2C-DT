@@ -19,9 +19,6 @@ class Machine(models.Model):
                                null=True, blank=True)
     user = models.CharField(max_length=255, null=False)
     fqdn = models.CharField(max_length=255, null=False)
-    wdir = models.CharField(max_length=2048, null=False)
-    installDir= models.CharField(max_length=2048, null=False)
-    dataDir=models.CharField(max_length=2048, null=False)
 
 
 class Product(models.Model):

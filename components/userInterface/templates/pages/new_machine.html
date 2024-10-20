@@ -20,18 +20,6 @@
               <label class="font-weight-bold">FQDN</label>
               {% render_field form.fqdn type="text" class="form-control" placeholder="Insert the machine Fully Qualified Domain Name" %}
             </div>
-            <div class="form-group">
-              <label class="font-weight-bold">WDIR</label>
-              {% render_field form.wdir type="text" class="form-control" placeholder="Insert the working directory path for the chosen machine" %}
-            </div>
-            <div class="form-group">
-              <label class="font-weight-bold">INSTALLATION DIRECTORY</label>
-              {% render_field form.installDir type="text" class="form-control" placeholder="Insert the installation directory path for the chosen machine" %}
-            </div>
-            <div class="form-group">
-              <label class="font-weight-bold">DATA DIRECTORY</label>
-              {% render_field form.dataDir type="text" class="form-control" placeholder="Insert the data directory path for the chosen machine" %}
-            </div>
             {{ form.author.as_hidden }}
 
             {% if error %}

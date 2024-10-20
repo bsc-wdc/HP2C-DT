@@ -36,7 +36,7 @@ class ExecutionForm(forms.ModelForm):
 class Machine_Form(forms.ModelForm):
     class Meta:
         model = Machine
-        fields = ('author', 'user', 'fqdn', 'wdir', 'installDir', 'dataDir')
+        fields = ('author', 'user', 'fqdn')
         widgets = {
             'author': forms.HiddenInput(),
         }
