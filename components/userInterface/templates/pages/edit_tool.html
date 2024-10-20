@@ -48,14 +48,18 @@
                                            value="{{ existing_repos.0.install_dir|default:'' }}"
                                            id="id_github_install_dir" placeholder="Install Dir (from repo root)">
                                 </div>
-                                <div class="d-flex align-items-center">
+                                <div>
                                     <label class="mr-2">Install in editable mode</label>
                                     <input type="checkbox" name="github_editable" id="id_github_editable"
                                     {% if existing_repos.0.editable %} checked {% endif %}>
-                                    <label class="ml-2 mr-2">Install requirements</label>
+                                </div>
+                                <div>
+                                    <label class="mr-2">Install requirements</label>
                                     <input type="checkbox" name="github_requirements" id="id_github_requirements"
                                     {% if existing_repos.0.requirements %} checked {% endif %}>
-                                    <label class="ml-2 mr-2">Target ("repo_root/packages")</label>
+                                </div>
+                                <div>
+                                    <label class="mr-2">Target ("repo_root/packages")</label>
                                     <input type="checkbox" name="github_target" id="github_target"
                                     {% if existing_repos.0.target %} checked {% endif %}>
                                 </div>
@@ -371,11 +375,17 @@ document.getElementById('add-repo').onclick = function() {
             <input type="text" name="github_install_dir_${repoCounter}" class="form-control flex-grow-1 ml-2"
             id="github_install_dir_${repoCounter}" placeholder="Install Dir (from repo root)">
         </div>
-        <div class="d-flex align-items-center">
+        <div>
             <label class="mr-2">Install in editable mode</label>
             <input type="checkbox" name="github_editable_${repoCounter}" id="github_editable_${repoCounter}">
-            <label class="ml-2 mr-2">Install requirements</label>
+        </div>
+        <div>
+            <label class="mr-2">Install requirements</label>
             <input type="checkbox" name="github_requirements_${repoCounter}" id="github_requirements_${repoCounter}">
+        </div>
+        <div>
+            <label class="mr-2">Target ("repo_root/packages")</label>
+            <input type="checkbox" name="github_target_${repoCounter}" id="github_target_${repoCounter}">
         </div>
     `;
     setupSection.appendChild(newRepoDiv);
