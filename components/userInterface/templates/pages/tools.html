@@ -64,4 +64,21 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var toolCreated = "{{ tool_created|default:'' }}";
+        var toolEdited = "{{ tool_edited|default:'' }}";
+        var showTool = toolCreated || toolEdited;
+
+        if (showTool) {
+            var ToolName = showTool.toLowerCase().replace(/\s+/g, '-');
+            var tabToShow = document.getElementById(ToolName + '-tab');
+            if (tabToShow) {
+                tabToShow.click();
+            }
+        }
+    });
+</script>
+
 {% endblock content %}
