@@ -363,7 +363,12 @@ def export_variables(script, tool_data):
     """
     exported_variables = get_environment_variables(tool_data)
     for key, value in exported_variables.items():
-        script.append(f"export {key}={value}")
+        if " " not in key:
+            script.append(f"export {key}={value}")
+        else:
+            print("Error exporting variables: There is a space in the variable "
+                  f"name {key}")
+
     return script
 
 
