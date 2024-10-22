@@ -164,3 +164,7 @@ dkms.conf
 *.mod
 *.smod
 config.json
+
+# UI logs
+*.err
+*.out

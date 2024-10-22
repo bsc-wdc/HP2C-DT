@@ -64,6 +64,22 @@ def get_files_r(remote_path, sftp):
     return files
 
 
+def get_local_files_r(local_path):
+    """
+    Get pairs of file name - file size, in order to display them in the results view.
+
+    :param local_path: Local root directory.
+    :return: Pairs of file path - file size within local_path subdirectories.
+    """
+    files = {}
+    for dirpath, _, filenames in os.walk(local_path):
+        for filename in filenames:
+            filepath = os.path.join(dirpath, filename)
+            files[filepath] = os.path.getsize(filepath)
+
+    return files
+
+
 def get_files(remote_path, private_key_decrypted, machineID):
     """
     Create SFTP connection and get files within remote_path subdirectories.

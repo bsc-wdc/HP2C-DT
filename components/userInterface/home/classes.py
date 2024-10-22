@@ -165,6 +165,17 @@ class RunSimulation(threading.Thread):
                                setup_path, pythonpath)
         stdout, stderr = script.execute()
 
+        # Save the logs locally
+        dir_name = os.path.dirname(__file__)
+        logs_path = os.path.join(dir_name, "..", "logs", f"execution{self.e_id}")
+        os.makedirs(logs_path)
+        stdout_path = os.path.join(logs_path, f"execution{self.e_id}.out")
+        stderr_path = os.path.join(logs_path, f"execution{self.e_id}.err")
+        with open(stdout_path, 'w') as f_out:
+            f_out.write("".join(stdout))
+        with open(stderr_path, 'w') as f_err:
+            f_err.write("".join(stderr))
+
         s = "Submitted batch job"
         var = ""
         while (len(stdout) == 0):

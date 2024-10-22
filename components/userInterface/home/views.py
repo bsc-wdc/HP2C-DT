@@ -469,7 +469,7 @@ def tools(request):
 
         if 'resultExecution' in request.POST:
             request.session['eIDdone'] = request.POST.get(
-                "resultExecutionValue")# TODO: change jobid for eid
+                "resultExecutionValue")
             request.session['jobIDdone'] = request.POST.get("jobIDValue")
             return redirect('results')
 
@@ -861,32 +861,36 @@ def results(request):
     :param request: request
     :return: HTML render
     """
-    if request.method == 'POST':
-        pass
-    else:
-        eID = request.session['eIDdone']
-        jobID = request.session['jobIDdone']
-        if Execution.objects.get(eID=eID).status == "INITIALIZING":
-            request.session["initializing"] = Execution.objects.get(eID=eID).name_sim
-            return redirect('tools')
+    eID = request.session['eIDdone']
+    jobID = request.session['jobIDdone']
+    if Execution.objects.get(eID=eID).status == "INITIALIZING":
+        request.session["initializing"] = Execution.objects.get(eID=eID).name_sim
+        return redirect('tools')
 
-        ssh = connection_ssh(request.session['private_key_decrypted'], request.session['machine_chosen'])
-        stdin, stdout, stderr = ssh.exec_command(
-            "sacct -j " + str(jobID) + " --format=jobId,user,nnodes,elapsed,state | sed -n 3,3p")
-        stdout = stdout.readlines()
-        print(stdout)
-        values = str(stdout).split()
-        Execution.objects.filter(jobID=jobID).update(status=values[4], time=values[3], nodes=int(values[2]))
-        execUpdate = Execution.objects.get(jobID=jobID)
-        remote_path = execUpdate.wdir
-        files = get_files(remote_path, request.session['private_key_decrypted'],
-                          request.session['machine_chosen'])
-        files = dict(sorted(files.items()))
+    ssh = connection_ssh(request.session['private_key_decrypted'], request.session['machine_chosen'])
+    stdin, stdout, stderr = ssh.exec_command(
+        "sacct -j " + str(jobID) + " --format=jobId,user,nnodes,elapsed,state | sed -n 3,3p")
+    stdout = stdout.readlines()
+    print(stdout)
+    values = str(stdout).split()
+    Execution.objects.filter(jobID=jobID).update(status=values[4], time=values[3], nodes=int(values[2]))
+    execUpdate = Execution.objects.get(jobID=jobID)
+    remote_path = execUpdate.wdir
+    remote_files = get_files(remote_path, request.session['private_key_decrypted'],
+                      request.session['machine_chosen'])
+    remote_files = dict(sorted(remote_files.items()))
 
-        request.session['remote_path'] = remote_path
-        request.session['results_dir'] = execUpdate.results_dir
+    # Get UI logs
+    dir_name = os.path.dirname(__file__)
+    logs_path = os.path.join(dir_name, "..", "logs", f"execution{eID}")
+    local_files = get_local_files_r(logs_path)
+
+    request.session['remote_path'] = remote_path
+    request.session['results_dir'] = execUpdate.results_dir
     return render(request, 'pages/results.html',
-                  {'executionsDone': execUpdate, 'files': files})
+                  {'executionsDone': execUpdate,
+                   'remote_files': remote_files,
+                   'local_files': local_files})
 
 
 @login_required()
