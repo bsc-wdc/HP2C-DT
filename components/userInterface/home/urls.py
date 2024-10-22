@@ -20,4 +20,5 @@ urlpatterns = [
   path('download_yaml/<str:tool_name>/', views.download_yaml, name='download_yaml'),
   path('create_tool/', views.create_tool, name='create_tool'),
   path('edit_tool/<str:tool_name>/', views.edit_tool, name='edit_tool'),
+  path('upload_tool/', views.upload_tool, name='upload_tool'),
 ]

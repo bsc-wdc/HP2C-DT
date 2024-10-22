@@ -15,11 +15,14 @@ def auto_convert(value):
     Convert string values to the appropriate type (list, int, float, bool...)
 
     :param value: Value involved
-    :return: If possible, converted value
+    :return: If possible, converted value; otherwise, returns None for "None"
     """
+    if value == "None":
+        return None
+
     try:
         return yaml.safe_load(value)
-    except:
+    except Exception:
         return value
 
 
@@ -101,6 +104,37 @@ def tool_to_yaml(tool_name):
         })
 
     return tool_data
+
+
+def yaml_to_tool(yaml_content):
+    tool_data = yaml.safe_load(yaml_content)
+
+    tool = Tool.objects.create(name=tool_data['tool_name'])
+    tool.set_modules_list(tool_data['modules_list'])
+
+    for field_data in tool_data['fields']:
+        tool.add_field(
+            field_name=auto_convert(field_data['name']),
+            default_value=auto_convert(field_data.get('default_value')),
+            preset_value=auto_convert(field_data.get('preset_value')),
+            section=auto_convert(field_data.get('section')),
+            type=auto_convert(field_data.get('type')),
+            placeholder=auto_convert(field_data.get('placeholder'))
+        )
+
+    for repo_data in yaml.safe_load(tool_data['repos']):
+        tool.add_repo(
+            url=auto_convert(repo_data['url']),
+            branch=auto_convert(repo_data['branch']),
+            install=auto_convert(repo_data['install']),
+            install_dir=auto_convert(repo_data.get('install_dir')),
+            editable=auto_convert(repo_data['editable']),
+            requirements=auto_convert(repo_data['requirements']),
+            target=auto_convert(repo_data['target'])
+        )
+
+    return tool
+
 
 
 def get_form_from_tool(tool):

@@ -26,7 +26,8 @@ from django.db.models import Q
 from .ssh import encrypt, decrypt, get_connection_status, get_name_fqdn, \
     check_connection, connection_ssh, populate_executions_machines, \
     get_machine_connected
-from .tool import extract_tool_data, get_form_from_tool, tool_to_yaml
+from .tool import extract_tool_data, get_form_from_tool, tool_to_yaml, \
+    yaml_to_tool
 
 
 @login_required
@@ -887,10 +888,29 @@ def results(request):
     return render(request, 'pages/results.html',
                   {'executionsDone': execUpdate, 'files': files})
 
+
+@login_required()
+def upload_tool(request):
+    if request.method == 'POST':
+        document_form = DocumentForm(request.POST, request.FILES)
+        if document_form.is_valid():
+            uploaded_file = request.FILES['document']
+            yaml_content = uploaded_file.read().decode('utf-8')
+            tool = yaml_to_tool(yaml_content)
+            request.session['tool_created'] = tool.name
+
+            return redirect('tools')
+    else:
+        document_form = DocumentForm()
+
+    return render(request, 'pages/upload_tool.html',
+                  {'document_form': document_form})
+
+
 @login_required()
 def download_yaml(request, tool_name):
     """
-    View to download a file from a local path or generate a YAML file from a dictionary.
+    View to download a file containing the yaml of the tool_name tool.
 
     :param request: HTTP request
     :param tool_name: Name of the tool to be downloaded
@@ -907,6 +927,44 @@ def download_yaml(request, tool_name):
     except:
         raise Http404("Error downloading yaml file.")
 
+
+@login_required
+def download_remote_file(request, file_name):
+    """
+    Auxiliary view used for downloading a concrete file (a log/result file of
+    an execution).
+
+    :param request: request
+    :param file_name: Name of the file involved
+    :return: HTML render
+    """
+    remote_path = request.session['remote_path']
+    private_key_decrypted = request.session['private_key_decrypted']
+    machineID = request.session['machine_chosen']
+
+    ssh = paramiko.SSHClient()
+    pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
+    machine_found = Machine.objects.get(id=machineID)
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
+    sftp = ssh.open_sftp()
+    try:
+        file_path = find_file_recursively(sftp, remote_path, file_name)
+        if file_path:
+            with sftp.file(file_path, 'rb') as file_obj:
+                file_data = file_obj.read()
+                response = HttpResponse(file_data, content_type='application/octet-stream')
+                response['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
+                return response
+        else:
+            raise Http404("File not found.")
+    except IOError:
+        raise Http404("Error accessing the file.")
+    finally:
+        sftp.close()
+        ssh.close()
+
+
 @login_required
 def download_remote_file(request, file_name):
     """
@@ -945,40 +1003,24 @@ def download_remote_file(request, file_name):
 
 
 @login_required
-def download_remote_file(request, file_name):
+def download_local_file(request, path_to_file):
     """
-    Auxiliary view used for downloading a concrete file (a log/result file of
-    an execution).
+    View to download a file from a local path or generate a YAML file from a dictionary.
 
-    :param request: request
-    :param file_name: Name of the file involved
-    :return: HTML render
+    :param request: HTTP request
+    :param local_path: Local path to file
+    :return: HTTP Response with file download
     """
-    remote_path = request.session['remote_path']
-    private_key_decrypted = request.session['private_key_decrypted']
-    machineID = request.session['machine_chosen']
+    if os.path.exists(path_to_file):
+        with open(path_to_file, 'rb') as file_obj:
+            response = HttpResponse(file_obj.read(),
+                                    content_type='application/octet-stream')
+            response[
+                'Content-Disposition'] = f'attachment; filename="{os.path.basename(path_to_file)}"'
+            return response
+    else:
+        raise Http404("File not found.")
 
-    ssh = paramiko.SSHClient()
-    pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
-    machine_found = Machine.objects.get(id=machineID)
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
-    sftp = ssh.open_sftp()
-    try:
-        file_path = find_file_recursively(sftp, remote_path, file_name)
-        if file_path:
-            with sftp.file(file_path, 'rb') as file_obj:
-                file_data = file_obj.read()
-                response = HttpResponse(file_data, content_type='application/octet-stream')
-                response['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
-                return response
-        else:
-            raise Http404("File not found.")
-    except IOError:
-        raise Http404("Error accessing the file.")
-    finally:
-        sftp.close()
-        ssh.close()
 
 
 @login_required
