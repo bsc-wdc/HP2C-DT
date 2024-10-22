@@ -108,8 +108,12 @@ def tool_to_yaml(tool_name):
 
 def yaml_to_tool(yaml_content):
     tool_data = yaml.safe_load(yaml_content)
+    tool_name = tool_data['tool_name']
 
-    tool = Tool.objects.create(name=tool_data['tool_name'])
+    if Tool.objects.filter(name=tool_name).exists():
+        raise ValueError(f"A tool with name '{tool_name}' already exists.")
+
+    tool = Tool.objects.create(name=tool_name)
     tool.set_modules_list(tool_data['modules_list'])
 
     for field_data in tool_data['fields']:
@@ -134,6 +138,7 @@ def yaml_to_tool(yaml_content):
         )
 
     return tool
+
 
 
 

@@ -896,15 +896,27 @@ def upload_tool(request):
         if document_form.is_valid():
             uploaded_file = request.FILES['document']
             yaml_content = uploaded_file.read().decode('utf-8')
-            tool = yaml_to_tool(yaml_content)
-            request.session['tool_created'] = tool.name
-
-            return redirect('tools')
+            try:
+                tool = yaml_to_tool(yaml_content)
+                request.session['tool_created'] = tool.name
+                return redirect('tools')
+            except ValueError as e:
+                error_string = str(e)
+                document_form = DocumentForm()
+                return render(request, 'pages/upload_tool.html',
+                              {'document_form': document_form, 'error': True, 'message': error_string})
+        else:
+            error_string = ""
+            for field, errors in document_form.errors.items():
+                error_string += f"{', '.join(errors)}\n"
+            document_form = DocumentForm()
+            return render(request, 'pages/upload_tool.html',
+                          {'document_form': document_form, 'error': True, 'message': error_string})
     else:
         document_form = DocumentForm()
 
-    return render(request, 'pages/upload_tool.html',
-                  {'document_form': document_form})
+    return render(request, 'pages/upload_tool.html', {'document_form': document_form})
+
 
 
 @login_required()

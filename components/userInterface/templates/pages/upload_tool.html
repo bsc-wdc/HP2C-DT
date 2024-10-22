@@ -7,6 +7,12 @@
 {% block content %}
 <h3 class="page-title">Upload tool</h3>
 
+{% if message %}
+  <div class="alert alert-danger text-center" role="alert">
+    {{ message }}
+  </div>
+{% endif %}
+
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
