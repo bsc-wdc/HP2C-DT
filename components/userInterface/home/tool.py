@@ -82,6 +82,27 @@ def extract_tool_data(request, tool_name):
     return tool_data
 
 
+def tool_to_yaml(tool_name):
+    tool = Tool.objects.get(name=tool_name)
+    tool_data = {}
+    tool_data['tool_name'] = tool_name
+    tool_data['repos'] = tool.repos_json()
+    tool_data['modules_list'] = tool.get_modules_list()
+    tool_data['fields'] = []
+
+    for field in tool.get_fields():
+        tool_data['fields'].append({
+            'name': field.name,
+            'default_value': field.default_value if field.default_value else "None",
+            'preset_value': field.preset_value if field.preset_value else "None",
+            'section': field.section,
+            'type': field.type,
+            'placeholder': field.placeholder if field.placeholder else "None"
+        })
+
+    return tool_data
+
+
 def get_form_from_tool(tool):
     """
     Generates a Django form class based on the `field_list` of a given Tool instance.

@@ -64,7 +64,7 @@
                     </tr>
                     {% for file, size in files.items %}
                         <tr style="text-align: left">
-                            <td><a href="{% url 'download_file' file %}">{{ file }}</a></td>
+                            <td><a href="{% url 'download_remote_file' file %}">{{ file }}</a></td>
                             <td>{{size}}</td>
                         </tr>
                     {% endfor %}

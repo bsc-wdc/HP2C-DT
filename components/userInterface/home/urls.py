@@ -15,7 +15,9 @@ urlpatterns = [
   path('tools/', views.tools, name='tools'),
   path('hpc_machines/', views.hpc_machines, name='hpc_machines'),
   path('results/', views.results, name='results'),
-  path('download/<str:file_name>/', views.download_file, name='download_file'),
+  path('download/<str:file_name>/', views.download_remote_file, name='download_remote_file'),
+  path('download_local/<str:path_to_file>/', views.download_local_file, name='download_local_file'),
+  path('download_yaml/<str:tool_name>/', views.download_yaml, name='download_yaml'),
   path('create_tool/', views.create_tool, name='create_tool'),
   path('edit_tool/<str:tool_name>/', views.edit_tool, name='edit_tool'),
 ]

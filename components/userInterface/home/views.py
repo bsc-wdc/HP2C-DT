@@ -5,10 +5,10 @@ from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from scripts.update_dashboards import update_dashboards
-from .classes import updateExecutions, RunSimulation
-from .dashboard import geomap, get_deployment
-from .execution import init_exec, checkpointing_noAutorestart, stopExecution, deleteExecution
-from .file_management import find_file_recursively, get_files
+from .classes import *
+from .dashboard import *
+from .execution import *
+from .file_management import *
 from .models import *
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
@@ -26,7 +26,7 @@ from django.db.models import Q
 from .ssh import encrypt, decrypt, get_connection_status, get_name_fqdn, \
     check_connection, connection_ssh, populate_executions_machines, \
     get_machine_connected
-from .tool import extract_tool_data, get_form_from_tool
+from .tool import extract_tool_data, get_form_from_tool, tool_to_yaml
 
 
 @login_required
@@ -424,6 +424,11 @@ def tools(request):
                 run_sim = RunSimulation(tool_data, request, e_id)
                 run_sim.start()
                 return redirect('tools')
+
+            match = re.match(rf'^getYaml(.*)$', key)
+            if bool(match):
+                tool_name = match.group(1)
+                return redirect('download_yaml', tool_name=tool_name)
 
             match = re.match(rf'^cloneTool(.*)$', key)
             if bool(match):
@@ -882,9 +887,65 @@ def results(request):
     return render(request, 'pages/results.html',
                   {'executionsDone': execUpdate, 'files': files})
 
+@login_required()
+def download_yaml(request, tool_name):
+    """
+    View to download a file from a local path or generate a YAML file from a dictionary.
+
+    :param request: HTTP request
+    :param tool_name: Name of the tool to be downloaded
+    :return: HTTP Response with file download
+    """
+    try:
+        tool_data = tool_to_yaml(tool_name)
+        yaml_content = yaml.dump(tool_data, default_flow_style=False)
+        response = HttpResponse(yaml_content,
+                                content_type='application/x-yaml')
+        response[
+            'Content-Disposition'] = f'attachment; filename="{tool_name}.yaml"'
+        return response
+    except:
+        raise Http404("Error downloading yaml file.")
 
 @login_required
-def download_file(request, file_name):
+def download_remote_file(request, file_name):
+    """
+    Auxiliary view used for downloading a concrete file (a log/result file of
+    an execution).
+
+    :param request: request
+    :param file_name: Name of the file involved
+    :return: HTML render
+    """
+    remote_path = request.session['remote_path']
+    private_key_decrypted = request.session['private_key_decrypted']
+    machineID = request.session['machine_chosen']
+
+    ssh = paramiko.SSHClient()
+    pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
+    machine_found = Machine.objects.get(id=machineID)
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(machine_found.fqdn, username=machine_found.user, pkey=pkey)
+    sftp = ssh.open_sftp()
+    try:
+        file_path = find_file_recursively(sftp, remote_path, file_name)
+        if file_path:
+            with sftp.file(file_path, 'rb') as file_obj:
+                file_data = file_obj.read()
+                response = HttpResponse(file_data, content_type='application/octet-stream')
+                response['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
+                return response
+        else:
+            raise Http404("File not found.")
+    except IOError:
+        raise Http404("Error accessing the file.")
+    finally:
+        sftp.close()
+        ssh.close()
+
+
+@login_required
+def download_remote_file(request, file_name):
     """
     Auxiliary view used for downloading a concrete file (a log/result file of
     an execution).
