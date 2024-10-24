@@ -115,7 +115,6 @@ def yaml_to_tool(yaml_content):
 
     tool = Tool.objects.create(name=tool_name)
     tool.set_modules_list(tool_data['modules_list'])
-
     for field_data in tool_data['fields']:
         tool.add_field(
             field_name=auto_convert(field_data['name']),
@@ -137,6 +136,7 @@ def yaml_to_tool(yaml_content):
             target=auto_convert(repo_data['target'])
         )
 
+    tool.save()
     return tool
 
 
