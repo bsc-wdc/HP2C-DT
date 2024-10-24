@@ -135,7 +135,10 @@ class RunSimulation(threading.Thread):
         pythonpath_list = []
         for repo in github_setup:
             repo_name = repo["url"].split("/")[4]
+            repo_entrypoint = entrypoint.split("/")[0]
             remote_path = os.path.join(install_dir, repo_name)
+            if repo_name == repo_entrypoint:
+                entrypoint = os.path.join(install_dir, entrypoint)
             editable = repo["editable"]
             install = repo["install"]
             run_install_dir = repo["install_dir"] # path where to execute pip install

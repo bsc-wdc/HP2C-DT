@@ -332,6 +332,7 @@ def run_execution(script, execution_folder, tool_data, entrypoint, setup_path,
         if arg == "Agents":
             if value is True:
                 compss_args += f"--agents "
+                entrypoint = entrypoint.split("/")[-1]
         if arg == "Graph":
             if value is True:
                 compss_args += f"--graph "
@@ -343,7 +344,10 @@ def run_execution(script, execution_folder, tool_data, entrypoint, setup_path,
     job_name = job_name.replace(" ", "_")
 
     if entrypoint.endswith("py"):
-        compss_args += "--lang=PYTHON"
+        if "agents" in compss_args:
+            compss_args += "--lang=PYTHON"
+        else:
+            compss_args += "--lang=python"
 
     script.append(f"enqueue_compss {slurm_args} {compss_args} --job_name={job_name} "
                   f"--keep_workingdir --log_dir={execution_folder} "
@@ -461,9 +465,9 @@ def install_repos(script, editable, install, install_dir, remote_path,
     the modules and, if needed, the requirements.
 
     :param script: Script object
-    :param editable: Boolean indicating if the instalation must run in
+    :param editable: Boolean indicating if the installation must run in
     editable mode
-    :param install: Boolean indicating if an instalation must be performed
+    :param install: Boolean indicating if an installation must be performed
     :param install_dir: Directory (from repo root) where the pip install must be performed
     :param remote_path: Absolute path to the root of the directory
     :param requirements: Boolean indicating if the requirements must be installed
@@ -475,8 +479,11 @@ def install_repos(script, editable, install, install_dir, remote_path,
     """
     pythonpath = [remote_path]
     if install:
-        installation_dir = os.path.join(remote_path,
-                                        install_dir)  # install_dir can be empty
+        if install_dir:
+            installation_dir = os.path.join(remote_path,
+                                            install_dir)  # install_dir can be empty
+        else:
+            installation_dir = remote_path
 
         editable_option = ""
         if editable:
