@@ -184,12 +184,10 @@ def get_github_code(repository, url, branch, local_folder):
         result = subprocess.run(
             [script_path, repository, ssh_url, branch, local_folder],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        print("Standard Output:")
+        print("-------------START STDOUT--------------")
         print(result.stdout)
+        print("-------------END STDOUT--------------")
 
-        # Print standard error
-        print("Standard Error:")
-        print(result.stderr)
         # Check the output
         if "Repository not found. Cloning repository..." in result.stdout:
             return True
@@ -197,7 +195,9 @@ def get_github_code(repository, url, branch, local_folder):
             return True
         else:
             if result.stderr:
-                print("Error:", result.stderr)
+                print("-------------START STDERR--------------")
+                print(result.stderr)
+                print("-------------START STDERR--------------")
     except subprocess.CalledProcessError as e:
         print(f"Script execution failed with error code {e.returncode}: {e.stderr.decode('utf-8')}")
     except FileNotFoundError:
