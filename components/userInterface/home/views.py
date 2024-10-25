@@ -14,7 +14,8 @@ from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, Http404
 from .forms import (CategoricalDeviceForm, NonCategoricalDeviceForm, \
-    CreateUserForm, Machine_Form, Key_Gen_Form, DocumentForm, ExecutionForm,
+                    CreateUserForm, Machine_Form, Key_Gen_Form, DocumentForm,
+                    ExecutionForm,
                     CreateToolForm)
 import requests
 from django.contrib.auth.decorators import login_required
@@ -191,9 +192,12 @@ def new_machine(request):
             fqdn = form.cleaned_data.get('fqdn')
             author = form.cleaned_data.get('author')
 
-            if Machine.objects.filter(author=author, user=user, fqdn=fqdn).exists():
+            if Machine.objects.filter(author=author, user=user,
+                                      fqdn=fqdn).exists():
                 error_string = 'A machine with this author, user and FQDN already exists.'
-                return render(request, 'pages/new_machine.html', {'form': form, 'error': True, 'message': error_string})
+                return render(request, 'pages/new_machine.html',
+                              {'form': form, 'error': True,
+                               'message': error_string})
 
             instance = form.save(commit=False)
             instance.author = request.user
@@ -205,7 +209,9 @@ def new_machine(request):
             for field, errors in form.errors.items():
                 error_string += f"{', '.join(errors)}\n"
 
-            return render(request, 'pages/new_machine.html', {'form': form, 'error': True, 'message': error_string})
+            return render(request, 'pages/new_machine.html',
+                          {'form': form, 'error': True,
+                           'message': error_string})
 
     else:
         form = Machine_Form(initial={'author': request.user})
@@ -294,77 +300,101 @@ def ssh_keys(request):
     if request.method == 'POST':
         form = Key_Gen_Form(request.POST)
         if form.is_valid():
-            Connection.objects.filter(user=request.user).update(status="Disconnect")
+            Connection.objects.filter(user=request.user).update(
+                status="Disconnect")
             if 'reuse_token_button' in request.POST:  # if the user has more than 1 Machine, he can decide to use the same SSH keys and token for all its machines
                 machine = request.POST.get('machineChoice')
                 user = machine.split("@")[0]
                 fqdn = machine.split("@")[1]
-                machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
+                machine_found = Machine.objects.get(author=request.user,
+                                                    user=user, fqdn=fqdn)
                 instance = form.save(commit=False)
                 instance.author = request.user
                 instance.machine = machine_found
-                instance.public_key = Key_Gen.objects.get(author=instance.author).public_key
-                instance.private_key = Key_Gen.objects.get(author=instance.author).private_key
+                instance.public_key = Key_Gen.objects.get(
+                    author=instance.author).public_key
+                instance.private_key = Key_Gen.objects.get(
+                    author=instance.author).private_key
                 instance.save()
                 request.session['warning'] = "first"
                 return redirect('dashboard')
             else:  # normal generation of the SSH keys
                 instance = form.save(commit=False)
                 instance.author = request.user
-                machine = request.POST.get('machineChoice')  # it's the machine choosen by the user
+                machine = request.POST.get(
+                    'machineChoice')  # it's the machine choosen by the user
                 user = machine.split("@")[0]
                 fqdn = machine.split("@")[1]
                 request.userMachine = user
                 request.fqdn = fqdn
-                machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
+                machine_found = Machine.objects.get(author=request.user,
+                                                    user=user, fqdn=fqdn)
                 instance.machine = machine_found
                 token = Fernet.generate_key()  # to generate a security token
-                key = paramiko.RSAKey.generate(2048)  # to generate the SSH keys
+                key = paramiko.RSAKey.generate(
+                    2048)  # to generate the SSH keys
                 privateString = StringIO()
                 key.write_private_key(privateString)
                 private_key = privateString.getvalue()
                 x = private_key.split("\'")
                 private_key = x[0]
                 public_key = key.get_base64()
-                enc_private_key = encrypt(private_key.encode(), token)  # encrypting the private SSH keys using the security token, only the user is allowed to use its SSH keys to connect to its machine
+                enc_private_key = encrypt(private_key.encode(),
+                                          token)  # encrypting the private SSH keys using the security token, only the user is allowed to use its SSH keys to connect to its machine
                 enc_private_key = str(enc_private_key).split("\'")[1]
                 x = str(token).split("\'")
                 token = x[1]
                 instance.public_key = public_key
                 instance.private_key = enc_private_key
-                if Key_Gen.objects.filter(author=instance.author, machine=instance.machine).exists():
+                if Key_Gen.objects.filter(author=instance.author,
+                                          machine=instance.machine).exists():
                     if request.session['warning'] == "first":
-                        if (Key_Gen.objects.filter(author=instance.author).count() > 1):
+                        if (Key_Gen.objects.filter(
+                                author=instance.author).count() > 1):
                             request.session['warning'] = "third"
                             return render(request, 'pages/ssh_keys.html',
-                                          {'form': form, 'warning': request.session['warning'],
-                                           'machines': populate_executions_machines(request)})
+                                          {'form': form,
+                                           'warning': request.session[
+                                               'warning'],
+                                           'machines': populate_executions_machines(
+                                               request)})
                         else:
                             request.session['warning'] = "second"
                             return render(request, 'pages/ssh_keys.html',
-                                          {'form': form, 'warning': request.session['warning'],
-                                           'machines': populate_executions_machines(request)})
+                                          {'form': form,
+                                           'warning': request.session[
+                                               'warning'],
+                                           'machines': populate_executions_machines(
+                                               request)})
 
-                    if (Key_Gen.objects.filter(author=instance.author).count() > 1):
-                        Key_Gen.objects.filter(author=instance.author).update(public_key=instance.public_key,
-                                                                              private_key=instance.private_key)
+                    if (Key_Gen.objects.filter(
+                            author=instance.author).count() > 1):
+                        Key_Gen.objects.filter(author=instance.author).update(
+                            public_key=instance.public_key,
+                            private_key=instance.private_key)
 
                     else:
-                        Key_Gen.objects.filter(author=instance.author, machine=instance.machine).update(
-                            public_key=instance.public_key, private_key=instance.private_key)
+                        Key_Gen.objects.filter(author=instance.author,
+                                               machine=instance.machine).update(
+                            public_key=instance.public_key,
+                            private_key=instance.private_key)
                 elif (Key_Gen.objects.filter(author=instance.author).exists()):
                     if request.session['reuse_token'] == "no":
                         request.session['reuse_token'] = "yes"
                         request.session['warning'] = "first"
                         machine = request.POST.get('machineChoice')
                         return render(request, 'pages/ssh_keys.html',
-                                      {'form': form, 'warning': request.session['warning'],
-                                       'reuse_token': request.session['reuse_token'],
-                                       'machines': populate_executions_machines(request), 'choice': machine})
+                                      {'form': form,
+                                       'warning': request.session['warning'],
+                                       'reuse_token': request.session[
+                                           'reuse_token'],
+                                       'machines': populate_executions_machines(
+                                           request), 'choice': machine})
                 else:
                     instance.save()
                 public_key = "rsa-sha2-512 " + public_key
-                return render(request, 'pages/ssh_keys_generation.html', {'token': token, 'public_key': public_key})
+                return render(request, 'pages/ssh_keys_generation.html',
+                              {'token': token, 'public_key': public_key})
     else:
         form = Key_Gen_Form(initial={'public_key': 123, 'private_key': 123})
         request.session['reuse_token'] = "no"
@@ -374,9 +404,11 @@ def ssh_keys(request):
         else:
             request.session['check_existence_machines'] = "no"
 
-    context = {'form': form, 'warning': request.session['warning'], 'reuse_token': request.session['reuse_token'],
-                   'machines': populate_executions_machines(request),
-               'check_existence_machines': request.session['check_existence_machines']}
+    context = {'form': form, 'warning': request.session['warning'],
+               'reuse_token': request.session['reuse_token'],
+               'machines': populate_executions_machines(request),
+               'check_existence_machines': request.session[
+                   'check_existence_machines']}
 
     if machine_connected is not None:
         machine_connected = "" + machine_connected.user + "@" + machine_connected.fqdn
@@ -631,21 +663,25 @@ def hpc_machines(request):
 
         if 'connectButton' in request.POST:
             user, fqdn = get_name_fqdn(request.POST.get('machineChoice'))
-            machine_found = Machine.objects.get(author=request.user, user=user, fqdn=fqdn)
+            machine_found = Machine.objects.get(author=request.user, user=user,
+                                                fqdn=fqdn)
             try:
-                machine_chosen = Key_Gen.objects.filter(machine_id=machine_found.id).get()
+                machine_chosen = Key_Gen.objects.filter(
+                    machine_id=machine_found.id).get()
             except ObjectDoesNotExist:
                 request.session['ssh_keys_not_created'] = True
                 return redirect('hpc_machines')
 
             private_key_encrypted = machine_chosen.private_key
             try:
-                private_key_decrypted = decrypt(private_key_encrypted, request.POST.get("token")).decode()
+                private_key_decrypted = decrypt(private_key_encrypted,
+                                                request.POST.get(
+                                                    "token")).decode()
             except Exception:
                 request.session['check_existence_machines'] = "yes"
                 return render(request, 'pages/hpc_machines.html',
                               {'form': form, 'machines': machines_done,
-                                'firstPhase': request.session['firstPhase'],
+                               'firstPhase': request.session['firstPhase'],
                                'connected': stability_connection,
                                'check_existence_machines':
                                    request.session['check_existence_machines'],
@@ -653,7 +689,8 @@ def hpc_machines(request):
 
             request.session["private_key_decrypted"] = private_key_decrypted
             request.session['machine_chosen'] = machine_found.id
-            connection, created = Connection.objects.get_or_create(user=request.user)
+            connection, created = Connection.objects.get_or_create(
+                user=request.user)
 
             if connection.status == "Active" or connection.status == "Pending" or connection.status == "Failed":
                 return redirect('hpc_machines')
@@ -667,9 +704,12 @@ def hpc_machines(request):
             stability_connection = check_connection(request)
             str_machine_connected = None
             if stability_connection:
-                machine_connected = Machine.objects.get(id=request.session["machine_chosen"])
-                str_machine_connected = str(machine_connected.user) + "@" + machine_connected.fqdn
-                request.session['nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
+                machine_connected = Machine.objects.get(
+                    id=request.session["machine_chosen"])
+                str_machine_connected = str(
+                    machine_connected.user) + "@" + machine_connected.fqdn
+                request.session[
+                    'nameConnectedMachine'] = "" + machine_connected.user + "@" + machine_connected.fqdn
                 if request.session.get('redirect_to_run_sim', False):
                     request.session.pop('redirect_to_run_sim')
                     if 'original_request' in request.session:
@@ -704,7 +744,6 @@ def hpc_machines(request):
                 id=request.session["machine_chosen"])
             str_machine_disconnected = str(
                 machine_disconnected.user) + "@" + machine_disconnected.fqdn
-
 
             if choice != str_machine_disconnected:
                 return render(request, 'pages/hpc_machines.html',
@@ -803,7 +842,8 @@ def hpc_machines(request):
         status = get_connection_status(request)
 
         if status == "Failed":
-            Connection.objects.filter(user=request.user).update(status="Disconnect")
+            Connection.objects.filter(user=request.user).update(
+                status="Disconnect")
 
         form = Machine_Form()
         request.session["check_connection_stable"] = "no"
@@ -831,9 +871,12 @@ def hpc_machines(request):
         return render(request, 'pages/hpc_machines.html',
                       {'machines': machines_done, 'form': form,
                        'firstPhase': request.session['firstPhase'],
-                       'check_existence_machines': request.session['check_existence_machines'],
-                       'show_warning': show_warning, 'connected': stability_connection,
-                       'machine_created': machine_created, 'ssh_keys_error': ssh_keys_error,
+                       'check_existence_machines': request.session[
+                           'check_existence_machines'],
+                       'show_warning': show_warning,
+                       'connected': stability_connection,
+                       'machine_created': machine_created,
+                       'ssh_keys_error': ssh_keys_error,
                        'tool_created': tool_created, 'status': status})
 
 
@@ -863,30 +906,44 @@ def results(request):
     """
     eID = request.session['eIDdone']
     jobID = request.session['jobIDdone']
-    if Execution.objects.get(eID=eID).status == "INITIALIZING":
-        request.session["initializing"] = Execution.objects.get(eID=eID).name_sim
-        return redirect('tools')
+    remote_files = {}
+    local_files = {}
+    remote_path = None
+    execUpdate = Execution.objects.get(eID=eID) or None
+    try:
+        ssh = connection_ssh(request.session['private_key_decrypted'],
+                             request.session['machine_chosen'])
+        stdin, stdout, stderr = ssh.exec_command(
+            "sacct -j " + str(
+                jobID) + " --format=jobId,user,nnodes,elapsed,state | sed -n 3,3p")
+        stdout = stdout.readlines()
+        print(stdout)
+        values = str(stdout).split()
+        Execution.objects.filter(jobID=jobID).update(status=values[4],
+                                                     time=values[3],
+                                                     nodes=int(values[2]))
+        execUpdate = Execution.objects.get(jobID=jobID)
+        remote_path = execUpdate.wdir
+        remote_files = get_files(remote_path,
+                                 request.session['private_key_decrypted'],
+                                 request.session['machine_chosen'])
+        remote_files = dict(sorted(remote_files.items()))
+    except:
+        print(
+            "Warning: unable to get remote files. The execution may not started")
 
-    ssh = connection_ssh(request.session['private_key_decrypted'], request.session['machine_chosen'])
-    stdin, stdout, stderr = ssh.exec_command(
-        "sacct -j " + str(jobID) + " --format=jobId,user,nnodes,elapsed,state | sed -n 3,3p")
-    stdout = stdout.readlines()
-    print(stdout)
-    values = str(stdout).split()
-    Execution.objects.filter(jobID=jobID).update(status=values[4], time=values[3], nodes=int(values[2]))
-    execUpdate = Execution.objects.get(jobID=jobID)
-    remote_path = execUpdate.wdir
-    remote_files = get_files(remote_path, request.session['private_key_decrypted'],
-                      request.session['machine_chosen'])
-    remote_files = dict(sorted(remote_files.items()))
-
-    # Get UI logs
-    dir_name = os.path.dirname(__file__)
-    logs_path = os.path.join(dir_name, "..", "logs", f"execution{eID}")
-    local_files = get_local_files_r(logs_path)
+    try:
+        # Get UI logs
+        dir_name = os.path.dirname(__file__)
+        logs_path = os.path.join(dir_name, "..", "logs", f"execution{eID}")
+        local_files = get_local_files_r(logs_path)
+    except:
+        print(
+            "Warning: unable to get UI files")
 
     request.session['remote_path'] = remote_path
-    request.session['results_dir'] = execUpdate.results_dir
+    if execUpdate:
+        request.session['results_dir'] = execUpdate.results_dir
     return render(request, 'pages/results.html',
                   {'executionsDone': execUpdate,
                    'remote_files': remote_files,
@@ -908,19 +965,21 @@ def upload_tool(request):
                 error_string = str(e)
                 document_form = DocumentForm()
                 return render(request, 'pages/upload_tool.html',
-                              {'document_form': document_form, 'error': True, 'message': error_string})
+                              {'document_form': document_form, 'error': True,
+                               'message': error_string})
         else:
             error_string = ""
             for field, errors in document_form.errors.items():
                 error_string += f"{', '.join(errors)}\n"
             document_form = DocumentForm()
             return render(request, 'pages/upload_tool.html',
-                          {'document_form': document_form, 'error': True, 'message': error_string})
+                          {'document_form': document_form, 'error': True,
+                           'message': error_string})
     else:
         document_form = DocumentForm()
 
-    return render(request, 'pages/upload_tool.html', {'document_form': document_form})
-
+    return render(request, 'pages/upload_tool.html',
+                  {'document_form': document_form})
 
 
 @login_required()
@@ -969,8 +1028,10 @@ def download_remote_file(request, file_name):
         if file_path:
             with sftp.file(file_path, 'rb') as file_obj:
                 file_data = file_obj.read()
-                response = HttpResponse(file_data, content_type='application/octet-stream')
-                response['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
+                response = HttpResponse(file_data,
+                                        content_type='application/octet-stream')
+                response[
+                    'Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
                 return response
         else:
             raise Http404("File not found.")
@@ -1006,8 +1067,10 @@ def download_remote_file(request, file_name):
         if file_path:
             with sftp.file(file_path, 'rb') as file_obj:
                 file_data = file_obj.read()
-                response = HttpResponse(file_data, content_type='application/octet-stream')
-                response['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
+                response = HttpResponse(file_data,
+                                        content_type='application/octet-stream')
+                response[
+                    'Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
                 return response
         else:
             raise Http404("File not found.")
@@ -1038,7 +1101,6 @@ def download_local_file(request, path_to_file):
         raise Http404("File not found.")
 
 
-
 @login_required
 def create_tool(request):
     """
@@ -1061,7 +1123,8 @@ def create_tool(request):
             field_names = set()
 
             custom_fields = {k: v for k, v in request.POST.items()
-                             if k.startswith(f'custom_field_') or k.startswith('custom_boolean_field')}
+                             if k.startswith(f'custom_field_') or k.startswith(
+                    'custom_boolean_field')}
 
             for field_key, field_name in custom_fields.items():
                 if not field_name:
@@ -1089,7 +1152,7 @@ def create_tool(request):
                     type = 'boolean'
                     index = field_key.split('_')[3]
                     section = request.POST.get(f'boolean_section_{index}',
-                                                     None)
+                                               None)
                     default_value = request.POST.get(f'default_value_boolean_'
                                                      f'{index}', None)
                     if default_value == "true":
@@ -1107,7 +1170,8 @@ def create_tool(request):
                     index = field_key.split('_')[2]
                     default_value = request.POST.get(f'default_value_{index}',
                                                      None)
-                    preset_value = request.POST.get(f'preset_value_{index}', None)
+                    preset_value = request.POST.get(f'preset_value_{index}',
+                                                    None)
                     section = request.POST.get(f'section_{index}',
                                                None)
                 if default_value == 'None' or default_value == '':
@@ -1142,22 +1206,29 @@ def create_tool(request):
                     number = repo_name.split('github_repo_')[1]
                     tool.add_repo(repo_value,
                                   request.POST.get('github_branch_' + number),
-                                  request.POST.get('github_install_' + number) == 'on',
-                                  request.POST.get('github_install_dir_' + number),
-                                  request.POST.get('github_editable_' + number) == 'on',
-                                  request.POST.get('github_requirements_' + number) == 'on',
-                                  request.POST.get('github_target_' + number) == 'on')
+                                  request.POST.get(
+                                      'github_install_' + number) == 'on',
+                                  request.POST.get(
+                                      'github_install_dir_' + number),
+                                  request.POST.get(
+                                      'github_editable_' + number) == 'on',
+                                  request.POST.get(
+                                      'github_requirements_' + number) == 'on',
+                                  request.POST.get(
+                                      'github_target_' + number) == 'on')
 
             request.session['tool_created'] = tool.name
             return redirect('tools')
 
         else:
             return render(request, 'pages/create_tool.html',
-                          {'form': form, 'errors': form.errors, 'sections': sections})
+                          {'form': form, 'errors': form.errors,
+                           'sections': sections})
     else:
         form = CreateToolForm()
 
-        return render(request, 'pages/create_tool.html', {'form': form, 'sections': sections})
+        return render(request, 'pages/create_tool.html',
+                      {'form': form, 'sections': sections})
 
 
 @login_required
@@ -1261,8 +1332,9 @@ def edit_tool(request, tool_name):
                           request.POST.get('github_requirements') == 'on',
                           request.POST.get('github_target') == 'on')
 
-            additional_repos = {k: v for k, v in request.POST.items() if k.startswith('github_repo_')}
-            
+            additional_repos = {k: v for k, v in request.POST.items() if
+                                k.startswith('github_repo_')}
+
             for repo_name, repo_value in additional_repos.items():
                 if "branch" not in repo_name:
                     number = repo_name.split('github_repo_')[1]
@@ -1272,12 +1344,14 @@ def edit_tool(request, tool_name):
                                   request.POST.get('github_branch_' + number),
                                   request.POST.get(
                                       'github_install_' + number) == 'on',
-                                  request.POST.get('github_install_dir_' + number),
+                                  request.POST.get(
+                                      'github_install_dir_' + number),
                                   request.POST.get(
                                       'github_editable_' + number) == 'on',
                                   request.POST.get(
                                       'github_requirements_' + number) == 'on',
-                                  request.POST.get('github_target_' + number) == 'on')
+                                  request.POST.get(
+                                      'github_target_' + number) == 'on')
 
                     if branch == '' or repo_value == '':
                         if branch == '':
@@ -1335,5 +1409,3 @@ def edit_tool(request, tool_name):
             'existing_modules': existing_modules,
             'sections': sections,
         })
-
-

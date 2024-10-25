@@ -199,7 +199,7 @@ def deleteExecution(eIDdelete, request):
         log_dir = os.path.join(os.path.dirname(__file__), "..", "logs",
                                f"execution{eIDdelete}")
         remove_directory(log_dir)
-        
+
         form = ExecutionForm()
         executions = Execution.objects.all().filter(author=request.user).filter(
             Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
