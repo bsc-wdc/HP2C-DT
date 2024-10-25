@@ -791,9 +791,6 @@ def hpc_machines(request):
             form = Machine_Form(
                 initial={'fqdn': machine_found.fqdn,
                          'user': machine_found.user,
-                         'wdir': machine_found.wdir,
-                         'installDir': machine_found.installDir,
-                         'dataDir': machine_found.dataDir,
                          'id': machine_found.id,
                          'author': machine_found.author})
             return render(request, 'pages/hpc_machines.html',
