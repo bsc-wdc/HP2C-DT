@@ -108,3 +108,16 @@ def get_files(remote_path, private_key_decrypted, machineID):
     ssh.close()
 
     return files
+
+
+def remove_directory(path):
+    if os.path.exists(path):
+        for root, dirs, files in os.walk(path, topdown=False):
+            for file in files:
+                os.remove(os.path.join(root, file))
+            for d in dirs:
+                os.rmdir(os.path.join(root, d))
+        os.rmdir(path)
+        print(f"Directory {path} and all contents removed.")
+    else:
+        print(f"Directory {path} does not exist.")

@@ -13,6 +13,7 @@ import paramiko
 from django.db.models import Q
 from django.shortcuts import render
 
+from home.file_management import remove_directory
 from home.forms import ExecutionForm
 from home.models import Machine, Execution
 from home.ssh import connection_ssh, get_name_fqdn, get_github_code
@@ -195,6 +196,10 @@ def deleteExecution(eIDdelete, request):
             command = "scancel " + str(exec.jobID)
             stdin, stdout, stderr = ssh.exec_command(command)
         Execution.objects.filter(eID=eIDdelete).delete()
+        log_dir = os.path.join(os.path.dirname(__file__), "..", "logs",
+                               f"execution{eIDdelete}")
+        remove_directory(log_dir)
+        
         form = ExecutionForm()
         executions = Execution.objects.all().filter(author=request.user).filter(
             Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
