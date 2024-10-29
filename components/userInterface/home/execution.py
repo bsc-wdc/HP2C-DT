@@ -382,7 +382,8 @@ def export_variables(script, tool_data):
 
 
 def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
-                           machine_id, branch, url, retry=False):
+                           machine_id, branch, url, stdout_path, stderr_path,
+                           retry=False):
     """
     Upload the codes from a concrete repo from GitHub to the remote machine.
 
@@ -396,7 +397,8 @@ def sftp_upload_repository(local_path, remote_path, private_key_decrypted,
     :return: None
     """
     repo_name = remote_path.split("/")[-1]
-    res = get_github_code(repo_name, url, branch, local_path)
+    res = get_github_code(repo_name, url, branch, local_path, stdout_path,
+                          stderr_path)
     ssh = paramiko.SSHClient()
     pkey = paramiko.RSAKey.from_private_key(StringIO(private_key_decrypted))
     machine_found = Machine.objects.get(id=machine_id)

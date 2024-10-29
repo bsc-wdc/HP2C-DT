@@ -132,6 +132,13 @@ class RunSimulation(threading.Thread):
         for module in modules:
             script.append(f"module load {module}")
 
+        dir_name = os.path.dirname(__file__)
+        logs_path = os.path.join(dir_name, "..", "logs",
+                                 f"execution{self.e_id}")
+        os.makedirs(logs_path)
+        stdout_path = os.path.join(logs_path, f"execution{self.e_id}.out")
+        stderr_path = os.path.join(logs_path, f"execution{self.e_id}.err")
+
         pythonpath_list = []
         for repo in github_setup:
             repo_name = repo["url"].split("/")[4]
@@ -150,7 +157,9 @@ class RunSimulation(threading.Thread):
                                        "private_key_decrypted"],
                                    machine_id=machine_found.id,
                                    branch=repo["branch"],
-                                   url=repo["url"])
+                                   url=repo["url"],
+                                   stdout_path=stdout_path,
+                                   stderr_path=stderr_path)
             print()
             print("UPLOADED REPO", repo["url"])
             print()
@@ -169,14 +178,9 @@ class RunSimulation(threading.Thread):
         stdout, stderr = script.execute()
 
         # Save the logs locally
-        dir_name = os.path.dirname(__file__)
-        logs_path = os.path.join(dir_name, "..", "logs", f"execution{self.e_id}")
-        os.makedirs(logs_path)
-        stdout_path = os.path.join(logs_path, f"execution{self.e_id}.out")
-        stderr_path = os.path.join(logs_path, f"execution{self.e_id}.err")
-        with open(stdout_path, 'w') as f_out:
+        with open(stdout_path, 'a') as f_out:
             f_out.write("".join(stdout))
-        with open(stderr_path, 'w') as f_err:
+        with open(stderr_path, 'a') as f_err:
             f_err.write("".join(stderr))
 
         s = "Submitted batch job"

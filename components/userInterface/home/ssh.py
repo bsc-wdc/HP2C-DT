@@ -171,7 +171,8 @@ def https_to_ssh(git_url):
     raise ValueError("URL is not in HTTPS format")
 
 
-def get_github_code(repository, url, branch, local_folder):
+def get_github_code(repository, url, branch, local_folder, stdout_path,
+                    stderr_path):
     """
     Executes a bash script to get the code from GitHub (clone repo locally)
     """
@@ -181,23 +182,42 @@ def get_github_code(repository, url, branch, local_folder):
     print("")
     print(f"Getting code from github repo {repository}...")
     try:
-        result = subprocess.run(
-            [script_path, repository, ssh_url, branch, local_folder],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        print("-------------START STDOUT--------------")
-        print(result.stdout)
-        print("-------------END STDOUT--------------")
+        with open(stdout_path, 'a') as stdout_file, open(stderr_path,
+                                                          'a') as stderr_file:
+            stdout_file.write("\n")
+            stdout_file.write(
+                f"Getting code from GitHub repo {repository}...\n")
+            stdout_file.write("\n")
 
-        # Check the output
-        if "Repository not found. Cloning repository..." in result.stdout:
-            return True
-        elif "Changes detected. Pulling latest changes..." in result.stdout:
-            return True
-        else:
-            if result.stderr:
-                print("-------------START STDERR--------------")
-                print(result.stderr)
-                print("-------------START STDERR--------------")
+            stderr_file.write("\n")
+            stderr_file.write(
+                f"Getting code from GitHub repo {repository}...\n")
+            stderr_file.write("\n")
+            
+            result = subprocess.run(
+                [script_path, repository, ssh_url, branch, local_folder],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+
+            stdout_file.write(result.stdout)
+            stderr_file.write(result.stderr)
+
+            print("-------------START STDOUT--------------")
+            print(result.stdout)
+            print("-------------END STDOUT--------------")
+
+            # Check the output
+            if "Repository not found. Cloning repository..." in result.stdout:
+                return True
+            elif "Changes detected. Pulling latest changes..." in result.stdout:
+                return True
+            else:
+                if result.stderr:
+                    print("-------------START STDERR--------------")
+                    print(result.stderr)
+                    print("-------------START STDERR--------------")
     except subprocess.CalledProcessError as e:
         print(f"Script execution failed with error code {e.returncode}: {e.stderr.decode('utf-8')}")
     except FileNotFoundError:
