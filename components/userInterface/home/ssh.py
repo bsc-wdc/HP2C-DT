@@ -193,7 +193,7 @@ def get_github_code(repository, url, branch, local_folder, stdout_path,
             stderr_file.write(
                 f"Getting code from GitHub repo {repository}...\n")
             stderr_file.write("\n")
-            
+
             result = subprocess.run(
                 [script_path, repository, ssh_url, branch, local_folder],
                 stdout=subprocess.PIPE,
@@ -202,7 +202,10 @@ def get_github_code(repository, url, branch, local_folder, stdout_path,
             )
 
             stdout_file.write(result.stdout)
+            stdout_file.write("\n")
+
             stderr_file.write(result.stderr)
+            stderr_file.write("\n")
 
             print("-------------START STDOUT--------------")
             print(result.stdout)
