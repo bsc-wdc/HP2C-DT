@@ -120,6 +120,7 @@ def index(request):
 
 
 @csrf_exempt
+@login_required()
 def device_detail(request, edge_name, device_name):
     """
     Displays the detail page of a device, including form for submitting device
@@ -234,7 +235,6 @@ def login_page(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             form = login(request, user)
-            messages.success(request, f' welcome {username} !!')
             return redirect('dashboard')
         else:
             form = CreateUserForm()
