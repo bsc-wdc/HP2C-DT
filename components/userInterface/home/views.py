@@ -120,7 +120,7 @@ def index(request):
 
 
 @csrf_exempt
-@login_required()
+@login_required
 def device_detail(request, edge_name, device_name):
     """
     Displays the detail page of a device, including form for submitting device
