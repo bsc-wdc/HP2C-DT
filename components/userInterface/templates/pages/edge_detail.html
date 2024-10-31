@@ -37,7 +37,7 @@
                   <td align="right">
                     {% if form %}
                       <div class="btn-group mb-2 mr-2">
-                        <form method="post" action="{% url 'index' %}" class="actuation-form" style="display: none">
+                        <form method="post" action="{% url 'dashboard' %}" class="actuation-form" style="display: none">
                           {% csrf_token %}
                           {{ form.as_ul }}
                           <button type="submit" class="btn btn-warning" data-toggle="tooltip">Actuate</button>

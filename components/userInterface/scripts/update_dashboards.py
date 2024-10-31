@@ -20,8 +20,8 @@ def update_dashboards():
     if not os.path.exists(setup_file):
         in_docker = True
         setup_file = "/data/deployment_setup.json"
-
     setup_data = None
+
     if os.path.exists(setup_file):
         with open(setup_file, 'r') as f:
             json_data = f.read()
@@ -37,15 +37,19 @@ def update_dashboards():
         response = requests.get(f"{server_url}/getEdgesInfo")
         edges_info = response.text
     except RequestException as _:
-        if "LOCAL_IP" in os.environ:
-            server_ip = os.getenv("LOCAL_IP")
-            server_url = f"http://{server_ip}:{server_port}"
-            response = requests.get(f"{server_url}/getEdgesInfo")
-            edges_info = response.text
-
+        try:
+            if "LOCAL_IP" in os.environ:
+                server_ip = os.getenv("LOCAL_IP")
+                server_url = f"http://{server_ip}:{server_port}"
+                response = requests.get(f"{server_url}/getEdgesInfo")
+                edges_info = response.text
+        except RequestException as _:
+            os.chdir("..")
+            return None, deployment_name, grafana_url, None, None
     if edges_info is None:
-        print("Server doesn't respond", flush=True)
-        exit(1)
+        print("Server doesn't respond or edges_info is empty", flush=True)
+        os.chdir("..")
+        return None, deployment_name, grafana_url, None, None
     # If the method is running for the first time we must update the dashboard.
     # Otherwise, we will check if the dashboard has changed and, if it didn´t,
     # we will not update it.
@@ -60,6 +64,7 @@ def update_dashboards():
                 return None, deployment_name, grafana_url, server_port, server_url
         else:
             os.environ["INITIAL_EXECUTION"] = "0"
+
 
     #################################### INIT #################################
     # Function to extract IP and port from JSON

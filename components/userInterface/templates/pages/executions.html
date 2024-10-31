@@ -1,0 +1,402 @@
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<div class="card-body mx-5">
+    {% if run_job %}
+      <div>
+        <div class="alert alert-success" role="alert">
+          Successfully run execution with name {{run_job}}
+        </div>
+      </div>
+    {% endif %}
+    {% if initializing %}
+      <div>
+        <div class="alert alert-danger" role="alert">
+          The execution {{initializing}} has not started
+        </div>
+      </div>
+    {% endif %}
+    {% if machine_chosen %}
+        <h2 class="text-center mb-5" style="text-decoration: underline;">
+            <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
+        </h2>
+    {% endif %}
+
+    <div class="d-flex">
+        <div class="p-2">
+            <form method="POST">
+                {% csrf_token %}
+                {{ execution_form.as_hidden }}
+                <button type="submit" class="btn btn-primary feather icon-refresh-cw" data-toggle="tooltip"
+                        data-placement="top" title="Refresh the data" aria-hidden="true"></button>
+            </form>
+        </div>
+    </div>
+
+    <div class="wrapper-create-work">
+        <div>
+            <div class="rounded" style="outline: 2px solid black;">
+                <p class="h4" style="text-align: center">Pending executions:</p>
+                {% if executions %}
+                    <table class="table" style="table-layout: fixed; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 10%;">Name</th>
+                                <th scope="col" style="width: 9%;">Tool</th>
+                                <th scope="col" style="width: 9%;">JobID</th>
+                                <th scope="col" style="width: 6%;">Status</th>
+                                <th scope="col" style="width: 9%;">Submit</th>
+                                <th scope="col" style="width: 9%;">Start</th>
+                                <th scope="col" style="width: 9%;">Time</th>
+                                <th scope="col" style="width: 9%;">Checkpoint</th>
+                                <th scope="col" style="width: 9%;">Autorestart</th>
+                                <th scope="col" style="width: 8%;"></th>
+                                <th scope="col" style="width: 8%;"></th>
+                                <th scope="col" style="width: 8%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in executions %}
+                                <tr>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.name_sim }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.tool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.jobID }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.status == "PENDING" %}
+                                            PEN
+                                        {% elif e.status == "INITIALIZING" %}
+                                            INI
+                                        {% elif e.status == "RUNNING" %}
+                                            RUN
+                                        {% elif e.status == "COMPLETED" %}
+                                            COM
+                                        {% elif e.status == "TIMEOUT" %}
+                                            TOUT
+                                        {% elif e.status == "FAILED" %}
+                                            FAIL
+                                        {% else %}
+                                            {{ e.status }}
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.submit %}
+                                            <div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.start %}
+                                            <div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.time }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.checkpointBool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.autorestart }}</td>
+                                    <td>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" value="{{ e.eID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.jobID }}" name="jobIDValue">
+                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" value="{{ e.eID }}" name="stopExecutionValue">
+                                            <button type="submit" name="stopExecution" class="btn btn-warning" data-toggle="tooltip" data-placement="top" title="Stop execution">STOP</button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" value="{{ e.eID }}" name="deleteExecutionValue">
+                                            <button type="submit" name="deleteExecution" class="btn btn-danger feather icon-stop-circle" data-toggle="tooltip" data-placement="top" title="Stop execution and delete the data"></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        No pending executions!
+                    </div>
+                {% endif %}
+            </div>
+
+
+            <div class="rounded" style="outline: 2px solid black;">
+                <p class="h4" style="text-align: center">Finished executions:</p>
+                {% if executionsDone %}
+                    <table class="table" style="table-layout: fixed; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 10%;">Name</th>
+                                <th scope="col" style="width: 10%;">Tool</th>
+                                <th scope="col" style="width: 10%;">JobID</th>
+                                <th scope="col" style="width: 8%;">Status</th>
+                                <th scope="col" style="width: 9%;">Submit</th>
+                                <th scope="col" style="width: 9%;">Start</th>
+                                <th scope="col" style="width: 9%;">Time</th>
+                                <th scope="col" style="width: 9%;">Checkpoint</th>
+                                <th scope="col" style="width: 9%;">Autorestart</th>
+                                <th scope="col" style="width: 9%;"></th>
+                                <th scope="col" style="width: 9%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in executionsDone %}
+                                <tr>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.name_sim }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.tool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.jobID }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.status == "PENDING" %}
+                                            PEN
+                                        {% elif e.status == "INITIALIZING" %}
+                                            INI
+                                        {% elif e.status == "RUNNING" %}
+                                            RUN
+                                        {% elif e.status == "COMPLETED" %}
+                                            COM
+                                        {% elif e.status == "TIMEOUT" %}
+                                            TOUT
+                                        {% elif e.status == "FAILED" %}
+                                            FAIL
+                                        {% else %}
+                                            {{ e.status }}
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.submit %}
+                                            <div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.start %}
+                                            <div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.time }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.checkpointBool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.autorestart }}</td>
+                                    <td>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" value="{{ e.eID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.jobID }}" name="jobIDValue">
+                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" value="{{ e.eID }}" name="deleteExecutionValue">
+                                            <button type="submit" name="deleteExecution" class="btn btn-danger feather icon-stop-circle" data-toggle="tooltip" data-placement="top" title="Delete the data"></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        No finished executions!
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="rounded" style="outline: 2px solid black;">
+                <p class="h4" style="text-align: center">Timeout executions:</p>
+                {% if executionsTimeout %}
+                    <table class="table" style="table-layout: fixed; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 10%;">Name</th>
+                                <th scope="col" style="width: 9%;">Tool</th>
+                                <th scope="col" style="width: 9%;">JobID</th>
+                                <th scope="col" style="width: 6%;">Status</th>
+                                <th scope="col" style="width: 9%;">Submit</th>
+                                <th scope="col" style="width: 9%;">Start</th>
+                                <th scope="col" style="width: 9%;">Time</th>
+                                <th scope="col" style="width: 9%;">Checkpoint</th>
+                                <th scope="col" style="width: 9%;">Autorestart</th>
+                                <th scope="col" style="width: 8%;"></th>
+                                <th scope="col" style="width: 8%;"></th>
+                                <th scope="col" style="width: 8%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in executionsTimeout %}
+                                <tr>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.name_sim }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.tool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.jobID }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.status == "PENDING" %}
+                                            PEN
+                                        {% elif e.status == "INITIALIZING" %}
+                                            INI
+                                        {% elif e.status == "RUNNING" %}
+                                            RUN
+                                        {% elif e.status == "COMPLETED" %}
+                                            COM
+                                        {% elif e.status == "TIMEOUT" %}
+                                            TOUT
+                                        {% elif e.status == "FAILED" %}
+                                            FAIL
+                                        {% else %}
+                                            {{ e.status }}
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.submit %}
+                                            <div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.start %}
+                                            <div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.time }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.checkpointBool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.autorestart }}</td>
+                                    <td>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" value="{{ e.jobID }}" name="timeoutExecutionValue">
+                                            <button type="submit" name="timeoutExecution" class="btn btn-primary fa fa-undo" data-toggle="tooltip" data-placement="top" title="Restart execution from the checkpoint"></button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" value="{{ e.eID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.jobID }}" name="jobIDValue">
+                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" value="{{ e.eID }}" name="deleteExecutionValue">
+                                            <button type="submit" name="deleteExecution" class="btn btn-danger feather icon-stop-circle" data-toggle="tooltip" data-placement="top" title="Delete the data"></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        No finished executions with a timeout!
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="rounded" style="outline: 2px solid black;">
+                <p class="h4" style="text-align: center">Failed executions:</p>
+                {% if executionsFailed %}
+                    <table class="table" style="table-layout: fixed; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 10%;">Name</th>
+                                <th scope="col" style="width: 10%;">Tool</th>
+                                <th scope="col" style="width: 10%;">JobID</th>
+                                <th scope="col" style="width: 8%;">Status</th>
+                                <th scope="col" style="width: 9%;">Submit</th>
+                                <th scope="col" style="width: 9%;">Start</th>
+                                <th scope="col" style="width: 9%;">Time</th>
+                                <th scope="col" style="width: 9%;">Checkpoint</th>
+                                <th scope="col" style="width: 9%;">Autorestart</th>
+                                <th scope="col" style="width: 9%;"></th>
+                                <th scope="col" style="width: 9%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in executionsFailed %}
+                                <tr>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.name_sim }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.tool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.jobID }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.status == "PENDING" %}
+                                            PEN
+                                        {% elif e.status == "INITIALIZING" %}
+                                            INI
+                                        {% elif e.status == "RUNNING" %}
+                                            RUN
+                                        {% elif e.status == "COMPLETED" %}
+                                            COM
+                                        {% elif e.status == "TIMEOUT" %}
+                                            TOUT
+                                        {% elif e.status == "FAILED" %}
+                                            FAIL
+                                        {% else %}
+                                            {{ e.status }}
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.submit %}
+                                            <div>{{ e.submit|date:"Y-m-d" }}<br>{{ e.submit|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {% if e.start %}
+                                            <div>{{ e.start|date:"Y-m-d" }}<br>{{ e.start|date:"H:i:s" }}</div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.time }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.checkpointBool }}</td>
+                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ e.autorestart }}</td>
+                                    <td>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" value="{{ e.eID }}" name="resultExecutionValue">
+                                            <input type="hidden" value="{{ e.jobID }}" name="jobIDValue">
+                                            <button type="submit" name="resultExecution" class="btn btn-primary feather icon-info" data-toggle="tooltip" data-placement="top" title="Results info page"></button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" value="{{ e.eID }}" name="deleteExecutionValue">
+                                            <button type="submit" name="deleteExecution" class="btn btn-danger feather icon-stop-circle" data-toggle="tooltip" data-placement="top" title="Delete the data"></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        No failed executions!
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock content %}

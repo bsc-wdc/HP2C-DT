@@ -1,0 +1,43 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<h3 class="page-title">Login</h3>
+<div class="card-block px-0 py-3">
+  <div class="card" style="border-radius: 15px;">
+    <div class="card-body p-5">
+      <div class="wrapper-create-work">
+        <form method="post">
+          {% csrf_token %}
+            <div class="form-group">
+              <label class="font-weight-bold">Username</label>
+              {% render_field form.username type="text" class="form-control" placeholder="Insert your username" %}
+            </div>
+            <div class="form-group">
+              <label class="font-weight-bold">Password</label>
+              {% render_field form.password1 type="password" class="form-control" placeholder="Insert your password" %}
+            </div>
+
+        {% if error %}
+        <div class="alert alert-danger text-center" role="alert">
+          Login Failed: Your username or password is incorrect
+            </div>
+          {% endif %}
+          <div>
+            <button type="submit" class="btn btn-success btn-block btn-lg gradient-custom-4 text-body">Login</button>
+          </div>
+          <p>Have Not an account?
+            <a href="{% url 'register' %}" class="fw-bold text-body">
+              <u>Register Here</u>
+            </a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}

@@ -1,0 +1,172 @@
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<div class="card-body mx-5">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+        <form method="POST" style="display: inline;">
+            {% csrf_token %}
+            <button name="deleteCustom{{name}}" type="submit" class="btn btn-danger">Delete tool</button>
+        </form>
+
+        <a href="{% url 'edit_tool' tool_name=name %}">
+            <button type="button" class="btn btn-primary">Edit tool</button>
+        </a>
+
+        <button type="button" class="btn btn-secondary" onclick="showCloneField()">Clone tool</button>
+
+        <form method="POST" style="display: inline;">
+            {% csrf_token %}
+            <button name="getYaml{{name}}" type="submit" class="btn btn-primary">Download tool yaml</button>
+        </form>
+
+    </div>
+
+    <form method="POST" style="margin-top: 15px;">
+        {% csrf_token %}
+        <div id="clone-tool-field" style="display:none; flex-direction: column; gap: 10px;">
+            <input type="text" name="new_tool_name_{{name}}" placeholder="New tool name" class="form-control" required>
+            <button type="submit" name="cloneTool{{name}}" class="btn btn-success mt-2">Clone</button>
+        </div>
+</form>
+
+
+    <h2 class="text-center mb-5" style="text-decoration: underline;">
+        <button type="button" class="btn btn-primary btn-xl" disabled>{{ machine_chosen }}</button>
+    </h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {% for section in sections %}
+            <div class="card-header clickable-header" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                <h5 class="mb-0">{{ section|capfirst }}</h5>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="card-block px-0 py-3">
+                <div class="section-content" id="section-{{ section }}" style="display: block;">
+                    {% for modified_name, field in fields.items %}
+                        {% if field.section == section %}
+                            {% for f in form %}
+                                {% if modified_name == f.label %}
+                                    <div class="form-group">
+                                        {% if f.field.widget.input_type == "checkbox" %}
+                                            <div class="form-check form-check-inline">
+                                                <label class="form-check-label mr-2" for="{{ f.id_for_label }}">{{ f.label }}:</label>
+                                                {{ f|add_class:"form-check-input" }}
+                                                <input type="hidden" name="preset_value_boolean_{{ f.id_for_label }}" value="{{ field.preset_value }}">
+                                                <input type="hidden" name="boolean_section_{{ f.id_for_label }}" value="{{ section }}">
+                                            </div>
+                                        {% else %}
+                                            {% if field.placeholder %}
+                                                <label for="{{ f.id_for_label }}">{{ f.label }} ({{field.placeholder}})</label>
+                                            {% else %}
+                                                <label for="{{ f.id_for_label }}">{{ f.label }}</label>
+                                            {% endif %}
+                                                {{ f|add_class:"form-control" }}
+                                                <input type="hidden" name="section_{{ f.id_for_label }}" value="{{ section }}">
+                                            <input type="hidden" name="preset_value_{{ f.id_for_label }}" value="{{ field.preset_value }}">
+                                            <input type="hidden" name="section_{{ f.id_for_label }}" value="{{ section }}">
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+        <input type="hidden" value="{{ e.eID }}" name="{{name}}ButtonValue">
+        <button type="submit" name="run{{name}}Button" class="btn btn-success btn-block btn-lg gradient-custom-4 feather icon-play mr-2" data-toggle="tooltip" data-placement="top" title="Run execution"></button>
+    </form>
+</div>
+
+<script>
+let fieldCounter = {{ existing_fields|length }};
+let repoCounter = {{ existing_repos|length }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    var sectionHeaders = document.querySelectorAll('.card-header h5');
+    sectionHeaders.forEach(function(header) {
+        header.addEventListener('click', function() {
+            var sectionContent = this.closest('.card-header').nextElementSibling.querySelector('.section-content');
+            if (sectionContent) {
+                sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    var sectionHeaders = document.querySelectorAll('.clickable-header');
+    sectionHeaders.forEach(function(header) {
+        header.addEventListener('click', function() {
+            var sectionContent = this.nextElementSibling.querySelector('.section-content');
+            if (sectionContent) {
+                sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+                var icon = this.querySelector('.toggle-icon');
+                if (icon) {
+                    icon.textContent = sectionContent.style.display === 'none' ? '▼' : '▲';
+                }
+            }
+        });
+    });
+});
+
+document.getElementById('add-repo').onclick = function() {
+    repoCounter++;
+    const setupSection = document.getElementById('setup-section');
+    const newRepoDiv = document.createElement('div');
+    newRepoDiv.classList.add('form-group');
+    newRepoDiv.innerHTML = `
+        <label for="github_repo_${repoCounter}">GitHub Repo ${repoCounter}</label>
+        <div class="d-flex align-items-center">
+            <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1" id="github_repo_${repoCounter}">
+            <input type="hidden" name="section_github_repo_${repoCounter}" value="setup">
+            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+        </div>
+    `;
+    setupSection.appendChild(newRepoDiv);
+};
+
+document.querySelectorAll('.add-field').forEach(button => {
+    button.addEventListener('click', () => {
+        fieldCounter++;
+        const section = button.getAttribute('data-section');
+        const sectionContent = document.getElementById('section-' + section);
+        const newFieldDiv = document.createElement('div');
+        newFieldDiv.classList.add('form-group');
+        newFieldDiv.innerHTML = `
+            <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}</label>
+            <div class="d-flex">
+                <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
+                <input type="hidden" name="section_${fieldCounter}" value="${section}">
+                <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+            </div>
+        `;
+        sectionContent.appendChild(newFieldDiv);
+    });
+});
+
+function showCloneField() {
+    var cloneField = document.getElementById("clone-tool-field");
+    if (cloneField.style.display === "none") {
+        cloneField.style.display = "block";
+    } else {
+        cloneField.style.display = "none";
+    }
+}
+</script>
+
+<style>
+.clickable-header:hover {
+    background-color: #f8f9fa;
+}
+.toggle-icon {
+    font-size: 14px;
+    margin-left: 10px;
+    transition: transform 0.2s;
+}
+</style>
+{% endblock content %}

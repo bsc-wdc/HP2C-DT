@@ -1,0 +1,100 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<h3 class="page-title">Info of execution {{ executionsDone.name_sim }} (Job ID {{ executionsDone.jobID }})</h3>
+<div class="card" style="border-radius: 15px;">
+    <div class="card-body p-5">
+        <div class="wrapper-create-work">
+            <script>
+                function copyToClipboard(element) {
+                    var $temp = $("<input>");
+                    $("body").append($temp);
+                    $temp.val($(element).text()).select();
+                    document.execCommand("copy");
+                    $temp.remove();
+                }
+            </script>
+
+            <table class="table">
+                <thead>
+                <tr style="text-align: center">
+                    <th scope="col">Name</th>
+                    <th scope="col">Tool</th>
+                    <th scope="col">JobID</th>
+                    <th scope="col">User</th>
+                    <th scope="col">Nodes</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Submit</th>
+                    <th scope="col">Start</th>
+                    <th scope="col">End</th>
+                    <th scope="col">Time</th>
+                    <th scope="col">Checkpoint</th>
+                    <th scope="col">Autorestart</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr style="text-align: center">
+                    <td>{{ executionsDone.name_sim }}</td>
+                    <td>{{ executionsDone.tool }}</td>
+                    <td>{{ executionsDone.jobID }}</td>
+                    <td>{{ executionsDone.user }}</td>
+                    <td>{{ executionsDone.nodes }}</td>
+                    <td>{{ executionsDone.status }}</td>
+                    <td>{% if executionsDone.submit %}{{ executionsDone.submit|date:"Y-m-d H:i:s" }}{% else %}-{% endif %}</td>
+                    <td>{% if executionsDone.start %}{{ executionsDone.start|date:"Y-m-d H:i:s" }}{% else %}-{% endif %}</td>
+                    <td>{% if executionsDone.end %}{{ executionsDone.end|date:"Y-m-d H:i:s" }}{% else %}-{% endif %}</td>
+                    <td>{{ executionsDone.time }}</td>
+                    <td>{{ executionsDone.checkpointBool }}</td>
+                    <td>{{ executionsDone.autorestart }}</td>
+                </tr>
+                </tbody>
+            </table>
+            <button class="btn btn-secondary" onclick="copyToClipboard('#p2')">Click to copy the result's path</button>
+            <button id="p2" hidden>{{ executionsDone.wdir }}</button>
+            <h5></h5>
+            <h5>HPC logs</h5>
+            <ul>
+                <table class="table">
+                    <tr style="text-align: left">
+                        <th scope="col">Name</th>
+                        <th scope="col">Size (bytes)</th>
+                    </tr>
+                    {% for file, size in remote_files.items %}
+                        <tr style="text-align: left">
+                            <td><a href="{% url 'download_remote_file' file %}">{{ file }}</a></td>
+                            <td>{{size}}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </ul>
+            <h5></h5>
+            <h5>UI logs </h5>
+            <ul>
+                <table class="table">
+                    <tr style="text-align: left">
+                        <th scope="col">Name</th>
+                        <th scope="col">Size (bytes)</th>
+                    </tr>
+                    {% for file, size in local_files.items %}
+                        <tr style="text-align: left">
+                            <td>
+                                <a href="{% url 'download_local_file' file %}">
+                                    {% if ".out" in file %}
+                                        execution.out
+                                    {% elif ".err" in file %}
+                                        execution.err
+                                    {% endif %}
+                                </a>
+                            </td>
+                            <td>{{size}}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,478 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<h3 class="page-title">Edit Tool</h3>
+{% if errors %}
+    <div>
+        {% for field, error_list in errors.items %}
+        <div class="alert alert-danger" role="alert">
+            {% for error in error_list %}
+            Error in field {{ field }}: {{ error }}<br>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+{% endif %}
+<div class="card px-0 py-3" style="border-radius: 15px;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
+            <div class="form-group">
+                <label for="id_name">{{ form.name.label }}</label>
+                <input type="text" name="name" class="form-control" id="id_name" value="{{ form.name.value }}">
+            </div>
+            {% for section in sections %}
+                <div class="card-header clickable-header" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                    <h5 class="mb-0">{{ section|capfirst }}</h5>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="card-block px-0 py-3">
+                    <div class="section-content" id="section-{{ section }}" style="display: block;">
+                        {% if section == "setup" %}
+                            <div class="form-group" id="setup-section">
+                                <label for="id_github_repo" style="font-weight: bold;">{{ form.github_repo.label }}</label>
+                                <div class="d-flex align-items-center mb-2">
+                                    <input type="text" name="github_repo" class="form-control flex-grow-1 mr-2" id="id_github_repo" value="{{ form.github_repo.value|default_if_none:'' }}" placeholder="Repo URL">
+                                    <input type="text" name="github_branch" class="form-control flex-grow-1" id="id_github_branch" value="{{ form.github_branch.value|default_if_none:'' }}" placeholder="Branch Name">
+                                    <button type="button" id="add-repo" class="btn btn-success feather icon-plus-circle ml-2"></button>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <label class="mr-2">Requires installation</label>
+                                    <input type="checkbox" name="github_install" id="id_github_install"
+                                           {% if existing_repos.0.install %} checked {% endif %}>
+                                    <input type="text" name="github_install_dir" class="form-control flex-grow-1 ml-2"
+                                           value="{{ existing_repos.0.install_dir|default:'' }}"
+                                           id="id_github_install_dir" placeholder="Install Dir (If pip install should be run from a directory within the repository, rather than the root)">
+                                </div>
+                                <div>
+                                    <label class="mr-2">Install in editable mode</label>
+                                    <input type="checkbox" name="github_editable" id="id_github_editable"
+                                    {% if existing_repos.0.editable %} checked {% endif %}>
+                                </div>
+                                <div>
+                                    <label class="mr-2">Install requirements</label>
+                                    <input type="checkbox" name="github_requirements" id="id_github_requirements"
+                                    {% if existing_repos.0.requirements %} checked {% endif %}>
+                                </div>
+                                <div>
+                                    <label class="mr-2">Target ("repo_root/packages")</label>
+                                    <input type="checkbox" name="github_target" id="github_target"
+                                    {% if existing_repos.0.target %} checked {% endif %}>
+                                </div>
+                            </div>
+
+                            {% for repo in existing_repos %}
+                                {% if not forloop.first %}
+                                    <div class="form-group">
+                                        <label for="github_repo_{{ forloop.counter }}" style="font-weight: bold;">
+                                            GitHub Repo</label>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <input type="text" name="github_repo_{{ forloop.counter }}"
+                                                   class="form-control flex-grow-1 mr-2" id="github_repo_{{ forloop.counter }}"
+                                                   value="{{ repo.url }}" placeholder="Repo Name">
+                                            <input type="text" name="github_branch_{{ forloop.counter }}"
+                                                   class="form-control flex-grow-1" id="id_github_branch_{{ forloop.counter }}"
+                                                   value="{{ repo.branch }}" placeholder="Branch Name">
+                                            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <label class="mr-2">Requires installation</label>
+                                            <input type="checkbox" name="github_install_{{ forloop.counter }}"
+                                                   id="id_github_install_{{ forloop.counter }}"
+                                                   {% if repo.install %} checked {% endif %}>
+                                            <input type="text" name="github_install_dir_{{ forloop.counter }}"
+                                                   class="form-control flex-grow-1 ml-2" id="id_github_install_dir_{{ forloop.counter }}"
+                                                   value="{{ repo.install_dir|default:'' }}" placeholder="Install Dir (from repo root)">
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <label class="mr-2">Install in editable mode</label>
+                                            <input type="checkbox" name="github_editable_{{ forloop.counter }}"
+                                                   id="id_github_editable_{{ forloop.counter }}"
+                                            {% if repo.editable %} checked {% endif %}>
+                                            <label class="ml-2 mr-2">Install requirements</label>
+                                            <input type="checkbox" name="github_requirements_{{ forloop.counter }}"
+                                                   id="id_github_requirements_{{ forloop.counter }}"
+                                            {% if repo.requirements %} checked {% endif %}>
+                                            <label class="ml-2 mr-2">Target ("repo_root/packages")</label>
+                                            <input type="checkbox" name="github_target_{{ forloop.counter }}"
+                                                   id="github_target_{{ forloop.counter }}"
+                                            {% if repo.target %} checked {% endif %}>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
+                        {% if section == "slurm" %}
+                            <div class="form-group">
+                                <label for="custom_field_Modules">Modules</label>
+                                <div id="module-fields-container-slurm" class="d-flex flex-column">
+                                    {% for module in existing_modules %}
+                                    <div class="module-field d-flex align-items-center mt-2">
+                                        <input type="text" name="module_{{ forloop.counter }}" class="form-control flex-grow-1"
+                                               id="module_{{ forloop.counter }}"
+                                               placeholder="Insert module to load (format: module/version)"
+                                               value="{{ module }}">
+                                        <button type="button" class="btn btn-danger ml-2" onclick="removeModule(this)">-</button>
+                                    </div>
+                                    {% endfor %}
+                                    <button type="button" class="btn btn-primary mt-2 add-module-btn" data-section="slurm">
+                                        Add Module</button>
+                                </div>
+                            </div>
+                        {% endif %}
+
+
+                        {% for custom_field in existing_fields %}
+                            {% if custom_field.section == section %}
+                                {% if custom_field.type == "text" %}
+                                    <div class="form-group">
+                                        <label for="custom_field_{{ custom_field.id }}">{{ custom_field.name }}</label>
+                                        <div class="d-flex">
+                                            <input type="text" name="custom_field_{{ custom_field.id }}"
+                                                   class="form-control flex-grow-1" id="custom_field_{{ custom_field.id }}"
+                                                   value="{{ custom_field.name }}">
+                                            <input type="text" name="default_value_{{ custom_field.id }}"
+                                                   class="form-control ml-2" id="default_value_{{ custom_field.id }}"
+                                                   value="{{ custom_field.default_value|default_if_none:'' }}"
+                                                   placeholder="Default Value (optional)">
+                                            <input type="text" name="preset_value_{{ custom_field.id }}"
+                                                   class="form-control ml-2" id="preset_value_{{ custom_field.id }}"
+                                                   value="{{ custom_field.preset_value|default_if_none:'' }}"
+                                                   placeholder="Preset Value (optional)">
+                                            <input type="hidden" name="section_{{ custom_field.id }}" value="{{ section }}">
+                                            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                {% if custom_field.type == "boolean" %}
+                                    <div class="form-group">
+                                        <label for="custom_boolean_field_{{ custom_field.id }}">{{ custom_field.name }}</label>
+                                        <div class="d-flex align-items-center">
+                                            <input type="text" name="custom_boolean_field_{{ custom_field.id }}"
+                                                   class="form-control flex-grow-1 mr-2"
+                                                   id="custom_boolean_field_{{ custom_field.id }}"
+                                                   value="{{ custom_field.name }}" placeholder="Field Name">
+                                            <select name="default_value_boolean_{{ custom_field.id }}"
+                                                    class="form-control ml-2" id="default_value_boolean_{{ custom_field.id }}">
+                                                <option value="" {% if not custom_field.default_value %}selected{% endif %}>
+                                                    No default value</option>
+                                                <option value="true" {% if custom_field.default_value == 'True' %}selected{% endif %}>
+                                                True</option>
+                                                <option value="false" {% if custom_field.default_value == 'False' %}selected{% endif %}>
+                                                False</option>
+                                            </select>
+                                            <select name="preset_value_boolean_{{ custom_field.id }}" class="form-control ml-2"
+                                                    id="preset_value_boolean_{{ custom_field.id }}">
+                                                <option value="" {% if not custom_field.preset_value %}selected{% endif %}>
+                                                    No preset value</option>
+                                                <option value="true" {% if custom_field.preset_value == 'True' %}selected{% endif %}>
+                                                True</option>
+                                                <option value="false" {% if custom_field.preset_value == 'False' %}selected{% endif %}>
+                                                False</option>
+                                            </select>
+                                            <input type="hidden" name="boolean_section_{{ custom_field.id }}" value="{{ section }}">
+                                            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Add Custom Field to {{ section|capfirst }}
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <button class="dropdown-item add-text-field" data-section="{{ section }}" type="button">
+                                    Text Field</button>
+                                <button class="dropdown-item add-boolean-field" data-section="{{ section }}" type="button">
+                                    Boolean Field</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+        </div>
+        <button type="submit" class="btn btn-primary ml-2">Save Changes</button>
+    </form>
+</div>
+
+<script>
+let fieldCounter = {{ existing_fields|length }};
+let repoCounter = {{ existing_repos|length }};
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    var sectionHeaders = document.querySelectorAll('.card-header h5');
+    sectionHeaders.forEach(function(header) {
+        header.addEventListener('click', function() {
+            var sectionContent = this.closest('.card-header').nextElementSibling.querySelector('.section-content');
+            if (sectionContent) {
+                sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    var sectionHeaders = document.querySelectorAll('.clickable-header');
+    sectionHeaders.forEach(function(header) {
+        header.addEventListener('click', function() {
+            var sectionContent = this.nextElementSibling.querySelector('.section-content');
+            if (sectionContent) {
+                sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+                var icon = this.querySelector('.toggle-icon');
+                if (icon) {
+                    icon.textContent = sectionContent.style.display === 'none' ? '▼' : '▲';
+                }
+            }
+        });
+    });
+});
+
+document.querySelectorAll('.add-text-field').forEach(button => {
+    button.addEventListener('click', function() {
+        fieldCounter++;
+        const section = button.getAttribute('data-section');
+        const sectionContent = document.getElementById('section-' + section);
+        const newFieldDiv = document.createElement('div');
+        newFieldDiv.classList.add('form-group');
+        newFieldDiv.innerHTML = `
+            <label for="custom_field_${fieldCounter}">Custom Field</label>
+            <div class="d-flex">
+                <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
+                <input type="text" name="default_value_${fieldCounter}" class="form-control ml-2" id="default_value_${fieldCounter}" placeholder="Default Value (optional)">
+                <input type="text" name="preset_value_${fieldCounter}" class="form-control ml-2" id="preset_value_${fieldCounter}" placeholder="Preset Value (optional)">
+                <input type="hidden" name="section_${fieldCounter}" value="${section}">
+                <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+            </div>
+        `;
+        sectionContent.appendChild(newFieldDiv);
+
+        document.getElementById(`default_value_${fieldCounter}`).addEventListener('input', function() {
+            toggleFieldState(`preset_value_${fieldCounter}`, this);
+        });
+
+        document.getElementById(`preset_value_${fieldCounter}`).addEventListener('input', function() {
+            toggleFieldState(`default_value_${fieldCounter}`, this);
+        });
+    });
+});
+
+document.querySelectorAll('.add-boolean-field').forEach(button => {
+    button.addEventListener('click', function() {
+        fieldCounter++;
+        const section = button.getAttribute('data-section');
+        const sectionContent = document.getElementById('section-' + section);
+        const newFieldDiv = document.createElement('div');
+        newFieldDiv.classList.add('form-group');
+        newFieldDiv.innerHTML = `
+            <label for="custom_boolean_field_${fieldCounter}">Custom Boolean Field</label>
+            <div class="d-flex align-items-center">
+                <input type="text" name="custom_boolean_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_boolean_field_${fieldCounter}" placeholder="Field Name">
+                <select name="default_value_boolean_${fieldCounter}" class="form-control ml-2" id="default_value_boolean_${fieldCounter}">
+                    <option value="" selected>No default value</option>
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
+                <select name="preset_value_boolean_${fieldCounter}" class="form-control ml-2" id="preset_value_boolean_${fieldCounter}">
+                    <option value="" selected>No preset value</option>
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
+                <input type="hidden" name="boolean_section_${fieldCounter}" value="${section}">
+                <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+            </div>
+        `;
+        sectionContent.appendChild(newFieldDiv);
+
+        const defaultField = document.getElementById(`default_value_boolean_${fieldCounter}`);
+        const presetField = document.getElementById(`preset_value_boolean_${fieldCounter}`);
+
+        defaultField.addEventListener('change', function() {
+            if (defaultField.value) {
+                presetField.disabled = true;
+                presetField.value = '';
+            } else {
+                presetField.disabled = false;
+            }
+        });
+
+        presetField.addEventListener('change', function() {
+            if (presetField.value) {
+                defaultField.disabled = true;
+                defaultField.value = '';
+            } else {
+                defaultField.disabled = false;
+            }
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const defaultBooleanFields = document.querySelectorAll('[id^="default_value_boolean_"]');
+    const presetBooleanFields = document.querySelectorAll('[id^="preset_value_boolean_"]');
+
+    defaultBooleanFields.forEach((defaultField, index) => {
+        const presetField = presetBooleanFields[index];
+
+        if (defaultField.value) {
+            presetField.disabled = true;
+        }
+        if (presetField.value) {
+            defaultField.disabled = true;
+        }
+
+        defaultField.addEventListener('change', function() {
+            if (defaultField.value) {
+                presetField.disabled = true;
+                presetField.value = '';
+            } else {
+                presetField.disabled = false;
+            }
+        });
+
+        presetField.addEventListener('change', function() {
+            if (presetField.value) {
+                defaultField.disabled = true;
+                defaultField.value = '';
+            } else {
+                defaultField.disabled = false;
+            }
+        });
+    });
+});
+
+
+function toggleFieldState(fieldToToggle, currentField) {
+    const field = document.getElementById(fieldToToggle);
+    field.disabled = currentField.value.length > 0;
+}
+
+
+document.getElementById('add-repo').onclick = function() {
+    repoCounter++;
+    const setupSection = document.getElementById('setup-section');
+    const newRepoDiv = document.createElement('div');
+    newRepoDiv.classList.add('form-group');
+    newRepoDiv.innerHTML = `
+        <label for="github_repo_${repoCounter}" style="font-weight: bold;">GitHub Repo</label>
+        <div class="d-flex align-items-center mb-2">
+            <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1 mr-2" id="github_repo_${repoCounter}" placeholder="Repo URL">
+            <input type="text" name="github_branch_${repoCounter}" class="form-control flex-grow-1" id="github_branch_${repoCounter}" placeholder="Branch Name">
+            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+        </div>
+        <div class="d-flex align-items-center mb-2">
+            <label class="mr-2">Requires installation</label>
+            <input type="checkbox" name="github_install_${repoCounter}" id="github_install_${repoCounter}">
+            <input type="text" name="github_install_dir_${repoCounter}" class="form-control flex-grow-1 ml-2"
+            id="github_install_dir_${repoCounter}" placeholder="Install Dir (from repo root)">
+        </div>
+        <div>
+            <label class="mr-2">Install in editable mode</label>
+            <input type="checkbox" name="github_editable_${repoCounter}" id="github_editable_${repoCounter}">
+        </div>
+        <div>
+            <label class="mr-2">Install requirements</label>
+            <input type="checkbox" name="github_requirements_${repoCounter}" id="github_requirements_${repoCounter}">
+        </div>
+        <div>
+            <label class="mr-2">Target ("repo_root/packages")</label>
+            <input type="checkbox" name="github_target_${repoCounter}" id="github_target_${repoCounter}">
+        </div>
+    `;
+    setupSection.appendChild(newRepoDiv);
+};
+
+function toggleFieldState(fieldToToggle, currentField) {
+    const field = document.getElementById(fieldToToggle);
+    field.disabled = currentField.value.length > 0;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const defaultFields = document.querySelectorAll('[id^="default_value_"]');
+    const presetFields = document.querySelectorAll('[id^="preset_value_"]');
+
+    defaultFields.forEach((defaultField, index) => {
+        const presetField = presetFields[index];
+
+        if (defaultField.value) {
+            presetField.disabled = true;
+        }
+        if (presetField.value) {
+            defaultField.disabled = true;
+        }
+
+        defaultField.addEventListener('input', function() {
+            if (defaultField.value) {
+                presetField.disabled = true;
+                presetField.value = '';
+            } else {
+                presetField.disabled = false;
+            }
+        });
+
+        presetField.addEventListener('input', function() {
+            if (presetField.value) {
+                defaultField.disabled = true;
+                defaultField.value = '';
+            } else {
+                defaultField.disabled = false;
+            }
+        });
+    });
+});
+
+function removeField(element) {
+    element.parentElement.parentElement.remove();
+}
+
+function removeModule(button) {
+    button.closest('.module-field').remove();
+}
+
+function toggleFieldState(fieldToToggle, currentField) {
+    const field = document.getElementById(fieldToToggle);
+    field.disabled = currentField.value.length > 0;
+}
+
+document.querySelectorAll('.add-module-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        fieldCounter++;
+        const section = button.getAttribute('data-section');
+        const sectionContent = document.getElementById('module-fields-container-' + section);
+
+        const newFieldDiv = document.createElement('div');
+        newFieldDiv.classList.add('module-field', 'd-flex', 'align-items-center', 'mt-2');
+        newFieldDiv.innerHTML = `
+            <input type="text" name="module_${fieldCounter}" class="form-control flex-grow-1" id="module_${fieldCounter}"
+            placeholder="Insert module to load (format: module/version)">
+            <button type="button" class="btn btn-danger ml-2" onclick="removeModule(this)">-</button>
+        `;
+
+        const addButton = button;
+        sectionContent.insertBefore(newFieldDiv, addButton);
+    });
+});
+
+
+
+</script>
+<style>
+    .clickable-header:hover {
+        background-color: #f8f9fa;
+    }
+    .toggle-icon {
+        font-size: 14px;
+        margin-left: 10px;
+        transition: transform 0.2s;
+    }
+</style>
+{% endblock content %}

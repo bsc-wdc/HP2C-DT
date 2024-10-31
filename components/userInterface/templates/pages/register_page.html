@@ -1,0 +1,48 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<h3 class="page-title">Register</h3>
+<div class="card-block px-0 py-3">
+  <div class="card" style="border-radius: 15px;">
+    <div class="card-body p-5">
+      <div class="wrapper-create-work">
+        <form method="post">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="font-weight-bold">Username</label>
+            {% render_field form.username type="text" class="form-control" placeholder="Insert your username" %}
+
+            <label class="font-weight-bold">Email</label>
+            {% render_field form.email type="text" class="form-control" placeholder="Insert your email" %}
+
+            <label class="font-weight-bold">Password</label>
+            {% render_field form.password1 type="password" class="form-control" placeholder="Insert your password" %}
+
+            <label class="font-weight-bold" for="typePasswordX-2">Confirm Password</label>
+            {% render_field form.password2 type="password" class="form-control" placeholder="Confirm your password" %}
+          </div>
+          {% if error %}
+            <div class="alert alert-danger text-center" role="alert">
+              Register Failed:
+              {{message}}
+            </div>
+
+          {% endif %}
+          <div>
+            <button type="submit" class="btn btn-success btn-block btn-lg gradient-custom-4 text-body" value="Submit">Register</button>
+          </div>
+          <p>Have already an account?
+            <a href="{% url 'login' %}" class="fw-bold text-body">
+              <u>Login here</u>
+            </a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

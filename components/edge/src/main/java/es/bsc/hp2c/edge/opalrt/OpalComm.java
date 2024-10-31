@@ -97,6 +97,7 @@ public class OpalComm {
                 }
             }
         }
+        if (indexesSet.size() == 0) return;
         // Check if indices are consecutive
         int minIndex = indexesSet.stream().mapToInt(Integer::intValue).min().orElse(-1);
         int maxIndex = indexesSet.stream().mapToInt(Integer::intValue).max().orElse(-1);
@@ -165,13 +166,13 @@ public class OpalComm {
                 }
                 udpSocket = new DatagramSocket(udpPORT, serverAddress);
             } catch (SocketException e) {
-                System.err.println("Error initializing UDP socket at IP " + udpIP +" and port " + udpPORT);
+                System.err.println("Error initializing UDP Sensors socket at IP " + udpIP +" and port " + udpPORT);
                 throw new RuntimeException(e);
             } catch (UnknownHostException e) {
                 System.err.println("Unable to resolve " + udpIP + " for the specified host.");
                 throw new RuntimeException(e);
             }
-            System.out.println("\nUDP socket running on port: " + udpPORT + "\n");
+            System.out.println("\nUDP Sensors socket running on port: " + udpPORT + "\n");
 
             while (true) {
                 // Print time each iteration
@@ -247,7 +248,7 @@ public class OpalComm {
                         //when a connection fails, set every TCP sensor as not available
                         setAvailableSensors(tcpSensorsList, false);
                     }
-                } catch (IOException ex) { System.err.println("Error closing client socket: " + ex.getMessage()); }
+                } catch (IOException ex) { System.err.println("Error closing TCP Sensors socket: " + ex.getMessage()); }
             }
         });
         TCPSensorsThread.setName("TCPSensorsThread");
@@ -343,7 +344,7 @@ public class OpalComm {
                 new Timer().scheduleAtFixedRate(new connectionTester(), 0, 5000);
                 break;
             } catch (IOException e) {
-                System.err.println("Failed to connect to server " + ip + " through port " + port + ": " +
+                System.err.println("Failed to connect to actuation ip " + ip + " through port " + port + ": " +
                         e.getMessage());
             }
         }
@@ -370,7 +371,7 @@ public class OpalComm {
                 missedValues = new HashMap<>();
             }
         } catch (IOException e) {
-            System.err.println("Failed to connect to server " + actuationIP + " through port " + actuationPORT + ": " +
+            System.err.println("Failed to connect to actuation ip " + actuationIP + " through port " + actuationPORT + ": " +
                     e.getMessage());
         }
     }
@@ -386,7 +387,7 @@ public class OpalComm {
         try{
             // count the number of floats to be sent
             int nIndexes = getnIndexes();
-            ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
+            ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES + Integer.BYTES + Character.BYTES);
             // obtain indexes of the actuator and put the proper values in bytebuffer
             int[] indexesLocal = getIndexesLocal(actuator, values, nIndexes, byteBuffer);
             // check data integrity
@@ -444,7 +445,7 @@ public class OpalComm {
 
     private static int[] getIndexesLocal(OpalActuator<?> actuator, Float[] values, int nIndexes, ByteBuffer byteBuffer) {
         int[] indexesLocal = Arrays.copyOf(actuator.getIndexes(), actuator.getIndexes().length);
-
+        byteBuffer.putInt(nIndexes);
         // For every float in bytebuffer, if index not in the list assign float minimum value, else assign proper value
         for (int i = 0; i < nIndexes; ++i){
             // Check if current index is in indexes
@@ -460,6 +461,7 @@ public class OpalComm {
             if (found){ byteBuffer.putFloat(values[index]); }
             else { byteBuffer.putFloat(Float.NEGATIVE_INFINITY); }
         }
+        byteBuffer.putChar('\n');
         return indexesLocal;
     }
 
@@ -477,11 +479,13 @@ public class OpalComm {
             try{
                 // count the number of floats to be sent
                 int nIndexes = getnIndexes();
-                ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES);
+                ByteBuffer byteBuffer = ByteBuffer.allocate(nIndexes * Float.BYTES + Integer.BYTES + Character.BYTES);
+                byteBuffer.putInt(nIndexes);
                 // Assign a dummy -Inf value as a testing message
                 for (int i = 0; i < nIndexes; ++i){
                     byteBuffer.putFloat(Float.NEGATIVE_INFINITY);
                 }
+                byteBuffer.putChar('\n');
                 DataOutputStream outputStream = new DataOutputStream(actuationSocket.getOutputStream());
                 byte[] buffer = byteBuffer.array();
                 outputStream.write(buffer);

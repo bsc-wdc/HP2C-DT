@@ -1,0 +1,87 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<h3 class="page-title">Tools</h3>
+
+<div class="d-flex flex-row-reverse">
+    <a href="{% url 'create_tool' %}">
+        <button type="button" class="btn btn-success">New tool</button>
+    </a>
+    <a href="{% url 'upload_tool' %}">
+        <button type="button" class="btn btn-success">Upload tool</button>
+    </a>
+</div>
+
+{% if tool_created %}
+  <div>
+    <div class="alert alert-success" role="alert">
+      Successfully created tool {{tool_created}}
+    </div>
+  </div>
+{% endif %}
+
+{% if tool_edited %}
+  <div>
+    <div class="alert alert-success" role="alert">
+      Successfully edited tool {{tool_edited}}
+    </div>
+  </div>
+{% endif %}
+
+{% if tool_deleted %}
+  <div>
+    <div class="alert alert-success" role="alert">
+      Successfully deleted tool {{tool_deleted}}
+    </div>
+  </div>
+{% endif %}
+
+<div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active show" id="profile-tab" data-toggle="tab" href="#profile" role="tab"
+               aria-controls="profile" aria-selected="true">Executions</a>
+        </li>
+
+        {% for tool_name, tool_data in tool_forms.items %}
+        <li class="nav-item">
+            <a class="nav-link" id="{{ tool_name|slugify }}-tab" data-toggle="tab" href="#{{ tool_name|slugify }}"
+               role="tab" aria-controls="{{ tool_name|slugify }}" aria-selected="false">{{ tool_name }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade active show" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+            {% include 'pages/executions.html' %}
+        </div>
+
+        {% for tool_name, tool_data in tool_forms.items %}
+            <div class="tab-pane fade" id="{{ tool_name|slugify }}" role="tabpanel" aria-labelledby="{{ tool_name|slugify }}-tab">
+                {% include 'pages/custom_tool.html' with form=tool_data.form name=tool_name tool=tool_data.tool fields=tool_data.fields %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var toolCreated = "{{ tool_created|default:'' }}";
+        var toolEdited = "{{ tool_edited|default:'' }}";
+        var showTool = toolCreated || toolEdited;
+
+        if (showTool) {
+            var ToolName = showTool.toLowerCase().replace(/\s+/g, '-');
+            var tabToShow = document.getElementById(ToolName + '-tab');
+            if (tabToShow) {
+                tabToShow.click();
+            }
+        }
+    });
+</script>
+
+{% endblock content %}

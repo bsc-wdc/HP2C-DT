@@ -1,0 +1,28 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<h3 class="page-title">Upload tool</h3>
+
+{% if message %}
+  <div class="alert alert-danger text-center" role="alert">
+    {{ message }}
+  </div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
+        <div class="form-group">
+            <label class="font-weight-bold" for="customFile">Input file</label>
+            {% render_field document_form.document type="file" class="form-control" id="customFile" placeholder="Upload your tool in yaml format" %}
+            <small class="form-text text-muted">Upload your tool in yaml format</small>
+            <button type="submit" class="btn btn-success btn-block btn-lg gradient-custom-4 mr-2">Upload tool</button>
+        </div>
+    </div>
+</form>
+
+{% endblock content %}

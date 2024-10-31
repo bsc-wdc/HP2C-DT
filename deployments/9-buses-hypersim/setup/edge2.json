@@ -6,18 +6,18 @@
                 "protocol": "udp",
                 "sensors": {
                     "ip": "0.0.0.0",
-                    "port": "22002"
+                    "port": "10202"
                 }
             },
             "opal-tcp": {
                 "protocol": "tcp",
                 "sensors": {
                     "ip": "0.0.0.0",
-                    "port": "12002"
+                    "port": "20202"
                 },
                 "actuators": {
-                    "ip": "$CUSTOM_IP",
-                    "port": "32002"
+                    "ip": ["$CUSTOM_IP", "$LOCAL_IP", "localhost"],
+                    "port": "30202"
                 }
             }
         },
@@ -45,7 +45,7 @@
             }
         },
         {
-            "label": "Ammeter Gen1",
+            "label": "Three-Phase Ammeter Gen1",
             "driver": "es.bsc.hp2c.edge.opalrt.OpalAmmeter",
             "driver-dt": "es.bsc.hp2c.server.device.VirtualAmmeter",
             "position": {

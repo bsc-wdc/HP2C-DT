@@ -1,0 +1,97 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<div class="card px-0 py-3" style="border-radius: 15px;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="col-xl-12 col-md-12 m-b-30" style="border-radius: 15px;">
+            {% for section in sections %}
+                <div class="card-header">
+                    <h5 style="cursor: pointer;">{{ section|capfirst }}</h5>
+                </div>
+                <div class="card-block px-0 py-3">
+                    <div class="section-content" id="section-{{ section }}" style="display: none;">
+                        <h3>test</h3>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+</div>
+
+<script>
+let fieldCounter = {{ existing_fields|length }};
+let repoCounter = {{ existing_repos|length }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    var sectionHeaders = document.querySelectorAll('.card-header h5');
+    sectionHeaders.forEach(function(header) {
+        header.addEventListener('click', function() {
+            var sectionContent = this.closest('.card-header').nextElementSibling.querySelector('.section-content');
+            if (sectionContent) {
+                sectionContent.style.display = sectionContent.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    });
+});
+
+document.getElementById('add-repo').onclick = function() {
+    repoCounter++;
+    const setupSection = document.getElementById('setup-section');
+    const newRepoDiv = document.createElement('div');
+    newRepoDiv.classList.add('form-group');
+    newRepoDiv.innerHTML = `
+        <label for="github_repo_${repoCounter}">GitHub Repo ${repoCounter}:</label>
+        <div class="d-flex align-items-center">
+            <input type="text" name="github_repo_${repoCounter}" class="form-control flex-grow-1" id="github_repo_${repoCounter}">
+            <input type="hidden" name="section_github_repo_${repoCounter}" value="setup">
+            <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+        </div>
+    `;
+    setupSection.appendChild(newRepoDiv);
+};
+
+document.querySelectorAll('.add-field').forEach(button => {
+    button.addEventListener('click', () => {
+        fieldCounter++;
+        const section = button.getAttribute('data-section');
+        const sectionContent = document.getElementById('section-' + section);
+        const newFieldDiv = document.createElement('div');
+        newFieldDiv.classList.add('form-group');
+        newFieldDiv.innerHTML = `
+            <label for="custom_field_${fieldCounter}">Custom Field ${fieldCounter}:</label>
+            <div class="d-flex">
+                <input type="text" name="custom_field_${fieldCounter}" class="form-control flex-grow-1" id="custom_field_${fieldCounter}">
+                <input type="text" name="default_value_${fieldCounter}" class="form-control ml-2" id="default_value_${fieldCounter}" placeholder="Default Value (optional)">
+                <input type="text" name="preset_value_${fieldCounter}" class="form-control ml-2" id="preset_value_${fieldCounter}" placeholder="Preset Value (optional)">
+                <input type="hidden" name="section_${fieldCounter}" value="${section}">
+                <button type="button" class="btn btn-danger ml-2" onclick="removeField(this)">-</button>
+            </div>
+        `;
+        sectionContent.appendChild(newFieldDiv);
+
+        document.getElementById(`default_value_${fieldCounter}`).addEventListener('input', function() {
+            toggleFieldState(`preset_value_${fieldCounter}`, this);
+        });
+
+        document.getElementById(`preset_value_${fieldCounter}`).addEventListener('input', function() {
+            toggleFieldState(`default_value_${fieldCounter}`, this);
+        });
+    });
+});
+
+function toggleFieldState(fieldToToggle, currentField) {
+    const field = document.getElementById(fieldToToggle);
+    field.disabled = currentField.value.length > 0;
+}
+
+function removeField(element) {
+    element.parentElement.parentElement.remove();
+}
+</script>
+{% endblock content %}

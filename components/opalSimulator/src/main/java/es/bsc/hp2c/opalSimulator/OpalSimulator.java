@@ -385,14 +385,20 @@ public class OpalSimulator {
 
         DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
         while (true) {
-            byte[] buffer = new byte[tcpIndexes * Float.BYTES];
+            int messageLength = dis.readInt();
+            byte[] buffer = new byte[messageLength * Float.BYTES];
             dis.readFully(buffer);
+
+            char endChar = dis.readChar();
+            if (endChar != '\n') {
+                throw new IOException("End character not found.");
+            }
 
             ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
 
             int index = 0;
             ArrayList<Float> message = new ArrayList<>();
-            while (byteBuffer.remaining() > 0) {
+            for (int f = 0; f < messageLength; ++f){
                 Float newFloat = byteBuffer.getFloat();
                 message.add(newFloat);
                 if (newFloat != Float.NEGATIVE_INFINITY) {
@@ -407,11 +413,12 @@ public class OpalSimulator {
                 index += 1;
             }
 
-            int nInfinity = 0;
+            boolean newValue = false;
             for (Float f : message) {
-                if (f == Float.NEGATIVE_INFINITY) nInfinity += 1;
+                if (f != Float.NEGATIVE_INFINITY) newValue = true;
+                break;
             }
-            if (!(nInfinity == tcpIndexes)) {
+            if (newValue) {
                 System.out.println("    Message is: " + message + " for edge " + edge.getLabel());
                 System.out.println("Message Received from " + clientSocket.getInetAddress().getHostAddress());
 
