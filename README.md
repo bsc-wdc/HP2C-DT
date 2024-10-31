@@ -14,6 +14,7 @@ This project embraces the digital and ecological transition to develop a High-Pr
 
 ## Additional Documentation
 
+- [Start up guide](docs/STARTUP.md)
 - [OpenStack Configuration Guide](docs/SERVER_SETUP.md)
 - [OpenStack Communications Instructions](docs/SERVER_COMM.md)
 
