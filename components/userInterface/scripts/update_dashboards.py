@@ -12,26 +12,22 @@ def dashboard_has_changed(server_url):
 
 
 def update_dashboards():
-    in_docker = False
-    deployment_name = "testbed"
-    if "DEPLOYMENT_NAME" in os.environ:
-        deployment_name = os.getenv("DEPLOYMENT_NAME")
-    setup_file = f"../../deployments/{deployment_name}/deployment_setup.json"
-    if not os.path.exists(setup_file):
-        in_docker = True
-        setup_file = "/data/deployment_setup.json"
-    setup_data = None
+    setup_file = os.getenv("DEPLOYMENT_JSON")
+    deployment_name = os.getenv("DEPLOYMENT_NAME")
 
     if os.path.exists(setup_file):
         with open(setup_file, 'r') as f:
             json_data = f.read()
             setup_data = json.loads(json_data)
     if not setup_data:
-        print("Deployment setup not found", flush=True)
+        print(f"Deployment setup not found in {setup_file}", flush=True)
         exit(1)
-    if not in_docker:
+
+    if not os.path.exists("/.dockerenv"):
         os.chdir("scripts")
+
     grafana_url, server_port, server_url = get_deployment_info(setup_data)
+
     edges_info = None
     try:
         response = requests.get(f"{server_url}/getEdgesInfo")
@@ -59,7 +55,7 @@ def update_dashboards():
         if initial_execution == 0:
             changed = check_changes(edges_info)
             if not changed:
-                if not in_docker:
+                if not os.path.exists("/.dockerenv"):
                     os.chdir("..")
                 return None, deployment_name, grafana_url, server_port, server_url
         else:
@@ -93,7 +89,7 @@ def update_dashboards():
     LOCAL_IP = os.getenv("LOCAL_IP", None)
     if LOCAL_IP:
         URLs.append(f"http://{LOCAL_IP}:{GRAFANA_PORT}")
-        
+
     ############################ GET DATASOURCE UID ######################################
     datasource_uid = ""
 
@@ -212,7 +208,8 @@ def update_dashboards():
         except RequestException as _:
             print("Error requesting to url: ", url, flush=True)
 
-    if not in_docker: os.chdir("..")
+    if not os.path.exists("/.dockerenv"):
+        os.chdir("..")
     return edges_info, deployment_name, grafana_url, server_port, server_url
 
 
