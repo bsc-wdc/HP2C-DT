@@ -113,11 +113,36 @@ public final class CommUtils {
         factory.setPort(port);
         boolean connected = false;
         Connection connection = null;
+
+        final int[] retryFlag = {1};
+
+        Thread monitorThread = new Thread(() -> {
+            System.out.println("");
+            while (true) {
+                if (retryFlag[0] == 1) {
+                    System.err.println("Error initializing RabbitMQ Connection to address "
+                            + ip + ":" + port + ". Retrying...");
+                }
+                if (retryFlag[0] == 0) {
+                    System.out.println("Connected to RabbitMQ broker at address " + ip + ":" + port + "...");
+                    return;
+                }
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    // Ignored
+                }
+            }
+        });
+        monitorThread.start();
+
         while (!connected) {
             try {
                 connection = factory.newConnection();
                 connected = true;
+                retryFlag[0] = 0;
             } catch (IOException | TimeoutException e) {
+                retryFlag[0] = 1;
                 System.err.println("Error initializing RabbitMQ Connection to address "
                         + ip + ":" + port + ". " + e.getMessage() + ". Retrying...");
                 // Retry connection after 5 seconds
@@ -128,6 +153,8 @@ public final class CommUtils {
                 }
             }
         }
+
+        retryFlag[0] = 0;
         return connection;
     }
 
