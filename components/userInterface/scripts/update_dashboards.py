@@ -104,6 +104,7 @@ def update_dashboards():
         URLs.append(f"http://{LOCAL_IP}:{GRAFANA_PORT}")
 
     ############################ GET DATASOURCE UID ######################################
+    print("Getting datasource UID...")
     datasource_uid = ""
     grafana_connected = False
     GRAFANA_API_KEY = None
@@ -141,6 +142,7 @@ def update_dashboards():
         exit(1)
 
     ############################ CREATE DATASOURCE ############################
+    print("Creating influxdb datasource...")
     INFLUXDB_JSON = {
         "name": "influxdb",
         "type": "influxdb",
@@ -180,6 +182,7 @@ def update_dashboards():
         exit(1)
 
     ########################### CREATE JSON DASHBOARD ####################################
+    print("Creating or updating dashboard...")
     # Execute the Python script to create the dashboard JSON
     ui_exec(deployment_name, edges_info, datasource_uid)
 
@@ -211,6 +214,7 @@ def update_dashboards():
         exit(1)
 
     ############################## GET DASHBOARDS #########################################
+    print("Getting dashboards...")
     os.makedirs("dashboards", exist_ok=True)
 
     for url in URLs:
