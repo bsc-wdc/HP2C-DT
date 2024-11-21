@@ -46,6 +46,7 @@ def update_dashboards():
         print("Server doesn't respond or edges_info is empty", flush=True)
         os.chdir("..")
         return None, deployment_name, grafana_url, None, None
+
     # If the method is running for the first time we must update the dashboard.
     # Otherwise, we will check if the dashboard has changed and, if it didn´t,
     # we will not update it.
@@ -79,10 +80,22 @@ def update_dashboards():
 
     with open(config_file, 'r') as f:
         config_data = json.load(f)
-    GRAFANA_API_KEY = config_data["grafana"]["api_key"]
+    grafana_api_keys = []
+    try:
+        gap = config_data["grafana"]["api_key"]
+    except KeyError:
+        print("Grafana API key not specified in config.json")
+        exit(1)
+
+    if isinstance(gap, list):
+        grafana_api_keys = gap
+    elif isinstance(gap, str):
+        grafana_api_keys.append(gap)
+
     DATABASE_USERNAME = config_data["database"]["username"]
     DATABASE_PASSWORD = config_data["database"]["password"]
     DATABASE_PORT = setup_data['database']['port']
+
     # Define a list of GRAFANA_URLs
     URLs = [GRAFANA_URL]
     # Check if LOCAL_IP is not empty and add it to the list
@@ -92,25 +105,40 @@ def update_dashboards():
 
     ############################ GET DATASOURCE UID ######################################
     datasource_uid = ""
+    grafana_connected = False
+    GRAFANA_API_KEY = None
 
     for url in URLs:
+        if grafana_connected:
+            break
         print(f"Trying URL {url} to handle datasource UID...", flush=True)
-        try:
-            response = requests.get(f"{url}/api/datasources", headers={
-                "Authorization": f"Bearer {GRAFANA_API_KEY}"})
-            data = response.json()
-            for item in data:
-                if item["name"] == "influxdb":
-                    datasource_uid = item["uid"]
-                    response = requests.delete(
-                        f"{url}/api/datasources/uid/{datasource_uid}",
-                        headers={"Authorization": f"Bearer {GRAFANA_API_KEY}"})
-                    print(f"Delete response {response.text}", flush=True)
+        for api_key in grafana_api_keys:
+            try:
+                response = requests.get(f"{url}/api/datasources", headers={
+                    "Authorization": f"Bearer {api_key}"})
+                data = response.json()
+                for item in data:
+                    if item["name"] == "influxdb":
+                        datasource_uid = item["uid"]
+                        response = requests.delete(
+                            f"{url}/api/datasources/uid/{datasource_uid}",
+                            headers={"Authorization": f"Bearer {api_key}"})
+                        print(f"Delete response {response.text}", flush=True)
+                        GRAFANA_API_KEY = api_key
+                        grafana_connected = True
+                        break
+                if datasource_uid:
+                    GRAFANA_API_KEY = api_key
+                    grafana_connected = True
                     break
-            if datasource_uid:
-                break
-        except RequestException as _:
-            print("Error requesting to url: ", url, flush=True)
+            except RequestException as _:
+                print("Error requesting to url: ", url, flush=True)
+            except Exception as e:
+                print(e)
+
+    if not GRAFANA_API_KEY:
+        print("Wrong Grafana API key, or Grafana-server is not reachable")
+        exit(1)
 
     ############################ CREATE DATASOURCE ############################
     INFLUXDB_JSON = {
