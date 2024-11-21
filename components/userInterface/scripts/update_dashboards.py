@@ -29,9 +29,11 @@ def update_dashboards():
     grafana_url, server_port, server_url = get_deployment_info(setup_data)
 
     edges_info = None
+    server_responded = False
     try:
         response = requests.get(f"{server_url}/getEdgesInfo")
         edges_info = response.text
+        server_responded = True
     except RequestException as _:
         try:
             if "LOCAL_IP" in os.environ:
@@ -39,11 +41,18 @@ def update_dashboards():
                 server_url = f"http://{server_ip}:{server_port}"
                 response = requests.get(f"{server_url}/getEdgesInfo")
                 edges_info = response.text
+                server_responded = True
         except RequestException as _:
             os.chdir("..")
             return None, deployment_name, grafana_url, None, None
+
+    if not server_responded:
+        print(f"Server {server_url} doesn't respond. Is it running?", flush=True)
+        os.chdir("..")
+        return None, deployment_name, grafana_url, None, None
+
     if edges_info is None:
-        print("Server doesn't respond or edges_info is empty", flush=True)
+        print("Edges_info is empty", flush=True)
         os.chdir("..")
         return None, deployment_name, grafana_url, None, None
 
