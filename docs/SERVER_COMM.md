@@ -38,45 +38,85 @@ or
 telnet YOUR_MACHINE_IP 8000
 ```
 
-#### To automate the process on startup (not implemented!)
+#### To automate the process on startup and handle socat failure
 The socat command needs to be running on background, so it will reset if the broker machine shuts down. A service can be configured upon startup.
 
-1. Create a systemd Service File:
+1. Create a script with the socat commands and check that the service will execute
+
+```bash
+sudo nano /usr/local/bin/socat-forwarding.sh
+```
+
+2. Add the required port forwarding steps:
+
+Paste the following commands,
+
+```bash
+#!/bin/bash
+
+# Ensure socat is forwarding on port 8000
+if ! pgrep -f "socat TCP-LISTEN:8000"; then
+  /usr/bin/socat TCP-LISTEN:8000,fork,reuseaddr TCP:192.168.0.154:8000 &
+fi
+
+# Ensure socat is forwarding on port 8030
+if ! pgrep -f "socat TCP-LISTEN:8030"; then
+  /usr/bin/socat TCP-LISTEN:8030,fork,reuseaddr TCP:192.168.0.154:8030 &
+fi
+
+# Wait to keep the script running
+wait
+```
+
+3. Create a systemd Service File
+
 Create a new systemd service file for socat. Open a terminal and run:
 ```bash
 sudo nano /etc/systemd/system/socat-forwarding.service
 ```
-2. Add Service Configuration:
+4. Add Service Configuration
+
 Paste the following configuration into the file:
 ```makefile
 [Unit]
-Description=Socat Port Forwarding Service
+Description=Socat Port Forwarding Service for Multiple Ports
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/socat TCP-LISTEN:8000,fork,reuseaddr TCP:UI_IP:8000
+ExecStart=/usr/local/bin/socat-forwarding.sh
 Restart=always
+RestartSec=10s
+StartLimitIntervalSec=500
+StandardOutput=syslog
+StandardError=syslog
+TimeoutStartSec=60
+TimeoutStopSec=60
 
 [Install]
 WantedBy=multi-user.target
 ```
-Replace UI_IP with the private IP address of your "ui" machine.
-3. Save and Close the File:
+
+5. Save and Close the File
+
 Press Ctrl + X, then Y, and Enter to save and exit nano.
-4. Reload systemd and Enable the Service:
+
+6. Reload systemd and Enable the Service
+
 Run the following commands to reload systemd and enable the newly created service:
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable socat-forwarding.service
 ```
-5. Start the Service:
+
+7. Start the Service
+
 Finally, start the socat service:
 ```bash
 sudo systemctl start socat-forwarding.service
 ```
 
-Now, socat will automatically start at boot time and handle the port forwarding from port 8000 on the "broker" machine to port 8000 on the "ui" machine. If the socat process stops for any reason, systemd will automatically restart it, ensuring continuous port forwarding functionality.
+Now, socat will automatically start at boot time and handle the port forwarding from port 8000 on the "broker" machine to port 8000 and 8030 on the "ui" machine. If the socat process stops for any reason, systemd will automatically restart it, ensuring continuous port forwarding functionality.
 
 # Port Mapping
 
