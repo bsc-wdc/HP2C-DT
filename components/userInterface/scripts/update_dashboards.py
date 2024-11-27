@@ -12,30 +12,28 @@ def dashboard_has_changed(server_url):
 
 
 def update_dashboards():
-    in_docker = False
-    deployment_name = "testbed"
-    if "DEPLOYMENT_NAME" in os.environ:
-        deployment_name = os.getenv("DEPLOYMENT_NAME")
-    setup_file = f"../../deployments/{deployment_name}/deployment_setup.json"
-    if not os.path.exists(setup_file):
-        in_docker = True
-        setup_file = "/data/deployment_setup.json"
-    setup_data = None
+    setup_file = os.getenv("DEPLOYMENT_JSON")
+    deployment_name = os.getenv("DEPLOYMENT_NAME")
 
     if os.path.exists(setup_file):
         with open(setup_file, 'r') as f:
             json_data = f.read()
             setup_data = json.loads(json_data)
     if not setup_data:
-        print("Deployment setup not found", flush=True)
+        print(f"Deployment setup not found in {setup_file}", flush=True)
         exit(1)
-    if not in_docker:
+
+    if not os.path.exists("/.dockerenv"):
         os.chdir("scripts")
+
     grafana_url, server_port, server_url = get_deployment_info(setup_data)
+
     edges_info = None
+    server_responded = False
     try:
         response = requests.get(f"{server_url}/getEdgesInfo")
         edges_info = response.text
+        server_responded = True
     except RequestException as _:
         try:
             if "LOCAL_IP" in os.environ:
@@ -43,13 +41,21 @@ def update_dashboards():
                 server_url = f"http://{server_ip}:{server_port}"
                 response = requests.get(f"{server_url}/getEdgesInfo")
                 edges_info = response.text
+                server_responded = True
         except RequestException as _:
             os.chdir("..")
             return None, deployment_name, grafana_url, None, None
-    if edges_info is None:
-        print("Server doesn't respond or edges_info is empty", flush=True)
+
+    if not server_responded:
+        print(f"Server {server_url} doesn't respond. Is it running?", flush=True)
         os.chdir("..")
         return None, deployment_name, grafana_url, None, None
+
+    if edges_info is None:
+        print("Edges_info is empty", flush=True)
+        os.chdir("..")
+        return None, deployment_name, grafana_url, None, None
+
     # If the method is running for the first time we must update the dashboard.
     # Otherwise, we will check if the dashboard has changed and, if it didn´t,
     # we will not update it.
@@ -59,7 +65,7 @@ def update_dashboards():
         if initial_execution == 0:
             changed = check_changes(edges_info)
             if not changed:
-                if not in_docker:
+                if not os.path.exists("/.dockerenv"):
                     os.chdir("..")
                 return None, deployment_name, grafana_url, server_port, server_url
         else:
@@ -83,40 +89,69 @@ def update_dashboards():
 
     with open(config_file, 'r') as f:
         config_data = json.load(f)
-    GRAFANA_API_KEY = config_data["grafana"]["api_key"]
+    grafana_api_keys = []
+    try:
+        gap = config_data["grafana"]["api_key"]
+    except KeyError:
+        print("Grafana API key not specified in config.json")
+        exit(1)
+
+    if isinstance(gap, list):
+        grafana_api_keys = gap
+    elif isinstance(gap, str):
+        grafana_api_keys.append(gap)
+
     DATABASE_USERNAME = config_data["database"]["username"]
     DATABASE_PASSWORD = config_data["database"]["password"]
     DATABASE_PORT = setup_data['database']['port']
+
     # Define a list of GRAFANA_URLs
     URLs = [GRAFANA_URL]
     # Check if LOCAL_IP is not empty and add it to the list
     LOCAL_IP = os.getenv("LOCAL_IP", None)
     if LOCAL_IP:
         URLs.append(f"http://{LOCAL_IP}:{GRAFANA_PORT}")
-        
+
     ############################ GET DATASOURCE UID ######################################
+    print("Getting datasource UID...")
     datasource_uid = ""
+    grafana_connected = False
+    GRAFANA_API_KEY = None
 
     for url in URLs:
+        if grafana_connected:
+            break
         print(f"Trying URL {url} to handle datasource UID...", flush=True)
-        try:
-            response = requests.get(f"{url}/api/datasources", headers={
-                "Authorization": f"Bearer {GRAFANA_API_KEY}"})
-            data = response.json()
-            for item in data:
-                if item["name"] == "influxdb":
-                    datasource_uid = item["uid"]
-                    response = requests.delete(
-                        f"{url}/api/datasources/uid/{datasource_uid}",
-                        headers={"Authorization": f"Bearer {GRAFANA_API_KEY}"})
-                    print(f"Delete response {response.text}", flush=True)
+        for api_key in grafana_api_keys:
+            try:
+                response = requests.get(f"{url}/api/datasources", headers={
+                    "Authorization": f"Bearer {api_key}"})
+                data = response.json()
+                for item in data:
+                    if item["name"] == "influxdb":
+                        datasource_uid = item["uid"]
+                        response = requests.delete(
+                            f"{url}/api/datasources/uid/{datasource_uid}",
+                            headers={"Authorization": f"Bearer {api_key}"})
+                        print(f"Delete response {response.text}", flush=True)
+                        GRAFANA_API_KEY = api_key
+                        grafana_connected = True
+                        break
+                if datasource_uid:
+                    GRAFANA_API_KEY = api_key
+                    grafana_connected = True
                     break
-            if datasource_uid:
-                break
-        except RequestException as _:
-            print("Error requesting to url: ", url, flush=True)
+            except RequestException as _:
+                print("Error requesting to url: ", url, flush=True)
+            except Exception as e:
+                print(e)
+
+    if not GRAFANA_API_KEY:
+        print("Wrong Grafana API key, or Grafana-server is not reachable")
+        exit(1)
 
     ############################ CREATE DATASOURCE ############################
+    print("Creating influxdb datasource...")
     INFLUXDB_JSON = {
         "name": "influxdb",
         "type": "influxdb",
@@ -156,6 +191,7 @@ def update_dashboards():
         exit(1)
 
     ########################### CREATE JSON DASHBOARD ####################################
+    print("Creating or updating dashboard...")
     # Execute the Python script to create the dashboard JSON
     ui_exec(deployment_name, edges_info, datasource_uid)
 
@@ -187,6 +223,7 @@ def update_dashboards():
         exit(1)
 
     ############################## GET DASHBOARDS #########################################
+    print("Getting dashboards...")
     os.makedirs("dashboards", exist_ok=True)
 
     for url in URLs:
@@ -212,7 +249,8 @@ def update_dashboards():
         except RequestException as _:
             print("Error requesting to url: ", url, flush=True)
 
-    if not in_docker: os.chdir("..")
+    if not os.path.exists("/.dockerenv"):
+        os.chdir("..")
     return edges_info, deployment_name, grafana_url, server_port, server_url
 
 

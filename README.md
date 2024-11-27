@@ -150,6 +150,19 @@ The final file involved in the deployment is the `config.json`. It must be manua
 }
 ```
 
+The Grafana API key can be either a single key (as shown in the previous example) or multiple keys (specified as a list) if the user wants to configure more than one setup:
+```json
+{
+  "database": {
+    "username": "XXXX",
+    "password": "XXXX"
+  },
+  "grafana": {
+    "api_key": ["XXXX", "XXXX"]
+  }
+}
+```
+
 In order to run the whole DT architecture, we have the edges, a server, a user interface, a database, and a broker (in charge of queuing and routing the messages).
 
 We made a random data generator for testing the application called "Opal Simulator". Every deployment script mentioned in this section has its own usage with several argument options that can be invoked using the "-h" flag.
