@@ -823,15 +823,9 @@ def hpc_machines(request):
                     id=request.session['machineID'])
                 userForm = form['user'].value()
                 fqdnForm = form['fqdn'].value()
-                wdirForm = form['wdir'].value()
-                installDirForM = form['installDir'].value()
-                dataDirForM = form['dataDir'].value()
                 Machine.objects.filter(
                     id=request.session['machineID']).update(user=userForm,
-                                                            wdir=wdirForm,
-                                                            fqdn=fqdnForm,
-                                                            installDir=installDirForM,
-                                                            dataDir=dataDirForM)
+                                                            fqdn=fqdnForm)
                 request.session['firstPhase'] = "yes"
                 request.session['machine_created'] = f"{userForm}@{fqdnForm}"
                 return redirect('hpc_machines')
