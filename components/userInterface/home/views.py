@@ -1116,7 +1116,12 @@ def create_tool(request):
 
         if form.is_valid():
             tool_name = form.cleaned_data['name']
-            tool = Tool.objects.create(name=tool_name)
+            use_args = request.POST.get('use_args') == 'on'
+            if use_args == "true":
+                use_args = True
+            elif use_args == "false":
+                use_args = False
+            tool = Tool.objects.create(name=tool_name, use_args=use_args)
             field_names = set()
 
             custom_fields = {k: v for k, v in request.POST.items()
@@ -1245,6 +1250,7 @@ def edit_tool(request, tool_name):
         form = CreateToolForm(request.POST, instance=tool)
         if form.is_valid():
             tool.name = form.cleaned_data['name']
+            tool.use_args = request.POST.get('use_args') == 'on'
             tool.save()
 
             tool.field_set.all().delete()
@@ -1386,9 +1392,12 @@ def edit_tool(request, tool_name):
             first_branch = repo.branch
             break
 
+        use_args = tool.use_args
+
         form = CreateToolForm(instance=tool, initial={
             'github_repo': first_repo,
-            'github_branch': first_branch
+            'github_branch': first_branch,
+            'use_args': use_args
         })
 
         for f in existing_fields:
