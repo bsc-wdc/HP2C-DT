@@ -24,6 +24,10 @@
             <div class="form-group">
                 <label for="id_name" style="font-weight: bold;">{{ form.name.label }}</label>
                 <input type="text" name="name" class="form-control" id="id_name" value="{{ form.name.value|default_if_none:'' }}">
+                <label for="id_use_args" style="margin-top: 15px; display: inline-block; font-weight: bold;">{{ form.use_args.label }}</label>
+                <input type="checkbox" name="use_args" id="id_use_args" style="margin-left: 10px;"
+                       {% if form.use_args.value %}checked{% endif %}>
+
             </div>
             {% for section in sections %}
                 <div class="card-header clickable-header" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">

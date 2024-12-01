@@ -38,6 +38,7 @@ def extract_tool_data(request, tool_name):
     tool_data = {}
     tool = Tool.objects.get(name=tool_name)
     tool_data['tool_name'] = tool.name
+    tool_data['use_args'] = tool.use_args
     tool_data['setup'] = {}
     tool_data['setup']['github'] = tool.repos_json()
     tool_data['slurm'] = {}

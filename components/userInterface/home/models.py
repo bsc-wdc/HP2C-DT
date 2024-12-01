@@ -94,6 +94,7 @@ STATUS_CONN = [
 
 class Tool(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    use_args = models.BooleanField(default=False)
     modules_list = models.TextField(blank=True, null=True)
 
     def get_modules_list(self):

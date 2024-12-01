@@ -24,6 +24,8 @@
             <div class="form-group">
                 <label for="id_name">{{ form.name.label }}</label>
                 <input type="text" name="name" class="form-control" id="id_name" value="{{ form.name.value }}">
+                <label for="id_use_args" class="mt-3">{{ form.use_args.label }}</label>
+                <input type="checkbox" name="use_args" id="id_use_args" {% if form.use_args.value %}checked{% endif %}>
             </div>
             {% for section in sections %}
                 <div class="card-header clickable-header" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
