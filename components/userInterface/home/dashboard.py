@@ -192,11 +192,14 @@ def get_deployment(edges_info, deployment_name, grafana_url, server_url,
             json_data = f.read()
         # Parse the JSON
         dashboard_data = json.loads(json_data)
+
         deployment, _ = Deployment.objects.get_or_create(
-            name=deployment_name,
-            uid=dashboard_data['dashboard']['uid'],
-            dashboard_name=dashboard_data['dashboard']['title'],
-            server_url=server_url)
+            name=deployment_name)
+        deployment.uid = dashboard_data['dashboard']['uid']
+        deployment.dashboard_name = dashboard_data['dashboard']['title']
+        deployment.server_url = server_url
+        deployment.save()
+
         panels = dashboard_data['dashboard']['panels']
         # Create instances of Edge and Device
         get_devices(deployment, panels, edges_info, grafana_url)
