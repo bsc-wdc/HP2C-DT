@@ -471,7 +471,8 @@ def tools(request):
                 tool = Tool.objects.get(name=tool_name)
 
                 cloned_tool = Tool.objects.create(name=new_name,
-                                                  modules_list=tool.modules_list)
+                                                  modules_list=tool.modules_list,
+                                                  use_args=tool.use_args)
 
                 original_fields = tool.field_set.all()
                 for field in original_fields:
