@@ -111,8 +111,8 @@ def index(request):
                     elif device.is_actionable:
                         form = NonCategoricalDeviceForm(device)
                     forms.append((device, form))
-        except:
-            pass
+        except Exception as e:
+            print(e)
         script_content = geomap(server_port, server_url)
         return render(request, 'pages/index.html',
                       {'edgeDevices': edgeDevices, 'forms': forms,
