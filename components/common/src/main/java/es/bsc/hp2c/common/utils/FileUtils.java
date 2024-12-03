@@ -108,4 +108,30 @@ public final class FileUtils {
         }
         return devices;
     }
+
+    public static int getWindowSize(JSONObject jProperties, JSONObject jGlobalProperties, String label) {
+        int windowSize;
+        if (jProperties.has("window-size")){
+            Object value = jProperties.get("window-size");
+            if (value instanceof Integer) {
+                windowSize = (Integer) value;
+            } else {
+                throw new JSONException("Malformed JSON. The window_size of the device " + label + " is not an integer. " +
+                        "It is: " + value.getClass().getSimpleName());
+            }
+        } else if (jGlobalProperties.has("window-size")){
+            Object value = jGlobalProperties.get("window-size");
+            if (value instanceof Integer) {
+                windowSize = (Integer) value;
+            } else {
+                throw new JSONException("Malformed JSON. The window_size declared in global properties is not an integer. " +
+                        "It is: " + value.getClass().getSimpleName());
+            }
+        } else {
+            windowSize = 1;
+        }
+        System.out.println("Label: " + label);
+        System.out.println("Window size: " + windowSize);
+        return windowSize;
+    }
 }

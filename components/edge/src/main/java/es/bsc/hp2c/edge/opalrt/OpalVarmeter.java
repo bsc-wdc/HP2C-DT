@@ -40,7 +40,7 @@ public class OpalVarmeter extends Varmeter<Float[]> implements OpalSensor<Float[
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
     public OpalVarmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
-        super(label, position);
+        super(label, position, jProperties, jGlobalProperties);
         JSONArray jIndexes = jProperties.getJSONArray("indexes");
         if (jIndexes.length() != 1){
             throw new IllegalArgumentException("The varmeter must have one index.");

@@ -16,11 +16,15 @@
 
 package es.bsc.hp2c.common.generic;
 
+import java.time.Instant;
 import java.util.ArrayList;
 
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.FileUtils;
+import es.bsc.hp2c.common.utils.MeasurementWindow;
+import org.json.JSONObject;
 
 /**
  * Sensor measuring the power of the network. It a has property (values) measured in Watts.
@@ -28,6 +32,7 @@ import es.bsc.hp2c.common.utils.CommUtils;
 public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> {
 
     private Float[] values = null;
+    private MeasurementWindow<Float[]> window;
     private ArrayList<Runnable> onReadFunctions;
 
     @Override
@@ -42,8 +47,9 @@ public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> 
      * @param label device label
      * @param position device position
      */
-    protected Wattmeter(String label, float[] position) {
+    protected Wattmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
+        window = new MeasurementWindow(FileUtils.getWindowSize(jProperties, jGlobalProperties, label));
         this.onReadFunctions = new ArrayList<>();
     }
 
@@ -76,6 +82,7 @@ public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> 
 
     protected void setValues(Float[] values) {
         this.values = values;
+        this.window.addMeasurement(Instant.now(), values);
         this.setLastUpdate();
     }
 

@@ -44,7 +44,7 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
     public OpalGenerator(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
-        super(label, position);
+        super(label, position, jProperties, jGlobalProperties);
         JSONArray jIndexes = jProperties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
         if (this.indexes.length != 2){

@@ -16,12 +16,16 @@
 package es.bsc.hp2c.common.generic;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.FileUtils;
+import es.bsc.hp2c.common.utils.MeasurementWindow;
+import org.json.JSONObject;
 
 
 /**
@@ -31,6 +35,7 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
 
     protected Float[] voltageSetpoint = null;
     protected Float[] powerSetpoint = null;
+    private MeasurementWindow<Float[]> window;
 
     private ArrayList<Runnable> onReadFunctions;
 
@@ -40,8 +45,9 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
      * @param label device label
      * @param position device position
      */
-    protected Generator(String label, float[] position) {
+    protected Generator(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
+        window = new MeasurementWindow(FileUtils.getWindowSize(jProperties, jGlobalProperties, label));
         this.onReadFunctions = new ArrayList<>();
     }
 
@@ -105,6 +111,7 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
             powerSetpoint = new Float[1];
             voltageSetpoint[0] = values[0];
             powerSetpoint[0] = values[1];
+            this.window.addMeasurement(Instant.now(), values);
         } else {
             System.err.println("Values length must be 2 (voltageSetpoint and powerSetpoint)");
         }

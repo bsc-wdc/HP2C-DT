@@ -40,7 +40,7 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     * @param jGlobalProperties JSONObject representing the global properties of the edge
     * */
     public OpalAmmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
-        super(label, position);
+        super(label, position, jProperties, jGlobalProperties);
         JSONArray jIndexes = jProperties.getJSONArray("indexes");
         if (jIndexes.length() != 1 && jIndexes.length() != 3){
             throw new IllegalArgumentException("The ammeter must have either one or three indexes.");

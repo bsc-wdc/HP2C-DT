@@ -78,6 +78,7 @@ public abstract class Device {
         }
     }
 
+
     /**
      * Reformat device label to comply with message protocol and database
      * naming limitations

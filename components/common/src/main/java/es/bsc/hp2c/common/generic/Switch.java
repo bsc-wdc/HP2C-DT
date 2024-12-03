@@ -16,12 +16,16 @@
 package es.bsc.hp2c.common.generic;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.FileUtils;
+import es.bsc.hp2c.common.utils.MeasurementWindow;
+import org.json.JSONObject;
 
 /**
  * This class interacts with a switch of the electrical network. It has a property (states), representing device's
@@ -32,10 +36,26 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     public enum State {
         ON,
         OFF,
-        NULL
+        NULL;
+
+        @Override
+        public String toString() {
+            switch (this) {
+                case ON:
+                    return "ON";
+                case OFF:
+                    return "OFF";
+                case NULL:
+                    return "NULL";
+                default:
+                    return super.toString();
+            }
+        }
     }
 
     protected State[] states;
+
+    private MeasurementWindow<State[]> window;
 
     private ArrayList<Runnable> onReadFunctions;
 
@@ -46,8 +66,9 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
      * @param position device position
      * @param size device number of phases
      */
-    protected Switch(String label, float[] position, int size) {
+    protected Switch(String label, float[] position, int size, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
+        window = new MeasurementWindow(FileUtils.getWindowSize(jProperties, jGlobalProperties, label));
         this.onReadFunctions = new ArrayList<>();
         this.states = new State[size];
         for (int i = 0; i < size; ++i){
@@ -116,6 +137,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
 
     protected void setValues(State[] values) {
         this.states = values;
+        this.window.addMeasurement(Instant.now(), values);
         this.setLastUpdate();
     }
     
