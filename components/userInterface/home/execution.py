@@ -354,10 +354,20 @@ def run_execution(script, execution_folder, tool_data, entrypoint, setup_path,
         else:
             compss_args += "--lang=python"
 
+    args = []
+    if tool_data['use_args']:
+        application_args = tool_data['application']
+        for value in application_args.values():
+            args.append(value)
+    else:
+        args.append(setup_path)
+
+    args_str = ' '.join(map(str, args))
+
     script.append(f"enqueue_compss {slurm_args} {compss_args} --job_name={job_name} "
                   f"--keep_workingdir --log_dir={execution_folder} "
                   f"--job_execution_dir={execution_folder} "
-                  f"--pythonpath={pythonpath} {entrypoint} {setup_path} "
+                  f"--pythonpath={pythonpath} {entrypoint} {args_str} "
                   f"--results_dir={execution_folder}/results")
     return script
 

@@ -38,6 +38,7 @@ def extract_tool_data(request, tool_name):
     tool_data = {}
     tool = Tool.objects.get(name=tool_name)
     tool_data['tool_name'] = tool.name
+    tool_data['use_args'] = tool.use_args
     tool_data['setup'] = {}
     tool_data['setup']['github'] = tool.repos_json()
     tool_data['slurm'] = {}
@@ -89,6 +90,7 @@ def tool_to_yaml(tool_name):
     tool = Tool.objects.get(name=tool_name)
     tool_data = {}
     tool_data['tool_name'] = tool_name
+    tool_data['use_args'] = tool.use_args
     tool_data['repos'] = tool.repos_json()
     tool_data['modules_list'] = tool.get_modules_list()
     tool_data['fields'] = []
@@ -109,11 +111,12 @@ def tool_to_yaml(tool_name):
 def yaml_to_tool(yaml_content):
     tool_data = yaml.safe_load(yaml_content)
     tool_name = tool_data['tool_name']
+    use_args = tool_data['use_args']
 
     if Tool.objects.filter(name=tool_name).exists():
         raise ValueError(f"A tool with name '{tool_name}' already exists.")
 
-    tool = Tool.objects.create(name=tool_name)
+    tool = Tool.objects.create(name=tool_name, use_args=use_args)
     tool.set_modules_list(tool_data['modules_list'])
     for field_data in tool_data['fields']:
         tool.add_field(
@@ -138,8 +141,6 @@ def yaml_to_tool(yaml_content):
 
     tool.save()
     return tool
-
-
 
 
 def get_form_from_tool(tool):

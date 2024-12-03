@@ -111,8 +111,8 @@ def index(request):
                     elif device.is_actionable:
                         form = NonCategoricalDeviceForm(device)
                     forms.append((device, form))
-        except:
-            pass
+        except Exception as e:
+            print(e)
         script_content = geomap(server_port, server_url)
         return render(request, 'pages/index.html',
                       {'edgeDevices': edgeDevices, 'forms': forms,
@@ -471,7 +471,8 @@ def tools(request):
                 tool = Tool.objects.get(name=tool_name)
 
                 cloned_tool = Tool.objects.create(name=new_name,
-                                                  modules_list=tool.modules_list)
+                                                  modules_list=tool.modules_list,
+                                                  use_args=tool.use_args)
 
                 original_fields = tool.field_set.all()
                 for field in original_fields:
@@ -1110,7 +1111,12 @@ def create_tool(request):
 
         if form.is_valid():
             tool_name = form.cleaned_data['name']
-            tool = Tool.objects.create(name=tool_name)
+            use_args = request.POST.get('use_args') == 'on'
+            if use_args == "true":
+                use_args = True
+            elif use_args == "false":
+                use_args = False
+            tool = Tool.objects.create(name=tool_name, use_args=use_args)
             field_names = set()
 
             custom_fields = {k: v for k, v in request.POST.items()
@@ -1239,6 +1245,7 @@ def edit_tool(request, tool_name):
         form = CreateToolForm(request.POST, instance=tool)
         if form.is_valid():
             tool.name = form.cleaned_data['name']
+            tool.use_args = request.POST.get('use_args') == 'on'
             tool.save()
 
             tool.field_set.all().delete()
@@ -1380,9 +1387,12 @@ def edit_tool(request, tool_name):
             first_branch = repo.branch
             break
 
+        use_args = tool.use_args
+
         form = CreateToolForm(instance=tool, initial={
             'github_repo': first_repo,
-            'github_branch': first_branch
+            'github_branch': first_branch,
+            'use_args': use_args
         })
 
         for f in existing_fields:
