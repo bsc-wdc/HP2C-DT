@@ -45,7 +45,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      */
     public VirtualSwitch(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
-        super(label, position, properties.getJSONArray("indexes").length());
+        super(label, position, properties.getJSONArray("indexes").length(), properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = properties.getJSONArray("indexes").length();
     }
@@ -115,13 +115,6 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
             }
         }
         return outputValues;
-    }
-
-    /**
-     * Update current sensor state.
-     */
-    public void setValues(State[] values) {
-        this.states = values;
     }
 
     @Override

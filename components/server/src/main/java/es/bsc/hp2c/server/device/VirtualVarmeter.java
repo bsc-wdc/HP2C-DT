@@ -37,7 +37,7 @@ public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      */
     public VirtualVarmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
-        super(label, position);
+        super(label, position, properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = properties.getJSONArray("indexes").length();
     }

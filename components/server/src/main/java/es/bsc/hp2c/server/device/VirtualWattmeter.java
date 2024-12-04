@@ -37,7 +37,7 @@ public class VirtualWattmeter extends Wattmeter<Float[]> implements VirtualSenso
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
     public VirtualWattmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
-        super(label, position);
+        super(label, position, properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = properties.getJSONArray("indexes").length();
     }

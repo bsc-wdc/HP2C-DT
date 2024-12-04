@@ -46,7 +46,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
     public VirtualGenerator(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
-        super(label, position);
+        super(label, position, properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = 2;
     }

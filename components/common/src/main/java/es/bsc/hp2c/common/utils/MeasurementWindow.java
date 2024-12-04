@@ -64,6 +64,10 @@ public class MeasurementWindow<T>{
     @Override
     public String toString() {
         Measurement[] measurements = getMeasurementsNewerToOlder();
-        return Arrays.toString(measurements);
+        StringBuilder result = new StringBuilder();
+        for (Measurement measurement : measurements) {
+            result.append(measurement).append(System.lineSeparator());
+        }
+        return result.toString();
     }
 }
