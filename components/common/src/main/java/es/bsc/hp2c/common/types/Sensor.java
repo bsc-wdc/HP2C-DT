@@ -15,6 +15,8 @@
  */
 package es.bsc.hp2c.common.types;
 
+import es.bsc.hp2c.common.utils.MeasurementWindow;
+
 /**
  * Class collecting information from the electrical network.
  *
@@ -28,7 +30,7 @@ public interface Sensor<R, V> {
      *
      * @param action Runnable that implements the function to handle.
      */
-    public void addOnReadFunction(Runnable action);
+    public void addOnReadFunction(Runnable action, int interval);
 
     /**
      * Call the functions triggered by a read value in the sensor.
@@ -65,6 +67,13 @@ public interface Sensor<R, V> {
      * @return Byte array message with the set of current values
      */
     public byte[] encodeValuesSensor();
+
+    /**
+     * Get sensor window
+     *
+     * @return Measurement Window
+     */
+    public MeasurementWindow<V> getWindow();
 
     /**
      * Decode values from a message made of an array of bytes.

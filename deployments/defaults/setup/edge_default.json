@@ -12,7 +12,11 @@
                 },
                 "trigger": {
                     "type": "onRead",
-                    "parameters": ["ALL"]
+                    "parameters": {
+                        "trigger-sensor": "ALL",
+                        "interval": 10
+                    }
+
                 }
             },
             {
@@ -26,7 +30,7 @@
                 },
                 "trigger": {
                     "type": "onStart",
-                    "parameters": []
+                    "parameters": {}
                 }
             }
         ]

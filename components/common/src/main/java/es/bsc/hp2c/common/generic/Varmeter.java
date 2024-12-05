@@ -24,6 +24,7 @@ import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import es.bsc.hp2c.common.utils.FileUtils;
 import es.bsc.hp2c.common.utils.MeasurementWindow;
+import es.bsc.hp2c.common.utils.OnReadFunction;
 import org.json.JSONObject;
 
 /**
@@ -33,7 +34,7 @@ public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
 
     private Float[] values = null;
     private MeasurementWindow<Float[]> window;
-    private ArrayList<Runnable> onReadFunctions;
+    private ArrayList<OnReadFunction> onReadFunctions;
 
     @Override
     public abstract void sensed(R values);
@@ -60,16 +61,23 @@ public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
      *
      * @param action runnable implementing the action
      */
-    public void addOnReadFunction(Runnable action) {
-        this.onReadFunctions.add(action);
+    public void addOnReadFunction(Runnable action, int interval) {
+        this.onReadFunctions.add(new OnReadFunction(action, interval));
     }
 
     /**
-     * Calls actions to be performed in case of a new read
+     * Calls actions to be performed in case of a new read;
+     *
      */
     public void onRead() {
-        for (Runnable action : this.onReadFunctions) {
-            action.run();
+        for (OnReadFunction orf : this.onReadFunctions) {
+            if (orf.getCounter() == orf.getInterval()){
+                orf.getRunnable().run();
+                orf.resetCounter();
+            }
+            else{
+                orf.incrementCounter();
+            }
         }
     }
 
@@ -83,6 +91,10 @@ public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
 
     @Override
     public final Float[] getCurrentValues() { return this.values; }
+
+    public MeasurementWindow<Float[]> getWindow(){
+        return this.window;
+    }
 
     protected void setValues(Float[] values) {
         this.values = values;

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import static es.bsc.hp2c.common.types.Device.formatLabel;
@@ -83,6 +84,11 @@ public abstract class Func implements Runnable {
             // Initialize function
             JSONObject jGlobalFunc = (JSONObject) jo;
             String funcLabel = jGlobalFunc.optString("label");
+            JSONObject jTriggerParameters = jGlobalFunc.getJSONObject("trigger").optJSONObject("parameters");
+            int interval = -1;
+            if (jTriggerParameters != null){
+                interval = jTriggerParameters.optInt("interval", -1);
+            }
             if (funcLabel.toLowerCase().contains("amqp") && !AmqpOn) {
                 System.err.println(
                         "AMQP " + funcLabel + " global functions declared but AMQP server is not connected. " +
@@ -102,7 +108,10 @@ public abstract class Func implements Runnable {
                         deviceList.add(device.getLabel());
                         jGlobalFunc.getJSONObject("parameters").put("sensors", deviceList);
                         // Do same modification to triggers in JSON
-                        jGlobalFunc.getJSONObject("trigger").put("parameters", deviceList);
+                        JSONObject jParameters = new JSONObject();
+                        jParameters = jParameters.put("trigger-sensor", device.getLabel());
+                        jParameters = jParameters.put("interval", interval);
+                        jGlobalFunc.getJSONObject("trigger").put("parameters", jParameters);
                         break;
                     case "AMQPConsume":
                         // Conditions to skip device
@@ -214,11 +223,11 @@ public abstract class Func implements Runnable {
     public static void setupTrigger(JSONObject jFunc, Map<String, Device> devices, Runnable action) {
         JSONObject jTrigger = jFunc.getJSONObject("trigger");
         String triggerType = jTrigger.optString("type", "");
-        JSONArray triggerParams = jTrigger.getJSONArray("parameters");
+        JSONObject triggerParams = jTrigger.getJSONObject("parameters");
 
         switch (triggerType) {
             case "onFrequency":
-                int freq = triggerParams.getInt(0) * 1000;
+                int freq = triggerParams.getInt("frequency") * 1000;
                 new Timer().scheduleAtFixedRate(new TimerTask() {
                     @Override
                     public void run() {
@@ -228,10 +237,14 @@ public abstract class Func implements Runnable {
                 break;
 
             case "onRead":
-                String triggerSensorName = triggerParams.getString(0);
+                String triggerSensorName = triggerParams.getString("trigger-sensor");
                 triggerSensorName = formatLabel(triggerSensorName);
                 Sensor<?,?> triggerSensor = (Sensor<?,?>) devices.get(triggerSensorName);
-                triggerSensor.addOnReadFunction(action);
+                int interval = triggerParams.optInt("interval", -1);
+                if (interval == -1){
+                    interval = triggerSensor.getWindow().getSize();
+                }
+                triggerSensor.addOnReadFunction(action, interval);
                 break;
 
             case "onStart":

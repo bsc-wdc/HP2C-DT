@@ -99,7 +99,10 @@
             "trigger": {
                 "type": "onRead",
                 "method-name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
-                "parameters": ["Voltmeter Gen1"]
+                "parameters": {
+                    "trigger-sensor": "Voltmeter Gen1",
+                    "interval": 5
+                }
             }
 
         },
@@ -115,7 +118,9 @@
             "trigger": {
                 "type": "onFrequency",
                 "method-name": "es.bsc.hp2c.edge.HP2Cedge.onFrequency",
-                "parameters": [10]
+                "parameters": {
+                    "frequency": 10
+                }
             }
         }
     ]
