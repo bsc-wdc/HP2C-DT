@@ -17,6 +17,7 @@ package es.bsc.hp2c.common.generic;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;

@@ -21,6 +21,22 @@ import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 public final class CommUtils {
     private CommUtils(){}
 
+    public static Number[] divideArray(Number[] array, double divisor) {
+        if (divisor == 0) {
+            throw new ArithmeticException("Division by zero is not allowed.");
+        }
+
+        Number[] result = new Number[array.length];
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] != null) {
+                result[i] = array[i].doubleValue() / divisor;
+            } else {
+                result[i] = null;
+            }
+        }
+        return result;
+    }
+
     /** Covert a Float array into a byte array. */
     public static byte[] FloatArrayToBytes(Float[] values) {
         int nFloat = values.length;
