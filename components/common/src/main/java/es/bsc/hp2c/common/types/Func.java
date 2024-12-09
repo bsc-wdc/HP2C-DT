@@ -22,6 +22,8 @@ import java.util.Map;
 
 import java.util.Timer;
 import java.util.TimerTask;
+
+import com.sun.xml.internal.bind.v2.runtime.reflect.opt.MethodAccessor_Double;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -196,7 +198,6 @@ public abstract class Func implements Runnable {
             Class<?> c = Class.forName(driver);
             ct = c.getConstructor(ArrayList.class, ArrayList.class, JSONArray.class);
             jOther = parameters.getJSONArray("other");
-
             Runnable action = (Runnable)ct.newInstance(sensors, actuators, jOther);
             return action;
 
@@ -222,6 +223,7 @@ public abstract class Func implements Runnable {
      */
     public static void setupTrigger(JSONObject jFunc, Map<String, Device> devices, Runnable action) {
         JSONObject jTrigger = jFunc.getJSONObject("trigger");
+        String label = jFunc.optString("label", null);
         String triggerType = jTrigger.optString("type", "");
         JSONObject triggerParams = jTrigger.getJSONObject("parameters");
 
@@ -240,11 +242,12 @@ public abstract class Func implements Runnable {
                 String triggerSensorName = triggerParams.getString("trigger-sensor");
                 triggerSensorName = formatLabel(triggerSensorName);
                 Sensor<?,?> triggerSensor = (Sensor<?,?>) devices.get(triggerSensorName);
+
                 int interval = triggerParams.optInt("interval", -1);
                 if (interval == -1){
                     interval = triggerSensor.getWindow().getSize();
                 }
-                triggerSensor.addOnReadFunction(action, interval);
+                triggerSensor.addOnReadFunction(action, interval, label);
                 break;
 
             case "onStart":

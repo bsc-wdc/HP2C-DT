@@ -50,6 +50,10 @@ public class MeasurementWindow<T>{
         return this.size;
     }
 
+    public int getCapacity(){
+        return this.window.length;
+    }
+
     @Override
     public String toString() {
         Measurement<T>[] measurements = getMeasurementsNewerToOlder();

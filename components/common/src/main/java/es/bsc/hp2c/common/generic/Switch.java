@@ -22,10 +22,7 @@ import java.util.ArrayList;
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
-import es.bsc.hp2c.common.utils.CommUtils;
-import es.bsc.hp2c.common.utils.FileUtils;
-import es.bsc.hp2c.common.utils.MeasurementWindow;
-import es.bsc.hp2c.common.utils.OnReadFunction;
+import es.bsc.hp2c.common.utils.*;
 import org.json.JSONObject;
 
 /**
@@ -58,7 +55,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
 
     private MeasurementWindow<State[]> window;
 
-    private ArrayList<OnReadFunction> onReadFunctions;
+    private OnReadFunctions onReadFunctions;
 
     /**
      * Creates a new instance of switch;
@@ -70,7 +67,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     protected Switch(String label, float[] position, int size, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
         window = new MeasurementWindow(FileUtils.getWindowSize(jProperties, jGlobalProperties, label));
-        this.onReadFunctions = new ArrayList<>();
+        this.onReadFunctions = new OnReadFunctions();
         this.states = new State[size];
         for (int i = 0; i < size; ++i){
             this.states[i] = null;
@@ -108,8 +105,8 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
      *
      * @param action runnable implementing the action
      */
-    public void addOnReadFunction(Runnable action, int interval) {
-        this.onReadFunctions.add(new OnReadFunction(action, interval));
+    public void addOnReadFunction(Runnable action, int interval, String label) {
+        this.onReadFunctions.addFunc(new OnReadFunction(action, interval, label));
     }
 
     /**
@@ -117,7 +114,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
      *
      */
     public void onRead() {
-        for (OnReadFunction orf : this.onReadFunctions) {
+        for (OnReadFunction orf : this.onReadFunctions.getOnReadFuncs()) {
             if (orf.getCounter() == orf.getInterval()){
                 orf.getRunnable().run();
                 orf.resetCounter();

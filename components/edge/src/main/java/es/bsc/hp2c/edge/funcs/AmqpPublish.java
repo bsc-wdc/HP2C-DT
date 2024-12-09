@@ -1,6 +1,9 @@
 package es.bsc.hp2c.edge.funcs;
 
 import com.rabbitmq.client.AMQP;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import es.bsc.hp2c.HP2CEdge;
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
@@ -9,6 +12,7 @@ import es.bsc.hp2c.common.types.Sensor;
 
 import com.rabbitmq.client.Channel;
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.MeasurementWindow;
 import org.json.JSONArray;
 
 import java.io.IOException;
@@ -26,6 +30,7 @@ public class AmqpPublish extends Func {
     private final Channel channel;
     private final String EXCHANGE_NAME;
     private final String routingKey;
+    private final Method aggregate;
 
     /**
      * Method constructor.
@@ -35,9 +40,18 @@ public class AmqpPublish extends Func {
      * @param others    Rest of parameters declared for de function.
      */
     public AmqpPublish(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONArray others)
-            throws IllegalArgumentException {
-
+            throws IllegalArgumentException, ClassNotFoundException, NoSuchMethodException {
         super(sensors, actuators, others);
+
+        String aggName = others.optString(0, "last");
+        Class<?> c = Class.forName("es.bsc.hp2c.common.utils.Aggregates");
+        Method agg = null;
+        try {
+            agg = c.getMethod(aggName, MeasurementWindow.class);
+        } catch (NoSuchMethodException e) {
+            throw new NoSuchMethodException("Method not found: " + aggName);
+        }
+        aggregate = agg;
 
         if (sensors.size() != 1) {
             throw new IllegalArgumentException("There should be one sensor for each AmqpPublish Func");

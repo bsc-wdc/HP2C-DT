@@ -1,14 +1,16 @@
 package es.bsc.hp2c.common.utils;
 
 public class OnReadFunction {
-
     private Runnable runnable;
     private int interval;
     private int counter;
-    public OnReadFunction(Runnable runnable, int interval) {
+    private String label;
+
+    public OnReadFunction(Runnable runnable, int interval, String label) {
         this.runnable = runnable;
         this.interval = interval;
         this.counter = 0;
+        this.label = label;
     }
 
     public Runnable getRunnable() {
@@ -20,6 +22,10 @@ public class OnReadFunction {
 
     public int getCounter() {
         return counter;
+    }
+
+    public String getLabel(){
+        return this.label;
     }
 
     public void resetCounter() {
