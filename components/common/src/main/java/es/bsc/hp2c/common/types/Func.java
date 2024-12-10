@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.opt.MethodAccessor_Double;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
