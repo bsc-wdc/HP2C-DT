@@ -17,7 +17,7 @@ package es.bsc.hp2c.common.generic;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Arrays;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
@@ -88,8 +88,15 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     public abstract void sensed(R values);
 
     @Override
-    public void sensed(byte[] messageBytes) {
-        sensed(decodeValuesSensor(messageBytes));
+    public MeasurementWindow<Float[]> sensed(byte[] bWindow) {
+        MeasurementWindow<State[]> window = MeasurementWindow.decode(bWindow);
+        MeasurementWindow<Float[]> returnWindow = new MeasurementWindow<>(window.getCapacity());
+        for (Measurement<State[]> m : window.getMeasurementsOlderToNewer()){
+            Float[] value = actuatedValues(m.getValue());
+            sensed((R) value);
+            returnWindow.addMeasurement(m.getTimestamp(), value);
+        }
+        return returnWindow;
     }
 
     @Override

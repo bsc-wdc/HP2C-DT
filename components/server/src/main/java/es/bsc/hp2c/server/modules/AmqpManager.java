@@ -22,6 +22,8 @@ import es.bsc.hp2c.HP2CServer;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.Measurement;
+import es.bsc.hp2c.common.utils.MeasurementWindow;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 
@@ -93,11 +95,18 @@ public class AmqpManager {
                         + ": message received but device not listed as " + edgeLabel + " digital twin devices.");
                 return;
             }
-            // Sense to the corresponding sensor
+
             Sensor<?, ?> sensor = (Sensor<?, ?>) edgeMap.get(edgeLabel).getDevice(deviceName);
-            sensor.sensed(message);
-            // Write entry in database
-            db.write((Float[]) sensor.decodeValuesSensor(message), timestamp, edgeLabel, deviceName);
+            try{
+                MeasurementWindow<Float[]> window = sensor.sensed(message);
+                for(Measurement<Float[]> m : window.getMeasurementsOlderToNewer()){
+                    Object m2 = (Object) m.getValue();
+                    System.out.println(m2.getClass().getName());
+                    db.write(m.getValue(), m.getTimestamp(), edgeLabel, deviceName);
+                }
+            } catch (Exception e){
+                System.out.println("Error in sensor " + ((Device)sensor).getLabel() + ": " + e);
+            }
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });
     }

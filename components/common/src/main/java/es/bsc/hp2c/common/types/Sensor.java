@@ -46,13 +46,14 @@ public interface Sensor<R, V> {
     public void sensed(R values);
 
     /**
-     * Method overloading of sensed value when provided an array of bytes.
+     * Method overloading of sensed value when provided a codified MeasurementWindow.
      * Again, sets value attribute according to what sensedValue(value)
-     * returns, but first decodes the values with decodeValues.
+     * returns, but first decodes the window with MeasurementWindow.decode.
      *
-     * @param values Type of value to return.
+     * @param bWindow Codified MeasurementWindow.
+     * @return MeasurementWindow<Float[]>
      */
-    public void sensed(byte[] values);
+    public MeasurementWindow<Float[]> sensed(byte[] bWindow);
 
     /**
      * Get the value stored.

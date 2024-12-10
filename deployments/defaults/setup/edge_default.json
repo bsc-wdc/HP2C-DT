@@ -8,13 +8,13 @@
                 "parameters": {
                     "sensors": ["ALL"],
                     "actuators": [],
-                    "other": []
+                    "other": ["avg"]
                 },
                 "trigger": {
                     "type": "onRead",
                     "parameters": {
                         "trigger-sensor": "ALL",
-                        "interval": 10
+                        "interval": 3
                     }
 
                 }

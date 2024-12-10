@@ -17,7 +17,6 @@ package es.bsc.hp2c.common.generic;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
@@ -52,8 +51,24 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     public abstract void sensed(R value);
 
     @Override
-    public void sensed(byte[] messageBytes) {
-        sensed(decodeValuesSensor(messageBytes));
+    public MeasurementWindow<Float[]> sensed(byte[] bWindow) {
+        MeasurementWindow<Float[]> window = MeasurementWindow.decode(bWindow);
+        MeasurementWindow<Float[]> returnWindow = new MeasurementWindow<>(window.getCapacity());
+        for (Measurement<Float[]> m : window.getMeasurementsOlderToNewer()){
+            Object value = m.getValue();
+            if (value instanceof Number[]) {
+                Number[] numbers = (Number[]) value;
+                Float[] floats = new Float[numbers.length];
+                for (int i = 0; i < numbers.length; i++) {
+                    floats[i] = numbers[i] == null ? null : numbers[i].floatValue();
+                }
+                sensed((R) floats);
+                returnWindow.addMeasurement(m.getTimestamp(), floats);
+            } else {
+                throw new IllegalArgumentException("Expected Number[], got: " + value.getClass());
+            }
+        }
+        return returnWindow;
     }
 
     @Override
@@ -140,7 +155,6 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
 
     @Override
     public abstract R decodeValuesSensor(byte[] message);
-
 
     @Override
     public boolean isActionable() {

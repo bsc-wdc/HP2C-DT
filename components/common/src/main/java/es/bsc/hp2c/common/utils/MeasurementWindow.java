@@ -1,9 +1,11 @@
 package es.bsc.hp2c.common.utils;
 
+import java.io.*;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Objects;
 
-public class MeasurementWindow<T>{
+public class MeasurementWindow<T> implements Serializable{
     private final Measurement<T>[] window;
     private int start = 0;  // Points to the oldest element
     private int size = 0;   // Current number of elements
@@ -11,6 +13,7 @@ public class MeasurementWindow<T>{
     public MeasurementWindow(int capacity) {
         this.window = new Measurement[capacity];
     }
+
 
     public void addMeasurement(Instant timestamp, T value) {
         int nextIndex = (start + size) % window.length; // Insert new element
@@ -62,5 +65,24 @@ public class MeasurementWindow<T>{
             result.append(measurement).append(System.lineSeparator());
         }
         return result.toString();
+    }
+
+    public byte[] encode(){
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            oos.writeObject(this);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static MeasurementWindow decode(byte[] data) {
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
+             ObjectInputStream ois = new ObjectInputStream(bais)) {
+            return (MeasurementWindow) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

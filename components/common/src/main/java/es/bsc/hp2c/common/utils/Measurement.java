@@ -1,8 +1,9 @@
 package es.bsc.hp2c.common.utils;
 
+import java.io.Serializable;
 import java.time.Instant;
 
-public class Measurement<T> {
+public class Measurement<T> implements Serializable{
     Instant timestamp;
     T value;
 

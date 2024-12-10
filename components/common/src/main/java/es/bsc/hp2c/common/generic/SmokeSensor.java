@@ -19,6 +19,8 @@ package es.bsc.hp2c.common.generic;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.Measurement;
+import es.bsc.hp2c.common.utils.MeasurementWindow;
 
 /**
  * Represents a smoke sensor belonging to the network.
@@ -70,7 +72,13 @@ public abstract class SmokeSensor<R> extends Device implements Sensor<R, SmokeSe
     public abstract void sensed(R value);
 
     @Override
-    public void sensed(byte[] messageBytes) {
-        sensed(decodeValuesSensor(messageBytes));
+    public MeasurementWindow<Float[]> sensed(byte[] bWindow) {
+        MeasurementWindow<Float[]> window = MeasurementWindow.decode(bWindow);
+        MeasurementWindow<Float[]> returnWindow = new MeasurementWindow<>(window.getCapacity());
+        for (Measurement<Float[]> m : window.getMeasurementsOlderToNewer()){
+            sensed((R) m.getValue());
+            returnWindow.addMeasurement(m.getTimestamp(), m.getValue());
+        }
+        return returnWindow;
     }
 }

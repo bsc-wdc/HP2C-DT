@@ -17,6 +17,7 @@ import org.json.JSONArray;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
 
@@ -74,17 +75,20 @@ public class AmqpPublish extends Func {
 
     @Override
     public void run() {
-        // Prepare body message
-        byte[] message = this.sensor.encodeValuesSensor();
-
-        // Set up timestamping in nanoseconds
-        AMQP.BasicProperties props = CommUtils.createAmqpPropertiesNanos();
-
-        // Deliver message
         try {
+            MeasurementWindow<?> aggregateWindow = (MeasurementWindow<?>) aggregate.invoke(null, this.sensor.getWindow());
+            // Prepare body message
+            byte[] message = aggregateWindow.encode();
+
+            // Set up timestamping in nanoseconds
+            AMQP.BasicProperties props = CommUtils.createAmqpPropertiesNanos();
+
+            // Deliver message
             channel.basicPublish(EXCHANGE_NAME, routingKey, props, message);
         } catch (IOException e) {
             System.err.println("IOException during AMQP publishing");
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
     }
