@@ -17,11 +17,7 @@ package es.bsc.hp2c.common.types;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Map;
-
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -76,44 +72,85 @@ public abstract class Func implements Runnable {
         }
     }
 
-    public static void loadGlobalFunctions(String defaultsPath, Map<String, Device> devices, boolean AmqpOn) throws IOException {
+    public static void loadGlobalFunctions(String setupFile, String defaultsPath, Map<String, Device> devices,
+                                           boolean AmqpOn) throws IOException {
+        // Load setup file
+        JSONObject object = getJsonObject(setupFile);
+        // Load specific devices
+        JSONArray jDevices = object.getJSONArray("devices");
+
         // Load generic file
         JSONObject objectGlobal = getJsonObject(defaultsPath);
         JSONObject jGlobProp = objectGlobal.getJSONObject("global-properties");
         JSONArray jGlobalFuncs = jGlobProp.getJSONArray("funcs");
-        for (Object jo: jGlobalFuncs) {
+        for (Object jo : jGlobalFuncs) {
             // Initialize function
-            JSONObject jGlobalFunc = (JSONObject) jo;
-            String funcLabel = jGlobalFunc.optString("label");
-            JSONObject jTriggerParameters = jGlobalFunc.getJSONObject("trigger").optJSONObject("parameters");
-            int interval = -1;
-            if (jTriggerParameters != null){
-                interval = jTriggerParameters.optInt("interval", -1);
-            }
+            JSONObject jGlobalFuncTemplate = (JSONObject) jo;
+            String funcLabel = jGlobalFuncTemplate.optString("label");
+
             if (funcLabel.toLowerCase().contains("amqp") && !AmqpOn) {
                 System.err.println(
                         "AMQP " + funcLabel + " global functions declared but AMQP server is not connected. " +
-                        "Skipping " + funcLabel + "...");
+                                "Skipping " + funcLabel + "...");
                 continue;
             }
+
             // Deploy function for each device building its custom jGlobalFunc
-            for (Device device: devices.values()) {
+            for (Device device : devices.values()) {
+                // Clone global function for this device
+                JSONObject jGlobalFunc = new JSONObject(jGlobalFuncTemplate.toString());
+
                 ArrayList<String> deviceList = new ArrayList<>();
                 switch (funcLabel) {
                     case "AMQPPublish":
-                        // Conditions to skip device
                         if (!device.isSensitive()) {
                             continue;
                         }
-                        // Create ArrayList of a single device and set it to the JSONObject
+
                         deviceList.add(device.getLabel());
                         jGlobalFunc.getJSONObject("parameters").put("sensors", deviceList);
-                        // Do same modification to triggers in JSON
+
+                        // Modify trigger parameters for this device
                         JSONObject jParameters = new JSONObject();
-                        jParameters = jParameters.put("trigger-sensor", device.getLabel());
-                        jParameters = jParameters.put("interval", interval);
+                        jParameters.put("trigger-sensor", device.getLabel());
+                        jParameters.put("interval", jGlobalFunc.getJSONObject("trigger").optJSONObject("parameters").optInt("interval", -1));
+
+                        // Check for device-specific properties
+                        JSONObject jDevice = null;
+                        for (Object d : jDevices) {
+                            JSONObject jD = (JSONObject) d;
+                            if (Objects.equals(jD.getString("label").replace(" ", "").replace("-", ""), device.getLabel())) {
+                                jDevice = jD;
+                                break;
+                            }
+                        }
+
+                        if (jDevice != null && jDevice.has("properties")) {
+                            String amqp_aggregate = jDevice.getJSONObject("properties").optString("amqp-aggregate", "");
+                            if (!Objects.equals(amqp_aggregate, "")) {
+                                ArrayList<String> other = new ArrayList<>();
+                                other.add(amqp_aggregate);
+                                jGlobalFunc.getJSONObject("parameters").put("other", other);
+                            }
+
+                            String amqp_type = jDevice.getJSONObject("properties").optString("amqp-type", "");
+                            if (!Objects.equals(amqp_type, "")) {
+                                jGlobalFunc.getJSONObject("trigger").put("type", amqp_type);
+                            }
+
+                            int amqp_interval = jDevice.getJSONObject("properties").optInt("amqp-interval", -1);
+                            if (amqp_interval != -1) {
+                                jParameters.put("interval", amqp_interval);
+                            }
+                            int amqp_frequency = jDevice.getJSONObject("properties").optInt("amqp-frequency", -1);
+                            if (amqp_frequency != -1) {
+                                jParameters.put("frequency", amqp_frequency);
+                            }
+                        }
+
                         jGlobalFunc.getJSONObject("trigger").put("parameters", jParameters);
                         break;
+
                     case "AMQPConsume":
                         // Conditions to skip device
                         if (!device.isActionable()) {
@@ -125,9 +162,11 @@ public abstract class Func implements Runnable {
                         // No triggers used for actuators, function triggers on start
                         // jGlobalFunc.getJSONObject("trigger").put("parameters", actuatorList);
                         break;
+
                     default:
                         continue;
                 }
+
                 // Perform Func initialization for each device
                 if (deviceList.isEmpty()) {
                     continue;
@@ -205,6 +244,7 @@ public abstract class Func implements Runnable {
         } catch (NoSuchMethodException | SecurityException e) {
             throw new FunctionInstantiationException("Error finding the constructor for " + driver, e);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new FunctionInstantiationException("Error instantiating " + funcLabel + " function. ", e);
         }
     }

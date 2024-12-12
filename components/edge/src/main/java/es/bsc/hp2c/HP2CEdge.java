@@ -87,7 +87,7 @@ public class HP2CEdge {
         }
         OpalComm.setLoadedDevices(true);
         Func.loadFunctions(setupFile, devices);
-        Func.loadGlobalFunctions(defaultsPath, devices, amqpOn);
+        Func.loadGlobalFunctions(setupFile, defaultsPath, devices, amqpOn);
     }
 
     private static boolean setUpMessaging(String ip, int port) {
@@ -142,7 +142,9 @@ public class HP2CEdge {
                 for (Object d : jDevices) {
                     JSONObject jD = (JSONObject) d;
                     boolean availability = true;
-                    String deviceLabel = jD.optString("label", "").replace(" ", "").replace("-", "");
+                    String deviceLabel = jD.optString("label", "")
+                            .replace(" ", "")
+                            .replace("-", "");
                     Device device = devices.get(deviceLabel);
                     if (device.isSensitive() && !device.isSensorAvailable()) {
                         availability = false;
