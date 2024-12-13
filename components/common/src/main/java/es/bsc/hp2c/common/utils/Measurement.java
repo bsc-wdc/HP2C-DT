@@ -3,6 +3,11 @@ package es.bsc.hp2c.common.utils;
 import java.io.Serializable;
 import java.time.Instant;
 
+/**
+ * Class collecting information from each measurement taken (timestamp and value).
+ *
+ * @param <T> Type of the values stored.
+ */
 public class Measurement<T> implements Serializable{
     Instant timestamp;
     T value;

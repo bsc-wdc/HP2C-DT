@@ -130,8 +130,7 @@ public final class FileUtils {
         } else {
             windowSize = 1;
         }
-        System.out.println("Label: " + label);
-        System.out.println("Window size: " + windowSize);
+        System.out.println(label + " window size: " + windowSize);
         return windowSize;
     }
 }

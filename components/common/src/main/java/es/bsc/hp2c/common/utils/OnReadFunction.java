@@ -1,9 +1,14 @@
 package es.bsc.hp2c.common.utils;
 
+/**
+ * Class collecting information from each onReadFunction (the method itself, the interval, the counter and its
+ * identifier)
+ *
+ */
 public class OnReadFunction {
     private Runnable runnable;
-    private int interval;
-    private int counter;
+    private int interval; // Number of reads needed for each execution
+    private int counter; // Current number of reads
     private String label;
 
     public OnReadFunction(Runnable runnable, int interval, String label) {

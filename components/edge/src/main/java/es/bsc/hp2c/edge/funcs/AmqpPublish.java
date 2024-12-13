@@ -76,6 +76,7 @@ public class AmqpPublish extends Func {
     @Override
     public void run() {
         try {
+            // Create a new MeasurementWindow using the appropriate aggregate function
             MeasurementWindow<?> aggregateWindow = (MeasurementWindow<?>) aggregate.invoke(null, this.sensor.getWindow());
             // Prepare body message
             byte[] message = aggregateWindow.encode();

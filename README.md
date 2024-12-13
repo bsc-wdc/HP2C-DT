@@ -50,7 +50,8 @@ To configure an edge node, we use JSON files (refer to the `deployments` directo
             "y": 41.389917
         },
         "connections": ["edge2"]
-    }
+    },
+    "window-size": 5, #optional
 }
 ```
 
@@ -59,6 +60,7 @@ This section contains the global properties of the edge node, such as
 - `label`, the name of the edge.
 - `comms`, where the user can define communication methods that can be later used by each device separatelly. Each method has a name (the key of the JSON object) and, within the object, a `protocol` (currently we only have `udp` and `tcp`), and how `sensors` and `actuators` will be handled. For each one, specify an IP or IPs (it can also be a list of IPs), and the port. These ports must be unique for every node.
 - `geo-data`, which includes the `position` (`x` and `y` coordinates) and `connections` (a list of edge labels).
+- `window-size`, which allows us to specify the size of the windows for all devices (this can be overridden for individual devices, as explained below). These windows help reduce communication load by enabling devices to store multiple values locally. Aggregates (described later) can then be performed on the stored data. 
 
 
 #### Devices
@@ -75,7 +77,10 @@ This section contains the global properties of the edge node, such as
         },
         "properties": {
             "comm-type": "opal-tcp",
-            "indexes": [0,1,2]
+            "indexes": [0,1,2],
+            "window-size": 5,  #optional
+            "amqp-type": "onRead", #optional
+            "amqp-interval": 5 #optional
         }
     },
     ...
@@ -90,6 +95,57 @@ The `devices` section will contain each device within the edge. Each device has 
 5. `properties`: We have two properties:
    - `comm-type`, where the user can refer to the methods declared in the `comms` section in `global-properties`.
    - `indexes`, which serves as a device identifier for those simulated by OpalRT. Indices represent the order in which measurements are sent in a packet from OpalRT. Voltmeters, ammeters, generators, wattmeters, and varmeters can have one or three indexes. Three-phase voltmeters and three-phase ammeters should have three indexes, while switches can have one or three, depending on their number of phases. These indexes must be unique, as they define the correspondent position in the socket received.
+   - `window-size`, optional argument where the user can specify the size of the sensor window. It can also be declared in the "global-properties" section and, if neither is provided, it will be 1.
+   - `amqp-type`, optional argument to specify which type of amqp publish is desired for this concrete device. Options are:
+     - **"onRead"**: sends message for each read or set of reads by using `amqp-interval`: [int]
+     - **"onFrequency"**: sends messages periodically every n seconds by using `amqp-frequency`: [int]
+   - `amqp-aggregate`, optional argument to specify the type of pre-processing to perform on the sensor window. Options include:
+       - **"sum"**: Sums up the values in the window. Only valid for `Number[]` sensors.
+       - **"avg"**: Returns the average of all values in the window. Only valid for `Number[]` sensors.
+       - **"last"**: Returns the most recent value in the window.
+       - **"all"**: Returns all values in the window, ordered from oldest to newest.
+
+These AMQP options can be defined for each sensor by editing the `deployments/defaults/setup/edge_setup.json` file. This file specifies the functions to be performed for each device. Commonly defined functions include:
+- **`AMQPConsume`**: A method used by actuators to receive actuations from the server.
+- **`AMQPPublish`**: A method used to send sensor readings from the edge to the server. This is where the AMQP parameters for each sensor are defined by default, though they can be overridden for individual devices as shown earlier.
+```json
+"global-properties":{
+    "funcs": [
+        {
+            "label": "AMQPPublish",
+            "lang": "Java",
+            "method-name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
+            "parameters": {
+                "sensors": ["ALL"],
+                "actuators": [],
+                "other": ["avg"] #specify aggregate method
+            },
+            "trigger": {
+                "type": "onRead", #onFrequency also possible
+                "parameters": {
+                    "trigger-sensor": "ALL",
+                    "interval": 3 #if onFrequency, declare "frequency": [int]
+                }
+        
+            }
+        },
+        {
+            "label": "AMQPConsume",
+            "lang": "Java",
+            "method-name": "es.bsc.hp2c.edge.funcs.AmqpConsume",
+            "parameters": {
+                "sensors": [],
+                "actuators": ["ALL"],
+                "other": []
+            },
+            "trigger": {
+                "type": "onStart",
+                "parameters": {}
+            }
+        }
+    ]
+}
+```
 
 #### Functions
 

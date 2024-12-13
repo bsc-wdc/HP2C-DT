@@ -98,10 +98,10 @@ public class AmqpManager {
 
             Sensor<?, ?> sensor = (Sensor<?, ?>) edgeMap.get(edgeLabel).getDevice(deviceName);
             try{
+                // Decodify the MeasurementWindow, setValues in the sensors, and get the new MeasurementWindow<Float[]>
                 MeasurementWindow<Float[]> window = sensor.sensed(message);
                 for(Measurement<Float[]> m : window.getMeasurementsOlderToNewer()){
-                    Object m2 = (Object) m.getValue();
-                    System.out.println(m2.getClass().getName());
+                    // Store the values in the database
                     db.write(m.getValue(), m.getTimestamp(), edgeLabel, deviceName);
                 }
             } catch (Exception e){

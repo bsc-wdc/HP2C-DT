@@ -46,9 +46,9 @@ public interface Sensor<R, V> {
     public void sensed(R values);
 
     /**
-     * Method overloading of sensed value when provided a codified MeasurementWindow.
-     * Again, sets value attribute according to what sensedValue(value)
-     * returns, but first decodes the window with MeasurementWindow.decode.
+     * This method receives a codified MeasurementWindow (from amqpManager), decodifies it, and sets the appropriate
+     * values for the involved sensors while constructing a new MeasurementWindow<Float[]>, which will be useful to
+     * store the sensor values in the database.
      *
      * @param bWindow Codified MeasurementWindow.
      * @return MeasurementWindow<Float[]>

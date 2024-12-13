@@ -104,25 +104,6 @@
                     "trigger-sensor":"Voltmeter Gen1"
                 }
             }
-
-        },
-        {
-            "label": "AMQPPublish",
-            "lang": "Java",
-            "method-name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
-            "parameters": {
-                "sensors": ["Three-Phase Switch Gen1"],
-                "actuators": [],
-                "other": ["last"]
-            },
-            "trigger": {
-                "type": "onRead",
-                "parameters": {
-                    "trigger-sensor": "Three-Phase Switch Gen1",
-                    "interval": 3
-                }
-
-            }
         },
         {
             "label": "CalcPower",

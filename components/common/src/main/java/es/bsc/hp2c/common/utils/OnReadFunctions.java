@@ -4,6 +4,10 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Objects;
 
+/**
+ * Class containing a list of onReadFunctions.
+ *
+ */
 public class OnReadFunctions {
     private ArrayList<OnReadFunction> onReadFuncs;
 

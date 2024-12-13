@@ -2,9 +2,12 @@ package es.bsc.hp2c.common.utils;
 
 import java.io.*;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Objects;
 
+/**
+ * Class in charge of storing an array of measurements. In order to send and receive windows, it implements serializable
+ *
+ * @param <T> Type of the measurements stored.
+ */
 public class MeasurementWindow<T> implements Serializable{
     private final Measurement<T>[] window;
     private int start = 0;  // Points to the oldest element
