@@ -29,7 +29,7 @@ public class OnReadFunction<T> {
         return runnable;
     }
 
-    public boolean isOnRead(){ return this.onRead; }
+    public boolean isOnChange(){ return !this.onRead; }
 
     public int getInterval() {
         return interval;

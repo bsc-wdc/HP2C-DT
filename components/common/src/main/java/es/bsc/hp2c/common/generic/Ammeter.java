@@ -86,16 +86,16 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
      */
     public void onRead() {
         for (OnReadFunction orf : this.onReadFunctions.getOnReadFuncs()) {
-            if (orf.isOnRead()) {
+            if (orf.isOnChange()) {
+                if (orf.changed(this.getCurrentValues())){ //changed() will update its last value if needed
+                    orf.getRunnable().run();
+                }
+            } else {
                 if (orf.getCounter() == orf.getInterval()) {
                     orf.getRunnable().run();
                     orf.resetCounter();
                 } else {
                     orf.incrementCounter();
-                }
-            } else {
-                if (orf.changed(this.getCurrentValues())){ //changed() will update its last value if needed
-                    orf.getRunnable().run();
                 }
             }
         }
