@@ -17,6 +17,7 @@
 package es.bsc.hp2c.common.generic;
 
 import java.time.Instant;
+import java.util.Arrays;
 
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
@@ -74,8 +75,9 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
      *
      * @param action runnable implementing the action
      */
-    public void addOnReadFunction(Runnable action, int interval, String label) {
-        this.onReadFunctions.addFunc(new OnReadFunction(action, interval, label));
+    @Override
+    public void addOnReadFunction(Runnable action, int interval, String label, boolean onRead) {
+        this.onReadFunctions.addFunc(new OnReadFunction<Float[]>(action, interval, label, onRead));
     }
 
     /**
@@ -84,12 +86,17 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
      */
     public void onRead() {
         for (OnReadFunction orf : this.onReadFunctions.getOnReadFuncs()) {
-            if (orf.getCounter() == orf.getInterval()){
-                orf.getRunnable().run();
-                orf.resetCounter();
-            }
-            else{
-                orf.incrementCounter();
+            if (orf.isOnRead()) {
+                if (orf.getCounter() == orf.getInterval()) {
+                    orf.getRunnable().run();
+                    orf.resetCounter();
+                } else {
+                    orf.incrementCounter();
+                }
+            } else {
+                if (orf.changed(this.getCurrentValues())){ //changed() will update its last value if needed
+                    orf.getRunnable().run();
+                }
             }
         }
     }

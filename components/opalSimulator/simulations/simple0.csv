@@ -1,5 +1,10 @@
 Edge, edge1, edge1, edge1, edge1, edge1, edge1, edge1
 Device, AmmeterGen1Sensor0, ThreePhaseSwitchGen1Sensor0, ThreePhaseSwitchGen1Sensor1, ThreePhaseSwitchGen1Sensor2, VoltmeterGen1Sensor0, GeneratorGen1Sensor0, GeneratorGen1Sensor1
 t0, 107.0, ,,, 186.0, ,
-t1, -186.0, ,,, -68.0, ,
-t2, 305.0, ,,, 300.0, ,
+t1, 107.0, ,,, 186.0, ,
+t2, 107.0, ,,, 186.0, ,
+t3, 107.0, ,,, 186.0, ,
+t4, 107.0, ,,, 186.0, ,
+t5, 107.0, ,,, 186.0, ,
+t6, -186.0, ,,, -68.0, ,
+t7, 305.0, ,,, 300.0, ,

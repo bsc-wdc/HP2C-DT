@@ -84,8 +84,9 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
      *
      * @param action runnable implementing the action
      */
-    public void addOnReadFunction(Runnable action, int interval, String label) {
-        this.onReadFunctions.addFunc(new OnReadFunction(action, interval, label));
+    @Override
+    public void addOnReadFunction(Runnable action, int interval, String label, boolean onRead) {
+        this.onReadFunctions.addFunc(new OnReadFunction<Float[]>(action, interval, label, onRead));
     }
 
     /**
@@ -94,12 +95,17 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
      */
     public void onRead() {
         for (OnReadFunction orf : this.onReadFunctions.getOnReadFuncs()) {
-            if (orf.getCounter() == orf.getInterval()){
-                orf.getRunnable().run();
-                orf.resetCounter();
-            }
-            else{
-                orf.incrementCounter();
+            if (orf.isOnRead()) {
+                if (orf.getCounter() == orf.getInterval()) {
+                    orf.getRunnable().run();
+                    orf.resetCounter();
+                } else {
+                    orf.incrementCounter();
+                }
+            } else {
+                if (orf.changed(this.getCurrentValues())){ //changed() will update its last value if needed
+                    orf.getRunnable().run();
+                }
             }
         }
     }

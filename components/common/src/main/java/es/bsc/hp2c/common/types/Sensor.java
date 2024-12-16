@@ -30,7 +30,7 @@ public interface Sensor<R, V> {
      *
      * @param action Runnable that implements the function to handle.
      */
-    public void addOnReadFunction(Runnable action, int interval, String label);
+    public void addOnReadFunction(Runnable action, int interval, String label, boolean onRead);
 
     /**
      * Call the functions triggered by a read value in the sensor.

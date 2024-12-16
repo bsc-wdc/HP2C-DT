@@ -20,7 +20,6 @@ import java.lang.reflect.Constructor;
 import java.util.*;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import static es.bsc.hp2c.common.types.Device.formatLabel;
@@ -249,6 +248,21 @@ public abstract class Func implements Runnable {
         }
     }
 
+
+    private static void setupOnReadTrigger(JSONObject triggerParams, Map<String, Device> devices, Runnable action, String label, boolean onRead) {
+        String triggerSensorName = triggerParams.getString("trigger-sensor");
+        triggerSensorName = formatLabel(triggerSensorName);
+        Sensor<?, ?> triggerSensor = (Sensor<?, ?>) devices.get(triggerSensorName);
+
+        int interval = triggerParams.optInt("interval", -1);
+        if (interval == -1) {
+            interval = triggerSensor.getWindow().getSize();
+        }
+
+        triggerSensor.addOnReadFunction(action, interval, label, onRead);
+    }
+
+
     /**
      * Selects and sets up the triggering method of a Func.
      * Options:
@@ -278,15 +292,11 @@ public abstract class Func implements Runnable {
                 break;
 
             case "onRead":
-                String triggerSensorName = triggerParams.getString("trigger-sensor");
-                triggerSensorName = formatLabel(triggerSensorName);
-                Sensor<?,?> triggerSensor = (Sensor<?,?>) devices.get(triggerSensorName);
+                setupOnReadTrigger(triggerParams, devices, action, label, true);
+                break;
 
-                int interval = triggerParams.optInt("interval", -1);
-                if (interval == -1){
-                    interval = triggerSensor.getWindow().getSize();
-                }
-                triggerSensor.addOnReadFunction(action, interval, label);
+            case "onChange":
+                setupOnReadTrigger(triggerParams, devices, action, label, false);
                 break;
 
             case "onStart":
