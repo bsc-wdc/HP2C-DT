@@ -1,7 +1,7 @@
 {
     "global-properties":{
         "label": "edge1",
-        "window-size": 4,
+        "window-size": 100,
         "comms":{
             "opal-udp": {
                 "protocol": "udp",
@@ -43,8 +43,7 @@
             "properties": {
                 "comm-type": "opal-udp",
                 "indexes": [0],
-                "window-size": 4,
-                "amqp-type": "onChange"
+                "amqp-aggregate": "phasor"
             }
         },
         {

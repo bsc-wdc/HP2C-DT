@@ -22,8 +22,10 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static es.bsc.hp2c.common.utils.CommUtils.parseAmqpPublishFunctions;
 import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
 
 /**
@@ -39,6 +41,7 @@ public class VirtualEdge {
     private float y;
     private ArrayList<String> connections;
     private boolean modified;
+    private List<Map<String, Object>> amqpPublishFunctions;
 
     /**
      * Basic constructor when passing all the essential parameters explicitly.
@@ -88,6 +91,7 @@ public class VirtualEdge {
             this.connections.add(jConnections.getString(i));
         }
         this.modified = true;
+        this.amqpPublishFunctions = parseAmqpPublishFunctions(jEdgeSetup);
     }
 
     public boolean equals(VirtualEdge oldEdge){
@@ -153,6 +157,16 @@ public class VirtualEdge {
                 jDevice.put("size", sensor.getSize());
             }
             jDevice.put("isActionable", isActionable);
+
+            for (Map<String, Object> amqpfunc : amqpPublishFunctions) {
+                List<String> devicesInFunc = (List<String>) amqpfunc.get("devices");
+                if (devicesInFunc.contains(deviceLabel)) {
+                    String aggregate = (String) amqpfunc.get("aggregate");
+                    jDevice.put("aggregate", aggregate);
+                    break;
+                }
+            }
+
             jDevicesInfo.put(deviceLabel, jDevice);
         }
         return jDevicesInfo;

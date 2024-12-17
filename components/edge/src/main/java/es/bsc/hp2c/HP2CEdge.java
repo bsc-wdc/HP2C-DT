@@ -27,10 +27,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 import static es.bsc.hp2c.common.utils.FileUtils.*;
 
@@ -74,20 +71,22 @@ public class HP2CEdge {
         int brokerPort = (int) brokerConnections.get("port");
 
         devices = loadDevices(setupFile, "driver", true);
-
         // Set up AMQP messaging
         boolean amqpOn = setUpMessaging(brokerIp, brokerPort);
+        OpalComm.setLoadedDevices(true);
+        Func.loadFunctions(setupFile, devices);
+        List<Map<String, Object>> amqpPublishFunctions = Func.loadGlobalFunctions(setupFile, defaultsPath, devices, amqpOn);
+
         if (amqpOn) {
             JSONObject jEdgeSetup = getJsonObject(setupFile);
+            jEdgeSetup.put("AMQPPublishFunctions", amqpPublishFunctions);
             Timer timer = new Timer();
             Heartbeat heartbeat = new Heartbeat(jEdgeSetup, edgeLabel);
             timer.scheduleAtFixedRate(heartbeat, 0, HEARTBEAT_RATE);
         } else {
             System.out.println("Heartbeat could not start. AMQP not available");
         }
-        OpalComm.setLoadedDevices(true);
-        Func.loadFunctions(setupFile, devices);
-        Func.loadGlobalFunctions(setupFile, defaultsPath, devices, amqpOn);
+
     }
 
     private static boolean setUpMessaging(String ip, int port) {

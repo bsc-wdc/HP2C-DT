@@ -3,13 +3,16 @@ package es.bsc.hp2c.common.utils;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -195,5 +198,47 @@ public final class CommUtils {
         long epochSeconds = (long) headers.get("epochSeconds");
         int nanos = (int) headers.get("nanos");
         return Instant.ofEpochSecond(epochSeconds, nanos);
+    }
+
+    /** Get AMQPPublish  functions from the list of functions created by loadGlobalFuncs */
+    public static List<Map<String, Object>> getAmqpPublishFunctions(List<Map<String, Object>> globalFuncs) {
+        List<Map<String, Object>> amqpPublishFunctions = new ArrayList<>();
+        for (Map<String, Object> globalFunc : globalFuncs) {
+            if ("AMQPPublish".equals(globalFunc.get("label"))) {
+                amqpPublishFunctions.add(globalFunc);
+            }
+        }
+        return amqpPublishFunctions;
+    }
+
+    public static List<Map<String, Object>> parseAmqpPublishFunctions(JSONObject jEdgeSetup) {
+        List<Map<String, Object>> amqpPublishFunctions = new ArrayList<>();
+
+        if (jEdgeSetup.has("AMQPPublishFunctions")) {
+            JSONArray amqpPublishArray = jEdgeSetup.getJSONArray("AMQPPublishFunctions");
+
+            for (Object obj : amqpPublishArray) {
+                if (obj instanceof JSONObject) {
+                    JSONObject func = (JSONObject) obj;
+
+                    Map<String, Object> funcMap = new HashMap<>();
+                    funcMap.put("label", func.optString("label"));
+                    funcMap.put("aggregate", func.optString("aggregate"));
+
+                    JSONArray devicesArray = func.optJSONArray("devices");
+                    List<String> devices = new ArrayList<>();
+                    if (devicesArray != null) {
+                        for (Object device : devicesArray) {
+                            devices.add(device.toString());
+                        }
+                    }
+                    funcMap.put("devices", devices);
+
+                    amqpPublishFunctions.add(funcMap);
+                }
+            }
+        }
+
+        return amqpPublishFunctions;
     }
 }

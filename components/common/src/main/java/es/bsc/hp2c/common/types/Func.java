@@ -23,6 +23,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import static es.bsc.hp2c.common.types.Device.formatLabel;
+import static es.bsc.hp2c.common.utils.CommUtils.getAmqpPublishFunctions;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 /**
@@ -71,8 +72,9 @@ public abstract class Func implements Runnable {
         }
     }
 
-    public static void loadGlobalFunctions(String setupFile, String defaultsPath, Map<String, Device> devices,
+    public static List<Map<String, Object>> loadGlobalFunctions(String setupFile, String defaultsPath, Map<String, Device> devices,
                                            boolean AmqpOn) throws IOException {
+        List<Map<String, Object>> functionDetails = new ArrayList<>();
         // Load setup file
         JSONObject object = getJsonObject(setupFile);
         // Load specific devices
@@ -98,6 +100,7 @@ public abstract class Func implements Runnable {
             for (Device device : devices.values()) {
                 // Clone global function for this device
                 JSONObject jGlobalFunc = new JSONObject(jGlobalFuncTemplate.toString());
+                String amqp_aggregate = "";
 
                 ArrayList<String> deviceList = new ArrayList<>();
                 switch (funcLabel) {
@@ -112,7 +115,9 @@ public abstract class Func implements Runnable {
                         // Modify trigger parameters for this device
                         JSONObject jParameters = new JSONObject();
                         jParameters.put("trigger-sensor", device.getLabel());
-                        jParameters.put("interval", jGlobalFunc.getJSONObject("trigger").optJSONObject("parameters").optInt("interval", -1));
+                        jParameters.put("interval", jGlobalFunc.getJSONObject("trigger")
+                                .optJSONObject("parameters")
+                                .optInt("interval", -1));
 
                         // Check for device-specific properties
                         JSONObject jDevice = null;
@@ -125,11 +130,17 @@ public abstract class Func implements Runnable {
                         }
 
                         if (jDevice != null && jDevice.has("properties")) {
-                            String amqp_aggregate = jDevice.getJSONObject("properties").optString("amqp-aggregate", "");
+                            amqp_aggregate = jDevice.getJSONObject("properties").optString("amqp-aggregate", "");
                             if (!Objects.equals(amqp_aggregate, "")) {
                                 ArrayList<String> other = new ArrayList<>();
                                 other.add(amqp_aggregate);
                                 jGlobalFunc.getJSONObject("parameters").put("other", other);
+                            } else {
+                                JSONArray aggregate = jGlobalFunc.getJSONObject("parameters").getJSONArray("other");
+
+                                if (!aggregate.isEmpty()) {
+                                    amqp_aggregate = aggregate.getString(0);
+                                }
                             }
 
                             String amqp_type = jDevice.getJSONObject("properties").optString("amqp-type", "");
@@ -165,11 +176,16 @@ public abstract class Func implements Runnable {
                     default:
                         continue;
                 }
-
-                // Perform Func initialization for each device
-                if (deviceList.isEmpty()) {
+                if (!deviceList.isEmpty()) {
+                    Map<String, Object> funcDetails = new HashMap<>();
+                    funcDetails.put("label", funcLabel);
+                    funcDetails.put("devices", deviceList);
+                    funcDetails.put("aggregate", amqp_aggregate);
+                    functionDetails.add(funcDetails);
+                } else {
                     continue;
                 }
+                // Perform Func initialization for each device
                 try {
                     Runnable action = functionParseJSON(jGlobalFunc, devices, funcLabel);
                     setupTrigger(jGlobalFunc, devices, action);
@@ -178,6 +194,7 @@ public abstract class Func implements Runnable {
                 }
             }
         }
+        return getAmqpPublishFunctions(functionDetails);
     }
 
     /**
