@@ -54,13 +54,13 @@ public class HP2CEdge {
         if (args.length == 1) {
             setupFile = args[0];
         } else {
-            setupFile = "../../deployments/simple/setup/edge1.json";
+            setupFile = "deployments/simple/setup/edge1.json";
         }
         // Get defaults file
         String defaultsPath = "/data/edge_default.json";
         File defaultsFile = new File(defaultsPath);
         if (!defaultsFile.isFile()) {
-            defaultsPath = "../../deployments/defaults/setup/edge_default.json";
+            defaultsPath = "deployments/defaults/setup/edge_default.json";
         }
         edgeLabel = readEdgeLabel(setupFile);
 
@@ -75,18 +75,32 @@ public class HP2CEdge {
         boolean amqpOn = setUpMessaging(brokerIp, brokerPort);
         OpalComm.setLoadedDevices(true);
         Func.loadFunctions(setupFile, devices);
-        List<Map<String, Object>> amqpPublishFunctions = Func.loadGlobalFunctions(setupFile, defaultsPath, devices, amqpOn);
+        Map<String, String> amqpAggregates = Func.loadGlobalFunctions(setupFile, defaultsPath, devices, amqpOn);
 
         if (amqpOn) {
             JSONObject jEdgeSetup = getJsonObject(setupFile);
-            jEdgeSetup.put("AMQPPublishFunctions", amqpPublishFunctions);
+            JSONArray devicesArray = jEdgeSetup.getJSONArray("devices");
+
+            // Update each device's "amqp-aggregate" property based on amqpAggregates map
+            for (int i = 0; i < devicesArray.length(); i++) {
+                JSONObject device = devicesArray.getJSONObject(i);
+                String deviceLabel = device.getString("label")
+                        .replace(" ", "")
+                        .replace("-", "");
+                if (amqpAggregates.containsKey(deviceLabel)) {
+                    String aggregateValue = amqpAggregates.get(deviceLabel);
+                    // Overwrite or add the "amqp-aggregate" property in the device's properties
+                    JSONObject properties = device.getJSONObject("properties");
+                    properties.put("amqp-aggregate", aggregateValue);
+                }
+            }
+
             Timer timer = new Timer();
             Heartbeat heartbeat = new Heartbeat(jEdgeSetup, edgeLabel);
             timer.scheduleAtFixedRate(heartbeat, 0, HEARTBEAT_RATE);
         } else {
             System.out.println("Heartbeat could not start. AMQP not available");
         }
-
     }
 
     private static boolean setUpMessaging(String ip, int port) {

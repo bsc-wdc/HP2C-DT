@@ -29,7 +29,10 @@ public class VirtualComm {
         boolean isAvailable();
         void setAvailability(boolean b);
     }
-    public interface VirtualSensor<V> extends Sensor<Float[], V>, VirtualDevice {}
+    public interface VirtualSensor<V> extends Sensor<Float[], V>, VirtualDevice {
+        String getAggregate();
+        void setAggregate(String aggregate);
+    }
     public interface VirtualActuator<V> extends Actuator<V>, VirtualDevice {
         void actuate(String[] stringValues) throws IOException;
         boolean isCategorical();

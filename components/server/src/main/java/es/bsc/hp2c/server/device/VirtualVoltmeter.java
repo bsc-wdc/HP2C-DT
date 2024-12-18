@@ -27,6 +27,7 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSenso
     private final String edgeLabel;
     private final int size;
     private boolean availability;
+    private String aggregate;
 
     /**
      * Creates a new instance of VirtualVoltmeter.
@@ -40,6 +41,7 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSenso
         super(label, position, properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = properties.getJSONArray("indexes").length();
+        this.aggregate = "";
     }
 
     /**
@@ -83,4 +85,15 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSenso
     public void setAvailability(boolean b){
         availability = b;
     }
+
+    @Override
+    public String getAggregate() {
+        return this.aggregate;
+    }
+
+    @Override
+    public void setAggregate(String aggregate) {
+        this.aggregate = aggregate;
+    }
+
 }

@@ -23,7 +23,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import static es.bsc.hp2c.common.types.Device.formatLabel;
-import static es.bsc.hp2c.common.utils.CommUtils.getAmqpPublishFunctions;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 /**
@@ -72,9 +71,9 @@ public abstract class Func implements Runnable {
         }
     }
 
-    public static List<Map<String, Object>> loadGlobalFunctions(String setupFile, String defaultsPath, Map<String, Device> devices,
+    public static Map<String, String> loadGlobalFunctions(String setupFile, String defaultsPath, Map<String, Device> devices,
                                            boolean AmqpOn) throws IOException {
-        List<Map<String, Object>> functionDetails = new ArrayList<>();
+        Map<String, String> amqpAggregates = new HashMap<>();
         // Load setup file
         JSONObject object = getJsonObject(setupFile);
         // Load specific devices
@@ -177,11 +176,9 @@ public abstract class Func implements Runnable {
                         continue;
                 }
                 if (!deviceList.isEmpty()) {
-                    Map<String, Object> funcDetails = new HashMap<>();
-                    funcDetails.put("label", funcLabel);
-                    funcDetails.put("devices", deviceList);
-                    funcDetails.put("aggregate", amqp_aggregate);
-                    functionDetails.add(funcDetails);
+                    if (funcLabel.equals("AMQPPublish")) {
+                        amqpAggregates.put(deviceList.get(0), amqp_aggregate);
+                    }
                 } else {
                     continue;
                 }
@@ -194,7 +191,7 @@ public abstract class Func implements Runnable {
                 }
             }
         }
-        return getAmqpPublishFunctions(functionDetails);
+        return amqpAggregates;
     }
 
     /**

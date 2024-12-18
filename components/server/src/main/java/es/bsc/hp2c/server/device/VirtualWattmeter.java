@@ -27,6 +27,7 @@ public class VirtualWattmeter extends Wattmeter<Float[]> implements VirtualSenso
     private final String edgeLabel;
     private final int size;
     private boolean availability;
+    private String aggregate;
 
     /**
      * Creates a new instance of VirtualWattmeter.
@@ -40,6 +41,7 @@ public class VirtualWattmeter extends Wattmeter<Float[]> implements VirtualSenso
         super(label, position, properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = properties.getJSONArray("indexes").length();
+        this.aggregate = "";
     }
 
     @Override
@@ -75,5 +77,15 @@ public class VirtualWattmeter extends Wattmeter<Float[]> implements VirtualSenso
     @Override
     public void setAvailability(boolean b){
         availability = b;
+    }
+
+    @Override
+    public String getAggregate() {
+        return aggregate;
+    }
+
+    @Override
+    public void setAggregate(String aggregate) {
+        this.aggregate = aggregate;
     }
 }

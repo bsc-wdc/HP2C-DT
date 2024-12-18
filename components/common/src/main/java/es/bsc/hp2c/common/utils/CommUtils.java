@@ -95,7 +95,7 @@ public final class CommUtils {
         // Check existence of file
         String deploymentFile = "/data/deployment_setup.json";
         if (!new File(deploymentFile).isFile()) {
-            deploymentFile = "../../deployments/testbed/deployment_setup.json";
+            deploymentFile = "deployments/testbed/deployment_setup.json";
             if (!new File(deploymentFile).isFile()) {
                 throw new IOException("Could not find 'deployment_setup.json'");
             }
@@ -200,16 +200,6 @@ public final class CommUtils {
         return Instant.ofEpochSecond(epochSeconds, nanos);
     }
 
-    /** Get AMQPPublish  functions from the list of functions created by loadGlobalFuncs */
-    public static List<Map<String, Object>> getAmqpPublishFunctions(List<Map<String, Object>> globalFuncs) {
-        List<Map<String, Object>> amqpPublishFunctions = new ArrayList<>();
-        for (Map<String, Object> globalFunc : globalFuncs) {
-            if ("AMQPPublish".equals(globalFunc.get("label"))) {
-                amqpPublishFunctions.add(globalFunc);
-            }
-        }
-        return amqpPublishFunctions;
-    }
 
     public static List<Map<String, Object>> parseAmqpPublishFunctions(JSONObject jEdgeSetup) {
         List<Map<String, Object>> amqpPublishFunctions = new ArrayList<>();

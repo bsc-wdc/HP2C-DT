@@ -46,11 +46,11 @@ public interface Sensor<R, V> {
     public void sensed(R values);
 
     /**
-     * This method receives a codified MeasurementWindow (from amqpManager), decodifies it, and sets the appropriate
+     * This method receives an encoded MeasurementWindow (from amqpManager), decodes it, and sets the appropriate
      * values for the involved sensors while constructing a new MeasurementWindow<Float[]>, which will be useful to
      * store the sensor values in the database.
      *
-     * @param bWindow Codified MeasurementWindow.
+     * @param bWindow Encoded MeasurementWindow.
      * @return MeasurementWindow<Float[]>
      */
     public MeasurementWindow<Float[]> sensed(byte[] bWindow);

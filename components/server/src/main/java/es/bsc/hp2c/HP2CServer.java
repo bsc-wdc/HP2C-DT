@@ -87,37 +87,6 @@ public class HP2CServer {
         return hostIp;
     }
 
-    /** Parse edge nodes files and configure the edge-device map. */
-    private static String parseSetupFiles(String[] args) throws IOException {
-        // Get IP and setup directory
-        String hostIp;
-        File setupDir;
-        if (args.length == 1) {
-            setupDir = new File(args[0]);
-            hostIp = System.getenv("LOCAL_IP");
-        } else {
-            setupDir = new File("../../deployments/testbed/setup");
-            hostIp = "0.0.0.0";
-        }
-        File[] setupFiles = setupDir.listFiles();
-        if (setupFiles == null) {
-            throw new FileNotFoundException("No setup files found in " + setupDir);
-        }
-        // Fill in edge-devices map
-        for (File setupFile: setupFiles) {
-            String filePath = setupFile.toString();
-            System.out.println("Loading setup configuration for file " + filePath);
-            String edgeLabel = readEdgeLabel(filePath);
-            Map<String, Device> devicesMap = loadDevices(filePath, "driver-dt", false);
-            Map <String, VirtualComm.VirtualDevice> devices = new HashMap<>();
-            for (String d : devicesMap.keySet()){
-                devices.put(d, (VirtualComm.VirtualDevice) devicesMap.get(d));
-            }
-            VirtualEdge edge = new VirtualEdge(edgeLabel, devices, 0L);
-            edgeMap.put(edgeLabel, edge);
-        }
-        return hostIp;
-    }
 
     /** Check actuator validity and return a custom error message upon error.*/
     public static ActuatorValidity checkActuator(String edgeLabel, String actuatorName) {

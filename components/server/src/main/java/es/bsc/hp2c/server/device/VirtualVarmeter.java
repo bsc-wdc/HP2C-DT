@@ -27,6 +27,7 @@ public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<
     private final String edgeLabel;
     private final int size;
     private boolean availability;
+    private String aggregate;
 
     /**
      * Creates a new instance of VirtualVarmeter.
@@ -40,6 +41,7 @@ public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<
         super(label, position, properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = properties.getJSONArray("indexes").length();
+        this.aggregate = "";
     }
 
     @Override
@@ -75,5 +77,15 @@ public class VirtualVarmeter extends Varmeter<Float[]> implements VirtualSensor<
     @Override
     public void setAvailability(boolean b){
         availability = b;
+    }
+
+    @Override
+    public String getAggregate() {
+        return this.aggregate;
+    }
+
+    @Override
+    public void setAggregate(String aggregate) {
+        this.aggregate = aggregate;
     }
 }

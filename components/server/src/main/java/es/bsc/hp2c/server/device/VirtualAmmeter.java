@@ -27,6 +27,7 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     private final String edgeLabel;
     private final int size;
     private boolean availability;
+    private String aggregate;
 
     /**
     * Creates a new instance of VirtualAmmeter.
@@ -40,6 +41,7 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
         super(label, position, properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = properties.getJSONArray("indexes").length();
+        this.aggregate = "";
     }
 
     /**
@@ -81,5 +83,15 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     @Override
     public void setAvailability(boolean b){
         availability = b;
+    }
+
+    @Override
+    public String getAggregate() {
+        return this.aggregate;
+    }
+
+    @Override
+    public void setAggregate(String aggregate) {
+        this.aggregate = aggregate;
     }
 }

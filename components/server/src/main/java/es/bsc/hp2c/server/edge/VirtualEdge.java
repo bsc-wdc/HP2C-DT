@@ -41,7 +41,6 @@ public class VirtualEdge {
     private float y;
     private ArrayList<String> connections;
     private boolean modified;
-    private List<Map<String, Object>> amqpPublishFunctions;
 
     /**
      * Basic constructor when passing all the essential parameters explicitly.
@@ -77,6 +76,13 @@ public class VirtualEdge {
             String deviceLabel = jDevice.getString("label").replace(" ", "").replace("-","");
             boolean availability = jDevice.getBoolean("availability");
             this.setDeviceAvailability(deviceLabel, availability);
+            String amqpAggregate = jDevice.getJSONObject("properties").optString("amqp-aggregate", "");
+            if (!amqpAggregate.isEmpty()){
+                if (devicesMap.get(deviceLabel).isSensitive()){
+                    VirtualComm.VirtualSensor<?> virtualSensor = (VirtualComm.VirtualSensor<?>) devicesMap.get(deviceLabel);
+                    virtualSensor.setAggregate(amqpAggregate);
+                }
+            }
         }
 
         this.isAvailable = jGlobalProps.getBoolean("available");
@@ -91,7 +97,7 @@ public class VirtualEdge {
             this.connections.add(jConnections.getString(i));
         }
         this.modified = true;
-        this.amqpPublishFunctions = parseAmqpPublishFunctions(jEdgeSetup);
+        parseAmqpPublishFunctions(jEdgeSetup);
     }
 
     public boolean equals(VirtualEdge oldEdge){
@@ -152,21 +158,13 @@ public class VirtualEdge {
                     jDevice.put("categories", actuator.getCategories());
                 }
             }
-            else{
+            if (device.isSensitive()){
                 VirtualComm.VirtualSensor<?> sensor = (VirtualComm.VirtualSensor<?>) device;
+                String aggregate = sensor.getAggregate();
+                jDevice.put("aggregate", aggregate);
                 jDevice.put("size", sensor.getSize());
             }
             jDevice.put("isActionable", isActionable);
-
-            for (Map<String, Object> amqpfunc : amqpPublishFunctions) {
-                List<String> devicesInFunc = (List<String>) amqpfunc.get("devices");
-                if (devicesInFunc.contains(deviceLabel)) {
-                    String aggregate = (String) amqpfunc.get("aggregate");
-                    jDevice.put("aggregate", aggregate);
-                    break;
-                }
-            }
-
             jDevicesInfo.put(deviceLabel, jDevice);
         }
         return jDevicesInfo;

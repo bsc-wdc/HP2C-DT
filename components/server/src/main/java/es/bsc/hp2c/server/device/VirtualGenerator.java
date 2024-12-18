@@ -34,8 +34,8 @@ import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
 public class VirtualGenerator extends Generator<Float[]> implements VirtualSensor<Float[]>, VirtualActuator<Float[]> {
     private final String edgeLabel;
     private final int size;
-
     private boolean availability;
+    private String aggregate;
 
     /**
      * Creates a new instance of VirtualGenerator.
@@ -49,6 +49,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
         super(label, position, properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = 2;
+        this.aggregate = "";
     }
 
     /**
@@ -127,6 +128,16 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     @Override
     public void setAvailability(boolean b){
         availability = b;
+    }
+
+    @Override
+    public String getAggregate() {
+        return this.aggregate;
+    }
+
+    @Override
+    public void setAggregate(String aggregate) {
+        this.aggregate = aggregate;
     }
 }
 

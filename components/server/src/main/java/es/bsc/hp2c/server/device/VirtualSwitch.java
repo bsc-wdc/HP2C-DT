@@ -35,6 +35,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     private final String edgeLabel;
     private final int size;
     private boolean availability;
+    private String aggregate;
 
     /**
      * Creates a new instance of VirtualSwitch.
@@ -48,6 +49,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
         super(label, position, properties.getJSONArray("indexes").length(), properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = properties.getJSONArray("indexes").length();
+        this.aggregate = "";
     }
 
     /**
@@ -157,5 +159,15 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     @Override
     public void setAvailability(boolean b){
         availability = b;
+    }
+
+    @Override
+    public String getAggregate() {
+        return this.aggregate;
+    }
+
+    @Override
+    public void setAggregate(String aggregate) {
+        this.aggregate = aggregate;
     }
 }
