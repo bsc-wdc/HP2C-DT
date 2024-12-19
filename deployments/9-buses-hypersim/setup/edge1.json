@@ -96,7 +96,6 @@
             },
             "trigger": {
                 "type": "onRead",
-                "method-name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
                 "parameters": {
                     "trigger-sensor": "Three-Phase Voltmeter Gen1"
                 }

@@ -162,7 +162,6 @@ These AMQP options can be defined for each sensor by editing the `deployments/de
         },
         "trigger": {
             "type": "onRead",
-            "method-name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
             "parameters": ["Voltmeter Gen1"]
         }
 
