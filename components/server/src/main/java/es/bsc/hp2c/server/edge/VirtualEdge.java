@@ -162,7 +162,12 @@ public class VirtualEdge {
                 VirtualComm.VirtualSensor<?> sensor = (VirtualComm.VirtualSensor<?>) device;
                 String aggregate = sensor.getAggregate();
                 jDevice.put("aggregate", aggregate);
-                jDevice.put("size", sensor.getSize());
+                if (aggregate.equals("phasor")) {
+                    jDevice.put("size", 2);
+                } else {
+                    jDevice.put("size", sensor.getSize());
+                }
+
             }
             jDevice.put("isActionable", isActionable);
             jDevicesInfo.put(deviceLabel, jDevice);
