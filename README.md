@@ -104,6 +104,7 @@ The `devices` section will contain each device within the edge. Each device has 
        - **"avg"**: Returns the average of all values in the window. Only valid for `Number[]` sensors.
        - **"last"**: Returns the most recent value in the window.
        - **"all"**: Returns all values in the window, ordered from oldest to newest.
+       - **"phasor"**: Returns phasor(magnitude and phase) of the sensor given (only for Ammeter and Voltmeter)
 
 These AMQP options can be defined for each sensor by editing the `deployments/defaults/setup/edge_setup.json` file. This file specifies the functions to be performed for each device. Commonly defined functions include:
 - **`AMQPConsume`**: A method used by actuators to receive actuations from the server.
