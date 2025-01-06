@@ -81,23 +81,20 @@ public class AmqpManager {
         System.out.println("[AmqpManager] Awaiting requests");
 
         DeliverCallback callback = (consumerTag, delivery) -> {
-            // Parse message. For instance: routingKey = "edge.edge1.sensors.voltmeter1"
-            byte[] message = delivery.getBody();
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
-            // Reconstruct timestamp
-            Map<String, Object> headers = delivery.getProperties().getHeaders();
-            Instant timestamp = CommUtils.extractNanosFromHeaders(headers);
-            // Check existence of pair edge-device
-            String edgeLabel = getEdgeLabel(senderRoutingKey);
-            String deviceName = getDeviceName(senderRoutingKey);
-            if (!HP2CServer.isInMap(edgeLabel, deviceName, edgeMap)) {
-                System.err.println("Edge " + edgeLabel + ", Device " + deviceName
-                        + ": message received but device not listed as " + edgeLabel + " digital twin devices.");
-                return;
-            }
-
-            Sensor<?, ?> sensor = (Sensor<?, ?>) edgeMap.get(edgeLabel).getDevice(deviceName);
             try {
+                // Parse message. For instance: routingKey = "edge.edge1.sensors.voltmeter1"
+                byte[] message = delivery.getBody();
+                // Check existence of pair edge-device
+                String edgeLabel = getEdgeLabel(senderRoutingKey);
+                String deviceName = getDeviceName(senderRoutingKey);
+                if (!HP2CServer.isInMap(edgeLabel, deviceName, edgeMap)) {
+                    System.err.println("Edge " + edgeLabel + ", Device " + deviceName
+                            + ": message received but device not listed as " + edgeLabel + " digital twin devices.");
+                    return;
+                }
+
+                Sensor<?, ?> sensor = (Sensor<?, ?>) edgeMap.get(edgeLabel).getDevice(deviceName);
                 // Decode the MeasurementWindow, setValues in the sensors, and get the new MeasurementWindow<Float[]>
                 MeasurementWindow<Float[]> window = sensor.sensed(message);
                 for (Measurement<Float[]> m : window.getMeasurementsOlderToNewer()) {
@@ -105,7 +102,7 @@ public class AmqpManager {
                     db.write(m.getValue(), m.getTimestamp(), edgeLabel, deviceName);
                 }
             } catch (Exception e) {
-                System.err.println("[AmqpManager] Error in sensor " + ((Device) sensor).getLabel() + ": " + e);
+                System.err.println("[AmqpManager] Error sensing incoming message for routing key " + senderRoutingKey);
             }
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });
