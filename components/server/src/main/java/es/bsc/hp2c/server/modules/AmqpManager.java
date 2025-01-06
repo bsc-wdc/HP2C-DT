@@ -78,7 +78,7 @@ public class AmqpManager {
         channel.exchangeDeclare(EXCHANGE_NAME, "topic");
         String queueName = channel.queueDeclare().getQueue();
         channel.queueBind(queueName, EXCHANGE_NAME, routingKey);
-        System.out.println(" [AmqpManager] Awaiting requests");
+        System.out.println("[AmqpManager] Awaiting requests");
 
         DeliverCallback callback = (consumerTag, delivery) -> {
             // Parse message. For instance: routingKey = "edge.edge1.sensors.voltmeter1"
@@ -97,15 +97,15 @@ public class AmqpManager {
             }
 
             Sensor<?, ?> sensor = (Sensor<?, ?>) edgeMap.get(edgeLabel).getDevice(deviceName);
-            try{
+            try {
                 // Decode the MeasurementWindow, setValues in the sensors, and get the new MeasurementWindow<Float[]>
                 MeasurementWindow<Float[]> window = sensor.sensed(message);
-                for(Measurement<Float[]> m : window.getMeasurementsOlderToNewer()){
+                for (Measurement<Float[]> m : window.getMeasurementsOlderToNewer()) {
                     // Store the values in the database
                     db.write(m.getValue(), m.getTimestamp(), edgeLabel, deviceName);
                 }
-            } catch (Exception e){
-                System.out.println("Error in sensor " + ((Device)sensor).getLabel() + ": " + e);
+            } catch (Exception e) {
+                System.err.println("[AmqpManager] Error in sensor " + ((Device) sensor).getLabel() + ": " + e);
             }
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });

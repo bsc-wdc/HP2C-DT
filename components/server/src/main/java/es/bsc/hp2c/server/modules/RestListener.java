@@ -81,7 +81,7 @@ public class RestListener {
                 response = e.getMessage();
                 responseCode = 400;
             }
-            System.out.println(" [RestListener] Received request to update edges modify attribute: " + response);
+            System.out.println("[RestListener] Received request to update edges modify attribute: " + response);
             exchange.sendResponseHeaders(responseCode, response.length());
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
@@ -114,7 +114,7 @@ public class RestListener {
                 return;
             }
 
-            System.out.println(" [RestListener] Sending requested GeoInfo: " + jGeoInfo);
+            System.out.println("[RestListener] Sending requested GeoInfo: " + jGeoInfo);
             exchange.sendResponseHeaders(200, response.length() + jGeoInfo.toString().getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
@@ -145,7 +145,7 @@ public class RestListener {
                 return;
             }
 
-            System.out.println(" [RestListener] Sending requested EdgesInfo: " + jEdgesInfo);
+            System.out.println("[RestListener] Sending requested EdgesInfo: " + jEdgesInfo);
             exchange.sendResponseHeaders(200, response.length() + jEdgesInfo.toString().getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());

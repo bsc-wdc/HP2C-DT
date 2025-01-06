@@ -294,6 +294,9 @@ public abstract class Func implements Runnable {
         String triggerType = jTrigger.optString("type", "");
         JSONObject triggerParams = jTrigger.getJSONObject("parameters");
 
+        // Print Func summary
+        printFuncSummary(jFunc, devices, triggerParams, label, triggerType);
+
         switch (triggerType) {
             case "onFrequency":
                 int freq = triggerParams.getInt("frequency") * 1000;
@@ -320,6 +323,32 @@ public abstract class Func implements Runnable {
             default:
                 System.out.print("Wrong trigger: " + triggerType + " defined on the setup file");
         }
+    }
+
+    /** Prints summary of a Func in a separate thread so it shows in the main container output */
+    private static void printFuncSummary(JSONObject jFunc, Map<String, Device> devices, JSONObject triggerParams,
+                                         String label, String triggerType) {
+        Thread tSummary = new Thread() {
+            public void run() {
+                String triggerSensorName = triggerParams.optString("trigger-sensor");
+                triggerSensorName = formatLabel(triggerSensorName);
+                Integer length = null;
+                try {
+                    Sensor<?, ?> triggerSensor = (Sensor<?, ?>) devices.get(triggerSensorName);
+                    length = triggerSensor.getWindow().getCapacity();
+                } catch (Exception e) {}
+                System.out.println("Loading Func "+ label + "\n" +
+                    "    Type: " + triggerType + "\n" +
+                    "    Trigger Sensor (onRead): " + triggerSensorName + "\n" +
+                    "    Window length for Trigger Sensor (onRead): " + length + "\n" +
+                    "    Interval (onRead): " + triggerParams.optInt("interval") + "\n" +
+                    "    Frequency (onFrequency): " + triggerParams.optInt("frequency") + "\n" +
+                    "    Other params or aggregation: "
+                        + jFunc.getJSONObject("parameters").getJSONArray("other"));
+            }
+        };
+        tSummary.setName("func-summary-thread");
+        tSummary.start();
     }
 
     /**

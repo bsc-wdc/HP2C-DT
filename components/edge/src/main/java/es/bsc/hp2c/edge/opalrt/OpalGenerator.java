@@ -66,8 +66,8 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     @Override
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
-        System.out.println("Device " + getLabel() + " voltage set point is " + this.voltageSetpoint[0] + " V");
-        System.out.println("Device " + getLabel() + " power set point is " + this.powerSetpoint[0] + " W");
+        System.out.println("[Sensed] Device " + getLabel() + " voltage set point is " + this.voltageSetpoint[0] + " V");
+        System.out.println("[Sensed] Device " + getLabel() + " power set point is " + this.powerSetpoint[0] + " W");
     }
 
     @Override

@@ -71,7 +71,7 @@ public class OpalWattmeter extends Wattmeter<Float[]> implements OpalSensor<Floa
     public void sensed(Float[] values) {
         super.setValues(sensedValues(values));
         for (Float value : values){
-            System.out.println("Device " + getLabel() + " sensed " + value + " W");
+            System.out.println("[Sensed] Device " + getLabel() + " sensed " + value + " W");
         }
     }
 

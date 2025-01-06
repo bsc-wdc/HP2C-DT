@@ -64,8 +64,14 @@ public class MeasurementWindow<T> implements Serializable{
     public String toString() {
         Measurement<T>[] measurements = getMeasurementsNewerToOlder();
         StringBuilder result = new StringBuilder();
+        int i = 0;
         for (Measurement<T> measurement : measurements) {
-            result.append(measurement).append(System.lineSeparator());
+            result.append(measurement);
+            if (i < measurements.length - 1) {
+                // Create new line except for last measurement
+                result.append(System.lineSeparator());
+            }
+            i++;
         }
         return result.toString();
     }

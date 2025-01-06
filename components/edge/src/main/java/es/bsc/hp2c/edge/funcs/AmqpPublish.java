@@ -50,7 +50,7 @@ public class AmqpPublish extends Func {
         try {
             agg = c.getMethod(aggName, MeasurementWindow.class);
         } catch (NoSuchMethodException e) {
-            throw new NoSuchMethodException("Method not found: " + aggName);
+            throw new NoSuchMethodException("Aggregate not found: " + aggName);
         }
         aggregate = agg;
 

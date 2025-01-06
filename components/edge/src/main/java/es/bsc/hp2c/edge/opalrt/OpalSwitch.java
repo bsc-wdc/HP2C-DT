@@ -65,7 +65,7 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     @Override
     public void sensed(Float[] values) {
         setValues(sensedValues(values));
-        System.out.println(getLabel() + " states are: " + printableArray(this.states));
+        System.out.println("[Sensed] " + getLabel() + " states are: " + printableArray(this.states));
     }
 
     @Override

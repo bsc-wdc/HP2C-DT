@@ -99,7 +99,7 @@ public class DatabaseHandler {
         for (int i = 0; i < values.length; i++) {
             String tagName = deviceName + "Sensor" + i;
             if (isVerbose()) {
-                System.out.println(" [DatabaseHandler] Writing DB with '" + edgeLabel + "." +
+                System.out.println("[DatabaseHandler] Writing DB with '" + edgeLabel + "." +
                         deviceName + "':'" + values[i] + "'");
             }
             influxDB.write(Point.measurement(edgeLabel)
