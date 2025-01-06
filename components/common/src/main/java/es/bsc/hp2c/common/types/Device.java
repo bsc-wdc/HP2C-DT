@@ -21,7 +21,6 @@ import java.time.LocalTime;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Represents any part of the electrical network.
@@ -113,10 +112,10 @@ public abstract class Device {
     * Long.MAX_VALUE), it will compare the difference between current time and the time of the last update to
     * maxTimeWithoutUpdate.
     * */
-    public boolean isSensorAvailable() throws NotImplementedException{
+    public boolean isSensorAvailable() throws UnsupportedOperationException{
         if (!isSensitive()){
             System.err.println("Device " + label + " is not a sensor");
-            throw new NotImplementedException();
+            throw new UnsupportedOperationException();
         }
         if (maxTimeWithoutUpdate != Long.MAX_VALUE && lastUpdate != null){
             Duration timeDifference = Duration.between(lastUpdate, LocalTime.now());
@@ -125,10 +124,10 @@ public abstract class Device {
         return isSensorAvailable;
     }
 
-    public boolean isActuatorAvailable() throws NotImplementedException{
+    public boolean isActuatorAvailable() throws UnsupportedOperationException{
         if (!isActionable()){
             System.err.println("Device " + label + " is not an actuator");
-            throw new NotImplementedException();
+            throw new UnsupportedOperationException();
         }
         return isActuatorAvailable;
     }
