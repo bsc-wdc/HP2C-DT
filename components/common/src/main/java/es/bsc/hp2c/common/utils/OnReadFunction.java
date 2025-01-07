@@ -20,7 +20,7 @@ public class OnReadFunction<T> {
     public OnReadFunction(Runnable runnable, int interval, String label, boolean onRead) {
         this.runnable = runnable;
         this.interval = interval;
-        this.counter = 0;
+        this.counter = 1;
         this.label = label;
         this.onRead = onRead;
     }

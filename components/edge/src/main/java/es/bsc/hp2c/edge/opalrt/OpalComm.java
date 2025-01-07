@@ -186,7 +186,7 @@ public class OpalComm {
                     //convert bytebuffer to Float array (readable values)
                     Float[] messageValues = new Float[maxUdpIndexesLength];
                     for (int i = 0; i < messageValues.length; i++) {
-                        messageValues[i] = byteBuffer.getFloat();;
+                        messageValues[i] = byteBuffer.getFloat();
                     }
                     distributeValues(messageValues, udpSensorsList, Instant.now());
                     System.out.println(); // Add empty line at the end of each measurement
