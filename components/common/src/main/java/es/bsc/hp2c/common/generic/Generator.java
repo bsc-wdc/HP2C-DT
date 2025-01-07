@@ -48,7 +48,7 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
     }
 
     @Override
-    public abstract void sensed(R value);
+    public abstract void sensed(R value, Instant timestamp);
 
     @Override
     public MeasurementWindow<Float[]> sensed(byte[] bWindow) {
@@ -62,7 +62,7 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
                 for (int i = 0; i < numbers.length; i++) {
                     floats[i] = numbers[i] == null ? null : numbers[i].floatValue();
                 }
-                sensed((R) floats);
+                sensed((R) floats, m.getTimestamp());
                 returnWindow.addMeasurement(m.getTimestamp(), floats);
             } else {
                 throw new IllegalArgumentException("Expected Number[], got: " + value.getClass());
@@ -134,13 +134,13 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
         return this.window;
     }
 
-    protected void setValues(Float[] values) {
+    protected void setValues(Float[] values, Instant timestamp) {
         if (values.length == 2) {
             voltageSetpoint = new Float[1];
             powerSetpoint = new Float[1];
             voltageSetpoint[0] = values[0];
             powerSetpoint[0] = values[1];
-            this.window.addMeasurement(Instant.now(), values);
+            this.window.addMeasurement(timestamp, values);
         } else {
             System.err.println("Values length must be 2 (voltageSetpoint and powerSetpoint)");
         }

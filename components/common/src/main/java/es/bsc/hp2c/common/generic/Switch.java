@@ -17,6 +17,7 @@ package es.bsc.hp2c.common.generic;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Arrays;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
@@ -84,7 +85,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     }
 
     @Override
-    public abstract void sensed(R values);
+    public abstract void sensed(R values, Instant timestamp);
 
     @Override
     public MeasurementWindow<Float[]> sensed(byte[] bWindow) {
@@ -92,7 +93,7 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
         MeasurementWindow<Float[]> returnWindow = new MeasurementWindow<>(window.getCapacity());
         for (Measurement<State[]> m : window.getMeasurementsOlderToNewer()){
             Float[] value = actuatedValues(m.getValue());
-            sensed((R) value);
+            sensed((R) value, m.getTimestamp());
             returnWindow.addMeasurement(m.getTimestamp(), value);
         }
         return returnWindow;
@@ -155,9 +156,9 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
         return this.window;
     }
 
-    protected void setValues(State[] values) {
+    protected void setValues(State[] values, Instant timestamp) {
         this.states = values;
-        this.window.addMeasurement(Instant.now(), values);
+        this.window.addMeasurement(timestamp, values);
         this.setLastUpdate();
     }
     

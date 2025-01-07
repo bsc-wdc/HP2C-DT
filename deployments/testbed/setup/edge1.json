@@ -55,7 +55,8 @@
             "properties": {
                 "comm-type": "opal-tcp",
                 "indexes": [0,1,2],
-                "window-size": 3
+                "window-size": 3,
+                "amqp-aggregate": "last"
             }
         },
         {

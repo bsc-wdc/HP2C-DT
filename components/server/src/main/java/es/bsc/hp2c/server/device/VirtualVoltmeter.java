@@ -20,6 +20,8 @@ import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
+import java.time.Instant;
+
 /**
  * Digital twin Voltmeter.
  */
@@ -49,8 +51,8 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSenso
      * device state.
      */
     @Override
-    public void sensed(Float[] values) {
-        super.setValues(sensedValues(values));
+    public void sensed(Float[] values, Instant timestamp) {
+        super.setValues(sensedValues(values), timestamp);
     }
 
     /**

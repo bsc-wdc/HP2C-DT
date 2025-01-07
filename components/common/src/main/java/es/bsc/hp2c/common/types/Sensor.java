@@ -17,6 +17,8 @@ package es.bsc.hp2c.common.types;
 
 import es.bsc.hp2c.common.utils.MeasurementWindow;
 
+import java.time.Instant;
+
 /**
  * Class collecting information from the electrical network.
  *
@@ -43,7 +45,7 @@ public interface Sensor<R, V> {
      *
      * @param values Type of value to return.
      */
-    public void sensed(R values);
+    public void sensed(R values, Instant timestamp);
 
     /**
      * This method receives an encoded MeasurementWindow (from amqpManager), decodes it, and sets the appropriate

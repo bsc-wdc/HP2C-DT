@@ -24,6 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.Instant;
 
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 
@@ -64,8 +65,8 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     }
 
     @Override
-    public void sensed(Float[] values) {
-        super.setValues(sensedValues(values));
+    public void sensed(Float[] values, Instant timestamp) {
+        super.setValues(sensedValues(values), timestamp);
         System.out.println("[Sensed] Device " + getLabel() + " voltage set point is " + this.voltageSetpoint[0] + " V");
         System.out.println("[Sensed] Device " + getLabel() + " power set point is " + this.powerSetpoint[0] + " W");
     }

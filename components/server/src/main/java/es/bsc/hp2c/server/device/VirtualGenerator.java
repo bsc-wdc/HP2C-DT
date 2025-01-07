@@ -22,6 +22,7 @@ import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 
 import static es.bsc.hp2c.HP2CServer.amqp;
@@ -57,8 +58,8 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
      * device state.
      */
     @Override
-    public void sensed(Float[] values) {
-        super.setValues(sensedValues(values));
+    public void sensed(Float[] values, Instant timestamp) {
+        super.setValues(sensedValues(values), timestamp);
     }
 
     @Override

@@ -46,7 +46,7 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
     }
 
     @Override
-    public abstract void sensed(R values);
+    public abstract void sensed(R values, Instant timestamp);
 
     @Override
     public MeasurementWindow<Float[]> sensed(byte[] bWindow) {
@@ -61,7 +61,7 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
                 for (int i = 0; i < numbers.length; i++) {
                     floats[i] = numbers[i] == null ? null : numbers[i].floatValue();
                 }
-                sensed((R) floats);
+                sensed((R) floats, m.getTimestamp());
                 returnWindow.addMeasurement(m.getTimestamp(), floats);
             } else {
                 throw new IllegalArgumentException("Expected Number[], got: " + value.getClass());
@@ -116,9 +116,9 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
         return this.window;
     }
 
-    protected void setValues(Float[] values) {
+    protected void setValues(Float[] values, Instant timestamp) {
         this.values = values;
-        this.window.addMeasurement(Instant.now(), values);
+        this.window.addMeasurement(timestamp, values);
         this.setLastUpdate();
     }
 

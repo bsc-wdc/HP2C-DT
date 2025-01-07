@@ -24,6 +24,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.Instant;
+
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 
@@ -63,8 +65,8 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     }
 
     @Override
-    public void sensed(Float[] values) {
-        setValues(sensedValues(values));
+    public void sensed(Float[] values, Instant timestamp) {
+        setValues(sensedValues(values), timestamp);
         System.out.println("[Sensed] " + getLabel() + " states are: " + printableArray(this.states));
     }
 

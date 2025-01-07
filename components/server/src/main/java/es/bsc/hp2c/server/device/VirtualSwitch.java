@@ -22,6 +22,7 @@ import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 
 import static es.bsc.hp2c.HP2CServer.amqp;
@@ -57,12 +58,12 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
      * device state.
      */
     @Override
-    public void sensed(Float[] values) {
+    public void sensed(Float[] values, Instant timestamp) {
         Float[] sensedValues = new Float[values.length];
         for (int i = 0; i < values.length; i++){
             sensedValues[i] = values[i];
         }
-        setValues(sensedValues(sensedValues));
+        setValues(sensedValues(sensedValues), timestamp);
     }
 
     @Override

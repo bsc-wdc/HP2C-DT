@@ -21,6 +21,8 @@ import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.time.Instant;
+
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 
 /**
@@ -63,8 +65,8 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     }
 
     @Override
-    public void sensed(Float[] values) {
-        super.setValues(sensedValues(values));
+    public void sensed(Float[] values, Instant timestamp) {
+        super.setValues(sensedValues(values), timestamp);
         for (Float value : values) {
             System.out.println("[Sensed] Device " + getLabel() + " sensed " + value + " A");
         }
