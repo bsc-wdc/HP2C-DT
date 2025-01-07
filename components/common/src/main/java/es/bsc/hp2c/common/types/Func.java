@@ -113,10 +113,8 @@ public abstract class Func implements Runnable {
 
                         // Modify trigger parameters for this device
                         JSONObject jParameters = new JSONObject();
+                        jParameters = jGlobalFunc.getJSONObject("trigger").optJSONObject("parameters");
                         jParameters.put("trigger-sensor", device.getLabel());
-                        jParameters.put("interval", jGlobalFunc.getJSONObject("trigger")
-                                .optJSONObject("parameters")
-                                .optInt("interval", -1));
 
                         // Check for device-specific properties
                         JSONObject jDevice = null;
@@ -218,6 +216,10 @@ public abstract class Func implements Runnable {
             String label = jSensors.getString(i);
             label = formatLabel(label);
             Device d = devices.get(label);
+            if (d == null){
+                throw new FunctionInstantiationException(
+                        "Function " + funcLabel + " cannot be instantiated because " + label + " was not found");
+            }
             if (d.isSensitive()) {
                 sensors.add((Sensor<?,?>) d);
             } else {
@@ -303,6 +305,7 @@ public abstract class Func implements Runnable {
                 new Timer().scheduleAtFixedRate(new TimerTask() {
                     @Override
                     public void run() {
+                        System.out.println("label: " + label + ".  frequency: " + freq);
                         action.run();
                     }
                 }, 0, freq);
