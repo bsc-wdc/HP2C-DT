@@ -97,7 +97,7 @@ public abstract class Func implements Runnable {
 
             // Deploy function for each device building its custom jGlobalFunc
             for (Device device : devices.values()) {
-                // Clone global function for this device
+                // Clone global function for this device (avoid overwriting the default parameters like type or interval)
                 JSONObject jGlobalFunc = new JSONObject(jGlobalFuncTemplate.toString());
                 String amqp_aggregate = "";
 
@@ -127,6 +127,7 @@ public abstract class Func implements Runnable {
                         }
 
                         if (jDevice != null && jDevice.has("properties")) {
+                            // Check if a concrete amqp-aggregate is specified for the device
                             amqp_aggregate = jDevice.getJSONObject("properties").optString("amqp-aggregate", "");
                             if (!Objects.equals(amqp_aggregate, "")) {
                                 ArrayList<String> other = new ArrayList<>();
@@ -140,15 +141,18 @@ public abstract class Func implements Runnable {
                                 }
                             }
 
+                            // Check if a concrete amqp-type is specified for the device
                             String amqp_type = jDevice.getJSONObject("properties").optString("amqp-type", "");
                             if (!Objects.equals(amqp_type, "")) {
                                 jGlobalFunc.getJSONObject("trigger").put("type", amqp_type);
                             }
 
+                            // Check if a concrete amqp-interval is specified for the device
                             int amqp_interval = jDevice.getJSONObject("properties").optInt("amqp-interval", -1);
                             if (amqp_interval != -1) {
                                 jParameters.put("interval", amqp_interval);
                             }
+                            // Check if a concrete amqp-frequency is specified for the device
                             int amqp_frequency = jDevice.getJSONObject("properties").optInt("amqp-frequency", -1);
                             if (amqp_frequency != -1) {
                                 jParameters.put("frequency", amqp_frequency);
