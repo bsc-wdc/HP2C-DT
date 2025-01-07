@@ -44,7 +44,7 @@ public class OnReadFunction<T> {
     }
 
     public void resetCounter() {
-        this.counter = 0;
+        this.counter = 1;
     }
 
     public void incrementCounter() {
