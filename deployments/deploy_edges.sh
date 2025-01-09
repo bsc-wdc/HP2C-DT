@@ -101,13 +101,24 @@ declare -A labels_tcp_sensors_ports
 sorted_setup_folder=($(ls -v "${setup_folder}"/*.json))
 
 for f in "${sorted_setup_folder[@]}"; do
+    type=$(jq -r '.["global-properties"].type' "${f}")
+    if [[ -z "$type" ]]; then
+        echo "Error: 'type' is not specified in the input file. Options: edge/server."
+        exit 1
+    elif [[ "$type" != "edge" && "$type" != "server" ]]; then
+        echo "Error: Invalid type '$type'. The 'type' must be specified as either 'edge' or 'server'."
+        exit 1
+    fi
+
     label=$(jq -r '.["global-properties"].label' "${f}")
     udp_port=$(jq -r '."global-properties".comms."opal-udp".sensors.port' "${f}")
     tcp_sensors_port=$(jq -r '."global-properties".comms."opal-tcp".sensors.port' "${f}")
     if [ "$label" != "null" ]; then
-        labels_paths["${label}"]="${f}"
-        labels_udp_ports["${label}"]="${udp_port}"
-        labels_tcp_sensors_ports["${label}"]="${tcp_sensors_port}"
+        if [ "$type" == "edge" ]; then
+            labels_paths["${label}"]="${f}"
+            labels_udp_ports["${label}"]="${udp_port}"
+            labels_tcp_sensors_ports["${label}"]="${tcp_sensors_port}"
+        fi
     else
         echo "Property 'global-properties.label' not found in ${f}"
     fi

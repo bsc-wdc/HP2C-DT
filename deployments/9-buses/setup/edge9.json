@@ -1,5 +1,6 @@
 {
     "global-properties":{
+        "type": "edge",
         "label": "edge9",
         "comms":{
             "opal-udp": {

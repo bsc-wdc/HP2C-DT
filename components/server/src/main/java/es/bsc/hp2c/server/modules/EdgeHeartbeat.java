@@ -16,6 +16,7 @@
 package es.bsc.hp2c.server.modules;
 
 import com.rabbitmq.client.*;
+import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 import org.json.JSONArray;
@@ -23,10 +24,14 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static es.bsc.hp2c.HP2CServer.getDevicesMap;
+import static es.bsc.hp2c.HP2CServer.getPathToSetup;
+import static es.bsc.hp2c.common.types.Func.loadFunctions;
 import static java.lang.Boolean.parseBoolean;
 
 /**
@@ -107,8 +112,18 @@ public class EdgeHeartbeat {
             VirtualEdge edge = new VirtualEdge(jEdgeSetup);
             System.out.println("[processHeartbeatMessage] Loaded edge '" + edgeLabel + "': " + edge);
             edgeMap.put(edgeLabel, edge);
+            /*
+            Map<String, VirtualComm.VirtualDevice> virtualDevices = getDevicesMap();
+            String pathToSetup = getPathToSetup();
+            loadFunctions(pathToSetup, virtualDevices);
+            */
+
+
+
+
         }
     }
+
 
     /** Periodically verify the edge heartbeat and update each `isAvailable` property accordingly. */
     class CheckInactiveEdges extends TimerTask {

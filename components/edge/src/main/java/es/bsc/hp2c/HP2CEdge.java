@@ -16,6 +16,7 @@
 package es.bsc.hp2c;
 
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.EdgeMap;
 import es.bsc.hp2c.edge.opalrt.OpalComm;
 import es.bsc.hp2c.common.types.Device;
 
@@ -74,7 +75,14 @@ public class HP2CEdge {
         // Set up AMQP messaging
         boolean amqpOn = setUpMessaging(brokerIp, brokerPort);
         OpalComm.setLoadedDevices(true);
-        Func.loadFunctions(setupFile, devices);
+
+        // Convert to EdgeMap if type is edge
+        EdgeMap edgeMap = null;
+        edgeMap = new EdgeMap();
+        for (Map.Entry<String, Device> entry : devices.entrySet()) {
+            edgeMap.addDevice(edgeLabel, entry.getKey(), entry.getValue());
+        }
+        Func.loadFunctions(setupFile, edgeMap);
         Map<String, String> amqpAggregates = Func.loadGlobalFunctions(setupFile, defaultsPath, devices, amqpOn);
 
         if (amqpOn) {

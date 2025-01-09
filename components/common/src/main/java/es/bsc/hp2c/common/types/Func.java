@@ -21,7 +21,7 @@ import java.util.*;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
+import es.bsc.hp2c.common.utils.EdgeMap;
 import static es.bsc.hp2c.common.types.Device.formatLabel;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
@@ -51,23 +51,67 @@ public abstract class Func implements Runnable {
      * Parse functions from JSON and, for each one, parse and check its triggers.
      *
      * @param setupFile String containing JSON file.
-     * @param devices   map of the devices within the edge.
+     * @param edgeMap   EdgeMap object containing the devices within each edge.
      */
-    public static void loadFunctions(String setupFile, Map<String, Device> devices) throws IOException {
+    public static void loadFunctions(String setupFile, EdgeMap edgeMap) throws IOException {
+        System.out.println("EdgeMapppppppppppppppppppppp:");
+        System.out.println(edgeMap);
         // Load setup file
         JSONObject object = getJsonObject(setupFile);
+
+        // Get the type of the JSON setup (edge/server)
+        String type = object.getJSONObject("global-properties").optString("type", "");
+        String edgeLabel = object.getJSONObject("global-properties").optString("label", "");
+
         // Load specific functions
         JSONArray funcs = object.getJSONArray("funcs");
         for (Object jo : funcs) {
             JSONObject jFunc = (JSONObject) jo;
+
+            System.out.println("Original Func:");
+            System.out.println(jFunc);
+            System.out.println("-------------------");
+            // Transform function parameters and triggers if type is edge. Converting to server format
+            if ("edge".equals(type)) {
+                transformFuncToServerFormat(jFunc, edgeLabel);
+            }
+            System.out.println("New Func:");
+            System.out.println(jFunc);
+            System.out.println("-------------------");
+
             String funcLabel = jFunc.optString("label", "");
-            // Perform Func initialization
             try {
-                Runnable action = functionParseJSON(jFunc, devices, funcLabel);
-                setupTrigger(jFunc, devices, action);
+                // Perform Func initialization
+                Runnable action = functionParseJSON(jFunc, null, funcLabel);
+                setupTrigger(jFunc, null, action);
             } catch (FunctionInstantiationException e) {
                 System.err.println("Error loading function " + funcLabel + ": " + e.getMessage());
             }
+        }
+    }
+
+    // Transform function to server format (edgeLabel-[deviceLabel] for parameters,
+    // and edgeLabel-deviceLabel for trigger-sensor)
+    private static void transformFuncToServerFormat(JSONObject jFunc, String edgeLabel) {
+        // Transform parameters section
+        JSONObject params = jFunc.getJSONObject("parameters");
+        String[] keys = new String[]{"sensors", "actuators"};
+        for (String key : keys) {
+            if (params.get(key) instanceof JSONArray) {
+                JSONArray originalArray = params.getJSONArray(key);
+                JSONObject transformed = new JSONObject();
+                transformed.put(edgeLabel, originalArray);
+                params.put(key, transformed);
+            }
+        }
+
+        // Transform trigger section
+        JSONObject triggerParams = jFunc.getJSONObject("trigger").getJSONObject("parameters");
+        String triggerSensor = triggerParams.optString("trigger-sensor", null);
+        if (triggerSensor != null) {
+            JSONObject transformed = new JSONObject();
+            transformed.put(edgeLabel, triggerSensor);
+            triggerParams.put("trigger-sensor", transformed);
         }
     }
 

@@ -42,6 +42,7 @@ public class HP2CServer {
     private static EdgeHeartbeat heartbeat;
     private static final Map<String, VirtualEdge> edgeMap = new HashMap<>();
     private static boolean verbose = true;
+    private static String pathToSetup = "";
 
     /** Start and run Server modules. */
     public static void main(String[] args) {
@@ -148,5 +149,29 @@ public class HP2CServer {
 
     public static void setVerbose(boolean verbose) {
         HP2CServer.verbose = verbose;
+    }
+
+    /**
+     * Get a Map containing the devices in every VirtualEdge
+     */
+    public static Map<String, VirtualComm.VirtualDevice> getDevicesMap(){
+        Map<String,VirtualComm.VirtualDevice> virtualDevices = new HashMap<>();
+        for (VirtualEdge virtualEdge:edgeMap.values()){
+            virtualDevices.putAll(virtualEdge.getDeviceMap());
+        }
+        return virtualDevices;
+    }
+
+    public static VirtualEdge findEdgeByDevice(Device device) {
+        for (VirtualEdge edge : edgeMap.values()) {
+            if (edge.getDeviceMap().equals(device)) {
+                return edge;
+            }
+        }
+        return null;
+    }
+
+    public static String getPathToSetup(){
+        return pathToSetup;
     }
 }

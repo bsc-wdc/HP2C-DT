@@ -102,14 +102,19 @@ public class OpalSimulator {
 
         for (String edgeFile : Objects.requireNonNull(setupDirectory.list())){
             String pathToEdge = deploymentFile + edgeFile;
-            Edge edge = initEdgeComms(pathToEdge);
-            ArrayList<DeviceWrapper> devicesWrapped = getDevices(pathToEdge);
+            JSONObject jGlobProp = getJGlobalProperties(pathToEdge);
+            String type = jGlobProp.optString("type", "");
+            if (Objects.equals(type, "edge")) {
+                Edge edge = initEdgeComms(pathToEdge, jGlobProp);
+                ArrayList<DeviceWrapper> devicesWrapped = getDevices(pathToEdge);
 
-            Map<String, Device> devices = loadDevices(pathToEdge, false);
-            devicesWrapped = joinDevices(devicesWrapped, devices);
-            edge.setDevices(devicesWrapped);
-            edges.add(edge);
-
+                Map<String, Device> devices = loadDevices(pathToEdge, false);
+                devicesWrapped = joinDevices(devicesWrapped, devices);
+                edge.setDevices(devicesWrapped);
+                edges.add(edge);
+            } else{
+                System.out.println("Skipppppppppppppppp");
+            }
         }
 
         if (runSimulation) createLogFiles(simulationName);
@@ -567,8 +572,7 @@ public class OpalSimulator {
         return devices;
     }
 
-    private static Edge initEdgeComms(String pathToEdge) throws IOException {
-        JSONObject jGlobProp = getJGlobalProperties(pathToEdge);
+    private static Edge initEdgeComms(String pathToEdge, JSONObject jGlobProp) throws IOException {
         JSONObject jComms = jGlobProp.getJSONObject("comms");
         String label = jGlobProp.getString("label");
 

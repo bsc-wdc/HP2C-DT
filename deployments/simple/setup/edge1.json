@@ -1,5 +1,6 @@
 {
     "global-properties":{
+        "type": "edge",
         "label": "edge1",
         "window-size": 100,
         "comms":{
