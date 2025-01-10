@@ -262,6 +262,7 @@ public abstract class Func implements Runnable {
         // Process Sensors
         JSONObject jSensors = parameters.getJSONObject("sensors");
         ArrayList<Sensor<?, ?>> sensors = new ArrayList<>();
+
         // Search the Sensors for every edge
         for (String edgeLabel : jSensors.keySet()) {
             JSONArray edgeSensors = jSensors.getJSONArray(edgeLabel);
@@ -358,7 +359,6 @@ public abstract class Func implements Runnable {
             triggerSensor.addOnReadFunction(action, interval, label, onRead);
         }
     }
-
 
 
     /**

@@ -126,7 +126,7 @@ echo "Deploying container for SERVER with REST API listening on port 8080..."
 docker run \
     -d -it --rm \
     --name ${DEPLOYMENT_PREFIX}_server \
-    -v ${setup_folder}:/data/edge/ \
+    -v ${setup_folder}:/data/server/ \
     -v ${deployment_json}:/data/deployment_setup.json \
     -v ${config_json}:/run/secrets/config.json \
     -p 8080:8080 \

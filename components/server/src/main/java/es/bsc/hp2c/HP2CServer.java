@@ -16,9 +16,11 @@
 package es.bsc.hp2c;
 
 import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.utils.EdgeMap;
 import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 import es.bsc.hp2c.server.modules.*;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,8 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
-import static es.bsc.hp2c.common.utils.FileUtils.readEdgeLabel;
+import static es.bsc.hp2c.common.utils.FileUtils.*;
 
 /**
  * Implementation of the server logic interacting with an InfluxDB database and
@@ -46,6 +47,7 @@ public class HP2CServer {
 
     /** Start and run Server modules. */
     public static void main(String[] args) {
+        pathToSetup = initPathToSetup(args);
         // Load setup files
         String hostIp = getHostIp();
         // Deploy listener
@@ -69,6 +71,46 @@ public class HP2CServer {
         restServer = new RestListener(edgeMap);
         cli = new CLI(edgeMap);
     }
+
+    private static String initPathToSetup(String[] args) {
+        String pathToSetup = "";
+
+        if (args.length == 1) {
+            File fileOrDir = new File(args[0]);
+
+            if (fileOrDir.isDirectory()) {
+                File[] jsonFiles = fileOrDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));
+
+                if (jsonFiles != null) {
+                    for (File jsonFile : jsonFiles) {
+                        try {
+                            JSONObject jsonObject = getJsonObject(jsonFile.getAbsolutePath());
+                            JSONObject globalProperties = jsonObject.optJSONObject("global-properties");
+
+                            if (globalProperties != null && "server".equals(globalProperties.optString("type"))) {
+                                pathToSetup = jsonFile.getAbsolutePath();
+                                System.out.println("Selected setup file: " + pathToSetup);
+                                return pathToSetup;
+                            }
+                        } catch (IOException e) {
+                            System.err.println("Error reading file: " + jsonFile.getName() + " - " + e.getMessage());
+                        }
+                    }
+                }
+                System.err.println("No valid server JSON file found in directory: " + args[0]);
+            } else {
+                System.err.println("Invalid path provided: " + args[0]);
+                System.exit(1);
+            }
+        } else {
+            pathToSetup = "deployments/simple/setup/server.json";
+        }
+        if (!pathToSetup.isEmpty()) {
+            System.out.println("Using server setup file: " + pathToSetup);
+        }
+        return pathToSetup;
+    }
+
 
     private static void start() throws IOException, InterruptedException {
         // Start Server modules
@@ -154,12 +196,15 @@ public class HP2CServer {
     /**
      * Get a Map containing the devices in every VirtualEdge
      */
-    public static Map<String, VirtualComm.VirtualDevice> getDevicesMap(){
-        Map<String,VirtualComm.VirtualDevice> virtualDevices = new HashMap<>();
+    public static EdgeMap getDevicesMap(){
+        EdgeMap edgeDevices = new EdgeMap();
         for (VirtualEdge virtualEdge:edgeMap.values()){
-            virtualDevices.putAll(virtualEdge.getDeviceMap());
+            Map<String, VirtualComm.VirtualDevice> devices = virtualEdge.getDeviceMap();
+            for (String deviceLabel:devices.keySet()){
+                edgeDevices.addDevice(virtualEdge.getLabel(), deviceLabel, (Device) devices.get(deviceLabel));
+            }
         }
-        return virtualDevices;
+        return edgeDevices;
     }
 
     public static VirtualEdge findEdgeByDevice(Device device) {
