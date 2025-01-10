@@ -1,6 +1,7 @@
 package es.bsc.hp2c.common.utils;
 
 import java.io.*;
+import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -50,6 +51,34 @@ public class MeasurementWindow<T> implements Serializable{
     public Measurement<T> getLastMeasurement(){
         if (size == 0){ return null; }
         return window[(start + size - 1) % window.length];
+    }
+
+    public Measurement<T> getFirstMeasurement() {
+        if (size == 0) {
+            return null;
+        }
+        return window[start];
+    }
+
+    public Duration getTotalTimeSpan() {
+        if (size < 2) {
+            return Duration.ZERO; // Not enough measurements to calculate a span
+        }
+        Instant oldest = window[start].getTimestamp();
+        Instant newest = window[(start + size - 1) % window.length].getTimestamp();
+        return Duration.between(oldest, newest);
+    }
+
+    public double getSamplingRate() {
+        if (size < 2) {
+            return 0.0; // Not enough data to calculate a rate
+        }
+        Duration timeSpan = getTotalTimeSpan();
+        long totalNanos = timeSpan.getSeconds() * 1_000_000_000L + timeSpan.getNano();
+        if (totalNanos == 0) {
+            return 0.0; // Avoid division by zero
+        }
+        return (double) (size - 1) / (totalNanos / 1_000_000_000.0);
     }
 
     public int getSize(){
