@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -94,8 +95,16 @@ public final class CommUtils {
     public static HashMap<String, Object> parseRemoteIp(String component) throws IOException {
         // Check existence of file
         String deploymentFile = "/data/deployment_setup.json";
+
         if (!new File(deploymentFile).isFile()) {
-            deploymentFile = "deployments/testbed/deployment_setup.json";
+            // Check if the current working directory ends with "server"
+            String cwd = Paths.get("").toAbsolutePath().toString();
+            if (cwd.endsWith("server")) {
+                deploymentFile = "../../deployments/testbed/deployment_setup.json";
+            } else {
+                deploymentFile = "deployments/testbed/deployment_setup.json";
+            }
+
             if (!new File(deploymentFile).isFile()) {
                 throw new IOException("Could not find 'deployment_setup.json'");
             }

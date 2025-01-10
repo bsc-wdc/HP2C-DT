@@ -25,6 +25,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
@@ -125,7 +126,13 @@ public class DatabaseHandler {
         String configPath = "/run/secrets/config.json";
         File configFile = new File(configPath);
         if (!configFile.isFile()) {
-            configPath = "config.json";
+            String cwd = Paths.get("").toAbsolutePath().toString();
+            if (cwd.endsWith("server")) {
+                configPath = "../../config.json";
+            } else {
+                configPath = "config.json";
+            }
+
         }
         // Parse config file
         return getAuth(configPath);

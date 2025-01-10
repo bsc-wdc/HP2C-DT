@@ -1,5 +1,43 @@
 #!/bin/bash
 
+usage() {
+    echo "Usage: $0 [-h] [--deployment_name=<name>]" 1>&2
+    echo "Options:" 1>&2
+    echo "  -h: Show usage instructions" 1>&2
+    echo "  --deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2
+    exit 1
+}
+
+# Initialization
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+DEPLOYMENT_PREFIX="hp2c"
+DEPLOYMENT_NAME="testbed"
+
+# Parse command line arguments
+pos=1
+for arg in "$@"; do
+    case $arg in
+        -h)
+            usage
+            ;;
+        --deployment_name=*)
+            DEPLOYMENT_NAME="${arg#*=}"
+            ;;
+        *)
+            if [ $pos -eq 1 ]; then
+                DEPLOYMENT_NAME=$1
+            else
+                echo "Error: Unknown option or argument: $arg"
+                usage
+            fi
+            ;;
+    esac
+    ((pos++))
+done
+
+# Initialize configuration files and directories
+setup_folder=$(realpath "${SCRIPT_DIR}/../../../deployments/${DEPLOYMENT_NAME}/setup") # Configuration files
+
 # Verify I am in the right folder and move one level down otherwise
 if [ ! -d "src" ]; then
     cd ..
@@ -12,4 +50,4 @@ mvn clean install
 # Compile and run
 cd ../server
 mvn clean package
-mvn exec:java -Dexec.mainClass="es.bsc.hp2c.HP2CServer"
+mvn exec:java -Dexec.mainClass="es.bsc.hp2c.HP2CServer" -Dexec.args="$setup_folder"

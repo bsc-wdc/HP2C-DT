@@ -23,7 +23,6 @@ import es.bsc.hp2c.server.modules.*;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
