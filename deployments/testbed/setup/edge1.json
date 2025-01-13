@@ -42,7 +42,10 @@
 
             "properties": {
                 "comm-type": "opal-udp",
-                "indexes": [0]
+                "indexes": [0],
+                "window-size": 5,
+                "amqp-type": "onRead",
+                "amqp-aggregate": "last"
             }
         },
         {
@@ -57,6 +60,7 @@
                 "comm-type": "opal-tcp",
                 "indexes": [0,1,2],
                 "window-size": 3,
+                "amqp-type": "onChange",
                 "amqp-aggregate": "last"
             }
         },
@@ -71,7 +75,8 @@
             "properties": {
                 "comm-type": "opal-udp",
                 "indexes": [1],
-                "window-size": 5
+                "window-size": 5,
+                "amqp-aggregate": "all"
             }
         },
         {

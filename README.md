@@ -117,7 +117,7 @@ These AMQP options can be defined for each sensor by editing the `deployments/de
             "lang": "Java",
             "method-name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
             "parameters": {
-                "sensors": ["ALL"],
+                "sensors": [],
                 "actuators": [],
                 "other": {
                     "aggregate": {
@@ -126,10 +126,10 @@ These AMQP options can be defined for each sensor by editing the `deployments/de
                 } 
             },
             "trigger": {
-                "type": "onRead", #onFrequency also possible
+                "type": "onRead",  # onFrequency also possible
                 "parameters": {
-                    "trigger-sensor": "ALL",
-                    "interval": 3 #if onFrequency, declare "frequency": [int]
+                    "trigger-sensor": "",
+                    "interval": 3  # if onFrequency, declare "frequency": [int]
                 }
         
             }
