@@ -104,7 +104,8 @@ public class AmqpManager {
                     db.write(m.getValue(), m.getTimestamp(), edgeLabel, deviceName);
                 }
             } catch (Exception e) {
-                System.err.println("[AmqpManager] Error sensing incoming message for routing key " + senderRoutingKey);
+                System.err.println("[AmqpManager] Error sensing incoming message for routing key " + senderRoutingKey
+                        + ": " + e.getMessage());
             }
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });

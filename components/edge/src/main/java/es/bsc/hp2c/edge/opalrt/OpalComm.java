@@ -602,7 +602,7 @@ public class OpalComm {
 
     private static void printCurrentTime() {
         LocalTime currentTime = LocalTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
         String formattedTime = currentTime.format(formatter);
         System.out.println("Current time: " + formattedTime);
     }
