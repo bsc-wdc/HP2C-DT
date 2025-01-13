@@ -99,7 +99,7 @@
             "trigger": {
                 "type": "onRead",
                 "parameters": {
-                    "trigger-sensor": "Three-Phase Voltmeter Gen1"
+                    "trigger-sensor": ["Three-Phase Voltmeter Gen1"]
                 }
             }
         }

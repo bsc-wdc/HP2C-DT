@@ -19,6 +19,9 @@ public class OnReadFunction<T> {
 
     public OnReadFunction(Runnable runnable, int interval, String label, boolean onRead) {
         this.runnable = runnable;
+        if (interval == -1){
+            interval = 1;
+        }
         this.interval = interval;
         this.counter = 1;
         this.label = label;

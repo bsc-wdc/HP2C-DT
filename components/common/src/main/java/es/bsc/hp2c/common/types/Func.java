@@ -82,8 +82,7 @@ public abstract class Func implements Runnable {
         }
     }
 
-    // Transform function to server format (edgeLabel-[deviceLabel] for parameters,
-    // and edgeLabel-deviceLabel for trigger-sensor)
+    // Transform function to server format (edgeLabel-[deviceLabel]
     private static void transformFuncToServerFormat(JSONObject jFunc, String edgeLabel) {
         // Transform parameters section
         JSONObject params = jFunc.getJSONObject("parameters");
@@ -99,13 +98,21 @@ public abstract class Func implements Runnable {
 
         // Transform trigger section
         JSONObject triggerParams = jFunc.getJSONObject("trigger").getJSONObject("parameters");
-        String triggerSensor = triggerParams.optString("trigger-sensor", null);
-        if (triggerSensor != null) {
-            JSONObject transformed = new JSONObject();
-            transformed.put(edgeLabel, triggerSensor);
-            triggerParams.put("trigger-sensor", transformed);
+
+        if (!triggerParams.has("trigger-sensor")){
+            return;
         }
+        Object triggerSensor = triggerParams.get("trigger-sensor");
+        if (!(triggerSensor instanceof JSONArray)) {
+            throw new IllegalArgumentException("Expected 'trigger-sensor' to be a JSONArray, but found: "
+                    + triggerSensor.getClass().getSimpleName());
+        }
+        JSONArray triggerSensorArray = (JSONArray) triggerSensor;
+        JSONObject transformed = new JSONObject();
+        transformed.put(edgeLabel, triggerSensorArray);
+        triggerParams.put("trigger-sensor", transformed);
     }
+
 
     public static Map<String, String> loadGlobalFunctions(String setupFile, String defaultsPath, Map<String, Device> devices,
                                            boolean AmqpOn) throws IOException {
@@ -150,7 +157,9 @@ public abstract class Func implements Runnable {
                         // Modify trigger parameters for this device
                         JSONObject jParameters = new JSONObject();
                         jParameters = jGlobalFunc.getJSONObject("trigger").optJSONObject("parameters");
-                        jParameters.put("trigger-sensor", device.getLabel());
+                        JSONArray triggerSensorArray = new JSONArray();
+                        triggerSensorArray.put(device.getLabel());
+                        jParameters.put("trigger-sensor", triggerSensorArray);
 
                         // Check for device-specific properties
                         JSONObject jDevice = null;
@@ -340,6 +349,7 @@ public abstract class Func implements Runnable {
 
 
     private static void setupOnReadTrigger(JSONObject triggerParams, EdgeMap edgeMap, Runnable action, String label, boolean onRead) {
+        System.out.println("Setup on read trigger:::::::::::::");
         JSONObject jTriggerSensorMap = triggerParams.optJSONObject("trigger-sensor");
 
         if (jTriggerSensorMap == null) {
@@ -347,16 +357,22 @@ public abstract class Func implements Runnable {
         }
 
         for (String edgeLabel : jTriggerSensorMap.keySet()) {
-            String deviceLabel = jTriggerSensorMap.getString(edgeLabel);
-            deviceLabel = formatLabel(deviceLabel);
-            Sensor<?, ?> triggerSensor = (Sensor<?, ?>) edgeMap.getDevice(edgeLabel, deviceLabel);
+            JSONArray deviceLabels = jTriggerSensorMap.getJSONArray(edgeLabel);
+            for (Object deviceLabelObject : deviceLabels) {
+                if (!(deviceLabelObject instanceof String)) {
+                    continue;
+                }
+                String deviceLabel = (String) deviceLabelObject;
+                deviceLabel = formatLabel(deviceLabel);
+                Sensor<?, ?> triggerSensor = (Sensor<?, ?>) edgeMap.getDevice(edgeLabel, deviceLabel);
 
-            int interval = triggerParams.optInt("interval", -1);
-            if (interval == -1) {
-                interval = triggerSensor.getWindow().getSize();
+                int interval = triggerParams.optInt("interval", -1);
+                if (interval == -1) {
+                    interval = triggerSensor.getWindow().getSize();
+                }
+                
+                triggerSensor.addOnReadFunction(action, interval, label, onRead);
             }
-
-            triggerSensor.addOnReadFunction(action, interval, label, onRead);
         }
     }
 
@@ -380,7 +396,6 @@ public abstract class Func implements Runnable {
 
         // Print Func summary
         printFuncSummary(jFunc, edgeMap, triggerParams, label, triggerType);
-
         switch (triggerType) {
             case "onFrequency":
                 int freq = triggerParams.getInt("frequency") * 1000;
@@ -421,20 +436,26 @@ public abstract class Func implements Runnable {
 
                 if (jTriggerSensorMap != null) {
                     for (String edgeLabel : jTriggerSensorMap.keySet()) {
-                        String deviceLabel = jTriggerSensorMap.getString(edgeLabel);
-                        deviceLabel = formatLabel(deviceLabel);
-                        Device device = edgeMap.getDevice(edgeLabel, deviceLabel);
+                        JSONArray deviceLabels = jTriggerSensorMap.getJSONArray(edgeLabel);
+                        for (Object deviceLabelObject : deviceLabels) {
+                            if (!(deviceLabelObject instanceof String)){
+                                continue;
+                            }
+                            String deviceLabel = (String) deviceLabelObject;
+                            deviceLabel = formatLabel(deviceLabel);
+                            Device device = edgeMap.getDevice(edgeLabel, deviceLabel);
 
-                        Sensor<?, ?> triggerSensor = (Sensor<?, ?>) device;
-                        try {
-                            windowLength = triggerSensor.getWindow().getCapacity();
-                        } catch (Exception e) {
-                            windowLength = null;
+                            Sensor<?, ?> triggerSensor = (Sensor<?, ?>) device;
+                            try {
+                                windowLength = triggerSensor.getWindow().getCapacity();
+                            } catch (Exception e) {
+                                windowLength = null;
+                            }
+
+                            triggerSensorDetails.append("Edge: ").append(edgeLabel)
+                                    .append(", Sensor: ").append(deviceLabel).append(", Window length: ")
+                                    .append(windowLength).append("\n");
                         }
-
-                        triggerSensorDetails.append("Edge: ").append(edgeLabel)
-                                .append(", Sensor: ").append(deviceLabel).append(", Window length: ")
-                                .append(windowLength).append("\n");
                     }
                 }
 

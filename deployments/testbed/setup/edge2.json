@@ -102,7 +102,7 @@
             "trigger": {
                 "type": "onRead",
                 "parameters": {
-                    "trigger-sensor":"Voltmeter Gen1"
+                    "trigger-sensor":["Voltmeter Gen1"]
                 }
             }
         }

@@ -83,7 +83,7 @@ def generate_panel_timeseries(edge_name, device, datasource_uid):
                     {
                         "id": "unit",
                         "value": "V" if device[2] == "Voltmeter"
-                        else "A" if device[2] == "Ammeter" else "custom"
+                        else "A" if device[2] == "Ammeter" else ""
                     }
                 ]
             },
