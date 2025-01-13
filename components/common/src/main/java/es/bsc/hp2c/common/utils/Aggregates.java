@@ -65,6 +65,12 @@ public class Aggregates {
     }
 
     public static MeasurementWindow<Number[]> phasor(MeasurementWindow<?> window) {
+        // Skip if window is empty
+        if (window.getSize() < 2) {
+            return null;
+        }
+
+        // Init
         final double FREQUENCY = 5.0; // Assumed frequency
         Instant aggregateTime = window.getLastMeasurement().getTimestamp();
         MeasurementWindow<Number[]> resultWindow = new MeasurementWindow<>(1);
@@ -92,8 +98,21 @@ public class Aggregates {
      *         [1] - The angle of the phasor (double, in radians), adjusted to the Unix epoch.
      */
     private static Number[] phasorEstimationDFT(MeasurementWindow<?> window, double f) {
+        // Checks
+        double samplingRate = window.getSamplingRate();
+        double timeSpan = (double) window.getTotalTimeSpan().toMillis() / 1000;  // seconds
+        if (samplingRate < (2 * f)) {
+            System.out.printf("[phasor] WARNING: Sampling rate %.2f Hz does not comply with the minimum Nyquist " +
+                    "criterion sampling rate of 2 * f = %.2f\n", samplingRate, (2 * f));
+        }
+        if ((timeSpan + (1 / f) * 0.1) < (1 / f)) {
+            System.out.printf("[phasor] WARNING: window too small (spanning %.0f ms) does not cover a complete " +
+                    "sampling period T = %.0f ms\n", timeSpan * 1000, 1000 / f);
+        }
+
+        // Init
         int N = window.getSize();
-        int k = (int) Math.round(N * f / window.getSamplingRate());
+        int k = (int) Math.round(N * f / samplingRate);
         Instant windowStartTime = window.getFirstMeasurement().getTimestamp();
 
         // Compute real and imaginary parts

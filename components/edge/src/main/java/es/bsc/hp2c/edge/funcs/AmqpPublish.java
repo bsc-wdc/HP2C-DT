@@ -77,7 +77,22 @@ public class AmqpPublish extends Func {
     public void run() {
         try {
             // Create a new MeasurementWindow using the appropriate aggregate function
-            MeasurementWindow<?> aggregateWindow = (MeasurementWindow<?>) aggregate.invoke(null, this.sensor.getWindow());
+            if (sensor.getWindow() == null) {
+                System.err.println("Sensor window is null");
+                return;
+            }
+            MeasurementWindow<?> aggregateWindow =
+                    (MeasurementWindow<?>) aggregate.invoke(null, this.sensor.getWindow());
+
+            // Handle malformed aggregate window
+            if (aggregateWindow == null) {
+                System.out.println("[AMQPPublish] Aggregate " + aggregate.getName() + " retrieved a null window. " +
+                        "Skipping AMQP publication...");
+                return;
+            }
+            System.out.println("[AMQPPublish] Sending values for sensor "
+                    + ((Device) sensor).getLabel() + ": " + aggregateWindow);
+
             // Prepare body message
             byte[] message = aggregateWindow.encode();
 
