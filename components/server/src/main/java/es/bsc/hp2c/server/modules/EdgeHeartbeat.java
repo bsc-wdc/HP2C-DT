@@ -112,13 +112,13 @@ public class EdgeHeartbeat {
             VirtualEdge edge = new VirtualEdge(jEdgeSetup);
             System.out.println("[processHeartbeatMessage] Loaded edge '" + edgeLabel + "': " + edge);
             edgeMap.put(edgeLabel, edge);
-            /*
-            Map<String, VirtualComm.VirtualDevice> virtualDevices = getDevicesMap();
+            EdgeMap edgeDevices = getDevicesMap();
             String pathToSetup = getPathToSetup();
-            loadFunctions(pathToSetup, virtualDevices);
-            */
-
-
+            try {
+                loadFunctions(pathToSetup, edgeDevices);
+            } catch (IOException e) {
+                System.out.println("Error loading functions: " + e);
+            }
 
 
         }

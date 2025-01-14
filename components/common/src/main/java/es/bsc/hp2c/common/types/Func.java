@@ -269,57 +269,61 @@ public abstract class Func implements Runnable {
         JSONObject parameters = jFunc.getJSONObject("parameters");
 
         // Process Sensors
-        JSONObject jSensors = parameters.getJSONObject("sensors");
+        JSONObject jSensors = parameters.optJSONObject("sensors");
         ArrayList<Sensor<?, ?>> sensors = new ArrayList<>();
+        if (jSensors != null) {
 
-        // Search the Sensors for every edge
-        for (String edgeLabel : jSensors.keySet()) {
-            JSONArray edgeSensors = jSensors.getJSONArray(edgeLabel);
-            for (int i = 0; i < edgeSensors.length(); i++) {
-                String label = edgeSensors.getString(i);
-                label = formatLabel(label);
-                Device d = edgeMap.getDevice(edgeLabel, label);
-                if (d == null) {
-                    throw new FunctionInstantiationException(
-                            "Function " + funcLabel + " cannot be instantiated because " + label + " on edge " +
-                                    edgeLabel + " was not found");
-                }
-                if (d.isSensitive()) {
-                    sensors.add((Sensor<?, ?>) d);
-                } else {
-                    throw new FunctionInstantiationException(
-                            "Function " + funcLabel + " cannot be instantiated because " + label + " on edge " +
-                                    edgeLabel + " is not a sensor");
+            // Search the Sensors for every edge
+            for (String edgeLabel : jSensors.keySet()) {
+                JSONArray edgeSensors = jSensors.getJSONArray(edgeLabel);
+                for (int i = 0; i < edgeSensors.length(); i++) {
+                    String label = edgeSensors.getString(i);
+                    label = formatLabel(label);
+                    Device d = edgeMap.getDevice(edgeLabel, label);
+
+                    if (d == null) {
+                        throw new FunctionInstantiationException(
+                                "Function " + funcLabel + " cannot be instantiated because " + label + " on edge " +
+                                        edgeLabel + " was not found");
+                    }
+                    if (d.isSensitive()) {
+                        sensors.add((Sensor<?, ?>) d);
+                    } else {
+                        throw new FunctionInstantiationException(
+                                "Function " + funcLabel + " cannot be instantiated because " + label + " on edge " +
+                                        edgeLabel + " is not a sensor");
+                    }
                 }
             }
         }
 
         // Process Actuators
-        JSONObject jActuators = parameters.getJSONObject("actuators");
+        JSONObject jActuators = parameters.optJSONObject("actuators");
         ArrayList<Actuator<?>> actuators = new ArrayList<>();
+        if (jActuators != null) {
 
-        // Search the Actuators for every edge
-        for (String edgeLabel : jActuators.keySet()) {
-            JSONArray edgeActuators = jActuators.getJSONArray(edgeLabel);
-            for (int i = 0; i < edgeActuators.length(); i++) {
-                String label = edgeActuators.getString(i);
-                label = formatLabel(label);
-                Device d = edgeMap.getDevice(edgeLabel, label);
-                if (d == null) {
-                    throw new FunctionInstantiationException(
-                            "Function " + funcLabel + " cannot be instantiated because " + label + " on edge " +
-                                    edgeLabel + " was not found");
-                }
-                if (d.isActionable()) {
-                    actuators.add((Actuator<?>) d);
-                } else {
-                    throw new FunctionInstantiationException(
-                            "Function " + funcLabel + " cannot be instantiated because " + label + " on edge " +
-                                    edgeLabel + " is not an actuator");
+            // Search the Actuators for every edge
+            for (String edgeLabel : jActuators.keySet()) {
+                JSONArray edgeActuators = jActuators.getJSONArray(edgeLabel);
+                for (int i = 0; i < edgeActuators.length(); i++) {
+                    String label = edgeActuators.getString(i);
+                    label = formatLabel(label);
+                    Device d = edgeMap.getDevice(edgeLabel, label);
+                    if (d == null) {
+                        throw new FunctionInstantiationException(
+                                "Function " + funcLabel + " cannot be instantiated because " + label + " on edge " +
+                                        edgeLabel + " was not found");
+                    }
+                    if (d.isActionable()) {
+                        actuators.add((Actuator<?>) d);
+                    } else {
+                        throw new FunctionInstantiationException(
+                                "Function " + funcLabel + " cannot be instantiated because " + label + " on edge " +
+                                        edgeLabel + " is not an actuator");
+                    }
                 }
             }
         }
-
         return getAction(funcLabel, driver, parameters, sensors, actuators);
     }
 
@@ -348,13 +352,14 @@ public abstract class Func implements Runnable {
     }
 
 
-    private static void setupOnReadTrigger(JSONObject triggerParams, EdgeMap edgeMap, Runnable action, String label, boolean onRead) {
-        System.out.println("Setup on read trigger:::::::::::::");
+    private static void setupOnReadTrigger(JSONObject triggerParams, EdgeMap edgeMap, Runnable action, String label,
+                                           boolean onRead) throws FunctionInstantiationException {
         JSONObject jTriggerSensorMap = triggerParams.optJSONObject("trigger-sensor");
 
         if (jTriggerSensorMap == null) {
             throw new IllegalArgumentException("Trigger-sensor map is required for onRead triggers.");
         }
+        HashMap<Sensor<?,?>, Integer> triggerSensors = new HashMap<>();
 
         for (String edgeLabel : jTriggerSensorMap.keySet()) {
             JSONArray deviceLabels = jTriggerSensorMap.getJSONArray(edgeLabel);
@@ -364,15 +369,28 @@ public abstract class Func implements Runnable {
                 }
                 String deviceLabel = (String) deviceLabelObject;
                 deviceLabel = formatLabel(deviceLabel);
-                Sensor<?, ?> triggerSensor = (Sensor<?, ?>) edgeMap.getDevice(edgeLabel, deviceLabel);
 
-                int interval = triggerParams.optInt("interval", -1);
-                if (interval == -1) {
-                    interval = triggerSensor.getWindow().getSize();
+                Device d = edgeMap.getDevice(edgeLabel, deviceLabel);
+                if (d != null){
+                    Sensor<?, ?> triggerSensor = (Sensor<?, ?>) edgeMap.getDevice(edgeLabel, deviceLabel);
+
+                    int interval = triggerParams.optInt("interval", 1);
+                    if (interval == -1) {
+                        interval = triggerSensor.getWindow().getCapacity();
+                    }
+                    triggerSensors.put(triggerSensor, interval);
                 }
-                
-                triggerSensor.addOnReadFunction(action, interval, label, onRead);
+                else {
+                    throw new FunctionInstantiationException(
+                            "Function " + label + " cannot be instantiated because trigger sensor" + deviceLabel + " on edge " +
+                                    edgeLabel + " was not found"); // if a device is missing the func must be discarded (awaiting a new edge to come)
+                }
             }
+        }
+
+        for (Sensor<?,?> triggerSensor : triggerSensors.keySet()){
+            int interval = triggerSensors.get(triggerSensor);
+            triggerSensor.addOnReadFunction(action, interval, label, onRead);
         }
     }
 
@@ -388,7 +406,8 @@ public abstract class Func implements Runnable {
      * @param edgeMap EdgeMap object containing the devices within each edge.
      * @param action  Runnable that implements the function to trigger.
      */
-    public static void setupTrigger(JSONObject jFunc, EdgeMap edgeMap, Runnable action) {
+    public static void setupTrigger(JSONObject jFunc, EdgeMap edgeMap, Runnable action)
+            throws FunctionInstantiationException {
         JSONObject jTrigger = jFunc.getJSONObject("trigger");
         String label = jFunc.optString("label", null);
         String triggerType = jTrigger.optString("type", "");

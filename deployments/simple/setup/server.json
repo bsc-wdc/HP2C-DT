@@ -1,0 +1,48 @@
+{
+  "global-properties": {
+    "type": "server"
+  },
+  "funcs":[
+    {
+      "label": "VoltLimitation",
+      "lang": "Java",
+      "method-name": "es.bsc.hp2c.server.funcs.VoltLimitation",
+      "parameters": {
+        "sensors": {
+          "edge1": ["Voltmeter Gen1"]
+        },
+        "actuators": {
+          "edge1": ["Three-Phase Switch Gen1"]
+        },
+        "other": [200]
+      },
+      "trigger": {
+        "type": "onRead",
+        "parameters": {
+          "trigger-sensor": {
+            "edge1": ["Voltmeter Gen1"]
+          },
+          "interval": 2
+        }
+      }
+    },
+    {
+      "label": "CalcPower",
+      "lang": "Python",
+      "method-name": "es.bsc.hp2c.server.funcs.CalcPower",
+      "parameters": {
+        "sensors": {
+          "edge1": ["Voltmeter Gen1", "Ammeter Gen1"]
+        },
+        "actuators": [],
+        "other": []
+      },
+      "trigger": {
+        "type": "onFrequency",
+        "parameters": {
+          "frequency": 10
+        }
+      }
+    }
+  ]
+}
