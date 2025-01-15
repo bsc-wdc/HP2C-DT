@@ -16,16 +16,12 @@
 package es.bsc.hp2c.server.modules;
 
 import com.rabbitmq.client.*;
-import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.utils.EdgeMap;
-import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.edge.VirtualEdge;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -33,7 +29,6 @@ import java.util.TimerTask;
 import static es.bsc.hp2c.HP2CServer.getDevicesMap;
 import static es.bsc.hp2c.HP2CServer.getPathToSetup;
 import static es.bsc.hp2c.common.types.Func.loadFunctions;
-import static java.lang.Boolean.parseBoolean;
 
 /**
  * Heartbeat handler that starts:
@@ -105,7 +100,7 @@ public class EdgeHeartbeat {
 
             if (!newEdge.equals(oldEdge)){
                 newEdge.setModified(true);
-                edgeMap.put(edgeLabel, newEdge);
+                oldEdge.update(newEdge);
             }
             else {
                 edgeMap.get(edgeLabel).setLastHeartbeat(heartbeatTime);

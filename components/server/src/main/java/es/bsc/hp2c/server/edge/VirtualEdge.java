@@ -22,7 +22,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static es.bsc.hp2c.common.utils.CommUtils.parseAmqpPublishFunctions;
@@ -37,11 +36,12 @@ public class VirtualEdge {
     private final Map<String, VirtualComm.VirtualDevice> devices;
     private boolean isAvailable;
     private long lastHeartbeat;
+
     private float x;
+
     private float y;
     private ArrayList<String> connections;
     private boolean modified;
-
     /**
      * Basic constructor when passing all the essential parameters explicitly.
      * @param label Edge label
@@ -98,6 +98,21 @@ public class VirtualEdge {
         }
         this.modified = true;
         parseAmqpPublishFunctions(jEdgeSetup);
+    }
+
+    public void update(VirtualEdge newEdge){
+        for (VirtualComm.VirtualDevice d : newEdge.getDeviceMap().values()){
+            String deviceLabel = ((Device) d).getLabel();
+            if (this.getDeviceMap().containsKey(deviceLabel)) {
+                boolean deviceAvailability = ((Device) d).getDeviceAvailability();
+                this.setDeviceAvailability(deviceLabel, deviceAvailability);
+            } else {
+                this.devices.put(deviceLabel, d);
+            }
+        }
+        this.x = newEdge.getX();
+        this.y = newEdge.getY();
+        this.connections = newEdge.getConnections();
     }
 
     public boolean equals(VirtualEdge oldEdge){
@@ -209,6 +224,18 @@ public class VirtualEdge {
 
     public void setLastHeartbeat(long lastHeartbeat) {
         this.lastHeartbeat = lastHeartbeat;
+    }
+
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    public ArrayList<String> getConnections() {
+        return connections;
     }
 
     public long getLastHeartbeat() {
