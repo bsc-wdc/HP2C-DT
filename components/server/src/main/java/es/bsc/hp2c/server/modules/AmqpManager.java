@@ -24,11 +24,11 @@ import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import es.bsc.hp2c.common.utils.Measurement;
 import es.bsc.hp2c.common.utils.MeasurementWindow;
+import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -98,6 +98,7 @@ public class AmqpManager {
                 // Decode the MeasurementWindow, setValues in the sensors, and get the new MeasurementWindow<Float[]>
                 MeasurementWindow<Float[]> window = sensor.sensed(message);
                 sensor.onRead();
+
                 for (Measurement<Float[]> m : window.getMeasurementsOlderToNewer()) {
                     // Store the values in the database
                     db.write(m.getValue(), m.getTimestamp(), edgeLabel, deviceName);

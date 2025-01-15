@@ -89,8 +89,8 @@ public abstract class Device {
 
     private final String label;
     private final float[] position;
-    private boolean isSensorAvailable = false;
-    private boolean isActuatorAvailable = false;
+    private boolean sensorAvailability = false;
+    private boolean actuatorAvailability = false;
     private LocalTime lastUpdate;
     private long maxTimeWithoutUpdate = Long.MAX_VALUE; // measured in milliseconds
 
@@ -99,9 +99,18 @@ public abstract class Device {
         this.position = position;
     }
 
-    public void setSensorAvailable(boolean b){ isSensorAvailable = b; }
+    public void setSensorAvailability(boolean b){ sensorAvailability = b; }
 
-    public void setActuatorAvailable(boolean b){ isActuatorAvailable = b; }
+    public void setActuatorAvailability(boolean b){ actuatorAvailability = b; }
+
+    public void setDeviceAvailability(boolean b){
+        if (this.isActionable()){
+            setActuatorAvailability(b);
+        }
+        if (this.isSensitive()){
+            setSensorAvailability(b);
+        }
+    }
 
     public void setMaxTimeWithoutUpdate(int m){ maxTimeWithoutUpdate = m; }
 
@@ -112,24 +121,35 @@ public abstract class Device {
     * Long.MAX_VALUE), it will compare the difference between current time and the time of the last update to
     * maxTimeWithoutUpdate.
     * */
-    public boolean isSensorAvailable() throws UnsupportedOperationException{
+    public boolean getSensorAvailability() throws UnsupportedOperationException{
         if (!isSensitive()){
             System.err.println("Device " + label + " is not a sensor");
             throw new UnsupportedOperationException();
         }
         if (maxTimeWithoutUpdate != Long.MAX_VALUE && lastUpdate != null){
             Duration timeDifference = Duration.between(lastUpdate, LocalTime.now());
-            isSensorAvailable = timeDifference.getSeconds() * 1000 < maxTimeWithoutUpdate;;
+            sensorAvailability = timeDifference.getSeconds() * 1000 < maxTimeWithoutUpdate;;
         }
-        return isSensorAvailable;
+        return sensorAvailability;
     }
 
-    public boolean isActuatorAvailable() throws UnsupportedOperationException{
+    public boolean getActuatorAvailability() throws UnsupportedOperationException{
         if (!isActionable()){
             System.err.println("Device " + label + " is not an actuator");
             throw new UnsupportedOperationException();
         }
-        return isActuatorAvailable;
+        return actuatorAvailability;
+    }
+
+    public boolean getDeviceAvailability(){
+        boolean availability = true;
+        if (this.isSensitive() && !sensorAvailability){
+            availability = false;
+        }
+        if (this.isActionable() && !actuatorAvailability){
+            availability = false;
+        }
+        return availability;
     }
 
     /**

@@ -51,8 +51,8 @@ public class CalcPower extends Func {
 
     @Override
     public void run() {
-        boolean voltmeterIsAvailable = voltmeter.isSensorAvailable();
-        boolean ammeterIsAvailable = ammeter.isSensorAvailable();
+        boolean voltmeterIsAvailable = voltmeter.getSensorAvailability();
+        boolean ammeterIsAvailable = ammeter.getSensorAvailability();
         Float[] voltage = this.voltmeter.getCurrentValues();
         Float[] current = this.ammeter.getCurrentValues();
         if (!voltmeterIsAvailable || !ammeterIsAvailable){

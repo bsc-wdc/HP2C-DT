@@ -145,7 +145,7 @@ public class VirtualEdge {
             String deviceLabel = entry.getKey();
             Device device = (Device) entry.getValue();
             JSONObject jDevice = new JSONObject();
-            jDevice.put("is_available", entry.getValue().isAvailable());
+            jDevice.put("is_available", ((Device) entry.getValue()).getDeviceAvailability());
             jDevice.put("type", ((Device) entry.getValue()).getType());
             boolean isActionable = false;
             if (device.isActionable()) {
@@ -176,11 +176,11 @@ public class VirtualEdge {
     }
 
     public void setDeviceAvailability(String deviceLabel, boolean availability){
-        devices.get(deviceLabel).setAvailability(availability);
+        ((Device) devices.get(deviceLabel)).setDeviceAvailability(availability);
     }
 
     public boolean getDeviceAvailability(String deviceLabel){
-        return devices.get(deviceLabel).isAvailable();
+        return ((Device) devices.get(deviceLabel)).getDeviceAvailability();
     }
 
     public String getLabel() {

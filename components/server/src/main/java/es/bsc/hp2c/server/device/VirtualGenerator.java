@@ -35,7 +35,6 @@ import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
 public class VirtualGenerator extends Generator<Float[]> implements VirtualSensor<Float[]>, VirtualActuator<Float[]> {
     private final String edgeLabel;
     private final int size;
-    private boolean availability;
     private String aggregate;
 
     /**
@@ -119,16 +118,6 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     @Override
     public ArrayList<String> getCategories() {
         return null;
-    }
-
-    @Override
-    public boolean isAvailable() {
-        return availability;
-    }
-
-    @Override
-    public void setAvailability(boolean b){
-        availability = b;
     }
 
     @Override

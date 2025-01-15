@@ -355,7 +355,7 @@ public class OpalComm {
     public static void retryConnectionActuation(){
         synchronized(actuatorsList){
             for (OpalActuator<?> a : actuatorsList){
-                if (((Device) a).isActuatorAvailable()){ return; }
+                if (((Device) a).getActuatorAvailability()){ return; }
             }
         }
         try {
@@ -539,13 +539,13 @@ public class OpalComm {
 
 
     public static  void setAvailableSensors(List<OpalSensor<?>> sensors, boolean b){
-        for(OpalSensor<?> sensor : sensors){ ((Device) sensor).setSensorAvailable(b); }
+        for(OpalSensor<?> sensor : sensors){ ((Device) sensor).setSensorAvailability(b); }
     }
 
 
     public static  void setAvailableActuators(List<OpalActuator<?>> actuators, boolean b){
         synchronized(actuatorsList){
-            for(OpalActuator<?> actuator : actuatorsList){ ((Device) actuator).setActuatorAvailable(b); }
+            for(OpalActuator<?> actuator : actuatorsList){ ((Device) actuator).setActuatorAvailability(b); }
         }
     }
 

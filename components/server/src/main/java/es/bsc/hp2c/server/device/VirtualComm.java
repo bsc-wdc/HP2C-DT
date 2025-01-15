@@ -26,8 +26,6 @@ public class VirtualComm {
     public interface VirtualDevice {
         String getEdgeLabel();
         int getSize();
-        boolean isAvailable();
-        void setAvailability(boolean b);
     }
     public interface VirtualSensor<V> extends Sensor<Float[], V>, VirtualDevice {
         String getAggregate();

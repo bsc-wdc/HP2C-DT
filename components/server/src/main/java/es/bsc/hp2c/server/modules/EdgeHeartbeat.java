@@ -17,6 +17,7 @@ package es.bsc.hp2c.server.modules;
 
 import com.rabbitmq.client.*;
 import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.utils.EdgeMap;
 import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 import org.json.JSONArray;
@@ -73,7 +74,8 @@ public class EdgeHeartbeat {
                 try {
                     processHeartbeatMessage(envelope.getRoutingKey(), body);
                 } catch (Exception e) {
-                    System.err.println("Error processing heartbeat message: " + e.getMessage());
+                    System.err.println("Error processing heartbeat message: " + e.getMessage() + ". ");
+                    e.printStackTrace();
                 }
             }
         };
@@ -100,6 +102,7 @@ public class EdgeHeartbeat {
             long heartbeatTime = jEdgeSetup.getJSONObject("global-properties").getLong("heartbeat");
             VirtualEdge newEdge = new VirtualEdge(jEdgeSetup);
             VirtualEdge oldEdge = edgeMap.get(edgeLabel);
+
             if (!newEdge.equals(oldEdge)){
                 newEdge.setModified(true);
                 edgeMap.put(edgeLabel, newEdge);

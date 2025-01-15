@@ -28,7 +28,6 @@ import java.time.Instant;
 public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Float[]> {
     private final String edgeLabel;
     private final int size;
-    private boolean availability;
     private String aggregate;
 
     /**
@@ -76,15 +75,6 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     @Override
     public int getSize() {
         return this.size;
-    }
-
-    @Override
-    public boolean isAvailable() {
-        return availability;
-    }
-    @Override
-    public void setAvailability(boolean b){
-        availability = b;
     }
 
     @Override

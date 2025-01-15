@@ -167,10 +167,10 @@ public class HP2CEdge {
                             .replace(" ", "")
                             .replace("-", "");
                     Device device = devices.get(deviceLabel);
-                    if (device.isSensitive() && !device.isSensorAvailable()) {
+                    if (device.isSensitive() && !device.getSensorAvailability()) {
                         availability = false;
                     }
-                    if (device.isActionable() && !device.isActuatorAvailable()) {
+                    if (device.isActionable() && !device.getActuatorAvailability()) {
                         availability = false;
                     }
                     jD.put("availability", availability);
