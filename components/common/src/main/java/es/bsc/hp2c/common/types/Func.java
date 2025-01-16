@@ -186,8 +186,8 @@ public abstract class Func implements Runnable {
                                 }
                             }
 
-                            // Check if a concrete amqp-type is specified for the device
-                            String amqp_type = jDevice.getJSONObject("properties").optString("amqp-type", "");
+                            // Check if a concrete amqp-trigger is specified for the device
+                            String amqp_type = jDevice.getJSONObject("properties").optString("amqp-trigger", "");
                             if (!Objects.equals(amqp_type, "")) {
                                 jGlobalFunc.getJSONObject("trigger").put("type", amqp_type);
                             }

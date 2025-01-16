@@ -79,7 +79,7 @@ This section contains the global properties of the edge node, such as
             "comm-type": "opal-tcp",
             "indexes": [0,1,2],
             "window-size": 5,  #optional
-            "amqp-type": "onRead", #optional
+            "amqp-trigger": "onRead", #optional
             "amqp-interval": 5 #optional
         }
     },
@@ -96,7 +96,7 @@ The `devices` section will contain each device within the edge. Each device has 
    - `comm-type`, where the user can refer to the methods declared in the `comms` section in `global-properties`.
    - `indexes`, which serves as a device identifier for those simulated by OpalRT. Indices represent the order in which measurements are sent in a packet from OpalRT. Voltmeters, ammeters, generators, wattmeters, and varmeters can have one or three indexes. Three-phase voltmeters and three-phase ammeters should have three indexes, while switches can have one or three, depending on their number of phases. These indexes must be unique, as they define the correspondent position in the socket received.
    - `window-size`, optional argument where the user can specify the size of the sensor window. It can also be declared in the "global-properties" section and, if neither is provided, it will be 1.
-   - `amqp-type`, optional argument to specify which type of amqp publish is desired for this concrete device. Options are:
+   - `amqp-trigger`, optional argument to specify which type of amqp publish is desired for this concrete device. Options are:
      - **"onRead"**: sends message for each read or set of reads by using `amqp-interval`: [int]
      - **"onFrequency"**: sends messages periodically every n seconds by using `amqp-frequency`: [int]
    - `amqp-aggregate`, optional argument to specify the type of pre-processing to perform on the sensor window. Options include:
