@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import static es.bsc.hp2c.common.types.Device.formatLabel;
 import static es.bsc.hp2c.common.utils.FileUtils.*;
 
 /**
@@ -92,9 +93,7 @@ public class HP2CEdge {
             // Update each device's "amqp-aggregate" property based on amqpAggregates map
             for (int i = 0; i < devicesArray.length(); i++) {
                 JSONObject device = devicesArray.getJSONObject(i);
-                String deviceLabel = device.getString("label")
-                        .replace(" ", "")
-                        .replace("-", "");
+                String deviceLabel = formatLabel(device.getString("label"));
                 if (amqpAggregates.containsKey(deviceLabel)) {
                     String aggregateValue = amqpAggregates.get(deviceLabel);
                     // Overwrite or add the "amqp-aggregate" property in the device's properties
@@ -163,9 +162,7 @@ public class HP2CEdge {
                 for (Object d : jDevices) {
                     JSONObject jD = (JSONObject) d;
                     boolean availability = true;
-                    String deviceLabel = jD.optString("label", "")
-                            .replace(" ", "")
-                            .replace("-", "");
+                    String deviceLabel = formatLabel(jD.optString("label", ""));
                     Device device = devices.get(deviceLabel);
                     if (device.isSensitive() && !device.getSensorAvailability()) {
                         availability = false;

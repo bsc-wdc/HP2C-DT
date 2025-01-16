@@ -17,6 +17,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import static es.bsc.hp2c.common.types.Device.formatLabel;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
@@ -558,7 +559,7 @@ public class OpalSimulator {
         for (Object jo : jDevices){
             JSONObject jDevice = (JSONObject) jo;
             JSONObject jDProperties = jDevice.getJSONObject("properties");
-            String label = jDevice.getString("label").replaceAll("[\\s-]", "");
+            String label = formatLabel(jDevice.getString("label"));
 
             String protocol = jDProperties.getString("comm-type");
 

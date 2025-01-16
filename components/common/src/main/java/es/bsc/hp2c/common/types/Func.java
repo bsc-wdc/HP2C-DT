@@ -165,7 +165,7 @@ public abstract class Func implements Runnable {
                         JSONObject jDevice = null;
                         for (Object d : jDevices) {
                             JSONObject jD = (JSONObject) d;
-                            if (Objects.equals(jD.getString("label").replace(" ", "").replace("-", ""), device.getLabel())) {
+                            if (Objects.equals(formatLabel(jD.getString("label")), device.getLabel())) {
                                 jDevice = jD;
                                 break;
                             }
