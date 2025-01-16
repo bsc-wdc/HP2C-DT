@@ -75,8 +75,7 @@
             "properties": {
                 "comm-type": "opal-udp",
                 "indexes": [1],
-                "window-size": 5,
-                "amqp-aggregate": "all"
+                "window-size": 5
             }
         },
         {
