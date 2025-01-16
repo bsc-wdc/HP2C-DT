@@ -99,7 +99,7 @@ public class EdgeHeartbeat {
             VirtualEdge oldEdge = edgeMap.get(edgeLabel);
 
             if (!newEdge.equals(oldEdge)){
-                newEdge.setModified(true);
+                oldEdge.setModified(true);
                 oldEdge.update(newEdge);
             }
             else {
