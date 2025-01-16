@@ -7,8 +7,7 @@ import es.bsc.hp2c.common.types.Func;
 import es.bsc.hp2c.common.types.Sensor;
 
 import java.util.ArrayList;
-
-import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * The method checks whether the written voltage is lower than threshold.
@@ -25,7 +24,7 @@ public class VoltLimitation extends Func {
      * @param actuators List of actuators declared for the function.
      * @param others    Rest of parameters declared for de function.
      */
-    public VoltLimitation(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONArray others)
+    public VoltLimitation(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
             throws FunctionInstantiationException {
 
         super(sensors, actuators, others);
@@ -48,7 +47,11 @@ public class VoltLimitation extends Func {
 
         this.voltmeter = (Voltmeter) sensors.get(0);
         this.sw = (Switch) actuators.get(0);
-        this.threshold = others.getFloat(0);
+        try {
+            this.threshold = others.getFloat("threshold");
+        } catch (Exception e){
+            throw new FunctionInstantiationException("'threshold' field must be provided");
+        }
     }
 
     @Override

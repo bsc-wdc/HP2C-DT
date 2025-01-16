@@ -14,7 +14,9 @@
         "actuators": {
           "edge1": ["Three-Phase Switch Gen1"]
         },
-        "other": [200]
+        "other": {
+          "threshold": 200
+        }
       },
       "trigger": {
         "type": "onRead",
@@ -36,7 +38,7 @@
           "edge2": ["Voltmeter Gen1"]
         },
         "actuators": [],
-        "other": []
+        "other": {}
       },
       "trigger": {
         "type": "onFrequency",

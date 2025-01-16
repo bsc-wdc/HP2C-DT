@@ -119,7 +119,11 @@ These AMQP options can be defined for each sensor by editing the `deployments/de
             "parameters": {
                 "sensors": ["ALL"],
                 "actuators": [],
-                "other": ["avg"] #specify aggregate method
+                "other": {
+                    "aggregate": {
+                        "type": "avg" #specify aggregate method
+                    }
+                } 
             },
             "trigger": {
                 "type": "onRead", #onFrequency also possible
@@ -137,7 +141,7 @@ These AMQP options can be defined for each sensor by editing the `deployments/de
             "parameters": {
                 "sensors": [],
                 "actuators": ["ALL"],
-                "other": []
+                "other": {}
             },
             "trigger": {
                 "type": "onStart",
@@ -159,7 +163,9 @@ These AMQP options can be defined for each sensor by editing the `deployments/de
         "parameters": {
             "sensors": ["Voltmeter Gen1"],
             "actuators": ["Three-Phase Switch Gen1"],
-            "other": [200]
+            "other": {
+                "threshold": 200
+            }
         },
         "trigger": {
             "type": "onRead",

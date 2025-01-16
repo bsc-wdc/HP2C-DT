@@ -175,21 +175,22 @@ public abstract class Func implements Runnable {
                             // Check if a concrete amqp-aggregate is specified for the device
                             amqp_aggregate = jDevice.getJSONObject("properties").optString("amqp-aggregate", "");
                             if (!Objects.equals(amqp_aggregate, "")) {
-                                ArrayList<String> other = new ArrayList<>();
-                                other.add(amqp_aggregate);
-                                jGlobalFunc.getJSONObject("parameters").put("other", other);
+                                JSONObject jOther = new JSONObject();
+                                JSONObject jAggregate = new JSONObject();
+                                jAggregate.put("type", amqp_aggregate);
+                                jOther.put("aggregate", jAggregate);
+                                jGlobalFunc.getJSONObject("parameters").put("other", jOther);
                             } else {
-                                JSONArray aggregate = jGlobalFunc.getJSONObject("parameters").getJSONArray("other");
-
-                                if (!aggregate.isEmpty()) {
-                                    amqp_aggregate = aggregate.getString(0);
-                                }
+                                amqp_aggregate = jGlobalFunc.getJSONObject("parameters")
+                                        .getJSONObject("other")
+                                        .getJSONObject("aggregate")
+                                        .optString("type", "last");
                             }
 
                             // Check if a concrete amqp-trigger is specified for the device
-                            String amqp_type = jDevice.getJSONObject("properties").optString("amqp-trigger", "");
-                            if (!Objects.equals(amqp_type, "")) {
-                                jGlobalFunc.getJSONObject("trigger").put("type", amqp_type);
+                            String amqp_trigger = jDevice.getJSONObject("properties").optString("amqp-trigger", "");
+                            if (!Objects.equals(amqp_trigger, "")) {
+                                jGlobalFunc.getJSONObject("trigger").put("type", amqp_trigger);
                             }
 
                             // Check if a concrete amqp-interval is specified for the device
@@ -332,12 +333,12 @@ public abstract class Func implements Runnable {
                                       ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators)
             throws FunctionInstantiationException {
         Constructor<?> ct;
-        JSONArray jOther;
+        JSONObject jOther;
 
         try {
             Class<?> c = Class.forName(driver);
-            ct = c.getConstructor(ArrayList.class, ArrayList.class, JSONArray.class);
-            jOther = parameters.getJSONArray("other");
+            ct = c.getConstructor(ArrayList.class, ArrayList.class, JSONObject.class);
+            jOther = parameters.getJSONObject("other");
             Runnable action = (Runnable)ct.newInstance(sensors, actuators, jOther);
             return action;
 
@@ -485,7 +486,7 @@ public abstract class Func implements Runnable {
                         "    Interval (onRead): " + triggerParams.optInt("interval") + "\n" +
                         "    Frequency (onFrequency): " + triggerParams.optInt("frequency") + "\n" +
                         "    Other params or aggregation: "
-                        + jFunc.getJSONObject("parameters").getJSONArray("other"));
+                        + jFunc.getJSONObject("parameters").getJSONObject("other"));
             }
         };
         tSummary.setName("func-summary-thread");
@@ -500,7 +501,7 @@ public abstract class Func implements Runnable {
      * @param actuators List of actuators declared for the function.
      * @param others  Rest of parameters declared for de function.
      */
-    protected Func(ArrayList<Sensor<?,?>> sensors, ArrayList<Actuator<?>> actuators, JSONArray others){
+    protected Func(ArrayList<Sensor<?,?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others){
 
     }
 }

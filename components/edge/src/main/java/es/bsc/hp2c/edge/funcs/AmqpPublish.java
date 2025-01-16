@@ -13,7 +13,7 @@ import es.bsc.hp2c.common.types.Sensor;
 import com.rabbitmq.client.Channel;
 import es.bsc.hp2c.common.utils.CommUtils;
 import es.bsc.hp2c.common.utils.MeasurementWindow;
-import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,11 +40,11 @@ public class AmqpPublish extends Func {
      * @param actuators List of actuators declared for the function.
      * @param others    Rest of parameters declared for de function.
      */
-    public AmqpPublish(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONArray others)
+    public AmqpPublish(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
             throws IllegalArgumentException, ClassNotFoundException, NoSuchMethodException {
         super(sensors, actuators, others);
 
-        String aggName = others.optString(0, "last");
+        String aggName = others.getJSONObject("aggregate").optString("type", "last");
         Class<?> c = Class.forName("es.bsc.hp2c.common.utils.Aggregates");
         Method agg = null;
         try {

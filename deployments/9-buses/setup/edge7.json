@@ -96,7 +96,9 @@
             "parameters": {
                 "sensors": ["Voltmeter Gen1"],
                 "actuators": ["Three-Phase Switch Gen1"],
-                "other": [200]
+                "other": {
+                    "threshold": 200
+                }
             },
             "trigger": {
                 "type": "onRead",
@@ -113,7 +115,7 @@
             "parameters": {
                 "sensors": ["Voltmeter Gen1", "Ammeter Gen1"],
                 "actuators": [],
-                "other": []
+                "other": {}
             },
             "trigger": {
                 "type": "onFrequency",

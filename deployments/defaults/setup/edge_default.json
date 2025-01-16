@@ -8,7 +8,11 @@
                 "parameters": {
                     "sensors": ["ALL"],
                     "actuators": [],
-                    "other": ["avg"]
+                    "other": {
+                        "aggregate": {
+                            "type": "last"
+                        }
+                    }
                 },
                 "trigger": {
                     "type": "onRead",
@@ -26,7 +30,7 @@
                 "parameters": {
                     "sensors": [],
                     "actuators": ["ALL"],
-                    "other": []
+                    "other": {}
                 },
                 "trigger": {
                     "type": "onStart",

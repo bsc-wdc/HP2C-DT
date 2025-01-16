@@ -94,7 +94,9 @@
             "parameters": {
                 "sensors": ["Three-Phase Voltmeter Gen1"],
                 "actuators": ["CB1"],
-                "other": [200]
+                "other": {
+                    "threshold": 200
+                }
             },
             "trigger": {
                 "type": "onRead",

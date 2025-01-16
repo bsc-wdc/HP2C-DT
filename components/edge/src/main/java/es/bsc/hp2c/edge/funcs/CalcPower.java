@@ -8,7 +8,7 @@ import es.bsc.hp2c.common.types.Sensor;
 
 import java.util.ArrayList;
 
-import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * The method calculates the power and prints it through standard output.
@@ -24,7 +24,7 @@ public class CalcPower extends Func {
      * @param actuators List of actuators declared for the function.
      * @param others    Rest of parameters declared for de function.
      */
-    public CalcPower(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONArray others)
+    public CalcPower(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
             throws IllegalArgumentException {
 
         super(sensors, actuators, others);
