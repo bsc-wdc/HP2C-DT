@@ -46,6 +46,24 @@
           "frequency": 10
         }
       }
+    },
+    {
+      "label": "LoadBalanceAlarm",
+      "lang": "Python",
+      "method-name": "es.bsc.hp2c.server.funcs.LoadBalanceAlarm",
+      "parameters": {
+        "sensors": {},
+        "actuators": [],
+        "other": {
+          "imbalance-range": 0.2
+        }
+      },
+      "trigger": {
+        "type": "onFrequency",
+        "parameters": {
+          "frequency": 10
+        }
+      }
     }
   ]
 }

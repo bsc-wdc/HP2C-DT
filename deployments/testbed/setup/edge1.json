@@ -43,9 +43,8 @@
             "properties": {
                 "comm-type": "opal-udp",
                 "indexes": [0],
-                "window-size": 5,
-                "amqp-type": "onRead",
-                "amqp-aggregate": "last"
+                "window-size": 10,
+                "amqp-aggregate": "phasor"
             }
         },
         {

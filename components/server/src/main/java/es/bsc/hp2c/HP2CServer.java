@@ -16,6 +16,7 @@
 package es.bsc.hp2c;
 
 import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.EdgeMap;
 import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.edge.VirtualEdge;
@@ -24,8 +25,10 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
 import static es.bsc.hp2c.common.utils.FileUtils.*;
@@ -217,5 +220,18 @@ public class HP2CServer {
 
     public static String getPathToSetup(){
         return pathToSetup;
+    }
+
+    public static ArrayList<Sensor> getSensorsByType(String type){
+        ArrayList<Sensor> sensors = new ArrayList<>();
+        for (VirtualEdge e : edgeMap.values()){
+            for (VirtualComm.VirtualDevice d : e.getDeviceMap().values()){
+                if (((Device) d).isSensitive() &&
+                        Objects.equals(((Device) d).getType(), type)){
+                    sensors.add((Sensor) d);
+                }
+            }
+        }
+        return sensors;
     }
 }

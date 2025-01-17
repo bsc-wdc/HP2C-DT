@@ -70,7 +70,9 @@
 
             "properties": {
                 "comm-type": "opal-udp",
-                "indexes": [2,3,4]
+                "indexes": [2,3,4],
+                "window-size": 10,
+                "amqp-aggregate": "phasor"
             }
         },
         {
