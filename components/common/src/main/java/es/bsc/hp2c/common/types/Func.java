@@ -66,7 +66,8 @@ public abstract class Func implements Runnable {
         for (Object jo : funcs) {
             JSONObject jFunc = (JSONObject) jo;
 
-            // Transform function parameters and triggers if type is edge. Converting to server format
+            // Transform function parameters and triggers if type is edge. Converting to
+            // server format
             if ("edge".equals(type)) {
                 transformFuncToServerFormat(jFunc, edgeLabel);
             }
@@ -86,7 +87,7 @@ public abstract class Func implements Runnable {
     private static void transformFuncToServerFormat(JSONObject jFunc, String edgeLabel) {
         // Transform parameters section
         JSONObject params = jFunc.getJSONObject("parameters");
-        String[] keys = new String[]{"sensors", "actuators"};
+        String[] keys = new String[] { "sensors", "actuators" };
         for (String key : keys) {
             if (params.get(key) instanceof JSONArray) {
                 JSONArray originalArray = params.getJSONArray(key);
@@ -99,7 +100,7 @@ public abstract class Func implements Runnable {
         // Transform trigger section
         JSONObject triggerParams = jFunc.getJSONObject("trigger").getJSONObject("parameters");
 
-        if (!triggerParams.has("trigger-sensor")){
+        if (!triggerParams.has("trigger-sensor")) {
             return;
         }
         Object triggerSensor = triggerParams.get("trigger-sensor");
@@ -113,9 +114,9 @@ public abstract class Func implements Runnable {
         triggerParams.put("trigger-sensor", transformed);
     }
 
-
-    public static Map<String, String> loadGlobalFunctions(String setupFile, String defaultsPath, Map<String, Device> devices,
-                                           boolean AmqpOn) throws IOException {
+    public static Map<String, String> loadGlobalFunctions(String setupFile, String defaultsPath,
+            Map<String, Device> devices,
+            boolean AmqpOn) throws IOException {
         Map<String, String> amqpAggregates = new HashMap<>();
         // Load setup file
         JSONObject object = getJsonObject(setupFile);
@@ -140,7 +141,8 @@ public abstract class Func implements Runnable {
 
             // Deploy function for each device building its custom jGlobalFunc
             for (Device device : devices.values()) {
-                // Clone global function for this device (avoid overwriting the default parameters like type or interval)
+                // Clone global function for this device (avoid overwriting the default
+                // parameters like type or interval)
                 JSONObject jGlobalFunc = new JSONObject(jGlobalFuncTemplate.toString());
                 String amqp_aggregate = "";
 
@@ -185,6 +187,19 @@ public abstract class Func implements Runnable {
                                         .getJSONObject("other")
                                         .getJSONObject("aggregate")
                                         .optString("type", "last");
+                            }
+
+                            // Check if aggregate arguments have been declared for the device
+                            JSONObject amqp_aggArgs = jDevice.getJSONObject("properties")
+                                    .optJSONObject("amqp-agg-args");
+                            if (amqp_aggArgs != null) {
+                                System.out.println(amqp_aggArgs);
+                                JSONObject jOther = new JSONObject();
+                                JSONObject jAggregate = new JSONObject();
+                                jAggregate.put("type", amqp_aggregate);
+                                jAggregate.put("args", amqp_aggArgs);
+                                jOther.put("aggregate", jAggregate);
+                                jGlobalFunc.getJSONObject("parameters").put("other", jOther);
                             }
 
                             // Check if a concrete amqp-trigger is specified for the device
@@ -240,7 +255,7 @@ public abstract class Func implements Runnable {
                         edgeMap.addDevice(edgeLabel, entry.getKey(), entry.getValue());
                     }
 
-                    //Transform to server format
+                    // Transform to server format
                     transformFuncToServerFormat(jGlobalFunc, edgeLabel);
 
                     Runnable action = functionParseJSON(jGlobalFunc, edgeMap, funcLabel);
@@ -328,9 +343,8 @@ public abstract class Func implements Runnable {
         return getAction(funcLabel, driver, parameters, sensors, actuators);
     }
 
-
     private static Runnable getAction(String funcLabel, String driver, JSONObject parameters,
-                                      ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators)
+            ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators)
             throws FunctionInstantiationException {
         Constructor<?> ct;
         JSONObject jOther;
@@ -339,7 +353,7 @@ public abstract class Func implements Runnable {
             Class<?> c = Class.forName(driver);
             ct = c.getConstructor(ArrayList.class, ArrayList.class, JSONObject.class);
             jOther = parameters.getJSONObject("other");
-            Runnable action = (Runnable)ct.newInstance(sensors, actuators, jOther);
+            Runnable action = (Runnable) ct.newInstance(sensors, actuators, jOther);
             return action;
 
         } catch (ClassNotFoundException e) {
@@ -352,15 +366,14 @@ public abstract class Func implements Runnable {
         }
     }
 
-
     private static void setupOnReadTrigger(JSONObject triggerParams, EdgeMap edgeMap, Runnable action, String label,
-                                           boolean onRead) throws FunctionInstantiationException {
+            boolean onRead) throws FunctionInstantiationException {
         JSONObject jTriggerSensorMap = triggerParams.optJSONObject("trigger-sensor");
 
         if (jTriggerSensorMap == null) {
             throw new IllegalArgumentException("Trigger-sensor map is required for onRead triggers.");
         }
-        HashMap<Sensor<?,?>, Integer> triggerSensors = new HashMap<>();
+        HashMap<Sensor<?, ?>, Integer> triggerSensors = new HashMap<>();
 
         for (String edgeLabel : jTriggerSensorMap.keySet()) {
             JSONArray deviceLabels = jTriggerSensorMap.getJSONArray(edgeLabel);
@@ -372,7 +385,7 @@ public abstract class Func implements Runnable {
                 deviceLabel = formatLabel(deviceLabel);
 
                 Device d = edgeMap.getDevice(edgeLabel, deviceLabel);
-                if (d != null){
+                if (d != null) {
                     Sensor<?, ?> triggerSensor = (Sensor<?, ?>) edgeMap.getDevice(edgeLabel, deviceLabel);
 
                     int interval = triggerParams.optInt("interval", 1);
@@ -380,28 +393,30 @@ public abstract class Func implements Runnable {
                         interval = triggerSensor.getWindow().getCapacity();
                     }
                     triggerSensors.put(triggerSensor, interval);
-                }
-                else {
+                } else {
                     throw new FunctionInstantiationException(
-                            "Function " + label + " cannot be instantiated because trigger sensor" + deviceLabel + " on edge " +
-                                    edgeLabel + " was not found"); // if a device is missing the func must be discarded (awaiting a new edge to come)
+                            "Function " + label + " cannot be instantiated because trigger sensor" + deviceLabel
+                                    + " on edge " +
+                                    edgeLabel + " was not found"); // if a device is missing the func must be discarded
+                                                                   // (awaiting a new edge to come)
                 }
             }
         }
 
-        for (Sensor<?,?> triggerSensor : triggerSensors.keySet()){
+        for (Sensor<?, ?> triggerSensor : triggerSensors.keySet()) {
             int interval = triggerSensors.get(triggerSensor);
             triggerSensor.addOnReadFunction(action, interval, label, onRead);
         }
     }
 
-
     /**
      * Selects and sets up the triggering method of a Func.
      * Options:
-     *      onFrequency: sets up a timer to run the Runnable function thread at a given frequency.
-     *      onRead: adds the Runnable function to the sensor's `addOnReadFunction` so that it is triggered every time
-     *          the sensor receives a measurement.
+     * onFrequency: sets up a timer to run the Runnable function thread at a given
+     * frequency.
+     * onRead: adds the Runnable function to the sensor's `addOnReadFunction` so
+     * that it is triggered every time
+     * the sensor receives a measurement.
      * 
      * @param jFunc   json description of the function.
      * @param edgeMap EdgeMap object containing the devices within each edge.
@@ -445,9 +460,12 @@ public abstract class Func implements Runnable {
         }
     }
 
-    /** Prints summary of a Func in a separate thread so it shows in the main container output */
+    /**
+     * Prints summary of a Func in a separate thread so it shows in the main
+     * container output
+     */
     private static void printFuncSummary(JSONObject jFunc, EdgeMap edgeMap, JSONObject triggerParams,
-                                         String label, String triggerType) {
+            String label, String triggerType) {
         Thread tSummary = new Thread() {
             public void run() {
                 JSONObject jTriggerSensorMap = triggerParams.optJSONObject("trigger-sensor");
@@ -458,7 +476,7 @@ public abstract class Func implements Runnable {
                     for (String edgeLabel : jTriggerSensorMap.keySet()) {
                         JSONArray deviceLabels = jTriggerSensorMap.getJSONArray(edgeLabel);
                         for (Object deviceLabelObject : deviceLabels) {
-                            if (!(deviceLabelObject instanceof String)){
+                            if (!(deviceLabelObject instanceof String)) {
                                 continue;
                             }
                             String deviceLabel = (String) deviceLabelObject;
@@ -482,7 +500,9 @@ public abstract class Func implements Runnable {
                 System.out.println("Loading Func " + label + "\n" +
                         "    Type: " + triggerType + "\n" +
                         "    Trigger Sensors (onRead): " + "\n\t\t" + (triggerSensorDetails.length() > 0
-                        ? triggerSensorDetails.toString() : "None") +
+                                ? triggerSensorDetails.toString()
+                                : "None")
+                        +
                         "    Interval (onRead): " + triggerParams.optInt("interval") + "\n" +
                         "    Frequency (onFrequency): " + triggerParams.optInt("frequency") + "\n" +
                         "    Other params or aggregation: "
@@ -493,15 +513,14 @@ public abstract class Func implements Runnable {
         tSummary.start();
     }
 
-
     /**
      * Function constructor.
      * 
-     * @param sensors  List of sensors declared for the function.
+     * @param sensors   List of sensors declared for the function.
      * @param actuators List of actuators declared for the function.
-     * @param others  Rest of parameters declared for de function.
+     * @param others    Rest of parameters declared for de function.
      */
-    protected Func(ArrayList<Sensor<?,?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others){
+    protected Func(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others) {
 
     }
 }

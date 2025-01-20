@@ -1,5 +1,7 @@
 package es.bsc.hp2c.common.utils;
 
+import org.json.JSONObject;
+
 import java.util.Arrays;
 import java.time.Instant;
 import java.time.Duration;
@@ -8,7 +10,7 @@ import static es.bsc.hp2c.common.utils.CommUtils.divideArray;
 
 public class Aggregates {
 
-    public static MeasurementWindow<Number[]> sum(MeasurementWindow<?> window) {
+    public static MeasurementWindow<Number[]> sum(MeasurementWindow<?> window, JSONObject jArgs) {
         MeasurementWindow<Number[]> resultWindow = new MeasurementWindow<>(1);
 
         Measurement<?> latestMeasurement = window.getLastMeasurement();
@@ -34,10 +36,10 @@ public class Aggregates {
         return resultWindow;
     }
 
-    public static MeasurementWindow<Number[]> avg(MeasurementWindow<?> window) {
+    public static MeasurementWindow<Number[]> avg(MeasurementWindow<?> window, JSONObject jArgs) {
         MeasurementWindow<Number[]> resultWindow = new MeasurementWindow<>(1);
 
-        MeasurementWindow<Number[]> sumWindow = sum(window);
+        MeasurementWindow<Number[]> sumWindow = sum(window, jArgs);
         Measurement<?> latestSum = sumWindow.getLastMeasurement();
         if (latestSum != null) {
             Number[] avg = divideArray((Number[]) latestSum.getValue(), window.getSize());
@@ -46,7 +48,7 @@ public class Aggregates {
         return resultWindow;
     }
 
-    public static MeasurementWindow<?> all(MeasurementWindow<?> window) {
+    public static MeasurementWindow<?> all(MeasurementWindow<?> window, JSONObject jArgs) {
         MeasurementWindow<Object> resultWindow = new MeasurementWindow<>(window.getCapacity());
         for (Measurement<?> measurement : window.getMeasurementsNewerToOlder()) {
             resultWindow.addMeasurement(measurement.getTimestamp(), measurement.getValue());
@@ -54,7 +56,7 @@ public class Aggregates {
         return resultWindow;
     }
 
-    public static MeasurementWindow<?> last(MeasurementWindow<?> window) {
+    public static MeasurementWindow<?> last(MeasurementWindow<?> window, JSONObject jArgs) {
         MeasurementWindow<Object> resultWindow = new MeasurementWindow<>(1);
 
         Measurement<?> lastMeasurement = window.getLastMeasurement();
@@ -64,14 +66,22 @@ public class Aggregates {
         return resultWindow;
     }
 
-    public static MeasurementWindow<Number[]> phasor(MeasurementWindow<?> window) {
+    public static MeasurementWindow<Number[]> phasor(MeasurementWindow<?> window, JSONObject jArgs) {
         // Skip if window is empty
         if (window.getSize() < 2) {
             return null;
         }
 
-        // Init
-        final double FREQUENCY = 5.0; // Assumed frequency
+        double frequency; 
+        if (jArgs.keySet().contains("phasor-freq")){
+            frequency = jArgs.getDouble("phasor-freq");
+        }
+        else{
+            frequency = 50.0; // Assumed frequency
+        }
+
+        System.out.println("[phasor] Using phasor frequency " + frequency);
+
         Instant aggregateTime = window.getLastMeasurement().getTimestamp();
         MeasurementWindow<Number[]> resultWindow = new MeasurementWindow<>(1);
 
@@ -80,7 +90,7 @@ public class Aggregates {
         if (latestMeasurement == null || !(latestMeasurement.getValue() instanceof Number[])) {
             throw new IllegalArgumentException("The MeasurementWindow does not contain Number[] values.");
         }
-        Number[] phasor = phasorEstimationDFT(window, FREQUENCY);
+        Number[] phasor = phasorEstimationDFT(window, frequency);
         resultWindow.addMeasurement(aggregateTime, phasor);
         return resultWindow;
     }

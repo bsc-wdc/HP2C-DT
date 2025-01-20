@@ -33,6 +33,7 @@ public class AmqpPublish extends Func {
     private final String EXCHANGE_NAME;
     private final String routingKey;
     private final Method aggregate;
+    private final JSONObject aggArgs;
 
     /**
      * Method constructor.
@@ -46,10 +47,11 @@ public class AmqpPublish extends Func {
         super(sensors, actuators, others);
 
         String aggName = others.getJSONObject("aggregate").optString("type", "last");
+        aggArgs = others.getJSONObject("aggregate").optJSONObject("args", new JSONObject());
         Class<?> c = Class.forName("es.bsc.hp2c.common.utils.Aggregates");
         Method agg = null;
         try {
-            agg = c.getMethod(aggName, MeasurementWindow.class);
+            agg = c.getMethod(aggName, MeasurementWindow.class, JSONObject.class);
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodException("Aggregate not found: " + aggName);
         }
@@ -83,7 +85,7 @@ public class AmqpPublish extends Func {
                 return;
             }
             MeasurementWindow<?> aggregateWindow =
-                    (MeasurementWindow<?>) aggregate.invoke(null, this.sensor.getWindow());
+                    (MeasurementWindow<?>) aggregate.invoke(null, this.sensor.getWindow(), aggArgs);
 
             // Handle malformed aggregate window
             if (aggregateWindow == null) {

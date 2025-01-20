@@ -81,6 +81,9 @@ This section contains the global properties of the edge node, such as
             "window-size": 5,  #optional
             "amqp-trigger": "onRead", #optional
             "amqp-interval": 5 #optional
+            "amqp-agg-args": { #optional
+                "phasor-freq": 40 #optional
+            }   
         }
     },
     ...
@@ -99,12 +102,12 @@ The `devices` section will contain each device within the edge. Each device has 
    - `amqp-trigger`, optional argument to specify which type of amqp publish is desired for this concrete device. Options are:
      - **"onRead"**: sends message for each read or set of reads by using `amqp-interval`: [int]
      - **"onFrequency"**: sends messages periodically every n seconds by using `amqp-frequency`: [int]
-   - `amqp-aggregate`, optional argument to specify the type of pre-processing to perform on the sensor window. Options include:
+   - `amqp-aggregate`, `amqp-agg-args` optional arguments to specify the type of pre-processing to perform on the sensor window, and its arguments (they can vary depending on the aggregate). Options include:
        - **"sum"**: Sums up the values in the window. Only valid for `Number[]` sensors.
        - **"avg"**: Returns the average of all values in the window. Only valid for `Number[]` sensors.
        - **"last"**: Returns the most recent value in the window.
        - **"all"**: Returns all values in the window, ordered from oldest to newest.
-       - **"phasor"**: Returns phasor(magnitude and phase) of the sensor given (only for Ammeter and Voltmeter)
+       - **"phasor"**: Returns phasor (magnitude and phase) of the sensor given (only for Ammeter and Voltmeter). Frequency can be specified including the entry "phasor-freq" and a double within the "amqp-agg-args" JSONObject.
 
 These AMQP options can be defined for each sensor by editing the `deployments/defaults/setup/edge_setup.json` file. This file specifies the functions to be performed for each device. Commonly defined functions include:
 - **`AMQPConsume`**: A method used by actuators to receive actuations from the server.
@@ -121,7 +124,10 @@ These AMQP options can be defined for each sensor by editing the `deployments/de
                 "actuators": [],
                 "other": {
                     "aggregate": {
-                        "type": "avg" #specify aggregate method
+                        "type": "phasor" #specify aggregate method
+                        "args": { #specify aggregate args (parsed by the aggregate method)
+                            "phasor-freq": 60.0 
+                        }   
                     }
                 } 
             },
