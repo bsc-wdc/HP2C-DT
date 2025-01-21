@@ -42,7 +42,8 @@
             },
             "properties": {
                 "comm-type": "opal-udp",
-                "indexes": [0]
+                "indexes": [0],
+                "amqp-aggregate": "phasor"
             }
         },
         {

@@ -33,7 +33,7 @@ public class AmqpPublish extends Func {
     private final String EXCHANGE_NAME;
     private final String routingKey;
     private final Method aggregate;
-    private final JSONObject aggArgs;
+    private JSONObject aggArgs;
 
     /**
      * Method constructor.
@@ -45,9 +45,14 @@ public class AmqpPublish extends Func {
     public AmqpPublish(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
             throws IllegalArgumentException, ClassNotFoundException, NoSuchMethodException {
         super(sensors, actuators, others);
-
         String aggName = others.getJSONObject("aggregate").optString("type", "last");
-        aggArgs = others.getJSONObject("aggregate").optJSONObject("args", new JSONObject());
+
+        JSONObject jAggregate = others.getJSONObject("aggregate");
+        aggArgs = new JSONObject();
+        if (jAggregate.has("args")){
+            aggArgs = jAggregate.getJSONObject("args");
+        }
+
         Class<?> c = Class.forName("es.bsc.hp2c.common.utils.Aggregates");
         Method agg = null;
         try {

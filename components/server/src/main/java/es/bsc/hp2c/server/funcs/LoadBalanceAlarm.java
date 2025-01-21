@@ -25,7 +25,8 @@ public class LoadBalanceAlarm extends Func {
         try {
             imbalance_range = others.getFloat("imbalance-range");
         } catch (Exception e){
-            throw new FunctionInstantiationException("'imbalance-range' must be defined");
+            throw new FunctionInstantiationException("[LoadBalanceAlarm] 'imbalance-range' must be defined in " +
+                    "'other' section");
         }
     }
 
@@ -38,7 +39,7 @@ public class LoadBalanceAlarm extends Func {
             Sensor s = iterator.next();
             VirtualAmmeter va = (VirtualAmmeter) s;
             if (!Objects.equals(va.getAggregate(), "phasor")) {
-                System.out.println("Ammeter " + ((Device) s).getLabel() + " aggregate is not phasor");
+                System.out.println("[LoadBalanceAlarm] Ammeter " + ((Device) s).getLabel() + " aggregate is not phasor");
                 iterator.remove();
             } else {
                 Float[] m = va.getCurrentValues();
@@ -55,7 +56,7 @@ public class LoadBalanceAlarm extends Func {
             float threshold = imbalance_range * maxCurrent;
 
             if (maxCurrent - minCurrent > threshold) {
-                System.out.println("Load imbalance detected: max = " + maxCurrent + ", min = " + minCurrent);
+                System.out.println("[LoadBalanceAlarm] Load imbalance detected: max = " + maxCurrent + ", min = " + minCurrent);
             }
         }
     }

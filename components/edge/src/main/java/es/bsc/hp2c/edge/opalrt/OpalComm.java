@@ -355,7 +355,9 @@ public class OpalComm {
     public static void retryConnectionActuation(){
         synchronized(actuatorsList){
             for (OpalActuator<?> a : actuatorsList){
-                if (((Device) a).getActuatorAvailability()){ return; }
+                if (((Device) a).getActuatorAvailability()){
+                    return;
+                }
             }
         }
         try {

@@ -64,7 +64,10 @@ public class VoltLimitation extends Func {
             if (voltage[0] > this.threshold) {
                 System.out.println("Voltage limit exceeded. Turning actuators off...");
                 try {
-                    if (!sw.getActuatorAvailability()){ System.err.println("Switch is not available"); return; }
+                    if (!sw.getActuatorAvailability()){
+                        System.err.println("[VoltLimitation] Switch is not available");
+                        return;
+                    }
                     Switch.State[] values = {Switch.State.OFF, Switch.State.ON, Switch.State.ON};
                     sw.actuate(values);
                 } catch (Exception e) {

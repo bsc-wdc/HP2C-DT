@@ -15,6 +15,8 @@
  */
 package es.bsc.hp2c;
 
+import es.bsc.hp2c.common.generic.Switch;
+import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.EdgeMap;
@@ -25,10 +27,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 import static es.bsc.hp2c.common.utils.FileUtils.*;
@@ -233,5 +232,43 @@ public class HP2CServer {
             }
         }
         return sensors;
+    }
+
+    public static ArrayList<Device> getDevicesByTypeAndEdge(String type, String edgeLabel){
+        ArrayList<Device> devices = new ArrayList<>();
+        for (VirtualEdge e : edgeMap.values()){
+            for (VirtualComm.VirtualDevice d : e.getDeviceMap().values()){
+                if ((Objects.equals(((Device) d).getType(), type))){
+                    devices.add((Device) d);
+                }
+            }
+        }
+        return devices;
+    }
+
+    public static ArrayList<String> getEdgeLabels(){
+        ArrayList<String> edgeLabels = new ArrayList<>();
+        for (String edgeLabel : edgeMap.keySet()){
+            edgeLabels.add(edgeLabel);
+        }
+        return edgeLabels;
+    }
+
+    public static void turnOffSwitches(String edgeLabel) throws IOException {
+        if (edgeMap.containsKey(edgeLabel)){
+            for (Device d : getDevicesByTypeAndEdge("Switch", edgeLabel)){
+                Switch sw = (Switch) d;
+                int size = sw.getCurrentValues().length;
+
+                if (!sw.getActuatorAvailability()){
+                    System.err.println("Switch is not available"); return;
+                }
+                Switch.State[] values = new Switch.State[size];
+
+                // Fill the array with the OFF state
+                Arrays.fill(values, Switch.State.OFF);
+                sw.actuate(values);
+            }
+        }
     }
 }

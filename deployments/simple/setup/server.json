@@ -64,6 +64,24 @@
           "frequency": 10
         }
       }
+    },
+    {
+      "label": "VoltageFaultDectection",
+      "lang": "Python",
+      "method-name": "es.bsc.hp2c.server.funcs.VoltageFaultDetection",
+      "parameters": {
+        "sensors": {},
+        "actuators": [],
+        "other": {
+          "threshold": 0.2
+        }
+      },
+      "trigger": {
+        "type": "onFrequency",
+        "parameters": {
+          "frequency": 4
+        }
+      }
     }
   ]
 }
