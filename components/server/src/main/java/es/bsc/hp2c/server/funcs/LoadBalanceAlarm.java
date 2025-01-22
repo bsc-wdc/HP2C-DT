@@ -5,14 +5,13 @@ import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Func;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.server.device.VirtualAmmeter;
+import kotlin.Triple;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Objects;
+import java.util.*;
 
-import static es.bsc.hp2c.HP2CServer.getSensorsByType;
+import static es.bsc.hp2c.HP2CServer.*;
+import static es.bsc.hp2c.common.utils.AlarmHandler.*;
 import static java.util.Collections.max;
 import static java.util.Collections.min;
 
@@ -24,6 +23,7 @@ public class LoadBalanceAlarm extends Func {
         super(sensors, actuators, others);
         try {
             imbalance_range = others.getFloat("imbalance-range");
+            addNewAlarm("LoadBalanceAlarm");
         } catch (Exception e){
             throw new FunctionInstantiationException("[LoadBalanceAlarm] 'imbalance-range' must be defined in " +
                     "'other' section");
@@ -32,32 +32,58 @@ public class LoadBalanceAlarm extends Func {
 
     @Override
     public void run() {
-        ArrayList<Sensor> ammeters = getSensorsByType("Ammeter");
-        ArrayList<Float> currentMeasurements = new ArrayList<>();
-        Iterator<Sensor> iterator = ammeters.iterator();
-        while (iterator.hasNext()) {
-            Sensor s = iterator.next();
-            VirtualAmmeter va = (VirtualAmmeter) s;
-            if (!Objects.equals(va.getAggregate(), "phasor")) {
-                System.out.println("[LoadBalanceAlarm] Ammeter " + ((Device) s).getLabel() + " aggregate is not phasor");
-                iterator.remove();
-            } else {
-                Float[] m = va.getCurrentValues();
-                if (m != null) {
-                    currentMeasurements.add(m[0]);
+        // Map to store edge-device-measurement relationships
+        Map<String, Map<String, Float>> edgeDeviceMeasurements = new HashMap<>();
+
+        for (String edgeLabel : getEdgeLabels()) {
+            ArrayList<Device> ammetersEdge = getDevicesByTypeAndEdge("Ammeter", edgeLabel);
+
+            for (Device d : ammetersEdge) {
+                VirtualAmmeter va = (VirtualAmmeter) d;
+
+                // Check if aggregate is "phasor"
+                if (!Objects.equals(va.getAggregate(), "phasor")) {
+                    System.out.println("[LoadBalanceAlarm] Ammeter " + d.getLabel() + " aggregate is not phasor");
+                } else {
+                    // Get current values
+                    Float[] m = va.getCurrentValues();
+                    if (m != null) {
+                        // Add edge-device-measurement to the map
+                        if (!edgeDeviceMeasurements.containsKey(edgeLabel)) {
+                            edgeDeviceMeasurements.put(edgeLabel, new HashMap<>());
+                        }
+                        edgeDeviceMeasurements.get(edgeLabel).put(d.getLabel(), m[0]);
+                    }
                 }
             }
         }
-        if (!currentMeasurements.isEmpty()){
 
-            // Check for load imbalance
+        // Collect all measurements
+        ArrayList<Float> currentMeasurements = new ArrayList<>();
+        for (String edge : edgeDeviceMeasurements.keySet()) {
+            for (String device : edgeDeviceMeasurements.get(edge).keySet()) {
+                currentMeasurements.add(edgeDeviceMeasurements.get(edge).get(device));
+            }
+        }
+
+        // Perform imbalance check
+        if (!currentMeasurements.isEmpty()) {
             Float maxCurrent = Collections.max(currentMeasurements);
             Float minCurrent = Collections.min(currentMeasurements);
             float threshold = imbalance_range * maxCurrent;
 
             if (maxCurrent - minCurrent > threshold) {
                 System.out.println("[LoadBalanceAlarm] Load imbalance detected: max = " + maxCurrent + ", min = " + minCurrent);
+
+                // Write alarm for each edge-device pair
+                for (String edge : edgeDeviceMeasurements.keySet()) {
+                    for (String device : edgeDeviceMeasurements.get(edge).keySet()) {
+                        writeAlarm("LoadBalanceAlarm", edge, device);
+                    }
+                }
             }
         }
     }
+
+
 }

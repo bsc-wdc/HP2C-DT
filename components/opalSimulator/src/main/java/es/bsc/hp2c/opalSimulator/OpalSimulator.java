@@ -25,7 +25,7 @@ import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
 public class OpalSimulator {
     private static String SERVER_ADDRESS = "127.0.0.1";
     private static ArrayList<Edge> edges = new ArrayList<>();
-    private static final double frequency = 1.0 / 20.0;
+    private static final double frequency = 5;
     private static boolean runSimulation = false;
     private static CSVTable csvTable;
     private static int runClient = 0;

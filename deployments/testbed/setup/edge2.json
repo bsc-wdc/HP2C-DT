@@ -43,7 +43,10 @@
             "properties": {
                 "comm-type": "opal-udp",
                 "indexes": [0],
-                "amqp-aggregate": "phasor"
+                "amqp-aggregate": "phasor",
+                "amqp-agg-args": {
+                    "phasor-freq": 5
+                }
             }
         },
         {
@@ -72,8 +75,11 @@
             "properties": {
                 "comm-type": "opal-udp",
                 "indexes": [2,3,4],
-                "window-size": 10,
-                "amqp-aggregate": "phasor"
+                "window-size": 20,
+                "amqp-aggregate": "phasor",
+                "amqp-agg-args": {
+                    "phasor-freq": 5
+                }
             }
         },
         {

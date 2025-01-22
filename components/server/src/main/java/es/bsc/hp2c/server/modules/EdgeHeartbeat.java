@@ -117,8 +117,6 @@ public class EdgeHeartbeat {
             } catch (IOException e) {
                 System.out.println("Error loading functions: " + e);
             }
-
-
         }
     }
 
