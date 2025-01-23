@@ -5,15 +5,12 @@ import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Func;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.server.device.VirtualAmmeter;
-import kotlin.Triple;
 import org.json.JSONObject;
 
 import java.util.*;
 
 import static es.bsc.hp2c.HP2CServer.*;
 import static es.bsc.hp2c.common.utils.AlarmHandler.*;
-import static java.util.Collections.max;
-import static java.util.Collections.min;
 
 public class LoadBalanceAlarm extends Func {
     private float imbalance_range;
@@ -34,7 +31,6 @@ public class LoadBalanceAlarm extends Func {
     public void run() {
         // Map to store edge-device-measurement relationships
         Map<String, Map<String, Float>> edgeDeviceMeasurements = new HashMap<>();
-
         for (String edgeLabel : getEdgeLabels()) {
             ArrayList<Device> ammetersEdge = getDevicesByTypeAndEdge("Ammeter", edgeLabel);
 
@@ -79,6 +75,12 @@ public class LoadBalanceAlarm extends Func {
                 for (String edge : edgeDeviceMeasurements.keySet()) {
                     for (String device : edgeDeviceMeasurements.get(edge).keySet()) {
                         writeAlarm("LoadBalanceAlarm", edge, device);
+                    }
+                }
+            } else { // update alarm (check if timeout has expired)
+                for (String edge : edgeDeviceMeasurements.keySet()) {
+                    for (String device : edgeDeviceMeasurements.get(edge).keySet()) {
+                        updateAlarm("LoadBalanceAlarm", edge, device);
                     }
                 }
             }

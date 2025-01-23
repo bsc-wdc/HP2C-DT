@@ -14,8 +14,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 import static es.bsc.hp2c.HP2CServer.*;
-import static es.bsc.hp2c.common.utils.AlarmHandler.addNewAlarm;
-import static es.bsc.hp2c.common.utils.AlarmHandler.writeAlarm;
+import static es.bsc.hp2c.common.utils.AlarmHandler.*;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 import static java.util.Collections.max;
 import static java.util.Collections.min;
@@ -104,6 +103,8 @@ public class VoltageFaultDetection extends Func {
                     System.out.println("[VoltageFaultDetection] Fault detected on edge " + edgeLabel + ". Voltage is " +
                             (currentVoltage / nominalVoltage * 100) + "%, Threshold is " + (threshold * 100) + "%");
                     writeAlarm("VoltageFaultDetection", edgeLabel, voltmeterLabel);
+                } else { // update alarm (check if timeout has expired)
+                    updateAlarm("VoltageFaultDetection", edgeLabel, voltmeterLabel);
                 }
             }
         }

@@ -113,8 +113,6 @@ public class OpalSimulator {
                 devicesWrapped = joinDevices(devicesWrapped, devices);
                 edge.setDevices(devicesWrapped);
                 edges.add(edge);
-            } else{
-                System.out.println("Skipppppppppppppppp");
             }
         }
 

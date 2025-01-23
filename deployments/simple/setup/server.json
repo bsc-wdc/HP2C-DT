@@ -1,6 +1,7 @@
 {
   "global-properties": {
-    "type": "server"
+    "type": "server",
+    "alarm-timeout": "10000ms"
   },
   "funcs":[
     {

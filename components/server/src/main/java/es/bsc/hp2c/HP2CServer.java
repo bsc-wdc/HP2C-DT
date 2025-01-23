@@ -19,6 +19,7 @@ import es.bsc.hp2c.common.generic.Switch;
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
+import es.bsc.hp2c.common.utils.AlarmHandler;
 import es.bsc.hp2c.common.utils.EdgeMap;
 import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.edge.VirtualEdge;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
+import static es.bsc.hp2c.common.utils.AlarmHandler.setTimeout;
 import static es.bsc.hp2c.common.utils.FileUtils.*;
 
 /**
@@ -49,6 +51,7 @@ public class HP2CServer {
     /** Start and run Server modules. */
     public static void main(String[] args) {
         pathToSetup = initPathToSetup(args);
+        initAlarms();
         // Load setup files
         String hostIp = getHostIp();
         // Deploy listener
@@ -75,7 +78,6 @@ public class HP2CServer {
 
     private static String initPathToSetup(String[] args) {
         String pathToSetup = "";
-
         if (args.length == 1) {
             File fileOrDir = new File(args[0]);
 
@@ -131,6 +133,19 @@ public class HP2CServer {
         return hostIp;
     }
 
+    private static void initAlarms(){
+        try {
+            // Load setup file
+            JSONObject object = getJsonObject(pathToSetup);
+            String timeoutValue = object.getJSONObject("global-properties").optString("alarm-timeout");
+            if(timeoutValue != null){
+                setTimeout(timeoutValue);
+            }
+        } catch (Exception e){
+            System.err.println("Error loading server json from: " + pathToSetup);
+        }
+
+    }
 
     /** Check actuator validity and return a custom error message upon error.*/
     public static ActuatorValidity checkActuator(String edgeLabel, String actuatorName) {
@@ -236,10 +251,12 @@ public class HP2CServer {
 
     public static ArrayList<Device> getDevicesByTypeAndEdge(String type, String edgeLabel){
         ArrayList<Device> devices = new ArrayList<>();
-        for (VirtualEdge e : edgeMap.values()){
+        if (edgeMap.containsKey(edgeLabel)){
+            VirtualEdge e = edgeMap.get(edgeLabel);
             for (VirtualComm.VirtualDevice d : e.getDeviceMap().values()){
-                if ((Objects.equals(((Device) d).getType(), type))){
-                    devices.add((Device) d);
+                Device device = (Device) d;
+                if ((Objects.equals(device.getType(), type))){
+                    devices.add(device);
                 }
             }
         }
