@@ -36,6 +36,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     private final String edgeLabel;
     private final int size;
     private String aggregate;
+    private Object units;
 
     /**
      * Creates a new instance of VirtualSwitch.
@@ -159,5 +160,15 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     @Override
     public void setAggregate(String aggregate) {
         this.aggregate = aggregate;
+    }
+
+    @Override
+    public void setUnits(Object units){
+        this.units = units;
+    }
+
+    @Override
+    public Object getUnits() {
+        return units;
     }
 }

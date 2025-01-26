@@ -7,6 +7,8 @@ def generate_panel_timeseries(edge_name, device, datasource_uid):
     targets = []
     generator_values = ["Voltage SetPoint", "Power SetPoint"]
     phasor_values = ["Magnitude", "Phase"]
+    units = device[4]  # Retrieve units (could be string or array)
+    field_overrides = []  # Initialize field overrides array
 
     for i in range(device[1]):
         cleaned_device_name = device[0].replace(" ", "").replace("-", "") + "Sensor" + str(i)
@@ -14,7 +16,6 @@ def generate_panel_timeseries(edge_name, device, datasource_uid):
         ref_id = f"{edge_name}-{cleaned_device_name}"
 
         if device[3] == "phasor":
-            # Add targets for Magnitude and Phase
             alias = phasor_values[i]
             targets.append({
                 "alias": alias,
@@ -43,6 +44,9 @@ def generate_panel_timeseries(edge_name, device, datasource_uid):
             })
         else:
             alias = generator_values[i] if device[2] == "Generator" else f"phase {i + 1}"
+
+            # Assign units based on whether it's a string or array
+            unit = units[i] if isinstance(units, list) and i < len(units) else units
             targets.append({
                 "alias": alias,
                 "datasource": {
@@ -69,10 +73,20 @@ def generate_panel_timeseries(edge_name, device, datasource_uid):
                 "tags": []
             })
 
-    # Add field overrides for phasor data
-    field_overrides = []
+            if unit:
+                field_overrides.append({
+                    "matcher": {"id": "byName", "options": alias},
+                    "properties": [
+                        {
+                            "id": "unit",
+                            "value": unit  # Set the unit
+                        }
+                    ]
+                })
+
+    # Add field overrides for phasor data if necessary
     if device[3] == "phasor":
-        field_overrides = [
+        field_overrides.extend([
             {
                 "matcher": {"id": "byName", "options": "Magnitude"},
                 "properties": [
@@ -96,11 +110,11 @@ def generate_panel_timeseries(edge_name, device, datasource_uid):
                     },
                     {
                         "id": "unit",
-                        "value": "º"
+                        "value": "°"
                     }
                 ]
             }
-        ]
+        ])
 
     panel = {
         "datasource": {
@@ -153,10 +167,12 @@ def generate_panel_timeseries(edge_name, device, datasource_uid):
 
 
 
+
 def generate_dashboard_json(deployment_name, edge_device_dict, datasource_uid):
     panels = []
     generator_values = ["Voltage SetPoint", "Power SetPoint"]
     phasor_values = ["Magnitude", "Phase"]
+
     for edge_name, devices in edge_device_dict.items():
         for device in devices:
             panel_timeseries = generate_panel_timeseries(edge_name, device, datasource_uid)
@@ -316,7 +332,8 @@ def ui_exec(deployment_name, edges_info, datasource_uid):
             n_indexes = info["size"]
             type = info["type"]
             aggregate = info.get("aggregate", "")
-            devices.append((device, n_indexes, type, aggregate))
+            units = info.get("units", "")
+            devices.append((device, n_indexes, type, aggregate, units))
         edges[edge] = devices
     generate_dashboard_json(deployment_name, edges, datasource_uid)
 

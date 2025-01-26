@@ -71,9 +71,20 @@ else
     deployment_json="${SCRIPT_DIR}/defaults/deployment_setup_${COMM_SETUP}.json"
 fi
 
+units_deployment="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/default_units.json"
+units_default="${SCRIPT_DIR}/defaults/default_units.json"
+
+# Check if the deployment-specific file exists
+if [ -f "$units_deployment" ]; then
+    units_file="$units_deployment"
+else
+    units_file="$units_default"
+fi
+
 echo "Using JSON for deployment communications:   $deployment_json"
 echo "Using setup folder:                         $setup_folder"
 echo "Using defaults JSON for default edge funcs: $defaults_json"
+echo "Using units JSON:                           $units_file"
 
 
 # Verify the provided files and directories exist
@@ -193,6 +204,7 @@ for label in "${!labels_paths[@]}"; do
         -v ${labels_paths[$label]}:/data/setup.json \
         -v ${defaults_json}:/data/edge_default.json \
         -v ${deployment_json}:/data/deployment_setup.json \
+        -v ${units_file}:/data/default_units.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
         -e LOCAL_IP=$ip_address \

@@ -17,6 +17,7 @@ package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Sensor;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +31,8 @@ public class VirtualComm {
     public interface VirtualSensor<V> extends Sensor<Float[], V>, VirtualDevice {
         String getAggregate();
         void setAggregate(String aggregate);
+        void setUnits(Object units);
+        Object getUnits();
     }
     public interface VirtualActuator<V> extends Actuator<V>, VirtualDevice {
         void actuate(String[] stringValues) throws IOException;

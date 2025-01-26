@@ -29,6 +29,7 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSenso
     private final String edgeLabel;
     private final int size;
     private String aggregate;
+    private Object units;
 
     /**
      * Creates a new instance of VirtualVoltmeter.
@@ -87,4 +88,13 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSenso
         this.aggregate = aggregate;
     }
 
+    @Override
+    public void setUnits(Object units){
+        this.units = units;
+    }
+
+    @Override
+    public Object getUnits() {
+        return units;
+    }
 }

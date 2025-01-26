@@ -285,7 +285,10 @@ def check_changes(edges_info):
             } for device in stored_devices}
 
             current_devices = {
-                device_name: {k: v for k, v in device_info.items() if k != "aggregate"}
+                device_name: {k: v for k, v in device_info.items()
+                              if k == "size" or k == "isActionable"
+                              or k == "type" or k == "is_available"
+                              or k == "categories"}
                 for device_name, device_info in edge_info["info"].items()
             }
 

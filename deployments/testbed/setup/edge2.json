@@ -44,6 +44,7 @@
                 "comm-type": "opal-udp",
                 "indexes": [0],
                 "amqp-aggregate": "phasor",
+                "window-size": 10,
                 "amqp-agg-args": {
                     "phasor-freq": 5
                 }

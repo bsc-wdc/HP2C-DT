@@ -58,6 +58,7 @@ public class HP2CEdge {
         } else {
             setupFile = "deployments/simple/setup/edge1.json";
         }
+
         // Get defaults file
         String defaultsPath = "/data/edge_default.json";
         File defaultsFile = new File(defaultsPath);
@@ -65,6 +66,14 @@ public class HP2CEdge {
             defaultsPath = "deployments/defaults/setup/edge_default.json";
         }
         edgeLabel = readEdgeLabel(setupFile);
+
+        // get default units path
+        String defaultUnitsPath = "/data/default_units.json";
+        File defaultUnitsFile = new File(defaultUnitsPath);
+        if (!defaultUnitsFile.isFile()){
+            defaultUnitsPath = "deployments/defaults/default_units.json";
+        }
+
 
         // Get IP address
         String localIp = System.getenv("LOCAL_IP");
@@ -85,6 +94,7 @@ public class HP2CEdge {
         }
         Func.loadFunctions(setupFile, edgeMap);
         Map<String, String> amqpAggregates = Func.loadGlobalFunctions(setupFile, defaultsPath, devices, amqpOn);
+        JSONObject sensorUnits = getSensorUnits(setupFile, defaultUnitsPath, devices);
 
         if (amqpOn) {
             JSONObject jEdgeSetup = getJsonObject(setupFile);
@@ -94,12 +104,25 @@ public class HP2CEdge {
             for (int i = 0; i < devicesArray.length(); i++) {
                 JSONObject device = devicesArray.getJSONObject(i);
                 String deviceLabel = formatLabel(device.getString("label"));
-                if (amqpAggregates.containsKey(deviceLabel)) {
+
+                if (amqpAggregates.containsKey(deviceLabel)) { // Specify amqp-aggregate for the device
                     String aggregateValue = amqpAggregates.get(deviceLabel);
                     // Overwrite or add the "amqp-aggregate" property in the device's properties
                     JSONObject properties = device.getJSONObject("properties");
                     properties.put("amqp-aggregate", aggregateValue);
                 }
+
+                if (sensorUnits.has(deviceLabel)) {
+                    Object units = sensorUnits.get(deviceLabel);
+                    if (units instanceof String) {
+                        device.put("units", (String) units);
+                    } else if (units instanceof JSONArray) {
+                        device.put("units", (JSONArray) units);
+                    } else {
+                        throw new IllegalArgumentException("Unsupported 'units' type for device: " + deviceLabel);
+                    }
+                }
+
             }
 
             Timer timer = new Timer();

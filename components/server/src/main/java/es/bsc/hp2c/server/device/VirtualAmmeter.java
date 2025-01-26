@@ -30,6 +30,9 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     private final int size;
     private String aggregate;
 
+
+    private Object units;
+
     /**
     * Creates a new instance of VirtualAmmeter.
     *
@@ -85,5 +88,15 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     @Override
     public void setAggregate(String aggregate) {
         this.aggregate = aggregate;
+    }
+
+    @Override
+    public void setUnits(Object units){
+        this.units = units;
+    }
+
+    @Override
+    public Object getUnits() {
+        return units;
     }
 }

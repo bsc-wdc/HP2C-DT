@@ -68,7 +68,6 @@ public class VirtualEdge {
         for (String d : devicesMap.keySet()){
             devices.put(d, (VirtualComm.VirtualDevice) devicesMap.get(d));
         }
-
         // Set devices' availability
         JSONArray jDevices = jEdgeSetup.getJSONArray("devices");
         for (Object device : jDevices){
@@ -77,10 +76,18 @@ public class VirtualEdge {
             boolean availability = jDevice.getBoolean("availability");
             this.setDeviceAvailability(deviceLabel, availability);
             String amqpAggregate = jDevice.getJSONObject("properties").optString("amqp-aggregate", "");
+
+            Object units = "";
+            if (jDevice.has("units")) {
+                units = jDevice.get("units");
+            }
+            JSONObject jProperties = jDevice.getJSONObject("properties");
+
             if (!amqpAggregate.isEmpty()){
                 if (devicesMap.get(deviceLabel).isSensitive()){
                     VirtualComm.VirtualSensor<?> virtualSensor = (VirtualComm.VirtualSensor<?>) devicesMap.get(deviceLabel);
                     virtualSensor.setAggregate(amqpAggregate);
+                    virtualSensor.setUnits(units);
                 }
             }
         }
@@ -183,6 +190,14 @@ public class VirtualEdge {
                     jDevice.put("size", sensor.getSize());
                 }
 
+                Object unitsObject = sensor.getUnits();
+                if (unitsObject instanceof String) {
+                    jDevice.put("units", (String) unitsObject);
+                } else if (unitsObject instanceof JSONArray) {
+                    jDevice.put("units", (JSONArray) unitsObject);
+                } else {
+                    throw new IllegalArgumentException("Unsupported 'units' type for device type: " + device.getType());
+                }
             }
             jDevice.put("isActionable", isActionable);
             jDevicesInfo.put(deviceLabel, jDevice);
