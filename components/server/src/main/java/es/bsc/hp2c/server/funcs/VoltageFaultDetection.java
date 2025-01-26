@@ -4,7 +4,6 @@ import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Func;
 import es.bsc.hp2c.common.types.Sensor;
-import es.bsc.hp2c.server.device.VirtualAmmeter;
 import es.bsc.hp2c.server.device.VirtualVoltmeter;
 import org.json.JSONObject;
 
@@ -13,11 +12,11 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static es.bsc.hp2c.HP2CServer.*;
+import static es.bsc.hp2c.HP2CServer.getEdgeLabels;
+import static es.bsc.hp2c.HP2CServer.getDevicesByTypeAndEdge;
+import static es.bsc.hp2c.HP2CServer.turnOffSwitches;
 import static es.bsc.hp2c.common.utils.AlarmHandler.*;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
-import static java.util.Collections.max;
-import static java.util.Collections.min;
 
 public class VoltageFaultDetection extends Func {
     private JSONObject nominalVoltages;
@@ -76,7 +75,8 @@ public class VoltageFaultDetection extends Func {
                         edgeMeasurements.put(d.getLabel(), m[0]);
                     }
                 } else {
-                    System.out.println("[VoltageFaultDetection] Voltmeter " + d.getLabel() + " aggregate is not phasor");
+                    System.out.println("[VoltageFaultDetection] Voltmeter " + d.getLabel() + " - " + edgeLabel +
+                            " aggregate is not phasor (" + va.getAggregate() +")");
                 }
             }
             currentMeasurements.put(edgeLabel, edgeMeasurements);
@@ -100,9 +100,11 @@ public class VoltageFaultDetection extends Func {
                         throw new RuntimeException(e);
                     }
 
-                    System.out.println("[VoltageFaultDetection] Fault detected on edge " + edgeLabel + ". Voltage is " +
-                            (currentVoltage / nominalVoltage * 100) + "%, Threshold is " + (threshold * 100) + "%");
-                    writeAlarm("VoltageFaultDetection", edgeLabel, voltmeterLabel);
+                    String infoMessage = "Fault detected on edge " + edgeLabel + ". Voltage is " +
+                            (currentVoltage / nominalVoltage * 100) + "%, Threshold is " + (threshold * 100) + "%";
+
+                    System.out.println("[VoltageFaultDetection] " + infoMessage);
+                    writeAlarm("VoltageFaultDetection", edgeLabel, voltmeterLabel, null);
                 } else { // update alarm (check if timeout has expired)
                     updateAlarm("VoltageFaultDetection", edgeLabel, voltmeterLabel);
                 }

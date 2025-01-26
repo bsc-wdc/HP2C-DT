@@ -29,14 +29,13 @@ public class LoadBalanceAlarm extends Func {
 
     @Override
     public void run() {
-        // Map to store edge-device-measurement relationships
+        // Map to store edge-device measurements
         Map<String, Map<String, Float>> edgeDeviceMeasurements = new HashMap<>();
         for (String edgeLabel : getEdgeLabels()) {
             ArrayList<Device> ammetersEdge = getDevicesByTypeAndEdge("Ammeter", edgeLabel);
 
             for (Device d : ammetersEdge) {
                 VirtualAmmeter va = (VirtualAmmeter) d;
-
                 // Check if aggregate is "phasor"
                 if (!Objects.equals(va.getAggregate(), "phasor")) {
                     System.out.println("[LoadBalanceAlarm] Ammeter " + d.getLabel() + " aggregate is not phasor");
@@ -44,48 +43,52 @@ public class LoadBalanceAlarm extends Func {
                     // Get current values
                     Float[] m = va.getCurrentValues();
                     if (m != null) {
-                        // Add edge-device-measurement to the map
-                        if (!edgeDeviceMeasurements.containsKey(edgeLabel)) {
-                            edgeDeviceMeasurements.put(edgeLabel, new HashMap<>());
-                        }
-                        edgeDeviceMeasurements.get(edgeLabel).put(d.getLabel(), m[0]);
+                        // Add edge-device measurement to the map
+                        edgeDeviceMeasurements.computeIfAbsent(edgeLabel, k -> new HashMap<>())
+                                .put(d.getLabel(), m[0]);
                     }
                 }
             }
         }
 
-        // Collect all measurements
-        ArrayList<Float> currentMeasurements = new ArrayList<>();
-        for (String edge : edgeDeviceMeasurements.keySet()) {
-            for (String device : edgeDeviceMeasurements.get(edge).keySet()) {
-                currentMeasurements.add(edgeDeviceMeasurements.get(edge).get(device));
+        // Store min and max values and their corresponding edge-device pairs
+        Float maxCurrent = Float.MIN_VALUE;
+        Float minCurrent = Float.MAX_VALUE;
+        String maxPair = null;
+        String minPair = null;
+
+        // Collect all measurements and find min/max with their edge-device pair
+        for (Map.Entry<String, Map<String, Float>> edgeEntry : edgeDeviceMeasurements.entrySet()) {
+            String edge = edgeEntry.getKey();
+            for (Map.Entry<String, Float> deviceEntry : edgeEntry.getValue().entrySet()) {
+                String device = deviceEntry.getKey();
+                Float value = deviceEntry.getValue();
+
+                if (value > maxCurrent) {
+                    maxCurrent = value;
+                    maxPair = edge + "-" + device;
+                }
+                if (value < minCurrent) {
+                    minCurrent = value;
+                    minPair = edge + "-" + device;
+                }
             }
         }
 
         // Perform imbalance check
-        if (!currentMeasurements.isEmpty()) {
-            Float maxCurrent = Collections.max(currentMeasurements);
-            Float minCurrent = Collections.min(currentMeasurements);
+        if (!edgeDeviceMeasurements.isEmpty()) {
             float threshold = imbalance_range * maxCurrent;
 
             if (maxCurrent - minCurrent > threshold) {
-                System.out.println("[LoadBalanceAlarm] Load imbalance detected: max = " + maxCurrent + ", min = " + minCurrent);
+                // Write a generic alarm with info message
+                String infoMessage = "Load imbalance detected: max=" + maxCurrent + " (" + maxPair + ") " +
+                        "min=" + minCurrent + " (" + minPair + ")";
+                System.out.println("[LoadBalanceAlarm]" + infoMessage);
 
-                // Write alarm for each edge-device pair
-                for (String edge : edgeDeviceMeasurements.keySet()) {
-                    for (String device : edgeDeviceMeasurements.get(edge).keySet()) {
-                        writeAlarm("LoadBalanceAlarm", edge, device);
-                    }
-                }
-            } else { // update alarm (check if timeout has expired)
-                for (String edge : edgeDeviceMeasurements.keySet()) {
-                    for (String device : edgeDeviceMeasurements.get(edge).keySet()) {
-                        updateAlarm("LoadBalanceAlarm", edge, device);
-                    }
-                }
+                writeAlarm("LoadBalanceAlarm", null, null, infoMessage);
+            } else { // Update alarm (check if timeout has expired)
+                updateAlarm("LoadBalanceAlarm", null, null);
             }
         }
     }
-
-
 }

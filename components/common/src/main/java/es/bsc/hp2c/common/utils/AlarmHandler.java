@@ -40,7 +40,7 @@ public class AlarmHandler {
         }
     }
 
-    public static void writeAlarm(String funcLabel, String edge, String device) {
+    public static void writeAlarm(String funcLabel, String edge, String device, String infoMessage) {
         if (!alarms.has(funcLabel)) {
             System.out.println("[Error] Function label does not exist: " + funcLabel);
             return;
@@ -49,20 +49,36 @@ public class AlarmHandler {
         JSONObject funcAlarm = alarms.getJSONObject(funcLabel);
         funcAlarm.put("alarm", true);
 
-        JSONObject location = funcAlarm.getJSONObject("location");
-        JSONObject edgeData = location.optJSONObject(edge);
-        if (edgeData == null) {
-            edgeData = new JSONObject();
+        // Handle the edge-device pair (if edge and device are not null)
+        if (edge != null && device != null) {
+            JSONObject location = funcAlarm.optJSONObject("location");
+            if (location == null) {
+                location = new JSONObject();
+            }
+
+            JSONObject edgeData = location.optJSONObject(edge);
+            if (edgeData == null) {
+                edgeData = new JSONObject();
+            }
+
+            // Add or update the device with the current timestamp
+            edgeData.put(device, Instant.now().toString());
+            location.put(edge, edgeData);
+            funcAlarm.put("location", location);
+        } else {
+            funcAlarm.put("time", Instant.now());
         }
 
-        // Add or update the device with the current timestamp
-        edgeData.put(device, Instant.now().toString());
-        location.put(edge, edgeData);
-        funcAlarm.put("location", location);
+        // Add the info message (if not null)
+        if (infoMessage != null) {
+            funcAlarm.put("info", infoMessage);
+        }
 
+        // Update the alarms attribute and write to file
         alarms.put(funcLabel, funcAlarm);
         writeToFile();
     }
+
 
     public static void updateAlarm(String funcLabel, String edge, String device) {
         if (!alarms.has(funcLabel)) {
@@ -71,36 +87,58 @@ public class AlarmHandler {
         }
 
         JSONObject funcAlarm = alarms.getJSONObject(funcLabel);
-        JSONObject location = funcAlarm.getJSONObject("location");
-
-        if (!location.has(edge)) {
-            System.out.println("[Update] Edge not found in location for function: " + funcLabel);
+        if (!funcAlarm.getBoolean("alarm")){
             return;
         }
+        JSONObject location = funcAlarm.optJSONObject("location");
 
-        JSONObject edgeData = location.getJSONObject(edge);
-        if (!edgeData.has(device)) {
-            System.out.println("[Update] Device not found in edge: " + edge);
-            return;
-        }
-
-        // Check the timestamp for the device
-        String timestamp = edgeData.getString(device);
-        Instant alarmTime = Instant.parse(timestamp);
-        Instant now = Instant.now();
-
-        if (Duration.between(alarmTime, now).getSeconds() >= timeout) {
-            // Remove the device if one minute has passed
-            edgeData.remove(device);
-            if (edgeData.isEmpty()) {
-                location.remove(edge);
+        if (edge == null && device == null) {
+            // Check the "time" key for timestamp
+            if (!funcAlarm.has("time")) {
+                System.out.println("[Update] No global timestamp found for function: " + funcLabel);
+                return;
             }
-            if (location.isEmpty()) {
+
+            Instant alarmTime = (Instant) funcAlarm.get("time");
+            Instant now = Instant.now();
+
+            if (Duration.between(alarmTime, now).getSeconds() >= timeout) {
+                // Clear the alarm entirely if the timeout has expired
                 funcAlarm.put("alarm", false);
+                funcAlarm.remove("time");
+                funcAlarm.remove("info");
+                writeToFile();
             }
-            writeToFile();
+        } else {
+            // Handle edge and device-specific case
+            if (location == null || !location.has(edge)) {
+                return;
+            }
+
+            JSONObject edgeData = location.getJSONObject(edge);
+            if (!edgeData.has(device)) {
+                System.out.println("[Update] Device not found in edge: " + edge);
+                return;
+            }
+
+            // Check the timestamp for the device
+            Instant alarmTime = (Instant) funcAlarm.get(device);
+            Instant now = Instant.now();
+
+            if (Duration.between(alarmTime, now).getSeconds() >= timeout) {
+                // Remove the device if the timeout has passed
+                edgeData.remove(device);
+                if (edgeData.isEmpty()) {
+                    location.remove(edge);
+                }
+                if (location.isEmpty()) {
+                    funcAlarm.put("alarm", false);
+                }
+                writeToFile();
+            }
         }
     }
+
 
     private static void writeToFile() {
         try (FileWriter fileWriter = new FileWriter(alarmFilePath)) {
