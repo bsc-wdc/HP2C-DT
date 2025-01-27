@@ -283,6 +283,7 @@ public abstract class Func implements Runnable {
 
         String driver = jFunc.optString("method-name", "");
         JSONObject parameters = jFunc.getJSONObject("parameters");
+        String lang = jFunc.getString("lang");
 
         // Process Sensors
         JSONObject jSensors = parameters.optJSONObject("sensors");
@@ -340,15 +341,20 @@ public abstract class Func implements Runnable {
                 }
             }
         }
-        return getAction(funcLabel, driver, parameters, sensors, actuators);
+        return getAction(funcLabel, driver, parameters, sensors, actuators, lang);
     }
 
     private static Runnable getAction(String funcLabel, String driver, JSONObject parameters,
-            ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators)
+                                      ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, String lang)
             throws FunctionInstantiationException {
+        // Use a specific driver for Python funcs
+        if (lang.equals("python") || lang.equals("Python") || lang.equals("PYTHON")) {
+            String method_name = driver;  // TODO: what do we do with the method_name in the json?
+            driver = "es.bsc.hp2c.common.utils.PythonFunc";
+        }
+
         Constructor<?> ct;
         JSONObject jOther;
-
         try {
             Class<?> c = Class.forName(driver);
             ct = c.getConstructor(ArrayList.class, ArrayList.class, JSONObject.class);
