@@ -31,7 +31,6 @@ public class AlarmHandler {
             if (!alarms.has(funcLabel)) {
                 JSONObject newAlarm = new JSONObject();
                 newAlarm.put("alarm", false);
-                newAlarm.put("location", new JSONObject());
                 alarms.put(funcLabel, newAlarm);
                 writeToFile();
             }
@@ -61,17 +60,22 @@ public class AlarmHandler {
                 edgeData = new JSONObject();
             }
 
+            JSONObject jDevice = new JSONObject();
+            jDevice.put("time", Instant.now());
+            if (infoMessage != null){
+                jDevice.put("info", infoMessage);
+            }
+
             // Add or update the device with the current timestamp
-            edgeData.put(device, Instant.now().toString());
+            edgeData.put(device, jDevice);
             location.put(edge, edgeData);
             funcAlarm.put("location", location);
+
         } else {
             funcAlarm.put("time", Instant.now());
-        }
-
-        // Add the info message (if not null)
-        if (infoMessage != null) {
-            funcAlarm.put("info", infoMessage);
+            if (infoMessage != null){
+                funcAlarm.put("info", infoMessage);
+            }
         }
 
         // Update the alarms attribute and write to file
@@ -121,11 +125,12 @@ public class AlarmHandler {
                 return;
             }
 
-            // Check the timestamp for the device
-            Instant alarmTime = (Instant) funcAlarm.get(device);
-            Instant now = Instant.now();
+            JSONObject jDevice = funcAlarm.getJSONObject(device);
 
-            if (Duration.between(alarmTime, now).getSeconds() >= timeout) {
+            // Check the timestamp for the device
+            Instant alarmTime = (Instant) jDevice.get("time");
+
+            if (Duration.between(alarmTime, Instant.now()).getSeconds() >= timeout) {
                 // Remove the device if the timeout has passed
                 edgeData.remove(device);
                 if (edgeData.isEmpty()) {
