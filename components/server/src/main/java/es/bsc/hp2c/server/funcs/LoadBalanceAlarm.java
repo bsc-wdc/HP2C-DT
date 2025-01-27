@@ -35,6 +35,11 @@ public class LoadBalanceAlarm extends Func {
             ArrayList<Device> ammetersEdge = getDevicesByTypeAndEdge("Ammeter", edgeLabel);
 
             for (Device d : ammetersEdge) {
+                if (!d.getDeviceAvailability()){
+                    System.out.println("[LoadBalanceAlarm] Ammeter " + d.getLabel() + " is not available");
+                    continue;
+                }
+
                 VirtualAmmeter va = (VirtualAmmeter) d;
                 // Check if aggregate is "phasor"
                 if (!Objects.equals(va.getAggregate(), "phasor")) {

@@ -67,6 +67,11 @@ public class VoltageFaultDetection extends Func {
         for (String edgeLabel : voltmetersEdge.keySet()) {
             Map<String, Float> edgeMeasurements = new HashMap<>();
             for (Device d : voltmetersEdge.get(edgeLabel)) {
+                if (!d.getDeviceAvailability()){
+                    System.out.println("[VoltageFaultDetection] Voltmeter " + d.getLabel() + " is not available");
+                    continue;
+                }
+
                 Sensor s = (Sensor) d;
                 VirtualVoltmeter va = (VirtualVoltmeter) s;
                 if (Objects.equals(va.getAggregate(), "phasor")) {
