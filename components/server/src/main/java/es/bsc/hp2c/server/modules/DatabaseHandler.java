@@ -111,6 +111,44 @@ public class DatabaseHandler {
         }
     }
 
+    /**
+     * Write a new alarm entry to Influx database.
+     * Use the alarmName as the `measurement`, the edgeLabel and deviceLabel as `tag`, and the alarmState as `field`
+     *
+     * @param timestamp    Message timestamp in long integer format.
+     * @param alarmName   Name of the alarm
+     * @param edgeLabel    Name of the Influx measurement (series) where we
+     *                      will write. Typically, the name of the edge node.
+     * @param deviceName   of the Influx tag where we will write. Typically,
+     *                     the name of the device.
+     * @param alarmStatus  Status of the alarm to write
+     * @param info         Info message of the alarm
+     */
+    public void writeAlarmDB(Instant timestamp, String alarmName, String edgeLabel, String deviceName,
+                             boolean alarmStatus, String info) {
+        long epochNanos = timestamp.getEpochSecond() * 1_000_000_000L + timestamp.getNano();
+
+        // Replace null values with default strings for tags
+        String safeEdgeLabel = edgeLabel != null ? edgeLabel : "";
+        String safeDeviceName = deviceName != null ? deviceName : "";
+        String safeInfo = info != null ? info : "";
+
+        Point.Builder pointBuilder = Point.measurement(alarmName)
+                .time(epochNanos, TimeUnit.NANOSECONDS)
+                .tag("device", safeDeviceName)
+                .tag("edge", safeEdgeLabel)
+                .addField("status", alarmStatus)
+                .addField("info", safeInfo);
+
+        if (isVerbose()) {
+            System.out.println("[DatabaseHandler] Writing alarm DB with alarm label: " + alarmName +
+                    ", edge label: " + safeEdgeLabel + ", device label: " + safeDeviceName + ", status: " + alarmStatus);
+        }
+
+        influxDB.write(pointBuilder.build());
+    }
+
+
     private String[] getAuth(String configFile) throws IOException {
         // Parse JSON file
         JSONObject jsonObject = getJsonObject(configFile);

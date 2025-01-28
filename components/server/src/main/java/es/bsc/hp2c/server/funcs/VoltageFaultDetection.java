@@ -5,6 +5,7 @@ import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Func;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.server.device.VirtualVoltmeter;
+import es.bsc.hp2c.server.modules.AlarmHandler;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -12,20 +13,20 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static es.bsc.hp2c.HP2CServer.getEdgeLabels;
-import static es.bsc.hp2c.HP2CServer.getDevicesByTypeAndEdge;
-import static es.bsc.hp2c.HP2CServer.turnOffSwitches;
-import static es.bsc.hp2c.common.utils.AlarmHandler.*;
+import static es.bsc.hp2c.HP2CServer.*;
+import static es.bsc.hp2c.server.modules.AlarmHandler.*;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 public class VoltageFaultDetection extends Func {
     private JSONObject nominalVoltages;
     private float threshold;
+    private AlarmHandler alarms;
 
     public VoltageFaultDetection(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
             throws FunctionInstantiationException {
         super(sensors, actuators, others);
         try {
+            alarms = getAlarms();
             String cwd = Paths.get("").toAbsolutePath().toString();
             System.out.println("Current path: " + cwd);
 
@@ -47,9 +48,13 @@ public class VoltageFaultDetection extends Func {
 
         try {
             threshold = others.getFloat("threshold");
-            addNewAlarm("VoltageFaultDetection");
         } catch (Exception e){
             throw new FunctionInstantiationException("[VoltageFaultDetection] 'threshold' must be defined in 'other' section");
+        }
+        try {
+            alarms.addNewAlarm("VoltageFaultDetection");
+        } catch (Exception e){
+            throw new FunctionInstantiationException("Error creating new alarm VoltageFaultDetection");
         }
     }
 
@@ -109,9 +114,10 @@ public class VoltageFaultDetection extends Func {
                             (currentVoltage / nominalVoltage * 100) + "%, Threshold is " + (threshold * 100) + "%";
 
                     System.out.println("[VoltageFaultDetection] " + infoMessage);
-                    writeAlarm("VoltageFaultDetection", edgeLabel, voltmeterLabel, null);
+                    alarms.writeAlarm("VoltageFaultDetection", edgeLabel, voltmeterLabel, infoMessage, true);
                 } else { // update alarm (check if timeout has expired)
-                    updateAlarm("VoltageFaultDetection", edgeLabel, voltmeterLabel);
+                    alarms.writeAlarm("VoltageFaultDetection", edgeLabel, voltmeterLabel, null, false);
+
                 }
             }
         }
