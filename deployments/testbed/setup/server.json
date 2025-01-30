@@ -80,7 +80,7 @@
       "trigger": {
         "type": "onFrequency",
         "parameters": {
-          "frequency": 4
+          "frequency": 10
         }
       }
     }

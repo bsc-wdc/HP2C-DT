@@ -276,4 +276,8 @@ public class HP2CServer {
     public static AlarmHandler getAlarms(){
         return alarms;
     }
+
+    public static DatabaseHandler getDB(){
+        return db;
+    }
 }

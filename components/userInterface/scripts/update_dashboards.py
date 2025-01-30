@@ -3,6 +3,8 @@ import json
 import requests
 from requests import RequestException
 
+from home.dashboard import get_alerts_list, create_alert_rule_json, \
+    post_alert_rules, create_folder
 from home.models import Edge, Device, Deployment
 from scripts.create_json_dashboard import ui_exec
 
@@ -139,6 +141,7 @@ def update_dashboards():
                         break
                 if datasource_uid:
                     GRAFANA_API_KEY = api_key
+                    URL = url
                     grafana_connected = True
                     break
             except RequestException as _:
@@ -186,9 +189,23 @@ def update_dashboards():
                         break
         except RequestException as _:
             print("Error requesting to url: ", url, flush=True)
+
     if not datasource_uid:
         print("Datasource influxdb uid not found")
         exit(1)
+
+    ########################### CREATE ALERT JSON #######################################
+    # Create folder
+    folder_uid = create_folder(URLs, GRAFANA_API_KEY)
+
+    alerts_list = get_alerts_list(server_url, server_port)
+    if alerts_list is not None:
+        alert_rules = [
+            create_alert_rule_json(alarm, edge, device, datasource_uid,
+                                   folder_uid)
+            for alarm, edge, device in alerts_list
+        ]
+        post_alert_rules(alert_rules, URLs, grafana_api_keys)
 
     ########################### CREATE JSON DASHBOARD ####################################
     print("Creating or updating dashboard...")
