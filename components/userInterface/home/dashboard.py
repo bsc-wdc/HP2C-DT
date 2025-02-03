@@ -41,8 +41,8 @@ def geomap(server_port, server_url):
             const svgHeight = +svg.attr("height");
 
             const projection = d3.geoNaturalEarth1()
-                .scale(5000)
-                .translate([svgWidth / 4.25, svgHeight * 4.15]);
+                .scale(4500)
+                .translate([svgWidth / 6, svgHeight * 3.6]);
 
             const path = d3.geoPath()
                 .projection(projection);
