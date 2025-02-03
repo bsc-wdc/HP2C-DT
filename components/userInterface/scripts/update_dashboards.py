@@ -293,13 +293,17 @@ def check_changes(edges_info):
                 return True
 
             stored_devices = Device.objects.filter(edge=edge_model)
-            stored_devices_dict = {device.name: {
-                "size": device.size,
-                "isActionable": device.is_actionable,
-                "type": device.type,
-                "is_available": device.show,
-                "categories": device.categories if device.is_categorical else None
-            } for device in stored_devices}
+            stored_devices_dict = {
+                device.name: {
+                    "size": device.size,
+                    "isActionable": device.is_actionable,
+                    "type": device.type,
+                    "is_available": device.show,
+                    **({"categories": device.categories}
+                       if device.is_categorical else {})
+                }
+                for device in stored_devices
+            }
 
             current_devices = {
                 device_name: {k: v for k, v in device_info.items()

@@ -251,9 +251,9 @@ def get_devices(deployment_model, panels, edges_info, grafana_url):
                                 grafana_url))
             device_model.table_link = table_link
             device_model.timeseries_link = timeseries_link
+            device_model.size = int(attributes["size"])
             if attributes["isActionable"]:
                 device_model.is_actionable = True
-                device_model.size = int(attributes["size"])
                 if attributes["isCategorical"]:
                     device_model.is_categorical = True
                     device_model.categories = attributes["categories"]
