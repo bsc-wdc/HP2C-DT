@@ -103,7 +103,8 @@ public class VoltageFaultDetection extends Func {
 
             for (String voltmeterLabel : edgeMeasurements.keySet()) {
                 Float currentVoltage = edgeMeasurements.get(voltmeterLabel);
-                if (currentVoltage < (threshold * nominalVoltage)) {
+              
+                if (currentVoltage < ((1-threshold) * nominalVoltage) || currentVoltage > (1+threshold) * nominalVoltage) {
                     try {
                         turnOffSwitches(edgeLabel);
                     } catch (IOException e) {

@@ -578,7 +578,6 @@ def create_alerts_panel(datasource_uid):
             "uid": f"{datasource_uid}",
             "type": "influxdb"
         },
-        "id": 17,
         "options": {
             "viewMode": "list",
             "groupMode": "default",

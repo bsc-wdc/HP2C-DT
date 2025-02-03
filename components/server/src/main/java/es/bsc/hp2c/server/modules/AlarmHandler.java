@@ -114,29 +114,27 @@ public class AlarmHandler {
                 }
             } else {
                 // Handle edge and device-specific case
-                if (location == null || !location.has(edge)) {
-                    return;
-                }
-
-                JSONObject edgeData = location.getJSONObject(edge);
-                if (!edgeData.has(device)) {
-                    System.out.println("[Update] Device not found in edge: " + edge);
-                    return;
-                }
-
-                JSONObject jDevice = edgeData.getJSONObject(device);
-
-                // Check the timestamp for the device
-                Instant alarmTime = (Instant) jDevice.get("time");
-
-                if (Duration.between(alarmTime, Instant.now()).getSeconds() >= timeout) {
-                    // Remove the device if the timeout has passed
-                    edgeData.remove(device);
-                    if (edgeData.isEmpty()) {
-                        location.remove(edge);
+                if (location != null && location.has(edge)) {
+                    JSONObject edgeData = location.getJSONObject(edge);
+                    if (!edgeData.has(device)) {
+                        System.out.println("[Update] Device not found in edge: " + edge);
+                        return;
                     }
-                    if (location.isEmpty()) {
-                        funcAlarm.put("alarm", false);
+
+                    JSONObject jDevice = edgeData.getJSONObject(device);
+
+                    // Check the timestamp for the device
+                    Instant alarmTime = (Instant) jDevice.get("time");
+
+                    if (Duration.between(alarmTime, Instant.now()).getSeconds() >= timeout) {
+                        // Remove the device if the timeout has passed
+                        edgeData.remove(device);
+                        if (edgeData.isEmpty()) {
+                            location.remove(edge);
+                        }
+                        if (location.isEmpty()) {
+                            funcAlarm.put("alarm", false);
+                        }
                     }
                 }
             }

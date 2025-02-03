@@ -65,12 +65,12 @@
                    aria-controls="profile" aria-selected="true">View Map</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
-                   aria-selected="false">View List</a>
-            </li>
-            <li class="nav-item">
                 <a class="nav-link" id="alerts-tab" data-toggle="tab" href="#alerts" role="tab" aria-controls="home"
                    aria-selected="false">Alerts</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
+                   aria-selected="false">View List</a>
             </li>
         </ul>
         <div class="tab-content" id="myTabContent">
@@ -133,11 +133,7 @@
 
             <div class="tab-pane fade active show" id="alerts" role="tabpanel" aria-labelledby="alerts-tab">
                 <div class="table-responsive" >
-                    <tr class="alerts-row">
-                        <td class="alerts-cell">
                           <iframe class="alerts" src="{{ alerts_link }}" width="1125" height="400" frameborder="0"></iframe>
-                        </td>
-                    </tr>
                 </div>
             </div>
 
