@@ -23,6 +23,10 @@ class TestUDSServer(unittest.TestCase):
         time.sleep(1)  # Allow server to start
 
     def test_client_messages(self):
+        """
+        Test the UDS Server by sending it 5 consecutive messages and wait
+        for the echoed response.
+        """
         client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         client.connect(SOCKET_PATH)
 

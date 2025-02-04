@@ -1,3 +1,7 @@
+"""
+Deploy a Unix socket server that waits indefinitely for petitions of Edge nodes
+to execute external functions in the `funcs` directory.
+"""
 import sys
 import socket
 import json
@@ -15,6 +19,7 @@ sys.path.append(os.path.join(curr_dir_path, "funcs"))
 
 
 def import_function(module_name, function_name):
+    """ Return handler of a function in external module by name. """
     module = importlib.import_module(module_name)
     return getattr(module, function_name)
 
@@ -57,7 +62,13 @@ def main(socket_path, func_module, json_params, buffer_size=1024):
 
 def call_func(data, func_module):
     """
-    Call function and return the result in JSON format or None
+    Prepare input data and call function and return the result in JSON format
+    or None.
+
+    The response follows the next format:
+    {
+      "result": ... Result produced by the called function ...
+    }
     """
     try:
         # Decode the data and parse the JSON
@@ -81,8 +92,11 @@ def call_func(data, func_module):
         func = import_function(func_module, method_name)  # TODO: where is the method_name that I print in Java in UniXSocketClient?
         print(f"Running function: {func_module}.{func.__name__}")
         if func:
+            # Compute function
             result = func(*func_params)
-            return result
+            # Wrap result in a JSON object and return
+            result_json = json.dumps({"result": result})
+            return result_json
         else:
             print(f"Warning: Method {method_name} not found in module.")
     else:
@@ -92,7 +106,8 @@ def call_func(data, func_module):
 if __name__ == "__main__":
     print("Received arguments: ", sys.argv)
     if len(sys.argv) < 4 or len(sys.argv) > 5:
-        raise ValueError("Wrong number of arguments: need to pass <socket_path> <func_module> <json_params>")
+        raise ValueError("Wrong number of arguments: need to pass"
+                         " <socket_path> <func_module> <json_params>")
     try:
         main(*sys.argv[1:])
     except:
