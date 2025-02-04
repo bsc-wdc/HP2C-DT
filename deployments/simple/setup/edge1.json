@@ -100,7 +100,7 @@
         {
             "label": "Fibonacci",
             "lang": "Python",
-            "method-name": "fibonaci",
+            "method-name": "es.bsc.hp2c.common.utils.PythonFunc",
             "parameters": {
                 "sensors": ["Voltmeter Gen1"],
                 "actuators": ["Three-Phase Switch Gen1"],

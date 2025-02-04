@@ -347,9 +347,8 @@ public abstract class Func implements Runnable {
     private static Runnable getAction(String funcLabel, String driver, JSONObject parameters,
                                       ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, String lang)
             throws FunctionInstantiationException {
-        // Use a specific driver for Python funcs
-        if (lang.equals("python") || lang.equals("Python") || lang.equals("PYTHON")) {
-            String method_name = driver;  // TODO: what do we do with the method_name in the json?
+        // Use a specific driver for Python funcs if driver is not specified
+        if (driver.isEmpty() && (lang.equals("python") || lang.equals("Python") || lang.equals("PYTHON"))) {
             driver = "es.bsc.hp2c.common.utils.PythonFunc";
         }
 
