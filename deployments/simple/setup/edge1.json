@@ -98,14 +98,14 @@
 
     "funcs":[
         {
-            "label": "VoltLimitation",
+            "label": "Fibonacci",
             "lang": "Python",
-            "method-name": "volt_limitation",
+            "method-name": "fibonaci",
             "parameters": {
                 "sensors": ["Voltmeter Gen1"],
                 "actuators": ["Three-Phase Switch Gen1"],
                 "other": {
-                    "module_name": "volt_limitation",
+                    "module_name": "fibonacci",
                     "n": 10
                 }
             },
