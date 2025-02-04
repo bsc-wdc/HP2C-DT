@@ -7,26 +7,46 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 
 import java.util.Map;
+import java.util.UUID;
 
+/**
+ * Executes a Python script in a separate thread, passing function parameters via a Unix Domain Socket (UDS).
+ * Captures and prints the Python script's output and error streams in real time.
+ *
+ * The class constructs a unique UDS path and invokes the Python script with the specified function module
+ * and its parameters (in JSON format). The script output and error streams are handled by separate threads.
+ *
+ */
 public class PythonCaller extends Thread {
-    private final String serverPath = "/home/eiraola/projects/hp2cdt/components/unixSocketServer/unix_socket_server.py";
+    private final String serverPath = "/home/eiraola/projects/hp2cdt/components/unixSocketServer/unix_socket_server.py";  // TODO: implement for relative folders and Docker
     private final String funcModule;
     private final String socketPath;
     private final JSONObject jsonParams;
 
-    public PythonCaller(String funcModule, String socketPath, JSONObject jsonParams) {
+    /**
+     * Constructs a new PythonCaller.
+     *
+     * @param funcModule The Python function module name (without .py) that will ultimately be called by the Python
+     *                   server. Func modules must be located in the 'unixSocketServer/funcs' directory
+     * @param jsonParams The parameters to pass to the function.
+     */
+    public PythonCaller(String funcModule, JSONObject jsonParams) {
         this.funcModule = funcModule;
-        this.socketPath = socketPath;
         this.jsonParams = jsonParams;
+        UUID uuid = UUID.randomUUID();
+        this.socketPath = "/tmp/hp2c_" + funcModule + "_" + uuid + ".sock";
     }
 
+    /**
+     * Executes the Python script as a subprocess and handles its output and error streams.
+     */
     public void run() {
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command("python", serverPath, socketPath, funcModule, jsonParams.toString());
 
         // Set environment variables
-        Map<String, String> environment = processBuilder.environment();
         // TODO: Set PYTHONUNBUFFERED to flush Python prints (but lower performance!)
+        Map<String, String> environment = processBuilder.environment();
         environment.put("PYTHONUNBUFFERED", "1");
 
         try {
@@ -38,7 +58,7 @@ public class PythonCaller extends Thread {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        System.out.println("*******[PYTHON OUTPUT] " + line);  // Print output in real-time
+                        System.out.println("[PythonCaller] PYTHON OUTPUT: " + line);  // Print output in real-time
                     }
                 } catch (IOException e) {
                     System.err.println("[PythonCaller] Error reading output: " + e.getMessage());
@@ -50,7 +70,7 @@ public class PythonCaller extends Thread {
                 try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
                     String line;
                     while ((line = errorReader.readLine()) != null) {
-                        System.err.println("*******[PYTHON ERR] " + line);  // Print error output in real-time
+                        System.err.println("[PythonCaller] PYTHON ERR: " + line);  // Print error output in real-time
                     }
                 } catch (IOException e) {
                     System.err.println("[PythonCaller] Error reading error output: " + e.getMessage());
@@ -73,6 +93,10 @@ public class PythonCaller extends Thread {
         } catch (IOException | InterruptedException e) {
             System.err.println("[PythonCaller] Error while executing python: " + e.getMessage());
         }
+    }
+
+    public String getSocketPath() {
+        return socketPath;
     }
 
 }

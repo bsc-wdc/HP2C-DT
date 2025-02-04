@@ -11,86 +11,47 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.UUID;
-import java.nio.file.Files;
 
 /**
- * Creates a Unix Socket with a unique name
+ * Connects to an existing UNIX socket as a client
  */
-public class UnixSocketClient extends Thread {
-    private final String name;
-    private final String socketPath;
-    private final File socketFile;
+public class UnixSocketClient {
+    private final String funcModule;
     private AFUNIXSocket socket;
     private BufferedWriter writer;
     private BufferedReader reader;
 
-    public UnixSocketClient(String name) {
-        this.name = name;
-        UUID uuid = UUID.randomUUID();
-        this.socketPath = "/tmp/hp2c_" + name + "_" + uuid + ".sock";
-        this.socketFile = new File(socketPath);
+    /**
+     * Constructs a new UnixSocketClient instance.
+     * This constructor initializes the socket client with the provided module name
+     * and the path to the UNIX domain socket, and then establishes a connection to the server.
+     *
+     * @param funcModule the exact name of the python module (without .py) that will be called by the Python server.
+     * @param socketPath path to the UNIX domain socket file.
+     *                   The client will attempt to connect to the server at this socket location.
+     * @throws IOException if an I/O error occurs while setting up the connection to the server.
+     */
+    public UnixSocketClient(String funcModule, String socketPath) throws IOException {
+        this.funcModule = funcModule;
+        setupConnection(socketPath);
     }
 
-    public String getSocketPath() {
-        return socketPath;
-    }
-
-    @Override
-    public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                // Remove and recreate the socket file if needed
-                restartSocketFile();
-                // Only set up the connection if it is not already active
-                if (socket == null || !socket.isConnected()) {
-                    setupConnection();
-                    System.out.println("[UnixSocketClient] Socket connection " + socketPath + " established.");
-                }
-            } catch (Exception e) {
-                System.err.println("[UnixSocketClient] Error in connection: " + e.getMessage());
-                closeConnection(); // Ensure proper cleanup
-                System.out.println("[UnixSocketClient] Attempting to reconnect...");
-            }
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); // Restore interrupt status
-                break; // Exit loop on interrupt
-            }
-        }
-        closeConnection(); // Cleanup if thread is interrupted
-    }
-
-    private synchronized void setupConnection() throws IOException {
-        if (!socketFile.exists()) {
-            // Create the empty file that will be used by the server
-            boolean created = socketFile.createNewFile();
-            if (created) {
-                System.out.println("[UnixSocketClient] Socket file created at " + socketPath);
-            } else {
-                System.out.println("[UnixSocketClient] Socket file already exists at " + socketPath);
-            }
-        }
+    private synchronized void setupConnection(String socketPath) throws IOException {
+        File socketFile = new File(socketPath);
         socket = AFUNIXSocket.newInstance();
         socket.connect(AFUNIXSocketAddress.of(socketFile));
         writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
-    private synchronized void restartSocketFile() {
-        try {
-            if (socketFile.exists()) {
-                Files.delete(socketFile.toPath());
-            }
-        } catch (IOException e) {
-            System.err.println("[UnixSocketClient] Failed to delete socket file: " + e.getMessage());
-        }
-    }
-
+    /**
+     * Runs the Python function, passing the list of parameters funcParams parsed inside a JSON object.
+     * @param funcParams list of parameters of the destination function
+     * @return Result of the Python operation
+     */
     public synchronized String call(Object... funcParams) {
         if (socket == null || !socket.isConnected()) {
-            throw new IllegalStateException("Socket is not connected.");
+            throw new IllegalStateException("[UnixSocketClient] " + funcModule + ": Socket is not connected.");
         }
 
         try {
@@ -102,34 +63,36 @@ public class UnixSocketClient extends Thread {
             // Add the funcParams as a JSON array
             JSONArray jsonParams = new JSONArray();
             for (Object param : funcParams) {
-                jsonParams.put(param); // Automatically converts each param to a JSON-friendly format
+                jsonParams.put(param);
             }
             jsonMessage.put("funcParams", jsonParams);
 
             // Send the JSON message to the socket
             writer.write(jsonMessage.toString());
-            writer.newLine(); // Optional newline if server expects one
+            // writer.newLine();  // Optional newline if server expects one
             writer.flush();
 
             // Read the response from the server
             String response = reader.readLine();
             if (response == null) {
-                throw new RuntimeException("Socket connection closed unexpectedly.");
+                throw new RuntimeException("[UnixSocketClient] "
+                        + funcModule + ": Socket connection closed unexpectedly.");
             }
             return response;
         } catch (IOException e) {
-            throw new RuntimeException("Error during socket communication: " + e.getMessage(), e);
+            throw new RuntimeException("[UnixSocketClient] "
+                    + funcModule + ": Error during socket communication: " + e.getMessage(), e);
         }
     }
 
-    public synchronized void closeConnection() {
+    public synchronized void close() {
         try {
             if (writer != null) writer.close();
             if (reader != null) reader.close();
             if (socket != null) socket.close();
-            System.out.println("[UnixSocketClient] Socket connection closed.");
+            System.out.println("[UnixSocketClient] " + funcModule + ": Socket connection closed.");
         } catch (Exception e) {
-            System.err.println("[UnixSocketClient] Error closing the socket: " + e.getMessage());
+            System.err.println("[UnixSocketClient] " + funcModule + ": Error closing the socket: " + e.getMessage());
         }
     }
 }

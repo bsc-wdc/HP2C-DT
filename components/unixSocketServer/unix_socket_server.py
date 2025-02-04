@@ -6,14 +6,12 @@ import os
 import traceback
 
 
-# Load funcs directory
+DEFAULT_METHOD_NAME = "main"
+
+# Load funcs directory into PATH
 curr_module_path = os.path.abspath(__file__)
-print(curr_module_path.split(os.sep)[:-1])
 curr_dir_path = os.sep.join(curr_module_path.split(os.sep)[:-1])
-print("CURR DIR PATH: ", curr_dir_path)
 sys.path.append(os.path.join(curr_dir_path, "funcs"))
-print("CURRENT PATH:", curr_dir_path)
-print("PATH ENV:", sys.path)
 
 
 def import_function(module_name, function_name):
@@ -22,70 +20,80 @@ def import_function(module_name, function_name):
 
 
 def main(socket_path, func_module, json_params, buffer_size=1024):
-    print("Instantiating socket", socket_path, flush=True)
+    print("Instantiating socket", socket_path)
     print("func_module:", func_module)
     print("json_params:", json_params)
     print("buffer_size:", buffer_size)
-    
+
+    # Remove socket if it exists and bind
+    if os.path.exists(socket_path):
+        os.remove(socket_path)
     server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    print("1111111111111")
-    # Clean up existing socket if present
-    try:
-        os.unlink(socket_path)
-    except OSError:
-        pass
     server_socket.bind(socket_path)
-    print("2222222222222")
     server_socket.listen(1)
-    print("333333333333333")
 
     print(f"Server listening on {socket_path}")
 
-    while True:
-        client_socket, _ = server_socket.accept()
+    # Start loop to accept requests
+    client_socket, _ = server_socket.accept()
+    try:
+        with client_socket:
+            while True:
+                print("Reading incoming data...")
+                data = client_socket.recv(buffer_size)
+                if not data:
+                    print("Client disconnected")
+                    break
+                response = call_func(data, func_module)
+                if response:
+                    print("RESPONSE: ", response)
+                    client_socket.sendall((response + "\n").encode("utf-8"))
+    except KeyboardInterrupt:
+        print("Shutting down Unix Socket...")
+    finally:
+        client_socket.close()  # Always close the client socket when done
+        os.remove(socket_path)
 
-        try:
-            print("Reading incoming data...")
-            data = client_socket.recv(buffer_size)  # Read incoming data from the client
-            if not data:
-                continue
 
-            # Decode the data and parse the JSON
-            message = data.decode('utf-8')
-            json_data = json.loads(message)
+def call_func(data, func_module):
+    """
+    Call function and return the result in JSON format or None
+    """
+    try:
+        # Decode the data and parse the JSON
+        message = data.decode('utf-8')
+        json_data = json.loads(message)
+        # Extract the fields from the JSON
+        method_name = json_data.get("method_name", DEFAULT_METHOD_NAME)
+        info = json_data.get("info")
+        func_params = json_data.get("funcParams")
+        print("method_name:", method_name)
+        print("info:", info)
+        print("funcs_params:", func_params)
+    except json.JSONDecodeError:
+        print("Received data is not valid JSON.")
+        return
 
-            # Extract the fields from the JSON
-            default_method_name = "main"  # Use main by default
-            method_name = json_data.get("method_name", default_method_name)
-            info = json_data.get("info")
-            func_params = json_data.get("funcParams")
-
-            print(f"Received method_name: {method_name}, info: {info}, funcParams: {func_params}")
-
-            # Assuming you have a function you want to call in func_module
-            if func_params:
-                func = import_function(func_module, method_name)  # TODO: where is the method_name that I print in Java in UniXSocketClient?
-                
-                # Verify contents of the module:
-                print(func)
-                if func:
-                    result = func(*func_params)  # Call the method with funcParams
-                    print(f"Result: {result}")
-                else:
-                    print(f"Method {method_name} not found in module.")
-            else:
-                print("No funcParams provided.")
-            
-        except json.JSONDecodeError:
-            print("Received data is not valid JSON.")
-        except Exception as e:
-            print(f"Error: {traceback.print_exc()}")
-        finally:
-            client_socket.close()  # Always close the client socket when done
+    print(f"Received method_name: {method_name}, info: {info}, "
+          f"funcParams: {func_params}")
+    # Call function
+    if func_params:
+        func = import_function(func_module, method_name)  # TODO: where is the method_name that I print in Java in UniXSocketClient?
+        print(f"Running function: {func_module}.{func.__name__}")
+        if func:
+            result = func(*func_params)
+            return result
+        else:
+            print(f"Warning: Method {method_name} not found in module.")
+    else:
+        print("Warning: No funcParams provided.")
 
 
 if __name__ == "__main__":
     print("Received arguments: ", sys.argv)
     if len(sys.argv) < 4 or len(sys.argv) > 5:
         raise ValueError("Wrong number of arguments: need to pass <socket_path> <func_module> <json_params>")
-    main(*sys.argv[1:])
+    try:
+        main(*sys.argv[1:])
+    except:
+        print(f"Error: {traceback.print_exc()}")  # Allows showing the stack
