@@ -13,16 +13,16 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
 /**
- * Connects to an existing UNIX socket as a client
+ * Connects to an existing UNIX socket as a client to make periodic calls of a Python function and handles its output
  */
-public class UnixSocketClient {
+public class UDSClient {
     private final String funcModule;
     private AFUNIXSocket socket;
     private BufferedWriter writer;
     private BufferedReader reader;
 
     /**
-     * Constructs a new UnixSocketClient instance.
+     * Constructs a new UDSClient instance.
      * This constructor initializes the socket client with the provided module name
      * and the path to the UNIX domain socket, and then establishes a connection to the server.
      *
@@ -31,7 +31,7 @@ public class UnixSocketClient {
      *                   The client will attempt to connect to the server at this socket location.
      * @throws IOException if an I/O error occurs while setting up the connection to the server.
      */
-    public UnixSocketClient(String funcModule, String socketPath) throws IOException {
+    public UDSClient(String funcModule, String socketPath) throws IOException {
         this.funcModule = funcModule;
         setupConnection(socketPath);
     }
@@ -51,7 +51,7 @@ public class UnixSocketClient {
      */
     public synchronized String call(Object... funcParams) {
         if (socket == null || !socket.isConnected()) {
-            throw new IllegalStateException("[UnixSocketClient] " + funcModule + ": Socket is not connected.");
+            throw new IllegalStateException("[UDSClient] " + funcModule + ": Socket is not connected.");
         }
 
         try {
@@ -75,12 +75,12 @@ public class UnixSocketClient {
             // Read the response from the server
             String response = reader.readLine();
             if (response == null) {
-                throw new RuntimeException("[UnixSocketClient] "
+                throw new RuntimeException("[UDSClient] "
                         + funcModule + ": Socket connection closed unexpectedly.");
             }
             return response;
         } catch (IOException e) {
-            throw new RuntimeException("[UnixSocketClient] "
+            throw new RuntimeException("[UDSClient] "
                     + funcModule + ": Error during socket communication: " + e.getMessage(), e);
         }
     }
@@ -90,9 +90,9 @@ public class UnixSocketClient {
             if (writer != null) writer.close();
             if (reader != null) reader.close();
             if (socket != null) socket.close();
-            System.out.println("[UnixSocketClient] " + funcModule + ": Socket connection closed.");
+            System.out.println("[UDSClient] " + funcModule + ": Socket connection closed.");
         } catch (Exception e) {
-            System.err.println("[UnixSocketClient] " + funcModule + ": Error closing the socket: " + e.getMessage());
+            System.err.println("[UDSClient] " + funcModule + ": Error closing the socket: " + e.getMessage());
         }
     }
 }

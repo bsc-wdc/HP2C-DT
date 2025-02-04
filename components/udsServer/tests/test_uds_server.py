@@ -11,11 +11,11 @@ TESTING_FUNC = "test_func"
 
 
 def start_server():
-    from unix_socket_server import main  # Import the actual server function
+    from uds_server import main  # Import the actual server function
     main(SOCKET_PATH, TESTING_FUNC, {})
 
 
-class TestUnixSocketServer(unittest.TestCase):
+class TestUDSServer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.server_thread = threading.Thread(target=start_server, daemon=True)

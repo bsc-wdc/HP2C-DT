@@ -17,20 +17,20 @@ import java.util.UUID;
  * and its parameters (in JSON format). The script output and error streams are handled by separate threads.
  *
  */
-public class PythonCaller extends Thread {
-    private final String serverPath = "/home/eiraola/projects/hp2cdt/components/unixSocketServer/unix_socket_server.py";  // TODO: implement for relative folders and Docker
+public class PythonHandler extends Thread {
+    private final String serverPath = "/home/eiraola/projects/hp2cdt/components/udsServer/uds_server.py";  // TODO: implement for relative folders and Docker
     private final String funcModule;
     private final String socketPath;
     private final JSONObject jsonParams;
 
     /**
-     * Constructs a new PythonCaller.
+     * Constructs a new PythonHandler.
      *
      * @param funcModule The Python function module name (without .py) that will ultimately be called by the Python
-     *                   server. Func modules must be located in the 'unixSocketServer/funcs' directory
+     *                   server. Func modules must be located in the 'udsServer/funcs' directory
      * @param jsonParams The parameters to pass to the function.
      */
-    public PythonCaller(String funcModule, JSONObject jsonParams) {
+    public PythonHandler(String funcModule, JSONObject jsonParams) {
         this.funcModule = funcModule;
         this.jsonParams = jsonParams;
         UUID uuid = UUID.randomUUID();
@@ -58,10 +58,10 @@ public class PythonCaller extends Thread {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        System.out.println("[PythonCaller] PYTHON OUTPUT: " + line);  // Print output in real-time
+                        System.out.println("[PythonHandler] PYTHON OUTPUT: " + line);  // Print output in real-time
                     }
                 } catch (IOException e) {
-                    System.err.println("[PythonCaller] Error reading output: " + e.getMessage());
+                    System.err.println("[PythonHandler] Error reading output: " + e.getMessage());
                 }
             });
 
@@ -70,10 +70,10 @@ public class PythonCaller extends Thread {
                 try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
                     String line;
                     while ((line = errorReader.readLine()) != null) {
-                        System.err.println("[PythonCaller] PYTHON ERR: " + line);  // Print error output in real-time
+                        System.err.println("[PythonHandler] PYTHON ERR: " + line);  // Print error output in real-time
                     }
                 } catch (IOException e) {
-                    System.err.println("[PythonCaller] Error reading error output: " + e.getMessage());
+                    System.err.println("[PythonHandler] Error reading error output: " + e.getMessage());
                 }
             });
 
@@ -88,10 +88,10 @@ public class PythonCaller extends Thread {
             outputThread.join();
             errorThread.join();
 
-            System.out.println("[PythonCaller] Exited with code: " + exitCode);
+            System.out.println("[PythonHandler] Exited with code: " + exitCode);
 
         } catch (IOException | InterruptedException e) {
-            System.err.println("[PythonCaller] Error while executing python: " + e.getMessage());
+            System.err.println("[PythonHandler] Error while executing python: " + e.getMessage());
         }
     }
 

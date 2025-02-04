@@ -14,8 +14,8 @@ import static java.lang.Thread.sleep;
  * General wrapper to call Python functions through a thread running the Python session and Unix Sockets
  */
 public class PythonFunc extends Func {
-    private final UnixSocketClient socket;
-    private final PythonCaller pythonCaller;
+    private final UDSClient socket;
+    private final PythonHandler pythonHandler;
     private final ArrayList<Sensor<?, ?>> sensors;
     private final ArrayList<Actuator<?>> actuators;
     private final String moduleName;
@@ -38,11 +38,12 @@ public class PythonFunc extends Func {
         this.moduleName = jParams.getString("module_name");
 
         // Initialize the Python server
-        this.pythonCaller = new PythonCaller(moduleName, jParams);
-        this.pythonCaller.start();
-        // Now UnixSocketClient connects to that socket as a client
+        this.pythonHandler = new PythonHandler(moduleName, jParams);
+        this.pythonHandler.start();
+
+        // Now UDSClient connects to that socket as a client
         sleep(1000);  // Give the Python server time to set up the Unix socket
-        this.socket = new UnixSocketClient(moduleName, pythonCaller.getSocketPath());
+        this.socket = new UDSClient(moduleName, pythonHandler.getSocketPath());
     }
 
     @Override
