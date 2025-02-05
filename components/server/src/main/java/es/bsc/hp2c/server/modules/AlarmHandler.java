@@ -15,7 +15,7 @@ public class AlarmHandler {
 
     private String alarmFilePath;
     private JSONObject alarms = new JSONObject();
-    private float timeout = 60f; // timeout to turn off an alarm (in seconds)
+    private float alarmOffDelay = 60f; // timeout to turn off an alarm (in seconds)
     private DatabaseHandler db;
 
     public AlarmHandler (String pathToSetup, DatabaseHandler database){
@@ -32,9 +32,9 @@ public class AlarmHandler {
         try {
             // Load setup file
             JSONObject object = getJsonObject(pathToSetup);
-            String timeoutValue = object.getJSONObject("global-properties").optString("alarm-timeout");
+            String timeoutValue = object.getJSONObject("global-properties").optString("alarm-off-delay");
             if(timeoutValue != null){
-                setTimeout(timeoutValue);
+                setAlarmOffDelay(timeoutValue);
             }
         } catch (Exception e){
             System.err.println("Error loading server json from: " + pathToSetup);
@@ -98,20 +98,22 @@ public class AlarmHandler {
 
             if (edge == null && device == null) {
                 // Check the "time" key for timestamp
-                if (!funcAlarm.has("time")) {
-                    System.out.println("[Update] No global timestamp found for function: " + funcLabel);
-                    return;
-                }
+                if (funcAlarm.has("time")) {
+                    Instant alarmTime = (Instant) funcAlarm.get("time");
+                    Instant now = Instant.now();
 
-                Instant alarmTime = (Instant) funcAlarm.get("time");
-                Instant now = Instant.now();
-
-                if (Duration.between(alarmTime, now).getSeconds() >= timeout) {
-                    // Clear the alarm entirely if the timeout has expired
+                    if (Duration.between(alarmTime, now).getSeconds() >= alarmOffDelay) {
+                        // Clear the alarm entirely if the alarm off delay has expired
+                        funcAlarm.put("alarm", false);
+                        funcAlarm.remove("time");
+                        funcAlarm.remove("info");
+                    }
+                } else {
                     funcAlarm.put("alarm", false);
-                    funcAlarm.remove("time");
-                    funcAlarm.remove("info");
+                    System.out.println("[Update] No global timestamp found for function: " + funcLabel);
                 }
+
+
             } else {
                 // Handle edge and device-specific case
                 if (location != null && location.has(edge)) {
@@ -126,7 +128,7 @@ public class AlarmHandler {
                     // Check the timestamp for the device
                     Instant alarmTime = (Instant) jDevice.get("time");
 
-                    if (Duration.between(alarmTime, Instant.now()).getSeconds() >= timeout) {
+                    if (Duration.between(alarmTime, Instant.now()).getSeconds() >= alarmOffDelay) {
                         // Remove the device if the timeout has passed
                         edgeData.remove(device);
                         if (edgeData.isEmpty()) {
@@ -156,7 +158,7 @@ public class AlarmHandler {
         }
     }
 
-    public void setTimeout(String timeValue) {
+    public void setAlarmOffDelay(String timeValue) {
         try {
             if (timeValue == null || timeValue.isEmpty()) {
                 throw new IllegalArgumentException("Time value cannot be null or empty");
@@ -176,21 +178,21 @@ public class AlarmHandler {
 
             switch (unit) {
                 case "ms": // Milliseconds
-                    timeout = value / 1000; // Convert to seconds
+                    alarmOffDelay = value / 1000; // Convert to seconds
                     break;
                 case "s": // Seconds
-                    timeout = value;
+                    alarmOffDelay = value;
                     break;
                 case "m": // Minutes
-                    timeout = value * 60;
+                    alarmOffDelay = value * 60;
                     break;
                 case "h": // Hours
-                    timeout = value * 3600;
+                    alarmOffDelay = value * 3600;
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported time unit: " + unit);
             }
-            System.out.println("[AlarmHandler] Timeout set to " + timeout + " seconds");
+            System.out.println("[AlarmHandler] Alarm off delay set to " + alarmOffDelay + " seconds");
         } catch (NumberFormatException e) {
             System.err.println("[AlarmHandler] Invalid numeric value in time string: " + timeValue);
         } catch (IllegalArgumentException e) {
