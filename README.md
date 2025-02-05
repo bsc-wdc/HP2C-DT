@@ -103,6 +103,7 @@ The `devices` section will contain each device within the edge. Each device has 
    - `amqp-trigger`, optional argument to specify which type of amqp publish is desired for this concrete device. Options are:
      - **"onRead"**: sends message for each read or set of reads by using `amqp-interval`: [int]
      - **"onFrequency"**: sends messages periodically every n seconds by using `amqp-frequency`: [int]
+     - **"onChange"**: Executed whenever the values of the sensors defined in `trigger.parameters` change.
    - `amqp-aggregate`, `amqp-agg-args` optional arguments to specify the type of pre-processing to perform on the sensor window, and its arguments (they can vary depending on the aggregate). Options include:
        - **"sum"**: Sums up the values in the window. Only valid for `Number[]` sensors.
        - **"avg"**: Returns the average of all values in the window. Only valid for `Number[]` sensors.
@@ -303,7 +304,7 @@ Here is an example of a JSON file:
 
 ```json
 {
-    "VoltageFaultDetection": {
+    "VoltageFaultDetection": { # local alarm
         "alarm": true,
         "location": {
             "edge1": {
@@ -331,11 +332,11 @@ To manage alarm states, we define an alarm off delay (see the [`Server`](#server
 
 Additionally, alarms are stored in InfluxDB, allowing us to define alert rules in Grafana and monitor their status, as explained in the [`Alarms on the User Interface`](#alarms-on-the-user-interface) section. Each database entry includes:
 
-- Alarm name
-- Edge (set to "global" if none)
-- Device (set to "global" if none)
-- Alarm status (true/false)
-- Info message
+- Alarm name - *Tag*
+- Edge (set to "global" if none) - *Tag*
+- Device (set to "global" if none) - *Tag*
+- Alarm status (true/false) - *Field*
+- Info message - *Field*
 - Timestamp
 
 If both the edge and device are set to "global," the alarm is assumed to be related to the entire system rather than a specific device.
