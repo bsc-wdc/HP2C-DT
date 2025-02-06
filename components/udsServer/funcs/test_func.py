@@ -1,6 +1,5 @@
-import json
 
 
-def main(n):
+def main(sensors, actuators, msg):
     """ Echoes the received message. """
-    return f"Test: {n}"
+    return f"Test: {msg}"

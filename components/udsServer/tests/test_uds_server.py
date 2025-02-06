@@ -32,7 +32,11 @@ class TestUDSServer(unittest.TestCase):
 
         for msg in range(1, 6):
             msg_json = json.dumps({
-                "funcParams": [msg]
+                "module_name": TESTING_FUNC,
+                "parameters": {
+                    "sensors": "",
+                    "actuators": "",
+                    "msg": msg}
             })
             client.sendall(msg_json.encode("utf-8"))
             response = client.recv(1024)

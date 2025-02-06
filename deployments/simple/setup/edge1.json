@@ -106,7 +106,10 @@
                 "actuators": ["Three-Phase Switch Gen1"],
                 "other": {
                     "module_name": "fibonacci",
-                    "n": 10
+                    "method_name": "main",
+                    "other_func_parameters": {
+                        "n": 4
+                    }
                 }
             },
             "trigger": {

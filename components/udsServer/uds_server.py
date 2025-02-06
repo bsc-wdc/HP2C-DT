@@ -18,10 +18,10 @@ curr_dir_path = os.sep.join(curr_module_path.split(os.sep)[:-1])
 sys.path.append(os.path.join(curr_dir_path, "funcs"))
 
 
-def import_function(module_name, function_name):
+def import_function(module_name, method_name):
     """ Return handler of a function in external module by name. """
     module = importlib.import_module(module_name)
-    return getattr(module, function_name)
+    return getattr(module, method_name)
 
 
 def main(socket_path, func_module, json_params, buffer_size=1024):
@@ -49,18 +49,25 @@ def main(socket_path, func_module, json_params, buffer_size=1024):
                 if not data:
                     print("Client disconnected")
                     break
-                response = call_func(data, func_module)
+                # Parse parameters from received JSON
+                module_name, method_name, func_params = \
+                    parse_json_parameters(data)
+                # Call function
+                response = call_func(module_name, method_name, func_params)
                 if response:
                     print("RESPONSE: ", response)
                     client_socket.sendall((response + "\n").encode("utf-8"))
     except KeyboardInterrupt:
         print("Shutting down Unix Socket...")
+    except:
+        print("Something failed calling the function. "
+              "Make sure the passed key-value parameters are correct.")
     finally:
         client_socket.close()  # Always close the client socket when done
         os.remove(socket_path)
 
 
-def call_func(data, func_module):
+def call_func(module_name, method_name, func_params):
     """
     Prepare input data and call function and return the result in JSON format
     or None.
@@ -70,30 +77,15 @@ def call_func(data, func_module):
       "result": ... Result produced by the called function ...
     }
     """
-    try:
-        # Decode the data and parse the JSON
-        message = data.decode('utf-8')
-        json_data = json.loads(message)
-        # Extract the fields from the JSON
-        method_name = json_data.get("method_name", DEFAULT_METHOD_NAME)
-        info = json_data.get("info")
-        func_params = json_data.get("funcParams")
-        print("method_name:", method_name)
-        print("info:", info)
-        print("funcs_params:", func_params)
-    except json.JSONDecodeError:
-        print("Received data is not valid JSON.")
-        return
-
-    print(f"Received method_name: {method_name}, info: {info}, "
-          f"funcParams: {func_params}")
     # Call function
+    print(f"Received method: {method_name}, for module {module_name}, with "
+          f"funcParams: {func_params}")
     if func_params:
-        func = import_function(func_module, method_name)  # TODO: where is the method_name that I print in Java in UniXSocketClient?
-        print(f"Running function: {func_module}.{func.__name__}")
+        func = import_function(module_name, method_name)
+        print(f"Running function: {module_name}.{func.__name__}")
         if func:
             # Compute function
-            result = func(*func_params)
+            result = func(**func_params)
             # Wrap result in a JSON object and return
             result_json = json.dumps({"result": result})
             return result_json
@@ -101,6 +93,25 @@ def call_func(data, func_module):
             print(f"Warning: Method {method_name} not found in module.")
     else:
         print("Warning: No funcParams provided.")
+
+
+def parse_json_parameters(data):
+    try:
+        # Decode the data and parse the JSON
+        message = data.decode('utf-8')
+        json_data = json.loads(message)
+
+        # Extract function name and parameters
+        module_name = json_data['module_name']
+        method_name = json_data.get("method_name", DEFAULT_METHOD_NAME)
+        func_params = json_data['parameters']
+
+        print("method_name:", method_name)
+        print("module_name:", module_name)
+        print("funcs_params:", json.dumps(func_params, indent=4))
+    except json.JSONDecodeError or KeyError:
+        raise ValueError("Received data is not a valid JSON")
+    return module_name, method_name, func_params
 
 
 if __name__ == "__main__":
