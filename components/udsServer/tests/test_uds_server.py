@@ -12,7 +12,7 @@ TESTING_FUNC = "test_func"
 
 def start_server():
     from uds_server import main  # Import the actual server function
-    main(SOCKET_PATH, TESTING_FUNC, {})
+    main(SOCKET_PATH, TESTING_FUNC)
 
 
 class TestUDSServer(unittest.TestCase):

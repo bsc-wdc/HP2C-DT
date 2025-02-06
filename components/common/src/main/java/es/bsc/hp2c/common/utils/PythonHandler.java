@@ -12,7 +12,6 @@ import java.util.UUID;
 /**
  * Executes a Python script in a separate thread, passing function parameters via a Unix Domain Socket (UDS).
  * Captures and prints the Python script's output and error streams in real time.
- *
  * The class constructs a unique UDS path and invokes the Python script with the specified function module
  * and its parameters (in JSON format). The script output and error streams are handled by separate threads.
  *
@@ -21,18 +20,15 @@ public class PythonHandler extends Thread {
     private final String serverPath = "/home/eiraola/projects/hp2cdt/components/udsServer/uds_server.py";  // TODO: implement for relative folders and Docker
     private final String funcModule;
     private final String socketPath;
-    private final JSONObject jsonParams;
 
     /**
      * Constructs a new PythonHandler.
      *
      * @param funcModule The Python function module name (without .py) that will ultimately be called by the Python
      *                   server. Func modules must be located in the 'udsServer/funcs' directory
-     * @param jsonParams The parameters to pass to the function.
      */
-    public PythonHandler(String funcModule, JSONObject jsonParams) {
+    public PythonHandler(String funcModule) {
         this.funcModule = funcModule;
-        this.jsonParams = jsonParams;
         UUID uuid = UUID.randomUUID();
         this.socketPath = "/tmp/hp2c_" + funcModule + "_" + uuid + ".sock";
     }
@@ -42,7 +38,7 @@ public class PythonHandler extends Thread {
      */
     public void run() {
         ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("python", serverPath, socketPath, funcModule, jsonParams.toString());
+        processBuilder.command("python", serverPath, socketPath, funcModule);
 
         // Set environment variables
         // TODO: Set PYTHONUNBUFFERED to flush Python prints (but lower performance!)

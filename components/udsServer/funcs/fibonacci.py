@@ -28,3 +28,7 @@ def main(sensors, actuators, n):
         for _ in range(2, n):
             result.append(result[-1] + result[-2])
     return result
+
+
+def other_main(sensors, actuators, n):
+    return f"Alternative result: {n}"

@@ -24,11 +24,13 @@ def import_function(module_name, method_name):
     return getattr(module, method_name)
 
 
-def main(socket_path, func_module, json_params, buffer_size=1024):
+def main(socket_path, func_module, buffer_size=1024):
     print("Instantiating socket", socket_path)
     print("func_module:", func_module)
-    print("json_params:", json_params)
     print("buffer_size:", buffer_size)
+
+    # Preload function for fast response
+    func_handler = import_function(func_module, DEFAULT_METHOD_NAME)
 
     # Remove socket if it exists and bind
     if os.path.exists(socket_path):
@@ -53,7 +55,8 @@ def main(socket_path, func_module, json_params, buffer_size=1024):
                 module_name, method_name, func_params = \
                     parse_json_parameters(data)
                 # Call function
-                response = call_func(module_name, method_name, func_params)
+                response = call_func(func_handler, module_name, method_name,
+                                     func_params)
                 if response:
                     print("RESPONSE: ", response)
                     client_socket.sendall((response + "\n").encode("utf-8"))
@@ -62,30 +65,54 @@ def main(socket_path, func_module, json_params, buffer_size=1024):
     except:
         print("Something failed calling the function. "
               "Make sure the passed key-value parameters are correct.")
+        traceback.print_exc()
     finally:
         client_socket.close()  # Always close the client socket when done
         os.remove(socket_path)
 
 
-def call_func(module_name, method_name, func_params):
+def call_func(f, module_name, method_name, func_params):
     """
-    Prepare input data and call function and return the result in JSON format
-    or None.
+    Executes the specified function with provided parameters and returns the
+    result in JSON format.
 
-    The response follows the next format:
-    {
-      "result": ... Result produced by the called function ...
-    }
+    This function calls the preloaded function handler `f` and wraps the output
+    in a JSON-compatible dictionary. If module_name and method_name do not
+    match f, the new module is imported again
+
+    Args:
+        f (callable): The function to be invoked.
+        module_name (str): The name of the module where the function resides.
+        method_name (str): The name of the function being called.
+        func_params (dict): A dictionary of parameters to be passed to the
+            function.
+
+    Returns:
+        dict or None: A dictionary containing the function's output in the
+        following format:
+            {
+                "result": <result produced by the function>
+            }
+        Returns `None` if the function does not produce a result or an error
+        occurs.
     """
-    # Call function
     print(f"Received method: {method_name}, for module {module_name}, with "
           f"funcParams: {func_params}")
+
+    # Make sure the call corresponds to the preloaded function
+    if not (f.__module__ == module_name
+            and f.__name__ == method_name):
+        print(f"Warning: not using preloaded function "
+              f"{f.__module__}.{f.__name__}. "
+              f"Calling {module_name}.{method_name} instead")
+        f = import_function(module_name, method_name)
+
+    # Call function
     if func_params:
-        func = import_function(module_name, method_name)
-        print(f"Running function: {module_name}.{func.__name__}")
-        if func:
+        print(f"Running {module_name}.{method_name}")
+        if f:
             # Compute function
-            result = func(**func_params)
+            result = f(**func_params)
             # Wrap result in a JSON object and return
             result_json = json.dumps({"result": result})
             return result_json
@@ -116,9 +143,9 @@ def parse_json_parameters(data):
 
 if __name__ == "__main__":
     print("Received arguments: ", sys.argv)
-    if len(sys.argv) < 4 or len(sys.argv) > 5:
+    if len(sys.argv) < 3 or len(sys.argv) > 4:
         raise ValueError("Wrong number of arguments: need to pass"
-                         " <socket_path> <func_module> <json_params>")
+                         " <socket_path> <func_module>")
     try:
         main(*sys.argv[1:])
     except:

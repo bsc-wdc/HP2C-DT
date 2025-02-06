@@ -40,7 +40,7 @@ public class PythonFunc extends Func {
         this.otherFuncParams = jParams.optJSONObject("other_func_parameters", null);
 
         // Initialize the Python server
-        this.pythonHandler = new PythonHandler(moduleName, jParams);
+        this.pythonHandler = new PythonHandler(moduleName);
         this.pythonHandler.start();
 
         // Now UDSClient connects to that socket as a client
