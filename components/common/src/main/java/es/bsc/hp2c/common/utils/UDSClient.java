@@ -96,7 +96,22 @@ public class UDSClient {
      * @param sensors         List of sensor objects, each having a `getCurrentValues()` method.
      * @param actuators       List of actuator objects
      * @param otherFuncParams A JSONObject containing additional function parameters.
-     * @return A JSONObject with the complete key-value set of params
+     * @return A JSONObject with the complete key-value set of params with the following structure
+     * {
+     *   "module_name": <MODULE_NAME>,
+     *   "method_name": <METHOD_NAME>,
+     *   "parameters": {
+     *     "sensors": {
+     *       "VoltmeterGen1": [<SENSOR_VALUE_1>, <SENSOR_VALUE_2>],
+     *     },
+     *     "actuators": {
+     *       "ThreePhaseSwitchGen1": <ACTUATOR_TYPE_1>,
+     *     },
+     *     "param1": <PARAM1_VALUE>,
+     *     "param2": <PARAM2_VALUE>,
+     *     ...,
+     *   }
+     * }
      */
     public static JSONObject composeJSON(String moduleName, String methodName, ArrayList<Sensor<?, ?>> sensors,
                                          ArrayList<Actuator<?>> actuators, JSONObject otherFuncParams) {

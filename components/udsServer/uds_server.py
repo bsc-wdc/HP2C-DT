@@ -123,6 +123,22 @@ def call_func(f, module_name, method_name, func_params):
 
 
 def parse_json_parameters(data):
+    """
+    Expects an encoded json and returns the module name, method name, and a
+    JSON object with the parameters to be passed to the function with the
+    format:
+        {
+          "sensors": {
+            <sensor1>: [<measured_values>]
+          },
+          "actuators": {
+            <actuator1>: <actuator_class>
+          },
+          <param1>: <value1>,
+          <param2>: <value2>,
+          ...
+        }
+    """
     try:
         # Decode the data and parse the JSON
         message = data.decode('utf-8')
