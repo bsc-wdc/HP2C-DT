@@ -31,7 +31,7 @@
     },
     {
       "label": "CalcPower",
-      "lang": "Python",
+      "lang": "Java",
       "method-name": "es.bsc.hp2c.server.funcs.CalcPower",
       "parameters": {
         "sensors": {
@@ -50,7 +50,7 @@
     },
     {
       "label": "LoadBalanceAlarm",
-      "lang": "Python",
+      "lang": "Java",
       "method-name": "es.bsc.hp2c.server.funcs.LoadBalanceAlarm",
       "parameters": {
         "sensors": {},
@@ -68,7 +68,7 @@
     },
     {
       "label": "VoltageFaultDectection",
-      "lang": "Python",
+      "lang": "Java",
       "method-name": "es.bsc.hp2c.server.funcs.VoltageFaultDetection",
       "parameters": {
         "sensors": {},
