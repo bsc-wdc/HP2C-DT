@@ -3,7 +3,7 @@
 echo "Creating SERVER image"
 
 # Set default values
-COMPSS_VERSION="3.2"
+COMPSS_VERSION="trunk"
 ORG_NAME="hp2c"
 HP2C_VERSION="1.0"
 
