@@ -13,12 +13,15 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package es.bsc.hp2c.common.types;
+package es.bsc.hp2c.common.funcs;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
+import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.common.types.Sensor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import es.bsc.hp2c.common.utils.EdgeMap;
@@ -349,7 +352,7 @@ public abstract class Func implements Runnable {
             throws FunctionInstantiationException {
         // Use a specific driver for Python funcs if driver is not specified
         if (driver.isEmpty() && (lang.equals("python") || lang.equals("Python") || lang.equals("PYTHON"))) {
-            driver = "es.bsc.hp2c.common.utils.PythonFunc";
+            driver = "es.bsc.hp2c.common.funcs.PythonFunc";
         }
 
         Constructor<?> ct;

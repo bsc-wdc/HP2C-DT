@@ -7,7 +7,7 @@ import java.lang.reflect.Method;
 import es.bsc.hp2c.HP2CEdge;
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
-import es.bsc.hp2c.common.types.Func;
+import es.bsc.hp2c.common.funcs.Func;
 import es.bsc.hp2c.common.types.Sensor;
 
 import com.rabbitmq.client.Channel;
@@ -17,8 +17,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Objects;
 
 import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
 

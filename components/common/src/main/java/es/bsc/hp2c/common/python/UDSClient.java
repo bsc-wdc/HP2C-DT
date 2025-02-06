@@ -1,4 +1,4 @@
-package es.bsc.hp2c.common.utils;
+package es.bsc.hp2c.common.python;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;

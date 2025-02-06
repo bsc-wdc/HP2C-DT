@@ -1,6 +1,4 @@
-package es.bsc.hp2c.common.utils;
-
-import org.json.JSONObject;
+package es.bsc.hp2c.common.python;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
