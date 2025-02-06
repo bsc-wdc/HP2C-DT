@@ -21,7 +21,7 @@ import java.util.HashMap;
  */
 public class UDSClient {
     private final String moduleName;
-    private final String functionName;
+    private final String methodName;
     private AFUNIXSocket socket;
     private BufferedWriter writer;
     private BufferedReader reader;
@@ -32,14 +32,14 @@ public class UDSClient {
      * and the path to the UNIX domain socket, and then establishes a connection to the server.
      *
      * @param moduleName   the exact name of the python module (without .py) that will be called by the Python server.
-     * @param functionName (optional) name of the Python function name inside moduleName (typically "main").
+     * @param methodName (optional) name of the Python function name inside moduleName (typically "main").
      * @param socketPath   path to the UNIX domain socket file.
      *                     The client will attempt to connect to the server at this socket location.
      * @throws IOException if an I/O error occurs while setting up the connection to the server.
      */
-    public UDSClient(String moduleName, String functionName, String socketPath) throws IOException {
+    public UDSClient(String moduleName, String methodName, String socketPath) throws IOException {
         this.moduleName = moduleName;
-        this.functionName = functionName;
+        this.methodName = methodName;
         setupConnection(socketPath);
     }
 
@@ -67,7 +67,7 @@ public class UDSClient {
 
         try {
             // Create the JSON object
-            JSONObject jsonMessage = composeJSON(moduleName, functionName, sensors, actuators, otherFuncParams);
+            JSONObject jsonMessage = composeJSON(moduleName, methodName, sensors, actuators, otherFuncParams);
 
             // Send the JSON message to the socket
             writer.write(jsonMessage.toString());
@@ -92,17 +92,17 @@ public class UDSClient {
      * additional parameters.
      *
      * @param moduleName      The module name to include in the JSON.
-     * @param functionName    The function name to include in the JSON.
+     * @param methodName    The function name to include in the JSON.
      * @param sensors         List of sensor objects, each having a `getCurrentValues()` method.
      * @param actuators       List of actuator objects
      * @param otherFuncParams A JSONObject containing additional function parameters.
      * @return A JSONObject with the complete key-value set of params
      */
-    public static JSONObject composeJSON(String moduleName, String functionName, ArrayList<Sensor<?, ?>> sensors,
+    public static JSONObject composeJSON(String moduleName, String methodName, ArrayList<Sensor<?, ?>> sensors,
                                          ArrayList<Actuator<?>> actuators, JSONObject otherFuncParams) {
         JSONObject jPyParams = new JSONObject();
         jPyParams.put("module_name", moduleName);
-        jPyParams.put("method_name", functionName);
+        jPyParams.put("method_name", methodName);
 
         // Constructing actuators map
         HashMap<String, Object[]> sensorMap = new HashMap<>();

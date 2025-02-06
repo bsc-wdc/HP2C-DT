@@ -19,7 +19,7 @@ public class PythonFunc extends Func {
     private final ArrayList<Sensor<?, ?>> sensors;
     private final ArrayList<Actuator<?>> actuators;
     private final String moduleName;
-    private final String functionName;
+    private final String methodName;
     private final JSONObject otherFuncParams;
 
     /**
@@ -36,7 +36,7 @@ public class PythonFunc extends Func {
         this.sensors = sensors;
         this.actuators = actuators;
         this.moduleName = jParams.getString("module_name");
-        this.functionName = jParams.optString("method_name", null);
+        this.methodName = jParams.optString("method_name", null);
         this.otherFuncParams = jParams.optJSONObject("other_func_parameters", null);
 
         // Initialize the Python server
@@ -45,7 +45,7 @@ public class PythonFunc extends Func {
 
         // Now UDSClient connects to that socket as a client
         sleep(1000);  // Give the Python server time to set up the Unix socket
-        this.socket = new UDSClient(moduleName, functionName, pythonHandler.getSocketPath());
+        this.socket = new UDSClient(moduleName, methodName, pythonHandler.getSocketPath());
     }
 
     @Override

@@ -18,19 +18,19 @@ import java.util.UUID;
  */
 public class PythonHandler extends Thread {
     private final String serverPath = "/home/eiraola/projects/hp2cdt/components/udsServer/uds_server.py";  // TODO: implement for relative folders and Docker
-    private final String funcModule;
+    private final String moduleName;
     private final String socketPath;
 
     /**
      * Constructs a new PythonHandler.
      *
-     * @param funcModule The Python function module name (without .py) that will ultimately be called by the Python
+     * @param moduleName The Python function module name (without .py) that will ultimately be called by the Python
      *                   server. Func modules must be located in the 'udsServer/funcs' directory
      */
-    public PythonHandler(String funcModule) {
-        this.funcModule = funcModule;
+    public PythonHandler(String moduleName) {
+        this.moduleName = moduleName;
         UUID uuid = UUID.randomUUID();
-        this.socketPath = "/tmp/hp2c_" + funcModule + "_" + uuid + ".sock";
+        this.socketPath = "/tmp/hp2c_" + moduleName + "_" + uuid + ".sock";
     }
 
     /**
@@ -38,7 +38,7 @@ public class PythonHandler extends Thread {
      */
     public void run() {
         ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("python", serverPath, socketPath, funcModule);
+        processBuilder.command("python", serverPath, socketPath, moduleName);
 
         // Set environment variables
         // TODO: Set PYTHONUNBUFFERED to flush Python prints (but lower performance!)
