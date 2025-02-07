@@ -1,5 +1,6 @@
 {
     "global-properties":{
+        "type": "edge",
         "label": "edge2",
         "comms":{
             "opal-udp": {
@@ -41,7 +42,12 @@
             },
             "properties": {
                 "comm-type": "opal-udp",
-                "indexes": [0]
+                "indexes": [0],
+                "amqp-aggregate": "phasor",
+                "window-size": 10,
+                "amqp-agg-args": {
+                    "phasor-freq": 5
+                }
             }
         },
         {
@@ -69,7 +75,12 @@
 
             "properties": {
                 "comm-type": "opal-udp",
-                "indexes": [2,3,4]
+                "indexes": [2,3,4],
+                "window-size": 20,
+                "amqp-aggregate": "phasor",
+                "amqp-agg-args": {
+                    "phasor-freq": 5
+                }
             }
         },
         {
@@ -82,7 +93,8 @@
             },
             "properties": {
                 "comm-type": "opal-tcp",
-                "indexes": [0,1,2]
+                "indexes": [0,1,2],
+                "amqp-aggregate": "last"
             }
         }
     ],
@@ -95,14 +107,16 @@
             "parameters": {
                 "sensors": ["Voltmeter Gen1"],
                 "actuators": ["Three-Phase Switch Gen1"],
-                "other": [200]
+                "other": {
+                    "threshold": 200
+                }
             },
             "trigger": {
                 "type": "onRead",
-                "method-name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
-                "parameters": ["Voltmeter Gen1"]
+                "parameters": {
+                    "trigger-sensor":["Voltmeter Gen1"]
+                }
             }
-
         }
     ]
 }

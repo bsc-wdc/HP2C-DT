@@ -45,3 +45,18 @@ def get_random_string(length):
     """
     result_str = ''.join(random.choice(string.ascii_letters) for i in range(length))
     return result_str
+
+
+def parse_string_to_list(input_string):
+    # Remove the outer brackets and split by closing square brackets followed by a comma
+    cleaned_string = input_string.strip()[1:-1]
+    list_of_lists = []
+
+    for group in cleaned_string.split("],"):
+        # Remove any brackets and whitespace, and split the group by commas
+        group = group.replace("[", "").replace("]", "").strip()
+        elements = [item.strip() for item in group.split(",")]
+        list_of_lists.append(elements)
+
+    return list_of_lists
+

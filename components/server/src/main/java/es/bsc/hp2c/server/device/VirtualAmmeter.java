@@ -20,13 +20,18 @@ import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
+import java.time.Instant;
+
 /**
  * Digital Twin Ammeter.
  */
 public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Float[]> {
     private final String edgeLabel;
     private final int size;
-    private boolean availability;
+    private String aggregate;
+
+
+    private Object units;
 
     /**
     * Creates a new instance of VirtualAmmeter.
@@ -37,9 +42,10 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     * @param jGlobalProperties JSONObject representing the global properties of the edge
     * */
     public VirtualAmmeter(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
-        super(label, position);
+        super(label, position, properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = properties.getJSONArray("indexes").length();
+        this.aggregate = "";
     }
 
     /**
@@ -47,8 +53,8 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
      * device state.
      */
     @Override
-    public void sensed(Float[] values) {
-        super.setValues(sensedValues(values));
+    public void sensed(Float[] values, Instant timestamp) {
+        super.setValues(sensedValues(values), timestamp);
     }
 
     /**
@@ -75,11 +81,22 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     }
 
     @Override
-    public boolean isAvailable() {
-        return availability;
+    public String getAggregate() {
+        return this.aggregate;
     }
+
     @Override
-    public void setAvailability(boolean b){
-        availability = b;
+    public void setAggregate(String aggregate) {
+        this.aggregate = aggregate;
+    }
+
+    @Override
+    public void setUnits(Object units){
+        this.units = units;
+    }
+
+    @Override
+    public Object getUnits() {
+        return units;
     }
 }

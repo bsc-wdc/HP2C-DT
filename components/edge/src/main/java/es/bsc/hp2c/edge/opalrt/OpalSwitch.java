@@ -24,6 +24,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.Instant;
+
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 
@@ -44,7 +46,7 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
     public OpalSwitch(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
-        super(label, position, jProperties.getJSONArray("indexes").length());
+        super(label, position, jProperties.getJSONArray("indexes").length(), jProperties, jGlobalProperties);
         JSONArray jIndexes = jProperties.getJSONArray("indexes");
         if (jIndexes.length() != 1 && jIndexes.length() != 3){
             throw new IllegalArgumentException("The switch must have either one or three indexes.");
@@ -63,9 +65,9 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     }
 
     @Override
-    public void sensed(Float[] values) {
-        setValues(sensedValues(values));
-        System.out.println(getLabel() + " states are: " + printableArray(this.states));
+    public void sensed(Float[] values, Instant timestamp) {
+        setValues(sensedValues(values), timestamp);
+        System.out.println("[Sensed] " + getLabel() + " states are: " + printableArray(this.states));
     }
 
     @Override
@@ -114,11 +116,6 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
             }
         }
         return states;
-    }
-
-    @Override
-    public void setValues(State[] values) {
-        this.states = values;
     }
 
     @Override

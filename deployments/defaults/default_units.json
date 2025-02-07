@@ -1,0 +1,8 @@
+{
+  "Ammeter": "A",
+  "Voltmeter": "V",
+  "Wattmeter": "W",
+  "Varmeter": "VA",
+  "Switch": "",
+  "Generator": ["V","W"]
+}

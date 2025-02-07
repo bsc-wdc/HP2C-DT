@@ -3,6 +3,8 @@ import json
 import requests
 from requests import RequestException
 
+from home.dashboard import get_alerts_list, create_alert_rule_json, \
+    post_alert_rules, create_folder
 from home.models import Edge, Device, Deployment
 from scripts.create_json_dashboard import ui_exec
 
@@ -139,6 +141,7 @@ def update_dashboards():
                         break
                 if datasource_uid:
                     GRAFANA_API_KEY = api_key
+                    URL = url
                     grafana_connected = True
                     break
             except RequestException as _:
@@ -186,9 +189,23 @@ def update_dashboards():
                         break
         except RequestException as _:
             print("Error requesting to url: ", url, flush=True)
+
     if not datasource_uid:
         print("Datasource influxdb uid not found")
         exit(1)
+
+    ########################### CREATE ALERT JSON #######################################
+    # Create folder
+    folder_uid = create_folder(URLs, GRAFANA_API_KEY)
+
+    alerts_list = get_alerts_list(server_url, server_port)
+    if alerts_list is not None:
+        alert_rules = [
+            create_alert_rule_json(alarm, edge, device, datasource_uid,
+                                   folder_uid)
+            for alarm, edge, device in alerts_list
+        ]
+        post_alert_rules(alert_rules, URLs, grafana_api_keys)
 
     ########################### CREATE JSON DASHBOARD ####################################
     print("Creating or updating dashboard...")
@@ -255,27 +272,59 @@ def update_dashboards():
 
 
 def check_changes(edges_info):
-    changed = False
+    """
+    Compare edges_info with stored edges in the database and return True if changes are found
+    or if any edge is marked as modified.
+
+    :param edges_info: JSON string containing the current edge information.
+    :return: Boolean indicating if any edge is modified or has changed compared to stored values.
+    """
     edges_data = json.loads(edges_info)
-    for edge, edge_info in edges_data.items():
-        if edge_info["modified"]:
-            changed = True
-            """edge_model = Edge.objects.get(name=edge)
-            if not edge_info["is_available"]:
-                edge_model.show = False
-                edge_model.save()
-                devices_all = Device.objects.filter(edge=edge_model)
-                for device_model in devices_all:
-                    device_model.show = False
-                    device_model.save()
-                continue
-            for device, device_info in edge_info["info"].items():
-                device_model = Device.objects.get(edge=edge_model, name=device)
-                if not device_info["is_available"]:
-                    device_model.show = False
-                else:
-                    device_model.show = True
-                device_model.save()"""
+    changed = False
+
+    for edge_name, edge_info in edges_data.items():
+        try:
+            edge_model = Edge.objects.get(name=edge_name)
+
+            if edge_info["modified"]:
+                return True
+
+            if edge_info["is_available"] != edge_model.show:
+                return True
+
+            stored_devices = Device.objects.filter(edge=edge_model)
+            stored_devices_dict = {
+                device.name: {
+                    "size": device.size,
+                    "isActionable": device.is_actionable,
+                    "type": device.type,
+                    "is_available": device.show,
+                    **({"categories": device.categories}
+                       if device.is_categorical else {})
+                }
+                for device in stored_devices
+            }
+
+            current_devices = {
+                device_name: {k: v for k, v in device_info.items()
+                              if k == "size" or k == "isActionable"
+                              or k == "type" or k == "is_available"
+                              or k == "categories"}
+                for device_name, device_info in edge_info["info"].items()
+            }
+
+            if set(current_devices.keys()) != set(stored_devices_dict.keys()):
+                return True
+
+            for device_name, device_info in current_devices.items():
+                if device_name not in stored_devices_dict:
+                    return True
+
+                if stored_devices_dict[device_name] != device_info:
+                    return True
+
+        except Edge.DoesNotExist:
+            return True
 
     return changed
 

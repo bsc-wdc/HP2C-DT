@@ -22,11 +22,13 @@ import es.bsc.hp2c.HP2CServer;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.Measurement;
+import es.bsc.hp2c.common.utils.MeasurementWindow;
+import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -76,28 +78,35 @@ public class AmqpManager {
         channel.exchangeDeclare(EXCHANGE_NAME, "topic");
         String queueName = channel.queueDeclare().getQueue();
         channel.queueBind(queueName, EXCHANGE_NAME, routingKey);
-        System.out.println(" [AmqpManager] Awaiting requests");
+        System.out.println("[AmqpManager] Awaiting requests");
 
         DeliverCallback callback = (consumerTag, delivery) -> {
-            // Parse message. For instance: routingKey = "edge.edge1.sensors.voltmeter1"
-            byte[] message = delivery.getBody();
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
-            // Reconstruct timestamp
-            Map<String, Object> headers = delivery.getProperties().getHeaders();
-            Instant timestamp = CommUtils.extractNanosFromHeaders(headers);
-            // Check existence of pair edge-device
-            String edgeLabel = getEdgeLabel(senderRoutingKey);
-            String deviceName = getDeviceName(senderRoutingKey);
-            if (!HP2CServer.isInMap(edgeLabel, deviceName, edgeMap)) {
-                System.err.println("Edge " + edgeLabel + ", Device " + deviceName
-                        + ": message received but device not listed as " + edgeLabel + " digital twin devices.");
-                return;
+            try {
+                // Parse message. For instance: routingKey = "edge.edge1.sensors.voltmeter1"
+                byte[] message = delivery.getBody();
+                // Check existence of pair edge-device
+                String edgeLabel = getEdgeLabel(senderRoutingKey);
+                String deviceName = getDeviceName(senderRoutingKey);
+                if (!HP2CServer.isInMap(edgeLabel, deviceName, edgeMap)) {
+                    System.err.println("Edge " + edgeLabel + ", Device " + deviceName
+                            + ": message received but device not listed as " + edgeLabel + " digital twin devices.");
+                    return;
+                }
+
+                Sensor<?, ?> sensor = (Sensor<?, ?>) edgeMap.get(edgeLabel).getDevice(deviceName);
+                // Decode the MeasurementWindow, setValues in the sensors, and get the new MeasurementWindow<Float[]>
+                MeasurementWindow<Float[]> window = sensor.sensed(message);
+                sensor.onRead();
+
+                for (Measurement<Float[]> m : window.getMeasurementsOlderToNewer()) {
+                    // Store the values in the database
+                    db.write(m.getValue(), m.getTimestamp(), edgeLabel, deviceName);
+                }
+            } catch (Exception e) {
+                System.err.println("[AmqpManager] Error sensing incoming message for routing key " + senderRoutingKey
+                        + ": " + e.getMessage());
             }
-            // Sense to the corresponding sensor
-            Sensor<?, ?> sensor = (Sensor<?, ?>) edgeMap.get(edgeLabel).getDevice(deviceName);
-            sensor.sensed(message);
-            // Write entry in database
-            db.write((Float[]) sensor.decodeValuesSensor(message), timestamp, edgeLabel, deviceName);
         };
         channel.basicConsume(queueName, true, callback, consumerTag -> { });
     }

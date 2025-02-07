@@ -1,0 +1,84 @@
+package es.bsc.hp2c.server.funcs;
+
+import es.bsc.hp2c.common.generic.Switch;
+import es.bsc.hp2c.common.generic.Voltmeter;
+import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Func;
+import es.bsc.hp2c.common.types.Sensor;
+
+import java.util.ArrayList;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+/**
+ * The method checks whether the written voltage is lower than threshold.
+ */
+public class VoltLimitation extends Func {
+    private Float threshold;
+    private Voltmeter<?> voltmeter;
+    private Switch<?> sw;
+
+    /**
+     * VoltLimitation method constructor.
+     *
+     * @param sensors   List of sensors declared for the function.
+     * @param actuators List of actuators declared for the function.
+     * @param others    Rest of parameters declared for de function.
+     */
+    public VoltLimitation(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
+            throws FunctionInstantiationException {
+
+        super(sensors, actuators, others);
+
+        if (!(sensors.size() == 1)) {
+            throw new FunctionInstantiationException("Sensors must be exactly one voltmeter");
+        }
+
+        if (!(sensors.get(0) instanceof Voltmeter)) {
+            throw new FunctionInstantiationException("The sensor must be a voltmeter");
+        }
+
+        if (!(actuators.size() == 1)) {
+            throw new FunctionInstantiationException("Actuators must be exactly one switch");
+        }
+
+        if (!(actuators.get(0) instanceof Switch)) {
+            throw new FunctionInstantiationException("The actuator must be a switch");
+        }
+
+        this.voltmeter = (Voltmeter) sensors.get(0);
+        this.sw = (Switch) actuators.get(0);
+        try {
+            this.threshold = others.getFloat("threshold");
+        } catch (Exception e){
+            throw new FunctionInstantiationException("'threshold' field must be provided");
+        }
+
+    }
+
+    @Override
+    public void run() {
+        if (voltmeter.getSensorAvailability() && voltmeter.getCurrentValues() != null){
+            Float[] voltage = this.voltmeter.getCurrentValues();
+            if (voltage[0] > this.threshold) {
+                System.out.println("Voltage limit exceeded. Turning actuators off...");
+                try {
+                    if (!sw.getActuatorAvailability()){
+                        System.err.println("[VoltLimitation] Switch is not available");
+                        return;
+                    }
+                    Switch.State[] values = {Switch.State.OFF, Switch.State.ON, Switch.State.ON};
+                    sw.actuate(values);
+                } catch (Exception e) {
+                    System.err.println("Error while setting switch OFF: " + e.getMessage());
+                }
+            }
+        }
+        else{
+            System.err.print("Error in function VoltLimitation: ");
+            if (!voltmeter.getSensorAvailability()) System.err.println("Voltmeter is not available");
+            else if (voltmeter.getCurrentValues() == null) System.err.println("Voltmeter has no value");
+        }
+    }
+}

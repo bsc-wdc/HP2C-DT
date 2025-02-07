@@ -65,9 +65,20 @@ else
     deployment_json="${SCRIPT_DIR}/defaults/deployment_setup_${COMM_SETUP}.json"
 fi
 
+nominal_voltages_deployment="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/nominal_voltages.json"
+nominal_voltages_default="${SCRIPT_DIR}/defaults/nominal_voltages.json"
+
+# Check if the deployment-specific file exists
+if [ -f "$nominal_voltages_deployment" ]; then
+    nominal_voltages_file="$nominal_voltages_deployment"
+else
+    nominal_voltages_file="$nominal_voltages_default"
+fi
+
 echo "Using JSON for deployment communications:   $deployment_json"
 echo "Using setup folder:                         $setup_folder"
 echo "Using defaults JSON for default edge funcs: $defaults_json"
+echo "Using nominal voltages file: $nominal_voltages_file"
 
 
 # Verify the provided files and directories exist
@@ -126,8 +137,9 @@ echo "Deploying container for SERVER with REST API listening on port 8080..."
 docker run \
     -d -it --rm \
     --name ${DEPLOYMENT_PREFIX}_server \
-    -v ${setup_folder}:/data/edge/ \
+    -v ${setup_folder}:/data/server/ \
     -v ${deployment_json}:/data/deployment_setup.json \
+    -v ${nominal_voltages_file}:/data/nominal_voltages.json \
     -v ${config_json}:/run/secrets/config.json \
     -p 8080:8080 \
     -e LOCAL_IP=$ip_address \

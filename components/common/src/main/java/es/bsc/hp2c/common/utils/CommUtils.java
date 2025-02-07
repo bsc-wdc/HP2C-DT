@@ -3,13 +3,17 @@ package es.bsc.hp2c.common.utils;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -20,6 +24,22 @@ import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
  */
 public final class CommUtils {
     private CommUtils(){}
+
+    public static Number[] divideArray(Number[] array, double divisor) {
+        if (divisor == 0) {
+            throw new ArithmeticException("Division by zero is not allowed.");
+        }
+
+        Number[] result = new Number[array.length];
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] != null) {
+                result[i] = array[i].doubleValue() / divisor;
+            } else {
+                result[i] = null;
+            }
+        }
+        return result;
+    }
 
     /** Covert a Float array into a byte array. */
     public static byte[] FloatArrayToBytes(Float[] values) {
@@ -75,8 +95,16 @@ public final class CommUtils {
     public static HashMap<String, Object> parseRemoteIp(String component) throws IOException {
         // Check existence of file
         String deploymentFile = "/data/deployment_setup.json";
+
         if (!new File(deploymentFile).isFile()) {
-            deploymentFile = "../../deployments/testbed/deployment_setup.json";
+            // Check if the current working directory ends with "server"
+            String cwd = Paths.get("").toAbsolutePath().toString();
+            if (cwd.endsWith("server")) {
+                deploymentFile = "../../deployments/testbed/deployment_setup.json";
+            } else {
+                deploymentFile = "deployments/testbed/deployment_setup.json";
+            }
+
             if (!new File(deploymentFile).isFile()) {
                 throw new IOException("Could not find 'deployment_setup.json'");
             }
@@ -179,5 +207,37 @@ public final class CommUtils {
         long epochSeconds = (long) headers.get("epochSeconds");
         int nanos = (int) headers.get("nanos");
         return Instant.ofEpochSecond(epochSeconds, nanos);
+    }
+
+
+    public static List<Map<String, Object>> parseAmqpPublishFunctions(JSONObject jEdgeSetup) {
+        List<Map<String, Object>> amqpPublishFunctions = new ArrayList<>();
+
+        if (jEdgeSetup.has("AMQPPublishFunctions")) {
+            JSONArray amqpPublishArray = jEdgeSetup.getJSONArray("AMQPPublishFunctions");
+
+            for (Object obj : amqpPublishArray) {
+                if (obj instanceof JSONObject) {
+                    JSONObject func = (JSONObject) obj;
+
+                    Map<String, Object> funcMap = new HashMap<>();
+                    funcMap.put("label", func.optString("label"));
+                    funcMap.put("aggregate", func.optString("aggregate"));
+
+                    JSONArray devicesArray = func.optJSONArray("devices");
+                    List<String> devices = new ArrayList<>();
+                    if (devicesArray != null) {
+                        for (Object device : devicesArray) {
+                            devices.add(device.toString());
+                        }
+                    }
+                    funcMap.put("devices", devices);
+
+                    amqpPublishFunctions.add(funcMap);
+                }
+            }
+        }
+
+        return amqpPublishFunctions;
     }
 }

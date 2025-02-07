@@ -1,0 +1,88 @@
+{
+  "global-properties": {
+    "type": "server",
+    "alarm-off-delay": "10000ms"
+  },
+  "funcs":[
+    {
+      "label": "VoltLimitation",
+      "lang": "Java",
+      "method-name": "es.bsc.hp2c.server.funcs.VoltLimitation",
+      "parameters": {
+        "sensors": {
+          "edge1": ["Voltmeter Gen1"]
+        },
+        "actuators": {
+          "edge1": ["Three-Phase Switch Gen1"]
+        },
+        "other": {
+          "threshold": 200
+        }
+      },
+      "trigger": {
+        "type": "onRead",
+        "parameters": {
+          "trigger-sensor": {
+            "edge1": ["Voltmeter Gen1"]
+          },
+          "interval": 2
+        }
+      }
+    },
+    {
+      "label": "CalcPower",
+      "lang": "Python",
+      "method-name": "es.bsc.hp2c.server.funcs.CalcPower",
+      "parameters": {
+        "sensors": {
+          "edge1": ["Ammeter Gen1"],
+          "edge2": ["Voltmeter Gen1"]
+        },
+        "actuators": [],
+        "other": {}
+      },
+      "trigger": {
+        "type": "onFrequency",
+        "parameters": {
+          "frequency": 10
+        }
+      }
+    },
+    {
+      "label": "LoadBalanceAlarm",
+      "lang": "Python",
+      "method-name": "es.bsc.hp2c.server.funcs.LoadBalanceAlarm",
+      "parameters": {
+        "sensors": {},
+        "actuators": [],
+        "other": {
+          "imbalance-range": 0.2
+        }
+      },
+      "trigger": {
+        "type": "onFrequency",
+        "parameters": {
+          "frequency": 10
+        }
+      }
+    },
+    {
+      "label": "VoltageFaultDectection",
+      "lang": "Python",
+      "method-name": "es.bsc.hp2c.server.funcs.VoltageFaultDetection",
+      "parameters": {
+        "sensors": {},
+        "actuators": [],
+        "other": {
+          "threshold": 0.2
+        }
+      },
+      "trigger": {
+        "type": "onFrequency",
+        "parameters": {
+          "frequency": 10
+        }
+      }
+    }
+  ]
+}

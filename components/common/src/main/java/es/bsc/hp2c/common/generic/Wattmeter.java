@@ -16,11 +16,12 @@
 
 package es.bsc.hp2c.common.generic;
 
-import java.util.ArrayList;
+import java.time.Instant;
 
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
-import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.*;
+import org.json.JSONObject;
 
 /**
  * Sensor measuring the power of the network. It a has property (values) measured in Watts.
@@ -28,13 +29,32 @@ import es.bsc.hp2c.common.utils.CommUtils;
 public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> {
 
     private Float[] values = null;
-    private ArrayList<Runnable> onReadFunctions;
+    private MeasurementWindow<Float[]> window;
+    private OnReadFunctions onReadFunctions;
 
     @Override
-    public abstract void sensed(R values);
+    public abstract void sensed(R values, Instant timestamp);
 
     @Override
-    public void sensed(byte[] messageBytes) { sensed(decodeValuesSensor(messageBytes)); }
+    public MeasurementWindow<Float[]> sensed(byte[] bWindow) {
+        MeasurementWindow<Float[]> window = MeasurementWindow.decode(bWindow);
+        MeasurementWindow<Float[]> returnWindow = new MeasurementWindow<>(window.getCapacity());
+        for (Measurement<Float[]> m : window.getMeasurementsOlderToNewer()){
+            Object value = m.getValue();
+            if (value instanceof Number[]) {
+                Number[] numbers = (Number[]) value;
+                Float[] floats = new Float[numbers.length];
+                for (int i = 0; i < numbers.length; i++) {
+                    floats[i] = numbers[i] == null ? null : numbers[i].floatValue();
+                }
+                sensed((R) floats, m.getTimestamp());
+                returnWindow.addMeasurement(m.getTimestamp(), floats);
+            } else {
+                throw new IllegalArgumentException("Expected Number[], got: " + value.getClass());
+            }
+        }
+        return returnWindow;
+    }
 
     /**
      * Creates a new instance of wattmeter;
@@ -42,9 +62,10 @@ public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> 
      * @param label device label
      * @param position device position
      */
-    protected Wattmeter(String label, float[] position) {
+    protected Wattmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
-        this.onReadFunctions = new ArrayList<>();
+        window = new MeasurementWindow<Float[]>(FileUtils.getWindowSize(jProperties, jGlobalProperties, label));
+        this.onReadFunctions = new OnReadFunctions();
     }
 
     /**
@@ -52,14 +73,29 @@ public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> 
      *
      * @param action runnable implementing the action
      */
-    public void addOnReadFunction(Runnable action) { this.onReadFunctions.add(action); }
+    @Override
+    public void addOnReadFunction(Runnable action, int interval, String label, boolean onRead) {
+        this.onReadFunctions.addFunc(new OnReadFunction<Float[]>(action, interval, label, onRead));
+    }
 
     /**
-     * Calls actions to be performed in case of a new read
+     * Calls actions to be performed in case of a new read;
+     *
      */
     public void onRead() {
-        for (Runnable action : this.onReadFunctions) {
-            action.run();
+        for (OnReadFunction orf : this.onReadFunctions.getOnReadFuncs()) {
+            if (orf.isOnChange()) {
+                if (orf.changed(this.getCurrentValues())){ //changed() will update its last value if needed
+                    orf.getRunnable().run();
+                }
+            } else {
+                if (orf.getCounter() == orf.getInterval()) {
+                    orf.getRunnable().run();
+                    orf.resetCounter();
+                } else {
+                    orf.incrementCounter();
+                }
+            }
         }
     }
 
@@ -74,8 +110,13 @@ public abstract class Wattmeter<R> extends Device implements Sensor<R, Float[]> 
     @Override
     public final Float[] getCurrentValues() { return this.values; }
 
-    protected void setValues(Float[] values) {
+    public MeasurementWindow<Float[]> getWindow(){
+        return this.window;
+    }
+
+    protected void setValues(Float[] values, Instant timestamp) {
         this.values = values;
+        this.window.addMeasurement(timestamp, values);
         this.setLastUpdate();
     }
 

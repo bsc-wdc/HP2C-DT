@@ -22,6 +22,7 @@ import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 
 import static es.bsc.hp2c.HP2CServer.amqp;
@@ -34,7 +35,8 @@ import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Switch.State[]>, VirtualActuator<Switch.State[]> {
     private final String edgeLabel;
     private final int size;
-    private boolean availability;
+    private String aggregate;
+    private Object units;
 
     /**
      * Creates a new instance of VirtualSwitch.
@@ -45,9 +47,10 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      */
     public VirtualSwitch(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
-        super(label, position, properties.getJSONArray("indexes").length());
+        super(label, position, properties.getJSONArray("indexes").length(), properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
         this.size = properties.getJSONArray("indexes").length();
+        this.aggregate = "";
     }
 
     /**
@@ -55,12 +58,12 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
      * device state.
      */
     @Override
-    public void sensed(Float[] values) {
+    public void sensed(Float[] values, Instant timestamp) {
         Float[] sensedValues = new Float[values.length];
         for (int i = 0; i < values.length; i++){
             sensedValues[i] = values[i];
         }
-        setValues(sensedValues(sensedValues));
+        setValues(sensedValues(sensedValues), timestamp);
     }
 
     @Override
@@ -117,13 +120,6 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
         return outputValues;
     }
 
-    /**
-     * Update current sensor state.
-     */
-    public void setValues(State[] values) {
-        this.states = values;
-    }
-
     @Override
     public final Float[] decodeValuesSensor(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
@@ -157,12 +153,22 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     }
 
     @Override
-    public boolean isAvailable() {
-        return availability;
+    public String getAggregate() {
+        return this.aggregate;
     }
 
     @Override
-    public void setAvailability(boolean b){
-        availability = b;
+    public void setAggregate(String aggregate) {
+        this.aggregate = aggregate;
+    }
+
+    @Override
+    public void setUnits(Object units){
+        this.units = units;
+    }
+
+    @Override
+    public Object getUnits() {
+        return units;
     }
 }

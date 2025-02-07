@@ -16,9 +16,8 @@
 package es.bsc.hp2c.server.modules;
 
 import com.rabbitmq.client.*;
-import es.bsc.hp2c.server.device.VirtualComm;
+import es.bsc.hp2c.common.utils.EdgeMap;
 import es.bsc.hp2c.server.edge.VirtualEdge;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -27,7 +26,9 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static java.lang.Boolean.parseBoolean;
+import static es.bsc.hp2c.HP2CServer.getDevicesMap;
+import static es.bsc.hp2c.HP2CServer.getPathToSetup;
+import static es.bsc.hp2c.common.types.Func.loadFunctions;
 
 /**
  * Heartbeat handler that starts:
@@ -68,7 +69,8 @@ public class EdgeHeartbeat {
                 try {
                     processHeartbeatMessage(envelope.getRoutingKey(), body);
                 } catch (Exception e) {
-                    System.err.println("Error processing heartbeat message: " + e.getMessage());
+                    System.err.println("Error processing heartbeat message: " + e.getMessage() + ". ");
+                    e.printStackTrace();
                 }
             }
         };
@@ -89,15 +91,16 @@ public class EdgeHeartbeat {
         JSONObject jEdgeSetup = new JSONObject(new String(body, StandardCharsets.UTF_8));
 
         // Process the heartbeat message
-        System.out.println(" [processHeartbeatMessage] Received heartbeat for edge '" + edgeLabel + "'");
+        System.out.println("[processHeartbeatMessage] Received heartbeat for edge '" + edgeLabel + "'");
         if (edgeMap.containsKey(edgeLabel)) {
             // Set last heartbeat
             long heartbeatTime = jEdgeSetup.getJSONObject("global-properties").getLong("heartbeat");
             VirtualEdge newEdge = new VirtualEdge(jEdgeSetup);
             VirtualEdge oldEdge = edgeMap.get(edgeLabel);
+
             if (!newEdge.equals(oldEdge)){
-                newEdge.setModified(true);
-                edgeMap.put(edgeLabel, newEdge);
+                oldEdge.setModified(true);
+                oldEdge.update(newEdge);
             }
             else {
                 edgeMap.get(edgeLabel).setLastHeartbeat(heartbeatTime);
@@ -105,10 +108,18 @@ public class EdgeHeartbeat {
         } else {
             // First time a heartbeat is received, load devices and store in the VirtualEdge object
             VirtualEdge edge = new VirtualEdge(jEdgeSetup);
-            System.out.println(" [processHeartbeatMessage] Loaded edge '" + edgeLabel + "': " + edge);
+            System.out.println("[processHeartbeatMessage] Loaded edge '" + edgeLabel + "': " + edge);
             edgeMap.put(edgeLabel, edge);
+            EdgeMap edgeDevices = getDevicesMap();
+            String pathToSetup = getPathToSetup();
+            try {
+                loadFunctions(pathToSetup, edgeDevices);
+            } catch (IOException e) {
+                System.out.println("Error loading functions: " + e);
+            }
         }
     }
+
 
     /** Periodically verify the edge heartbeat and update each `isAvailable` property accordingly. */
     class CheckInactiveEdges extends TimerTask {
@@ -118,14 +129,14 @@ public class EdgeHeartbeat {
             for (VirtualEdge edge : edgeMap.values()) {
                 if (currentTime - edge.getLastHeartbeat() > HEARTBEAT_TIMEOUT) {
                     // Edge not available
-                    System.out.println(" [CheckInactiveEdges] Edge '" + edge.getLabel() + "' is inactive.");
+                    System.out.println("[CheckInactiveEdges] Edge '" + edge.getLabel() + "' is inactive.");
                     if (edge.isAvailable()) {
                         edge.setModified(true);
                         edge.setAvailable(false);
                     }
                 } else {
                     // Edge available
-                    System.out.println(" [CheckInactiveEdges] Edge '" + edge.getLabel() + "' is active.");
+                    System.out.println("[CheckInactiveEdges] Edge '" + edge.getLabel() + "' is active.");
                     if (!edge.isAvailable()) {
                         edge.setModified(true);
                         edge.setAvailable(true);

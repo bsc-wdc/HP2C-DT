@@ -28,4 +28,4 @@ FROM openjdk:8-jdk-alpine
 COPY --from=builder /app/server/target/*.jar /app/server.jar
 
 # Specify the command to start the application using the desired main class
-CMD ["java", "-cp", "/app/server.jar", "es.bsc.hp2c.HP2CServer", "/data/edge/"]
+CMD ["java", "-cp", "/app/server.jar", "es.bsc.hp2c.HP2CServer", "/data/server/"]

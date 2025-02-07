@@ -8,7 +8,7 @@ import es.bsc.hp2c.common.types.Sensor;
 
 import java.util.ArrayList;
 
-import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * The method calculates the power and prints it through standard output.
@@ -24,7 +24,7 @@ public class CalcPower extends Func {
      * @param actuators List of actuators declared for the function.
      * @param others    Rest of parameters declared for de function.
      */
-    public CalcPower(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONArray others)
+    public CalcPower(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
             throws IllegalArgumentException {
 
         super(sensors, actuators, others);
@@ -51,20 +51,20 @@ public class CalcPower extends Func {
 
     @Override
     public void run() {
-        boolean voltmeterIsAvailable = voltmeter.isSensorAvailable();
-        boolean ammeterIsAvailable = ammeter.isSensorAvailable();
+        boolean voltmeterIsAvailable = voltmeter.getSensorAvailability();
+        boolean ammeterIsAvailable = ammeter.getSensorAvailability();
         Float[] voltage = this.voltmeter.getCurrentValues();
         Float[] current = this.ammeter.getCurrentValues();
         if (!voltmeterIsAvailable || !ammeterIsAvailable){
-            System.err.println("Warning in function CalcPower: ");
+            System.err.println("[CalcPower] Warning in function CalcPower: ");
             if (!voltmeterIsAvailable) System.err.println("Voltmeter is not available");
             else if (voltage == null) System.err.println("Voltmeter has no value");
             if (!ammeterIsAvailable) System.err.println("Ammeter is not available");
             else if (current == null) System.err.println("Ammeter has no value");
         }
         if (voltage != null && current != null) {
-            System.out.println("Calculating power: ");
-            System.out.println("    Power is: " + voltage[0] * current[0] + " W");
+            System.out.println("[CalcPower] Calculating power: ");
+            System.out.println("[CalcPower]     Power is: " + voltage[0] * current[0] + " W");
         }
     }
 }

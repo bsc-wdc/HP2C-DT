@@ -6,13 +6,20 @@
                 "lang": "Java",
                 "method-name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
                 "parameters": {
-                    "sensors": ["ALL"],
+                    "sensors": [],
                     "actuators": [],
-                    "other": []
+                    "other": {
+                        "aggregate": {
+                            "type": "last"
+                        }
+                    }
                 },
                 "trigger": {
-                    "type": "onRead",
-                    "parameters": ["ALL"]
+                    "type": "onFrequency",
+                    "parameters": {
+                        "trigger-sensor": "",
+                        "frequency": 10
+                    }
                 }
             },
             {
@@ -22,11 +29,11 @@
                 "parameters": {
                     "sensors": [],
                     "actuators": ["ALL"],
-                    "other": []
+                    "other": {}
                 },
                 "trigger": {
                     "type": "onStart",
-                    "parameters": []
+                    "parameters": {}
                 }
             }
         ]

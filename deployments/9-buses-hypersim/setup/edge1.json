@@ -1,5 +1,6 @@
 {
     "global-properties":{
+        "type": "edge",
         "label": "edge1",
         "comms":{
             "opal-udp": {
@@ -66,7 +67,8 @@
             },
             "properties": {
                 "comm-type": "opal-tcp",
-                "indexes": [0,1,2]
+                "indexes": [0,1,2],
+                "amqp-aggregate": "last"
             }
         },
         {
@@ -92,14 +94,16 @@
             "parameters": {
                 "sensors": ["Three-Phase Voltmeter Gen1"],
                 "actuators": ["CB1"],
-                "other": [200]
+                "other": {
+                    "threshold": 200
+                }
             },
             "trigger": {
                 "type": "onRead",
-                "method-name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
-                "parameters": ["Three-Phase Voltmeter Gen1"]
+                "parameters": {
+                    "trigger-sensor": ["Three-Phase Voltmeter Gen1"]
+                }
             }
-
         }
     ]
 }

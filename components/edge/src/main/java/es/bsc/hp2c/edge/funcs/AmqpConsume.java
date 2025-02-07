@@ -7,7 +7,7 @@ import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Func;
 import es.bsc.hp2c.common.types.Sensor;
-import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ public class AmqpConsume extends Func {
      * @param actuators List of actuators declared for the function.
      * @param others    Rest of parameters declared for de function.
      */
-    public AmqpConsume(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONArray others)
+    public AmqpConsume(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
             throws IllegalArgumentException {
 
         super(sensors, actuators, others);
@@ -72,7 +72,7 @@ public class AmqpConsume extends Func {
         }
 
         // Declare callback to respond to commands
-        System.out.println(" [AmqpConsume] Awaiting requests for queue " + routingKey + " at exchange " + EXCHANGE_NAME);
+        System.out.println("[AmqpConsume] Awaiting requests for queue " + routingKey + " at exchange " + EXCHANGE_NAME);
         DeliverCallback callback = (consumerTag, delivery) -> {
             // Parse message. For instance: routingKey = "edge.edge1.actuators.voltmeter1"
             byte[] message = delivery.getBody();

@@ -16,6 +16,7 @@
 package es.bsc.hp2c;
 
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.EdgeMap;
 import es.bsc.hp2c.edge.opalrt.OpalComm;
 import es.bsc.hp2c.common.types.Device;
 
@@ -27,11 +28,9 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
+import static es.bsc.hp2c.common.types.Device.formatLabel;
 import static es.bsc.hp2c.common.utils.FileUtils.*;
 
 /**
@@ -57,15 +56,24 @@ public class HP2CEdge {
         if (args.length == 1) {
             setupFile = args[0];
         } else {
-            setupFile = "../../deployments/simple/setup/edge1.json";
+            setupFile = "deployments/simple/setup/edge1.json";
         }
+
         // Get defaults file
         String defaultsPath = "/data/edge_default.json";
         File defaultsFile = new File(defaultsPath);
         if (!defaultsFile.isFile()) {
-            defaultsPath = "../../deployments/defaults/setup/edge_default.json";
+            defaultsPath = "deployments/defaults/setup/edge_default.json";
         }
         edgeLabel = readEdgeLabel(setupFile);
+
+        // get default units path
+        String defaultUnitsPath = "/data/default_units.json";
+        File defaultUnitsFile = new File(defaultUnitsPath);
+        if (!defaultUnitsFile.isFile()){
+            defaultUnitsPath = "deployments/defaults/default_units.json";
+        }
+
 
         // Get IP address
         String localIp = System.getenv("LOCAL_IP");
@@ -74,20 +82,55 @@ public class HP2CEdge {
         int brokerPort = (int) brokerConnections.get("port");
 
         devices = loadDevices(setupFile, "driver", true);
-
         // Set up AMQP messaging
         boolean amqpOn = setUpMessaging(brokerIp, brokerPort);
+        OpalComm.setLoadedDevices(true);
+
+        // Convert to EdgeMap if type is edge
+        EdgeMap edgeMap = null;
+        edgeMap = new EdgeMap();
+        for (Map.Entry<String, Device> entry : devices.entrySet()) {
+            edgeMap.addDevice(edgeLabel, entry.getKey(), entry.getValue());
+        }
+        Func.loadFunctions(setupFile, edgeMap);
+        Map<String, String> amqpAggregates = Func.loadGlobalFunctions(setupFile, defaultsPath, devices, amqpOn);
+        JSONObject sensorUnits = getSensorUnits(setupFile, defaultUnitsPath, devices);
+
         if (amqpOn) {
             JSONObject jEdgeSetup = getJsonObject(setupFile);
+            JSONArray devicesArray = jEdgeSetup.getJSONArray("devices");
+
+            // Update each device's "amqp-aggregate" property based on amqpAggregates map
+            for (int i = 0; i < devicesArray.length(); i++) {
+                JSONObject device = devicesArray.getJSONObject(i);
+                String deviceLabel = formatLabel(device.getString("label"));
+
+                if (amqpAggregates.containsKey(deviceLabel)) { // Specify amqp-aggregate for the device
+                    String aggregateValue = amqpAggregates.get(deviceLabel);
+                    // Overwrite or add the "amqp-aggregate" property in the device's properties
+                    JSONObject properties = device.getJSONObject("properties");
+                    properties.put("amqp-aggregate", aggregateValue);
+                }
+
+                if (sensorUnits.has(deviceLabel)) {
+                    Object units = sensorUnits.get(deviceLabel);
+                    if (units instanceof String) {
+                        device.put("units", (String) units);
+                    } else if (units instanceof JSONArray) {
+                        device.put("units", (JSONArray) units);
+                    } else {
+                        throw new IllegalArgumentException("Unsupported 'units' type for device: " + deviceLabel);
+                    }
+                }
+
+            }
+
             Timer timer = new Timer();
             Heartbeat heartbeat = new Heartbeat(jEdgeSetup, edgeLabel);
             timer.scheduleAtFixedRate(heartbeat, 0, HEARTBEAT_RATE);
         } else {
             System.out.println("Heartbeat could not start. AMQP not available");
         }
-        OpalComm.setLoadedDevices(true);
-        Func.loadFunctions(setupFile, devices);
-        Func.loadGlobalFunctions(defaultsPath, devices, amqpOn);
     }
 
     private static boolean setUpMessaging(String ip, int port) {
@@ -142,12 +185,12 @@ public class HP2CEdge {
                 for (Object d : jDevices) {
                     JSONObject jD = (JSONObject) d;
                     boolean availability = true;
-                    String deviceLabel = jD.optString("label", "").replace(" ", "").replace("-", "");
+                    String deviceLabel = formatLabel(jD.optString("label", ""));
                     Device device = devices.get(deviceLabel);
-                    if (device.isSensitive() && !device.isSensorAvailable()) {
+                    if (device.isSensitive() && !device.getSensorAvailability()) {
                         availability = false;
                     }
-                    if (device.isActionable() && !device.isActuatorAvailable()) {
+                    if (device.isActionable() && !device.getActuatorAvailability()) {
                         availability = false;
                     }
                     jD.put("availability", availability);

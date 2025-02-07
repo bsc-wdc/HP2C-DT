@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -185,9 +186,9 @@ public class OpalComm {
                     //convert bytebuffer to Float array (readable values)
                     Float[] messageValues = new Float[maxUdpIndexesLength];
                     for (int i = 0; i < messageValues.length; i++) {
-                        messageValues[i] = byteBuffer.getFloat();;
+                        messageValues[i] = byteBuffer.getFloat();
                     }
-                    distributeValues(messageValues, udpSensorsList);
+                    distributeValues(messageValues, udpSensorsList, Instant.now());
                     System.out.println(); // Add empty line at the end of each measurement
                 } catch (Exception e) {
                     System.err.println("Error receiving UDP message: " + e.getMessage());
@@ -199,7 +200,7 @@ public class OpalComm {
     }
 
 
-    private static void distributeValues(Float[] messageValues, List<OpalSensor<?>> sensors) {
+    private static void distributeValues(Float[] messageValues, List<OpalSensor<?>> sensors, Instant timestamp) {
         synchronized (sensors) {
             //distribute values to their respective sensors
             for (OpalSensor<?> sensor : sensors){
@@ -208,7 +209,7 @@ public class OpalComm {
                 for (int j = 0; j < indexes.length; ++j) {
                     sensedValues[j] = messageValues[indexes[j]];
                 }
-                sensor.sensed(sensedValues);
+                sensor.sensed(sensedValues, timestamp);
                 sensor.onRead();
             }
         }
@@ -283,7 +284,7 @@ public class OpalComm {
                 for (int i = 0; i < messageLength; i++) {
                     messageValues[i] = byteBuffer.getFloat();
                 }
-                distributeValues(messageValues, tcpSensorsList);
+                distributeValues(messageValues, tcpSensorsList, Instant.now());
                 System.out.println(); // Add empty line at the end of each measurement
             }
         } catch (IOException e){
@@ -354,7 +355,9 @@ public class OpalComm {
     public static void retryConnectionActuation(){
         synchronized(actuatorsList){
             for (OpalActuator<?> a : actuatorsList){
-                if (((Device) a).isActuatorAvailable()){ return; }
+                if (((Device) a).getActuatorAvailability()){
+                    return;
+                }
             }
         }
         try {
@@ -538,13 +541,13 @@ public class OpalComm {
 
 
     public static  void setAvailableSensors(List<OpalSensor<?>> sensors, boolean b){
-        for(OpalSensor<?> sensor : sensors){ ((Device) sensor).setSensorAvailable(b); }
+        for(OpalSensor<?> sensor : sensors){ ((Device) sensor).setSensorAvailability(b); }
     }
 
 
     public static  void setAvailableActuators(List<OpalActuator<?>> actuators, boolean b){
         synchronized(actuatorsList){
-            for(OpalActuator<?> actuator : actuatorsList){ ((Device) actuator).setActuatorAvailable(b); }
+            for(OpalActuator<?> actuator : actuatorsList){ ((Device) actuator).setActuatorAvailability(b); }
         }
     }
 
@@ -601,7 +604,7 @@ public class OpalComm {
 
     private static void printCurrentTime() {
         LocalTime currentTime = LocalTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
         String formattedTime = currentTime.format(formatter);
         System.out.println("Current time: " + formattedTime);
     }

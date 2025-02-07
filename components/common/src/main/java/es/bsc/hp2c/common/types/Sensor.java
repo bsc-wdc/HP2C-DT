@@ -15,6 +15,10 @@
  */
 package es.bsc.hp2c.common.types;
 
+import es.bsc.hp2c.common.utils.MeasurementWindow;
+
+import java.time.Instant;
+
 /**
  * Class collecting information from the electrical network.
  *
@@ -28,7 +32,7 @@ public interface Sensor<R, V> {
      *
      * @param action Runnable that implements the function to handle.
      */
-    public void addOnReadFunction(Runnable action);
+    public void addOnReadFunction(Runnable action, int interval, String label, boolean onRead);
 
     /**
      * Call the functions triggered by a read value in the sensor.
@@ -41,16 +45,17 @@ public interface Sensor<R, V> {
      *
      * @param values Type of value to return.
      */
-    public void sensed(R values);
+    public void sensed(R values, Instant timestamp);
 
     /**
-     * Method overloading of sensed value when provided an array of bytes.
-     * Again, sets value attribute according to what sensedValue(value)
-     * returns, but first decodes the values with decodeValues.
+     * This method receives an encoded MeasurementWindow (from amqpManager), decodes it, and sets the appropriate
+     * values for the involved sensors while constructing a new MeasurementWindow<Float[]>, which will be useful to
+     * store the sensor values in the database.
      *
-     * @param values Type of value to return.
+     * @param bWindow Encoded MeasurementWindow.
+     * @return MeasurementWindow<Float[]>
      */
-    public void sensed(byte[] values);
+    public MeasurementWindow<Float[]> sensed(byte[] bWindow);
 
     /**
      * Get the value stored.
@@ -65,6 +70,13 @@ public interface Sensor<R, V> {
      * @return Byte array message with the set of current values
      */
     public byte[] encodeValuesSensor();
+
+    /**
+     * Get sensor window
+     *
+     * @return Measurement Window
+     */
+    public MeasurementWindow<V> getWindow();
 
     /**
      * Decode values from a message made of an array of bytes.

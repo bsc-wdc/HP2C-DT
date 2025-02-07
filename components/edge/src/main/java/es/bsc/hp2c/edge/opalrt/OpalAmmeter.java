@@ -21,6 +21,8 @@ import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.time.Instant;
+
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 
 /**
@@ -40,7 +42,7 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     * @param jGlobalProperties JSONObject representing the global properties of the edge
     * */
     public OpalAmmeter(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
-        super(label, position);
+        super(label, position, jProperties, jGlobalProperties);
         JSONArray jIndexes = jProperties.getJSONArray("indexes");
         if (jIndexes.length() != 1 && jIndexes.length() != 3){
             throw new IllegalArgumentException("The ammeter must have either one or three indexes.");
@@ -63,10 +65,10 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     }
 
     @Override
-    public void sensed(Float[] values) {
-        super.setValues(sensedValues(values));
+    public void sensed(Float[] values, Instant timestamp) {
+        super.setValues(sensedValues(values), timestamp);
         for (Float value : values) {
-            System.out.println("Device " + getLabel() + " sensed " + value + " A");
+            System.out.println("[Sensed] Device " + getLabel() + " sensed " + value + " A");
         }
     }
 

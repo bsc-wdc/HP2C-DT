@@ -17,6 +17,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import static es.bsc.hp2c.common.types.Device.formatLabel;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
@@ -24,7 +25,7 @@ import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
 public class OpalSimulator {
     private static String SERVER_ADDRESS = "127.0.0.1";
     private static ArrayList<Edge> edges = new ArrayList<>();
-    private static final double frequency = 1.0 / 20.0;
+    private static final double frequency = 5;
     private static boolean runSimulation = false;
     private static CSVTable csvTable;
     private static int runClient = 0;
@@ -102,14 +103,17 @@ public class OpalSimulator {
 
         for (String edgeFile : Objects.requireNonNull(setupDirectory.list())){
             String pathToEdge = deploymentFile + edgeFile;
-            Edge edge = initEdgeComms(pathToEdge);
-            ArrayList<DeviceWrapper> devicesWrapped = getDevices(pathToEdge);
+            JSONObject jGlobProp = getJGlobalProperties(pathToEdge);
+            String type = jGlobProp.optString("type", "");
+            if (Objects.equals(type, "edge")) {
+                Edge edge = initEdgeComms(pathToEdge, jGlobProp);
+                ArrayList<DeviceWrapper> devicesWrapped = getDevices(pathToEdge);
 
-            Map<String, Device> devices = loadDevices(pathToEdge, false);
-            devicesWrapped = joinDevices(devicesWrapped, devices);
-            edge.setDevices(devicesWrapped);
-            edges.add(edge);
-
+                Map<String, Device> devices = loadDevices(pathToEdge, false);
+                devicesWrapped = joinDevices(devicesWrapped, devices);
+                edge.setDevices(devicesWrapped);
+                edges.add(edge);
+            }
         }
 
         if (runSimulation) createLogFiles(simulationName);
@@ -553,7 +557,7 @@ public class OpalSimulator {
         for (Object jo : jDevices){
             JSONObject jDevice = (JSONObject) jo;
             JSONObject jDProperties = jDevice.getJSONObject("properties");
-            String label = jDevice.getString("label").replaceAll("[\\s-]", "");
+            String label = formatLabel(jDevice.getString("label"));
 
             String protocol = jDProperties.getString("comm-type");
 
@@ -567,8 +571,7 @@ public class OpalSimulator {
         return devices;
     }
 
-    private static Edge initEdgeComms(String pathToEdge) throws IOException {
-        JSONObject jGlobProp = getJGlobalProperties(pathToEdge);
+    private static Edge initEdgeComms(String pathToEdge, JSONObject jGlobProp) throws IOException {
         JSONObject jComms = jGlobProp.getJSONObject("comms");
         String label = jGlobProp.getString("label");
 

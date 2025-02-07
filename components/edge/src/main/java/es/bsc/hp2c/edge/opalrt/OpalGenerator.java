@@ -24,6 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.Instant;
 
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 
@@ -44,7 +45,7 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
      * @param jGlobalProperties JSONObject representing the global properties of the edge
      * */
     public OpalGenerator(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
-        super(label, position);
+        super(label, position, jProperties, jGlobalProperties);
         JSONArray jIndexes = jProperties.getJSONArray("indexes");
         this.indexes = new int[jIndexes.length()];
         if (this.indexes.length != 2){
@@ -64,10 +65,10 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     }
 
     @Override
-    public void sensed(Float[] values) {
-        super.setValues(sensedValues(values));
-        System.out.println("Device " + getLabel() + " voltage set point is " + this.voltageSetpoint[0] + " V");
-        System.out.println("Device " + getLabel() + " power set point is " + this.powerSetpoint[0] + " W");
+    public void sensed(Float[] values, Instant timestamp) {
+        super.setValues(sensedValues(values), timestamp);
+        System.out.println("[Sensed] Device " + getLabel() + " voltage set point is " + this.voltageSetpoint[0] + " V");
+        System.out.println("[Sensed] Device " + getLabel() + " power set point is " + this.powerSetpoint[0] + " W");
     }
 
     @Override

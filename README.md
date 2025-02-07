@@ -30,6 +30,7 @@ To configure an edge node, we use JSON files (refer to the `deployments` directo
 ```json
 "global-properties":{
     "label": "edge1",
+    "type": "edge" # json type (edge/server)
     "comms":{
         "opal-tcp": {
             "protocol": "tcp",
@@ -50,7 +51,8 @@ To configure an edge node, we use JSON files (refer to the `deployments` directo
             "y": 41.389917
         },
         "connections": ["edge2"]
-    }
+    },
+    "window-size": 5, #optional
 }
 ```
 
@@ -59,6 +61,7 @@ This section contains the global properties of the edge node, such as
 - `label`, the name of the edge.
 - `comms`, where the user can define communication methods that can be later used by each device separatelly. Each method has a name (the key of the JSON object) and, within the object, a `protocol` (currently we only have `udp` and `tcp`), and how `sensors` and `actuators` will be handled. For each one, specify an IP or IPs (it can also be a list of IPs), and the port. These ports must be unique for every node.
 - `geo-data`, which includes the `position` (`x` and `y` coordinates) and `connections` (a list of edge labels).
+- `window-size`, which allows us to specify the size of the windows for all devices (this can be overridden for individual devices, as explained below). These windows help reduce communication load by enabling devices to store multiple values locally. Aggregates (described later) can then be performed on the stored data. 
 
 
 #### Devices
@@ -75,7 +78,13 @@ This section contains the global properties of the edge node, such as
         },
         "properties": {
             "comm-type": "opal-tcp",
-            "indexes": [0,1,2]
+            "indexes": [0,1,2],
+            "window-size": 5,  #optional
+            "amqp-trigger": "onRead", #optional
+            "amqp-interval": 5 #optional
+            "amqp-agg-args": { #optional
+                "phasor-freq": 40 #optional
+            }   
         }
     },
     ...
@@ -90,8 +99,78 @@ The `devices` section will contain each device within the edge. Each device has 
 5. `properties`: We have two properties:
    - `comm-type`, where the user can refer to the methods declared in the `comms` section in `global-properties`.
    - `indexes`, which serves as a device identifier for those simulated by OpalRT. Indices represent the order in which measurements are sent in a packet from OpalRT. Voltmeters, ammeters, generators, wattmeters, and varmeters can have one or three indexes. Three-phase voltmeters and three-phase ammeters should have three indexes, while switches can have one or three, depending on their number of phases. These indexes must be unique, as they define the correspondent position in the socket received.
+   - `window-size`, optional argument where the user can specify the size of the sensor window. It can also be declared in the "global-properties" section and, if neither is provided, it will be 1.
+   - `amqp-trigger`, optional argument to specify which type of amqp publish is desired for this concrete device. Options are:
+     - **"onRead"**: sends message for each read or set of reads by using `amqp-interval`: [int]
+     - **"onFrequency"**: sends messages periodically every n seconds by using `amqp-frequency`: [int]
+     - **"onChange"**: Executed whenever the values of the sensors defined in `trigger.parameters` change.
+   - `amqp-aggregate`, `amqp-agg-args` optional arguments to specify the type of pre-processing to perform on the sensor window, and its arguments (they can vary depending on the aggregate). Options include:
+       - **"sum"**: Sums up the values in the window. Only valid for `Number[]` sensors.
+       - **"avg"**: Returns the average of all values in the window. Only valid for `Number[]` sensors.
+       - **"last"**: Returns the most recent value in the window.
+       - **"all"**: Returns all values in the window, ordered from oldest to newest.
+       - **"phasor"**: Returns phasor (magnitude and phase) of the sensor given (only for Ammeter and Voltmeter). Frequency can be specified including the entry "phasor-freq" and a double within the "amqp-agg-args" JSONObject.
 
-#### Functions
+These AMQP options can be defined for each sensor by editing the `deployments/defaults/setup/edge_setup.json` file. This file specifies the functions to be performed for each device. Commonly defined functions include:
+- **`AMQPConsume`**: A method used by actuators to receive actuations from the server.
+- **`AMQPPublish`**: A method used to send sensor readings from the edge to the server. This is where the AMQP parameters for each sensor are defined by default, though they can be overridden for individual devices as shown earlier.
+```json
+"global-properties":{
+    "funcs": [
+        {
+            "label": "AMQPPublish",
+            "lang": "Java",
+            "method-name": "es.bsc.hp2c.edge.funcs.AmqpPublish",
+            "parameters": {
+                "sensors": [],
+                "actuators": [],
+                "other": {
+                    "aggregate": {
+                        "type": "phasor" #specify aggregate method
+                        "args": { #specify aggregate args (parsed by the aggregate method)
+                            "phasor-freq": 60.0 
+                        }   
+                    }
+                } 
+            },
+            "trigger": {
+                "type": "onRead",  # onFrequency also possible
+                "parameters": {
+                    "trigger-sensor": "",
+                    "interval": 3  # if onFrequency, declare "frequency": [int]
+                }
+        
+            }
+        },
+        {
+            "label": "AMQPConsume",
+            "lang": "Java",
+            "method-name": "es.bsc.hp2c.edge.funcs.AmqpConsume",
+            "parameters": {
+                "sensors": [],
+                "actuators": ["ALL"],
+                "other": {}
+            },
+            "trigger": {
+                "type": "onStart",
+                "parameters": {}
+            }
+        }
+    ]
+}
+```
+
+## Functions
+
+To perform any action or evaluation within the system, we can declare **functions**. A function is a Java method (`method-name`) that receives specific parameters (sensors and/or actuators) along with additional user-defined parameters (in the `other` section).
+
+We can also define how or when the function is triggered, allowing the following options:
+
+- **`onRead`**: Executed every time the sensor defined in `parameters` is read.
+- **`onChange`**: Executed whenever the values of the sensors defined in `trigger.parameters` change.
+- **`onFrequency`**: Triggered every _n_ seconds, where _n_ is specified in `parameters.frequency` (see JSON example in the [`Server`](#server) section).
+- **`onStart`**: Runs the function when the DT is initialized.
+
 
 ```json
 "funcs": [
@@ -102,11 +181,12 @@ The `devices` section will contain each device within the edge. Each device has 
         "parameters": {
             "sensors": ["Voltmeter Gen1"],
             "actuators": ["Three-Phase Switch Gen1"],
-            "other": [200]
+            "other": {
+                "threshold": 200
+            }
         },
         "trigger": {
             "type": "onRead",
-            "method-name": "es.bsc.hp2c.edge.HP2Cedge.onRead",
             "parameters": ["Voltmeter Gen1"]
         }
 
@@ -114,12 +194,159 @@ The `devices` section will contain each device within the edge. Each device has 
 ]
 ```
 
-A function is a method that can read from one or more sensors and actuate over one or more actuators. Within the `functions` section, the user must specify the following:
+A function is a method that can read from one or more sensors and actuate over one or more actuators. Within the `funcs` section, the user must specify the following:
 1. `label`: a unique name for the function.
 2. `lang`: the language in which it was implemented (Java or Python).
 3. `method-name`: the path to the method's implementation (e.g., es.bsc.hp2c.<SUBPACKAGE>.<CLASS>).
 4. `parameters`: the user must define lists of `sensors`, `actuators`, and additional parameters called `others` that are needed by the function.
-5. `trigger`: the event that triggers the execution of the function. As for `type`, it can be `onFrequency` (executed with a periodicity specified in `parameters`) and `onRead` (executed after every read of the devices declared as sensors). Additionally, the user should provide a `method-name` (path to the implementation of those triggers).
+5. `trigger`: the event that triggers the execution of the function. 
+
+## Server
+Another key component in our architecture is the Server, which is responsible for receiving data from the edges, storing it in the InfluxDB database, executing functions, and providing data to the User Interface, among other tasks.
+
+To deploy the server, the user must provide a JSON file specifying:
+
+- The "type" as "server" (see example below)
+- The "alarm-off-delay" (optional)
+- The "funcs" list (as done previously for the edge)
+
+```json
+{
+  "global-properties": {
+    "type": "server",
+    "alarm-off-delay": "10000ms" # optional. Specify the time plus the unit (ms, s, m, h)
+  },
+  "funcs":[
+    {
+      "label": "VoltageFaultDectection",
+      "lang": "Python",
+      "method-name": "es.bsc.hp2c.server.funcs.VoltageFaultDetection",
+      "parameters": {
+        "sensors": {},
+        "actuators": [],
+        "other": {
+          "threshold": 0.2
+        }
+      },
+      "trigger": {
+        "type": "onFrequency",
+        "parameters": {
+          "frequency": 10
+        }
+      }
+    }
+  ]
+}
+```
+
+### Server REST API
+
+In order to get some information from the server and send orders, there is a REST API implemented in the Server. It has several functions like:
+- **actuate**: explained in section [`Actuation`](#actuation)
+- **getGeoInfo**: returns the geographical information (useful for creating the geomap in UI), and information about whether the edge is available or not ("show"):
+  ```bash
+  curl -X GET http://0.0.0.0:8080/getGeoInfo
+    
+  {"edge1":{"show":true,"position":{"x":2.1153889,"y":41.389915},"connections":["edge2"]},
+  "edge2":{"show":true,"position":{"x":-5.9826,"y":37.3886},"connections":["edge1"]}}
+  ```   
+- **getEdgesInfo**: returns information about the whole system (edges, devices and their attributes):
+  ```bash
+  curl -X GET http://0.0.0.0:8080/getEdgesInfo
+     {
+        "edge1":{
+           "modified":true,
+           "is_available":true,
+           "info":{
+             "VoltmeterGen1":{
+               "size":2,
+               "isActionable":false,
+               "units":"V",
+               "type":"Voltmeter",
+               "is_available":true,
+               "aggregate":"phasor"
+             },
+             "ThreePhaseSwitchGen1":{
+               "isCategorical":true,
+               "size":3,
+               "isActionable":true,
+               "categories":["ON","OFF","NULL"],
+               "units":"",
+               "type":"Switch",
+               "is_available":true,
+               "aggregate":"last"
+             }
+           }
+        }
+      }
+  ```
+
+- **getAlarms**: returns the triples alarm-edge-device declared.
+  ```bash
+  curl -X GET http://0.0.0.0:8080/getAlarms
+    [[VoltageFaultDetection, edge2, VoltmeterGen1], 
+    [VoltageFaultDetection, edge1, VoltmeterGen1], 
+    [LoadBalanceAlarm, global, global]]
+  ```
+
+
+## Alarms
+Alarms are another functionality of our Digital Twin. They are useful for monitoring the system’s state and receiving notifications when unexpected events occur.
+
+To enable this, we implemented a writeAlarm method, which can be called from a function (see the previous section [`Functions`](#functions)) whenever an alarm needs to be triggered.
+
+### Alarms on the Server
+The server generates a JSON file in the project root (alarms.json) that summarizes the status of all declared alarms.
+
+In this JSON file, each alarm entry includes a location section listing the edge-device pairs, along with the date and time of the alarm and, if specified, an informational message. If no edge or device is declared, the date and time will be stored directly within the alarm entry rather than in the location subsection.
+
+Here is an example of a JSON file:
+
+```json
+{
+    "VoltageFaultDetection": { # local alarm
+        "alarm": true,
+        "location": {
+            "edge1": {
+                "VoltmeterGen1": {
+                    "time": "2025-02-03T14:52:40.687Z",
+                    "info": "Fault detected on edge edge1. Voltage is 132.15349%, Threshold is 20.0%"
+                }
+            },
+            "edge2": {
+                "VoltmeterGen1": {
+                    "time": "2025-02-03T14:52:40.689Z",
+                    "info": "Fault detected on edge edge2. Voltage is 60.319984%, Threshold is 20.0%"
+                }
+            }
+        }
+    },
+    "LoadBalanceAlarm": { # global alarm
+        "alarm": true,
+        "time": "2025-02-03T14:52:40.686Z",
+        "info": "Load imbalance detected: max=620.3006 (edge2-ThreePhaseAmmeterGen1) min=146.368 (edge1-AmmeterGen1)"
+    }
+}
+```
+To manage alarm states, we define an alarm off delay (see the [`Server`](#server) section for the JSON definition). This represents the period during which no new true events occur for the alarm, after which it is automatically turned off.
+
+Additionally, alarms are stored in InfluxDB, allowing us to define alert rules in Grafana and monitor their status, as explained in the [`Alarms on the User Interface`](#alarms-on-the-user-interface) section. Each database entry includes:
+
+- Alarm name - *Tag*
+- Edge (set to "global" if none) - *Tag*
+- Device (set to "global" if none) - *Tag*
+- Alarm status (true/false) - *Field*
+- Info message - *Field*
+- Timestamp
+
+If both the edge and device are set to "global," the alarm is assumed to be related to the entire system rather than a specific device.
+
+### Alarms on the User Interface
+Once the alarm statuses are stored in the database, we define alert rules in Grafana to visualize them. We create a new rule for each unique alarm-edge-device combination to ensure all potential issues are monitored.
+
+Additionally, these rules are displayed in a dedicated panel within the User Interface, as shown below:
+
+![alerts-grafana](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/alerts-grafana.png)
 
 ## Deployment
 Under the `deployments` directory, we provide several deployment bash scripts and two different deployment configuration examples: `testbed`, a simple one with two edges, and `9-buses` (with nine). Each deployment has a setup (previously explained) and a `deployment_setup.json`, which includes the IP and port of every service (refer to the given examples).

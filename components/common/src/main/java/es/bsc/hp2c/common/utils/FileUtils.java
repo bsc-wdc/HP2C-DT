@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static es.bsc.hp2c.common.types.Device.formatLabel;
+
 public final class FileUtils {
     private FileUtils(){}
 
@@ -108,4 +110,75 @@ public final class FileUtils {
         }
         return devices;
     }
+
+    public static int getWindowSize(JSONObject jProperties, JSONObject jGlobalProperties, String label) {
+        int windowSize;
+        if (jProperties.has("window-size")){
+            Object value = jProperties.get("window-size");
+            if (value instanceof Integer) {
+                windowSize = (Integer) value;
+            } else {
+                throw new JSONException("Malformed JSON. The window_size of the device " + label + " is not an integer. " +
+                        "It is: " + value.getClass().getSimpleName());
+            }
+        } else if (jGlobalProperties.has("window-size")){
+            Object value = jGlobalProperties.get("window-size");
+            if (value instanceof Integer) {
+                windowSize = (Integer) value;
+            } else {
+                throw new JSONException("Malformed JSON. The window_size declared in global properties is not an integer. " +
+                        "It is: " + value.getClass().getSimpleName());
+            }
+        } else {
+            windowSize = 1;
+        }
+        System.out.println(label + " window size: " + windowSize);
+        return windowSize;
+    }
+
+    public static JSONObject getSensorUnits(String setupFile, String defaultUnitsPath,
+                                            Map<String, Device> devices) throws IOException {
+        JSONObject sensorUnits = new JSONObject();
+
+        // Load setup file
+        JSONObject object = getJsonObject(setupFile);
+
+        // Load specific devices
+        JSONArray jDevices = object.getJSONArray("devices");
+
+        // Load generic file
+        JSONObject jDefaultUnits = getJsonObject(defaultUnitsPath);
+
+        for (Object deviceObject : jDevices) {
+            JSONObject jDevice = new JSONObject();
+            if (deviceObject instanceof JSONObject) {
+                jDevice = (JSONObject) deviceObject;
+            }
+
+            String deviceLabel = formatLabel(jDevice.getString("label"));
+            Device device = devices.get(deviceLabel);
+
+            if (jDevice.has("units")) { // concrete units defined for this device
+                Object unitsObject = jDevice.get("units");
+                if (unitsObject instanceof String) {
+                    sensorUnits.put(deviceLabel, (String) unitsObject);
+                } else if (unitsObject instanceof JSONArray) {
+                    sensorUnits.put(deviceLabel, (JSONArray) unitsObject);
+                } else {
+                    throw new IllegalArgumentException("Unsupported 'units' type for device: " + deviceLabel);
+                }
+            } else if (jDefaultUnits.has(device.getType())) { // get the default units defined for this type
+                Object unitsObject = jDefaultUnits.get(device.getType());
+                if (unitsObject instanceof String) {
+                    sensorUnits.put(deviceLabel, (String) unitsObject);
+                } else if (unitsObject instanceof JSONArray) {
+                    sensorUnits.put(deviceLabel, (JSONArray) unitsObject);
+                } else {
+                    throw new IllegalArgumentException("Unsupported 'units' type for device type: " + device.getType());
+                }
+            }
+        }
+        return sensorUnits;
+    }
+
 }

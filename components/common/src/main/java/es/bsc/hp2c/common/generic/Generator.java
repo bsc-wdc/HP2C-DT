@@ -16,12 +16,13 @@
 package es.bsc.hp2c.common.generic;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.time.Instant;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
-import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.*;
+import org.json.JSONObject;
 
 
 /**
@@ -31,8 +32,8 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
 
     protected Float[] voltageSetpoint = null;
     protected Float[] powerSetpoint = null;
-
-    private ArrayList<Runnable> onReadFunctions;
+    private MeasurementWindow<Float[]> window;
+    private OnReadFunctions onReadFunctions;
 
     /**
      * Creates a new instance of generator;
@@ -40,17 +41,34 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
      * @param label device label
      * @param position device position
      */
-    protected Generator(String label, float[] position) {
+    protected Generator(String label, float[] position, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
-        this.onReadFunctions = new ArrayList<>();
+        window = new MeasurementWindow(FileUtils.getWindowSize(jProperties, jGlobalProperties, label));
+        this.onReadFunctions = new OnReadFunctions();
     }
 
     @Override
-    public abstract void sensed(R value);
+    public abstract void sensed(R value, Instant timestamp);
 
     @Override
-    public void sensed(byte[] messageBytes) {
-        sensed(decodeValuesSensor(messageBytes));
+    public MeasurementWindow<Float[]> sensed(byte[] bWindow) {
+        MeasurementWindow<Float[]> window = MeasurementWindow.decode(bWindow);
+        MeasurementWindow<Float[]> returnWindow = new MeasurementWindow<>(window.getCapacity());
+        for (Measurement<Float[]> m : window.getMeasurementsOlderToNewer()){
+            Object value = m.getValue();
+            if (value instanceof Number[]) {
+                Number[] numbers = (Number[]) value;
+                Float[] floats = new Float[numbers.length];
+                for (int i = 0; i < numbers.length; i++) {
+                    floats[i] = numbers[i] == null ? null : numbers[i].floatValue();
+                }
+                sensed((R) floats, m.getTimestamp());
+                returnWindow.addMeasurement(m.getTimestamp(), floats);
+            } else {
+                throw new IllegalArgumentException("Expected Number[], got: " + value.getClass());
+            }
+        }
+        return returnWindow;
     }
 
     @Override
@@ -66,16 +84,29 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
      *
      * @param action runnable implementing the action
      */
-    public void addOnReadFunction(Runnable action) {
-        this.onReadFunctions.add(action);
+    @Override
+    public void addOnReadFunction(Runnable action, int interval, String label, boolean onRead) {
+        this.onReadFunctions.addFunc(new OnReadFunction<Float[]>(action, interval, label, onRead));
     }
 
     /**
-     * Calls actions to be performed in case of a new read
+     * Calls actions to be performed in case of a new read;
+     *
      */
     public void onRead() {
-        for (Runnable action : this.onReadFunctions) {
-            action.run();
+        for (OnReadFunction orf : this.onReadFunctions.getOnReadFuncs()) {
+            if (orf.isOnChange()) {
+                if (orf.changed(this.getCurrentValues())){ //changed() will update its last value if needed
+                    orf.getRunnable().run();
+                }
+            } else {
+                if (orf.getCounter() == orf.getInterval()) {
+                    orf.getRunnable().run();
+                    orf.resetCounter();
+                } else {
+                    orf.incrementCounter();
+                }
+            }
         }
     }
 
@@ -99,12 +130,17 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
         return combinedValues;
     }
 
-    protected void setValues(Float[] values) {
+    public MeasurementWindow<Float[]> getWindow(){
+        return this.window;
+    }
+
+    protected void setValues(Float[] values, Instant timestamp) {
         if (values.length == 2) {
             voltageSetpoint = new Float[1];
             powerSetpoint = new Float[1];
             voltageSetpoint[0] = values[0];
             powerSetpoint[0] = values[1];
+            this.window.addMeasurement(timestamp, values);
         } else {
             System.err.println("Values length must be 2 (voltageSetpoint and powerSetpoint)");
         }
@@ -125,7 +161,6 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
 
     @Override
     public abstract R decodeValuesSensor(byte[] message);
-
 
     @Override
     public boolean isActionable() {

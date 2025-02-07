@@ -2,56 +2,121 @@ import json
 import os
 import sys
 
+from home.dashboard import create_alerts_panel
+
+
 def generate_panel_timeseries(edge_name, device, datasource_uid):
     targets = []
     generator_values = ["Voltage SetPoint", "Power SetPoint"]
+    phasor_values = ["Magnitude", "Phase"]
+    units = device[4]  # Retrieve units (could be string or array)
+    field_overrides = []  # Initialize field overrides array
+
     for i in range(device[1]):
-        cleaned_device_name = device[0].replace(" ", "")
-        cleaned_device_name = cleaned_device_name.replace("-", "") + "Sensor" + str(i)
+        cleaned_device_name = device[0].replace(" ", "").replace("-", "") + "Sensor" + str(i)
         query = f"SELECT * FROM \"{edge_name}\" WHERE device = \'{cleaned_device_name}\'\n"
         ref_id = f"{edge_name}-{cleaned_device_name}"
-        alias = "phase " + str(i + 1)
-        if device[2] == "Generator":
-            alias = generator_values[i]
-        target = {
-            "alias": alias,
-            "datasource": {
-                "type": "influxdb",
-                "uid": datasource_uid
-            },
-            "groupBy": [
-                {
-                    "params": ["$__interval"],
-                    "type": "time"
+
+        if device[3] == "phasor":
+            alias = phasor_values[i]
+            targets.append({
+                "alias": alias,
+                "datasource": {
+                    "type": "influxdb",
+                    "uid": datasource_uid
                 },
-                {
-                    "params": ["null"],
-                    "type": "fill"
-                }
-            ],
-            "measurement": edge_name,
-            "orderByTime": "ASC",
-            "policy": "one_day_only",
-            "query": query,
-            "rawQuery": True,
-            "refId": ref_id,
-            "resultFormat": "time_series",
-            "select": [
-                [
+                "groupBy": [
+                    {"params": ["$__interval"], "type": "time"},
+                    {"params": ["null"], "type": "fill"}
+                ],
+                "measurement": edge_name,
+                "orderByTime": "ASC",
+                "policy": "one_day_only",
+                "query": query,
+                "rawQuery": True,
+                "refId": f"{ref_id}-{alias}",
+                "resultFormat": "time_series",
+                "select": [
+                    [
+                        {"params": ["value"], "type": "field"},
+                        {"params": [], "type": "last"}
+                    ]
+                ],
+                "tags": []
+            })
+        else:
+            alias = generator_values[i] if device[2] == "Generator" else f"phase {i + 1}"
+
+            # Assign units based on whether it's a string or array
+            unit = units[i] if isinstance(units, list) and i < len(units) else units
+            targets.append({
+                "alias": alias,
+                "datasource": {
+                    "type": "influxdb",
+                    "uid": datasource_uid
+                },
+                "groupBy": [
+                    {"params": ["$__interval"], "type": "time"},
+                    {"params": ["null"], "type": "fill"}
+                ],
+                "measurement": edge_name,
+                "orderByTime": "ASC",
+                "policy": "one_day_only",
+                "query": query,
+                "rawQuery": True,
+                "refId": ref_id,
+                "resultFormat": "time_series",
+                "select": [
+                    [
+                        {"params": ["value"], "type": "field"},
+                        {"params": [], "type": "last"}
+                    ]
+                ],
+                "tags": []
+            })
+
+            if unit:
+                field_overrides.append({
+                    "matcher": {"id": "byName", "options": alias},
+                    "properties": [
+                        {
+                            "id": "unit",
+                            "value": unit  # Set the unit
+                        }
+                    ]
+                })
+
+    # Add field overrides for phasor data if necessary
+    if device[3] == "phasor":
+        field_overrides.extend([
+            {
+                "matcher": {"id": "byName", "options": "Magnitude"},
+                "properties": [
                     {
-                        "params": ["value"],
-                        "type": "field"
+                        "id": "custom.axisPlacement",
+                        "value": "left"
                     },
                     {
-                        "params": [],
-                        "type": "last"
+                        "id": "unit",
+                        "value": "V" if device[2] == "Voltmeter"
+                        else "A" if device[2] == "Ammeter" else ""
                     }
                 ]
-            ],
-            "tags": []
-        }
-        targets.append(target)
-    
+            },
+            {
+                "matcher": {"id": "byName", "options": "Phase"},
+                "properties": [
+                    {
+                        "id": "custom.axisPlacement",
+                        "value": "right"
+                    },
+                    {
+                        "id": "unit",
+                        "value": "°"
+                    }
+                ]
+            }
+        ])
 
     panel = {
         "datasource": {
@@ -79,18 +144,23 @@ def generate_panel_timeseries(edge_name, device, datasource_uid):
                     "scaleDistribution": {"type": "linear"},
                     "showPoints": "always",
                     "spanNulls": False,
-                    "stacking": {"group": ref_id, 
-                                 "mode": "none"},
+                    "stacking": {"group": ref_id, "mode": "none"},
                     "thresholdsStyle": {"mode": "off"}
                 },
                 "mappings": [],
-                "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": None}, {"color": "red", "value": 80}]},
+                "thresholds": {"mode": "absolute",
+                               "steps": [{"color": "green", "value": None},
+                                         {"color": "red", "value": 80}]},
                 "unitScale": True
             },
-            "overrides": []
+            "overrides": field_overrides
         },
         "gridPos": {"h": 11, "w": 21, "x": 0, "y": 0},
-        "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": True}, "tooltip": {"mode": "single", "sort": "none"}},
+        "options": {
+            "legend": {"calcs": [], "displayMode": "list",
+                       "placement": "bottom", "showLegend": True},
+            "tooltip": {"mode": "single", "sort": "none"}
+        },
         "targets": targets,
         "title": f"{edge_name} - {device[0]}",
         "type": "timeseries"
@@ -99,9 +169,12 @@ def generate_panel_timeseries(edge_name, device, datasource_uid):
 
 
 
+
 def generate_dashboard_json(deployment_name, edge_device_dict, datasource_uid):
     panels = []
     generator_values = ["Voltage SetPoint", "Power SetPoint"]
+    phasor_values = ["Magnitude", "Phase"]
+
     for edge_name, devices in edge_device_dict.items():
         for device in devices:
             panel_timeseries = generate_panel_timeseries(edge_name, device, datasource_uid)
@@ -111,6 +184,8 @@ def generate_dashboard_json(deployment_name, edge_device_dict, datasource_uid):
                 alias = "phase " + str(i + 1)
                 if device[2] == "Generator":
                     alias = generator_values[i]
+                if device[3] == "phasor":
+                    alias = phasor_values[i]
                 if len(panel_table["targets"]) == 1: 
                     time = "Time"
                     names.append(time)
@@ -172,6 +247,9 @@ def generate_dashboard_json(deployment_name, edge_device_dict, datasource_uid):
             }
             panels.append(panel_table)
             panels.append(panel_timeseries)
+
+    alerts_panel = create_alerts_panel(datasource_uid)
+    panels.append(alerts_panel)
 
     dashboard_title = f"hp2cdt - {deployment_name}"
     dashboard = {
@@ -258,7 +336,9 @@ def ui_exec(deployment_name, edges_info, datasource_uid):
         for device, info in edge_info["info"].items():
             n_indexes = info["size"]
             type = info["type"]
-            devices.append((device, n_indexes, type))
+            aggregate = info.get("aggregate", "")
+            units = info.get("units", "")
+            devices.append((device, n_indexes, type, aggregate, units))
         edges[edge] = devices
     generate_dashboard_json(deployment_name, edges, datasource_uid)
 

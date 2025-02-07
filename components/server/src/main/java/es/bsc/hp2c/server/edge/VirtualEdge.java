@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static es.bsc.hp2c.common.utils.CommUtils.parseAmqpPublishFunctions;
 import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
 
 /**
@@ -35,11 +36,12 @@ public class VirtualEdge {
     private final Map<String, VirtualComm.VirtualDevice> devices;
     private boolean isAvailable;
     private long lastHeartbeat;
+
     private float x;
+
     private float y;
     private ArrayList<String> connections;
     private boolean modified;
-
     /**
      * Basic constructor when passing all the essential parameters explicitly.
      * @param label Edge label
@@ -66,7 +68,6 @@ public class VirtualEdge {
         for (String d : devicesMap.keySet()){
             devices.put(d, (VirtualComm.VirtualDevice) devicesMap.get(d));
         }
-
         // Set devices' availability
         JSONArray jDevices = jEdgeSetup.getJSONArray("devices");
         for (Object device : jDevices){
@@ -74,6 +75,21 @@ public class VirtualEdge {
             String deviceLabel = jDevice.getString("label").replace(" ", "").replace("-","");
             boolean availability = jDevice.getBoolean("availability");
             this.setDeviceAvailability(deviceLabel, availability);
+            String amqpAggregate = jDevice.getJSONObject("properties").optString("amqp-aggregate", "");
+
+            Object units = "";
+            if (jDevice.has("units")) {
+                units = jDevice.get("units");
+            }
+            JSONObject jProperties = jDevice.getJSONObject("properties");
+
+            if (!amqpAggregate.isEmpty()){
+                if (devicesMap.get(deviceLabel).isSensitive()){
+                    VirtualComm.VirtualSensor<?> virtualSensor = (VirtualComm.VirtualSensor<?>) devicesMap.get(deviceLabel);
+                    virtualSensor.setAggregate(amqpAggregate);
+                    virtualSensor.setUnits(units);
+                }
+            }
         }
 
         this.isAvailable = jGlobalProps.getBoolean("available");
@@ -88,6 +104,22 @@ public class VirtualEdge {
             this.connections.add(jConnections.getString(i));
         }
         this.modified = true;
+        parseAmqpPublishFunctions(jEdgeSetup);
+    }
+
+    public void update(VirtualEdge newEdge){
+        for (VirtualComm.VirtualDevice d : newEdge.getDeviceMap().values()){
+            String deviceLabel = ((Device) d).getLabel();
+            if (this.getDeviceMap().containsKey(deviceLabel)) {
+                boolean deviceAvailability = ((Device) d).getDeviceAvailability();
+                this.setDeviceAvailability(deviceLabel, deviceAvailability);
+            } else {
+                this.devices.put(deviceLabel, d);
+            }
+        }
+        this.x = newEdge.getX();
+        this.y = newEdge.getY();
+        this.connections = newEdge.getConnections();
     }
 
     public boolean equals(VirtualEdge oldEdge){
@@ -135,7 +167,7 @@ public class VirtualEdge {
             String deviceLabel = entry.getKey();
             Device device = (Device) entry.getValue();
             JSONObject jDevice = new JSONObject();
-            jDevice.put("is_available", entry.getValue().isAvailable());
+            jDevice.put("is_available", ((Device) entry.getValue()).getDeviceAvailability());
             jDevice.put("type", ((Device) entry.getValue()).getType());
             boolean isActionable = false;
             if (device.isActionable()) {
@@ -148,9 +180,24 @@ public class VirtualEdge {
                     jDevice.put("categories", actuator.getCategories());
                 }
             }
-            else{
+            if (device.isSensitive()){
                 VirtualComm.VirtualSensor<?> sensor = (VirtualComm.VirtualSensor<?>) device;
-                jDevice.put("size", sensor.getSize());
+                String aggregate = sensor.getAggregate();
+                jDevice.put("aggregate", aggregate);
+                if (aggregate.equals("phasor")) {
+                    jDevice.put("size", 2);
+                } else {
+                    jDevice.put("size", sensor.getSize());
+                }
+
+                Object unitsObject = sensor.getUnits();
+                if (unitsObject instanceof String) {
+                    jDevice.put("units", (String) unitsObject);
+                } else if (unitsObject instanceof JSONArray) {
+                    jDevice.put("units", (JSONArray) unitsObject);
+                } else {
+                    throw new IllegalArgumentException("Unsupported 'units' type for device type: " + device.getType());
+                }
             }
             jDevice.put("isActionable", isActionable);
             jDevicesInfo.put(deviceLabel, jDevice);
@@ -159,11 +206,11 @@ public class VirtualEdge {
     }
 
     public void setDeviceAvailability(String deviceLabel, boolean availability){
-        devices.get(deviceLabel).setAvailability(availability);
+        ((Device) devices.get(deviceLabel)).setDeviceAvailability(availability);
     }
 
     public boolean getDeviceAvailability(String deviceLabel){
-        return devices.get(deviceLabel).isAvailable();
+        return ((Device) devices.get(deviceLabel)).getDeviceAvailability();
     }
 
     public String getLabel() {
@@ -192,6 +239,18 @@ public class VirtualEdge {
 
     public void setLastHeartbeat(long lastHeartbeat) {
         this.lastHeartbeat = lastHeartbeat;
+    }
+
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    public ArrayList<String> getConnections() {
+        return connections;
     }
 
     public long getLastHeartbeat() {

@@ -16,12 +16,14 @@
 package es.bsc.hp2c.common.generic;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.time.Instant;
+import java.util.Arrays;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
-import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.common.utils.*;
+import org.json.JSONObject;
 
 /**
  * This class interacts with a switch of the electrical network. It has a property (states), representing device's
@@ -32,12 +34,28 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     public enum State {
         ON,
         OFF,
-        NULL
+        NULL;
+
+        @Override
+        public String toString() {
+            switch (this) {
+                case ON:
+                    return "ON";
+                case OFF:
+                    return "OFF";
+                case NULL:
+                    return "NULL";
+                default:
+                    return super.toString();
+            }
+        }
     }
 
     protected State[] states;
 
-    private ArrayList<Runnable> onReadFunctions;
+    private MeasurementWindow<State[]> window;
+
+    private OnReadFunctions onReadFunctions;
 
     /**
      * Creates a new instance of switch;
@@ -46,9 +64,10 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
      * @param position device position
      * @param size device number of phases
      */
-    protected Switch(String label, float[] position, int size) {
+    protected Switch(String label, float[] position, int size, JSONObject jProperties, JSONObject jGlobalProperties) {
         super(label, position);
-        this.onReadFunctions = new ArrayList<>();
+        window = new MeasurementWindow(FileUtils.getWindowSize(jProperties, jGlobalProperties, label));
+        this.onReadFunctions = new OnReadFunctions();
         this.states = new State[size];
         for (int i = 0; i < size; ++i){
             this.states[i] = null;
@@ -66,11 +85,18 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     }
 
     @Override
-    public abstract void sensed(R values);
+    public abstract void sensed(R values, Instant timestamp);
 
     @Override
-    public void sensed(byte[] messageBytes) {
-        sensed(decodeValuesSensor(messageBytes));
+    public MeasurementWindow<Float[]> sensed(byte[] bWindow) {
+        MeasurementWindow<State[]> window = MeasurementWindow.decode(bWindow);
+        MeasurementWindow<Float[]> returnWindow = new MeasurementWindow<>(window.getCapacity());
+        for (Measurement<State[]> m : window.getMeasurementsOlderToNewer()){
+            Float[] value = actuatedValues(m.getValue());
+            sensed((R) value, m.getTimestamp());
+            returnWindow.addMeasurement(m.getTimestamp(), value);
+        }
+        return returnWindow;
     }
 
     @Override
@@ -86,8 +112,9 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
      *
      * @param action runnable implementing the action
      */
-    public void addOnReadFunction(Runnable action) {
-        this.onReadFunctions.add(action);
+    @Override
+    public void addOnReadFunction(Runnable action, int interval, String label, boolean onRead) {
+        this.onReadFunctions.addFunc(new OnReadFunction<State[]>(action, interval, label, onRead));
     }
 
     /**
@@ -95,8 +122,19 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
      *
      */
     public void onRead() {
-        for (Runnable action : this.onReadFunctions) {
-            action.run();
+        for (OnReadFunction orf : this.onReadFunctions.getOnReadFuncs()) {
+            if (orf.isOnChange()) {
+                if (orf.changed(this.getCurrentValues())){ //changed() will update its last value if needed
+                    orf.getRunnable().run();
+                }
+            } else {
+                if (orf.getCounter() == orf.getInterval()) {
+                    orf.getRunnable().run();
+                    orf.resetCounter();
+                } else {
+                    orf.incrementCounter();
+                }
+            }
         }
     }
 
@@ -114,8 +152,13 @@ public abstract class Switch<R> extends Device implements Sensor<R, Switch.State
     @Override
     public final State[] getCurrentValues() { return this.states; }
 
-    protected void setValues(State[] values) {
+    public MeasurementWindow<State[]> getWindow(){
+        return this.window;
+    }
+
+    protected void setValues(State[] values, Instant timestamp) {
         this.states = values;
+        this.window.addMeasurement(timestamp, values);
         this.setLastUpdate();
     }
     
