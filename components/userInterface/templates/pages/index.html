@@ -126,23 +126,34 @@
                 </div>
             </div>
 
-
             <div class="tab-pane fade active show" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-                <div class="table-responsive" >
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <script src="{% static 'assets/js/d3.v7.min.js' %}"></script>
-                        <script src="{% static 'assets/js/topojson.v3.min.js' %}"></script>
-                    </head>
-                    <body>
-                        <svg id="map-container"></svg>
-                        <script>
-                            {{ script_content|safe }}
-                        </script>
-                    </body>
+                <div class="table-responsive">
+                    <table class="table">
+                        <tr>
+                            <td>
+                                <div style="margin-top: 50px;">
+                                    <iframe class="alerts" src="{{ alerts_link }}" width="560" height="400" frameborder="0"></iframe>
+                                </div>
+                            </td>
+                            <td>
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                    <script src="{% static 'assets/js/d3.v7.min.js' %}"></script>
+                                    <script src="{% static 'assets/js/topojson.v3.min.js' %}"></script>
+                                </head>
+                                <body>
+                                    <svg id="map-container"></svg>
+                                    <script>
+                                        {{ script_content|safe }}
+                                    </script>
+                                </body>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-            </div>
+</div>
+
 
 
         </div>

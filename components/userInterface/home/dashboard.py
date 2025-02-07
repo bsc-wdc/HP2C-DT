@@ -1,7 +1,6 @@
 "This module contains the methods used for creating and displaying the dashboard, including showing device states and rendering edges on a geomap."
-
-
-
+import ast
+import re
 import json
 import os
 
@@ -9,6 +8,7 @@ import requests
 from requests import RequestException
 
 from home.models import Edge, Device, Deployment
+from home.utils import parse_string_to_list
 
 
 def geomap(server_port, server_url):
@@ -41,8 +41,8 @@ def geomap(server_port, server_url):
             const svgHeight = +svg.attr("height");
 
             const projection = d3.geoNaturalEarth1()
-                .scale(5000)
-                .translate([svgWidth / 4.25, svgHeight * 4.15]);
+                .scale(4500)
+                .translate([svgWidth / 6, svgHeight * 3.6]);
 
             const path = d3.geoPath()
                 .projection(projection);
@@ -201,6 +201,10 @@ def get_deployment(edges_info, deployment_name, grafana_url, server_url,
         deployment.save()
 
         panels = dashboard_data['dashboard']['panels']
+        dashboard_name = deployment.dashboard_name.replace("-", "").replace(" ", "")
+        deployment.alerts_link = get_alerts_link(panels, grafana_url,
+                                                 deployment, dashboard_name)
+        deployment.save()
         # Create instances of Edge and Device
         get_devices(deployment, panels, edges_info, grafana_url)
         try:
@@ -247,9 +251,9 @@ def get_devices(deployment_model, panels, edges_info, grafana_url):
                                 grafana_url))
             device_model.table_link = table_link
             device_model.timeseries_link = timeseries_link
+            device_model.size = int(attributes["size"])
             if attributes["isActionable"]:
                 device_model.is_actionable = True
-                device_model.size = int(attributes["size"])
                 if attributes["isCategorical"]:
                     device_model.is_categorical = True
                     device_model.categories = attributes["categories"]
@@ -272,23 +276,337 @@ def get_panel_links(deployment, edge, device, panels, grafana_url):
     table_link = None
     timeseries_link = None
     for index, panel in enumerate(panels):
-        panel_id = index + 1
-        # Get the name of the edge and the device from the panel title
-        title_parts = panel['title'].split(' - ')
-        edge_name = title_parts[0].replace("-", "").replace(" ", "")
-        device_name = title_parts[1].replace("-", "").replace(" ", "")
-        is_table = False
-        if "(Table)" in edge_name:
-            is_table = True
-            edge_name = edge_name.replace("(Table)", "")
-        if edge_name == edge and device_name == device:
-            if is_table:
-                table_link = (f"http://{grafana_url}/d-solo/{deployment.uid}/"
-                              f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
-                              f"&panelId={panel_id}")
-            else:
-                timeseries_link = (
-                    f"http://{grafana_url}/d-solo/{deployment.uid}/"
-                    f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
-                    f"&panelId={panel_id}")
+        title = panel['title']
+        if title != "Alerts":
+            panel_id = index + 1
+            # Get the name of the edge and the device from the panel title
+            title_parts = title.split(' - ')
+            edge_name = title_parts[0].replace("-", "").replace(" ", "")
+            device_name = title_parts[1].replace("-", "").replace(" ", "")
+            is_table = False
+            if "(Table)" in edge_name:
+                is_table = True
+                edge_name = edge_name.replace("(Table)", "")
+            if edge_name == edge and device_name == device:
+                if is_table:
+                    table_link = (f"http://{grafana_url}/d-solo/{deployment.uid}/"
+                                  f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
+                                  f"&panelId={panel_id}")
+                else:
+                    timeseries_link = (
+                        f"http://{grafana_url}/d-solo/{deployment.uid}/"
+                        f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
+                        f"&panelId={panel_id}")
+
     return table_link, timeseries_link
+
+
+def create_alert_rule_json(alarm_name, edge_name, device_name, datasource_uid, folder_uid):
+    """
+    Creates a JSON payload for creating a new alert rule in Grafana.
+
+    Args:
+        alarm_name (str): The name of the alarm.
+        edge_name (str): The name of the edge (or "-" if not applicable).
+        device_name (str): The name of the device (or "-" if not applicable).
+        datasource_uid (str): The UID of the datasource in Grafana.
+        folder_uid (str): The UID of the folder where the alert rule will be stored.
+
+    Returns:
+        dict: The JSON payload for the Grafana API.
+    """
+    # Define the query to check the alarm status
+    query = f"SELECT \"status\" FROM alarms WHERE \"alarm\" = '{alarm_name}' AND \"edge\" = '{edge_name}' AND \"device\" = '{device_name}'"
+    # Create the JSON payload
+    alert_rule = {
+        "title": f"{alarm_name}_{edge_name}_{device_name}",
+        "ruleGroup": "API",
+        "folderUID": folder_uid,
+        "noDataState": "OK",
+        "execErrState": "OK",
+        "for": "10s",
+        "orgId": 1,
+        "uid": "",
+        "condition": "B",
+        "annotations": {
+            "summary": f"Alarm triggered for {alarm_name} on edge {edge_name} and device {device_name}"
+        },
+        "labels": {
+            "alarm": alarm_name,
+            "edge": edge_name,
+            "device": device_name
+        },
+        "data": [
+            {
+                "refId": "A",
+                "relativeTimeRange": {
+                    "from": 600,
+                    "to": 0
+                },
+                "datasourceUid": datasource_uid,
+                "model": {
+                    "intervalMs": 1000,
+                    "maxDataPoints": 43200,
+                    "query": query,
+                    "rawQuery": True,
+                    "refId": "A",
+                    "resultFormat": "time_series"
+                }
+            },
+            {
+                "refId": "B",
+                "relativeTimeRange": {
+                    "from": 600,
+                    "to": 0
+                },
+                "datasourceUid": "__expr__",
+                "model": {
+                    "conditions": [
+                        {
+                            "evaluator": {
+                                "params": [],
+                                "type": "gt"
+                            },
+                            "operator": {
+                                "type": "and"
+                            },
+                            "query": {
+                                "params": ["B"]
+                            },
+                            "reducer": {
+                                "params": [],
+                                "type": "last"
+                            },
+                            "type": "query"
+                        }
+                    ],
+                    "datasource": {
+                        "type": "__expr__",
+                        "uid": "__expr__"
+                    },
+                    "expression": "A",
+                    "intervalMs": 1000,
+                    "maxDataPoints": 43200,
+                    "reducer": "last",
+                    "refId": "B",
+                    "type": "reduce"
+                }
+            },
+            {
+                "refId": "C",
+                "relativeTimeRange": {
+                    "from": 600,
+                    "to": 0
+                },
+                "datasourceUid": "__expr__",
+                "model": {
+                    "conditions": [
+                        {
+                            "evaluator": {
+                                "params": [0],  # Threshold value (status > 0)
+                                "type": "gt"
+                            },
+                            "operator": {
+                                "type": "and"
+                            },
+                            "query": {
+                                "params": ["C"]
+                            },
+                            "reducer": {
+                                "params": [],
+                                "type": "last"
+                            },
+                            "type": "query"
+                        }
+                    ],
+                    "datasource": {
+                        "type": "__expr__",
+                        "uid": "__expr__"
+                    },
+                    "expression": "B",
+                    "intervalMs": 1000,
+                    "maxDataPoints": 43200,
+                    "refId": "C",
+                    "type": "threshold"
+                }
+            }
+        ]
+    }
+    return alert_rule
+
+
+def get_alerts_list(server_url, server_port):
+    alerts_list = None
+    server_responded = False
+
+    try:
+        response = requests.get(f"{server_url}/getAlarms")
+        alerts_list = response.text
+        server_responded = True
+    except RequestException:
+        try:
+            if "LOCAL_IP" in os.environ:
+                server_ip = os.getenv("LOCAL_IP")
+                server_url = f"http://{server_ip}:{server_port}"
+                response = requests.get(f"{server_url}/getAlarms")
+                alerts_list = response.text
+                server_responded = True
+        except RequestException:
+            print("Error getting the alerts list")
+
+    if not server_responded:
+        print(f"Server {server_url} doesn't respond. Is it running?", flush=True)
+
+    if alerts_list is None:
+        print("Alerts list is empty", flush=True)
+        return None
+
+    try:
+        print("Raw alerts list response:", alerts_list)
+        alerts_list = parse_string_to_list(alerts_list)
+    except (ValueError, SyntaxError):
+        print("Failed to decode alerts list", flush=True)
+        return None
+
+    return alerts_list
+
+
+
+def post_alert_rules(alert_rules, URLs, grafana_api_keys):
+    """
+    Posts alert rules to the Grafana API.
+
+    Args:
+        alert_rules (list): A list of JSON payloads for alert rules.
+        grafana_url (str): The base URL of the Grafana instance.
+        api_key (str): The Grafana API key for authentication.
+
+    Returns:
+        None
+    """
+    for url in URLs:
+        for api_key in grafana_api_keys:
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+
+            for rule in alert_rules:
+                try:
+                    response = requests.post(
+                        f"{url}/api/v1/provisioning/alert-rules",
+                        headers=headers,
+                        json=rule
+                    )
+
+                    if response.status_code == 200:
+                        print(f"Successfully created alert rule: {rule['title']}")
+                    else:
+                        print(f"Failed to create alert rule: {rule['title']}")
+                        print(f"Response: {response.text}")
+                except requests.RequestException as e:
+                    print(f"Error posting alert rule {rule['title']}: {e}")
+
+
+def create_folder(URLs, GRAFANA_API_KEY):
+    print("Getting folder UID...")
+    folder_uid = ""
+    grafana_connected = False
+
+    for url in URLs:
+        if grafana_connected:
+            break
+        print(f"Trying URL {url} to handle folder UID...", flush=True)
+        try:
+            response = requests.get(f"{url}/api/folders", headers={
+                "Authorization": f"Bearer {GRAFANA_API_KEY}"})
+            data = response.json()
+            for item in data:
+                folder_uid = item["uid"]
+                response = requests.delete(
+                    f"{url}/api/folders/{folder_uid}?forceDeleteRules=true",
+                    headers={"Authorization": f"Bearer {GRAFANA_API_KEY}"})
+                grafana_connected = True
+
+            if folder_uid:
+                grafana_connected = True
+                break
+        except RequestException as _:
+            print("Error requesting to url: ", url, flush=True)
+        except Exception as e:
+            print(e)
+
+    FOLDER_JSON = {
+        "title": "DTAlarms",
+        "overwrite": True
+    }
+
+    folder_uid = ""
+    for url in URLs:
+        try:
+            headers = {
+                "Authorization": f"Bearer {GRAFANA_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            print("Creating folder: ", FOLDER_JSON)
+            response = requests.post(f"{url}/api/folders", headers=headers,
+                                     json=FOLDER_JSON)
+
+            if response.status_code == 200:
+                response = response.json()
+                folder_uid = response["uid"]
+        except RequestException as _:
+            print("Error requesting to url: ", url, flush=True)
+
+    if not folder_uid:
+        print("Datasource influxdb uid not found")
+        exit(1)
+    print("Folder uid: ", folder_uid)
+    return folder_uid
+
+def create_alerts_panel(datasource_uid):
+    PANEL_JSON = {
+        "type": "alertlist",
+        "title": "Alerts",
+        "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 14,
+            "h": 14
+        },
+        "datasource": {
+            "uid": f"{datasource_uid}",
+            "type": "influxdb"
+        },
+        "options": {
+            "viewMode": "list",
+            "groupMode": "default",
+            "groupBy": [],
+            "maxItems": 20,
+            "sortOrder": 1,
+            "dashboardAlerts": False,
+            "alertName": "",
+            "alertInstanceLabelFilter": "",
+            "stateFilter": {
+                "firing": True,
+                "pending": True,
+                "noData": True,
+                "normal": True,
+                "error": True
+            }
+        }
+    }
+    return PANEL_JSON
+
+
+def get_alerts_link(panels, grafana_url, deployment, dashboard_name):
+    panel_id = 0
+    for index, panel in enumerate(panels):
+        title = panel['title']
+        if title == "Alerts":
+            panel_id = index + 1
+            break
+
+    return (f"http://{grafana_url}/d-solo/{deployment.uid}/"
+            f"{dashboard_name}?orgId=1&refresh=5s&theme=light"
+            f"&panelId={panel_id}")

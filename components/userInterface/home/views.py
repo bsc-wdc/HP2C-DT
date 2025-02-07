@@ -111,12 +111,14 @@ def index(request):
                     elif device.is_actionable:
                         form = NonCategoricalDeviceForm(device)
                     forms.append((device, form))
+            alerts_link = deployment.alerts_link
         except Exception as e:
             print(e)
         script_content = geomap(server_port, server_url)
         return render(request, 'pages/index.html',
                       {'edgeDevices': edgeDevices, 'forms': forms,
-                       'script_content': script_content})
+                       'script_content': script_content,
+                       'alerts_link': alerts_link})
 
 
 @csrf_exempt

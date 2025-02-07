@@ -35,6 +35,7 @@ class Deployment(models.Model):
     uid = models.CharField(max_length=100, default="")
     dashboard_name = models.CharField(max_length=100, default="")
     server_url = models.CharField(max_length=100, default="http://localhost:8080")
+    alerts_link = models.CharField(max_length=100, default="")
     def __str__(self):
         return self.name
 

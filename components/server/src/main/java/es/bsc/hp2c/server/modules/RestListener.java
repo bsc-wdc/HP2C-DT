@@ -20,7 +20,6 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 
 import es.bsc.hp2c.HP2CServer.ActuatorValidity;
-import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 import org.json.JSONArray;
@@ -29,10 +28,13 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static es.bsc.hp2c.HP2CServer.checkActuator;
+import static es.bsc.hp2c.HP2CServer.getDB;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 
 /**
@@ -54,6 +56,7 @@ public class RestListener {
         server.createContext("/getGeoInfo", new GetGeoInfoHandler());
         server.createContext("/getEdgesInfo", new GetEdgesInfoHandler());
         server.createContext("/setUpdated", new SetUpdatedHandler());
+        server.createContext("/getAlarms", new GetAlarmsHandler());
         // Start the server
         server.start();
         System.out.println("HTTP Server started on port " + REST_PORT);
@@ -150,6 +153,22 @@ public class RestListener {
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
             os.write(jEdgesInfo.toString().getBytes());
+            os.close();
+        }
+    }
+
+    static class GetAlarmsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            DatabaseHandler db = getDB();
+            Set<ArrayList<String>> alarmsTriples = db.getUniqueAlarmTriples();
+            String response = "";
+
+            System.out.println("[RestListener] Sending requested alarms: " + alarmsTriples);
+            exchange.sendResponseHeaders(200, response.length() + alarmsTriples.toString().getBytes().length);
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.write(alarmsTriples.toString().getBytes());
             os.close();
         }
     }
@@ -256,5 +275,7 @@ public class RestListener {
             }
         }
     }
+
+
 }
 

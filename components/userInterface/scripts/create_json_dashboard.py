@@ -2,6 +2,8 @@ import json
 import os
 import sys
 
+from home.dashboard import create_alerts_panel
+
 
 def generate_panel_timeseries(edge_name, device, datasource_uid):
     targets = []
@@ -245,6 +247,9 @@ def generate_dashboard_json(deployment_name, edge_device_dict, datasource_uid):
             }
             panels.append(panel_table)
             panels.append(panel_timeseries)
+
+    alerts_panel = create_alerts_panel(datasource_uid)
+    panels.append(alerts_panel)
 
     dashboard_title = f"hp2cdt - {deployment_name}"
     dashboard = {

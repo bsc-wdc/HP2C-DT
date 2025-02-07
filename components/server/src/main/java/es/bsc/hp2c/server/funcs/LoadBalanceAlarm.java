@@ -5,22 +5,24 @@ import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.funcs.Func;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.server.device.VirtualAmmeter;
+import es.bsc.hp2c.server.modules.AlarmHandler;
 import org.json.JSONObject;
 
 import java.util.*;
 
 import static es.bsc.hp2c.HP2CServer.*;
-import static es.bsc.hp2c.common.utils.AlarmHandler.*;
 
 public class LoadBalanceAlarm extends Func {
     private float imbalance_range;
+    private AlarmHandler alarms;
 
     public LoadBalanceAlarm(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
             throws FunctionInstantiationException {
         super(sensors, actuators, others);
+        alarms = getAlarms();
         try {
             imbalance_range = others.getFloat("imbalance-range");
-            addNewAlarm("LoadBalanceAlarm");
+            alarms.addNewAlarm("LoadBalanceAlarm");
         } catch (Exception e){
             throw new FunctionInstantiationException("[LoadBalanceAlarm] 'imbalance-range' must be defined in " +
                     "'other' section");
@@ -89,10 +91,9 @@ public class LoadBalanceAlarm extends Func {
                 String infoMessage = "Load imbalance detected: max=" + maxCurrent + " (" + maxPair + ") " +
                         "min=" + minCurrent + " (" + minPair + ")";
                 System.out.println("[LoadBalanceAlarm]" + infoMessage);
-
-                writeAlarm("LoadBalanceAlarm", null, null, infoMessage);
+                alarms.writeAlarm("LoadBalanceAlarm", null, null, infoMessage, true);
             } else { // Update alarm (check if timeout has expired)
-                updateAlarm("LoadBalanceAlarm", null, null);
+                alarms.writeAlarm("LoadBalanceAlarm", null, null, null, false);
             }
         }
     }
