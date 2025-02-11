@@ -98,12 +98,7 @@ public final class CommUtils {
 
         if (!new File(deploymentFile).isFile()) {
             // Check if the current working directory ends with "server"
-            String cwd = Paths.get("").toAbsolutePath().toString();
-            if (cwd.endsWith("server")) {
-                deploymentFile = "../../deployments/testbed/deployment_setup.json";
-            } else {
-                deploymentFile = "deployments/testbed/deployment_setup.json";
-            }
+            deploymentFile = "deployments/testbed/deployment_setup.json";
 
             if (!new File(deploymentFile).isFile()) {
                 throw new IOException("Could not find 'deployment_setup.json'");

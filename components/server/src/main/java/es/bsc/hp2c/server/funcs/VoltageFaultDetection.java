@@ -35,9 +35,6 @@ public class VoltageFaultDetection extends Func {
 
             if (file.exists() && file.isFile()) {
                 path = "/data/nominal_voltages.json";
-            }
-            else if (cwd.endsWith("server")) {
-                path = "../../deployments/defaults/nominal_voltages.json";
             } else {
                 path = "deployments/defaults/nominal_voltages.json";
             }

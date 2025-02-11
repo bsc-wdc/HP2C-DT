@@ -39,7 +39,7 @@ public class PythonFunc extends Func {
         this.actuators = actuators;
         this.moduleName = jParams.getString("module_name");
         this.methodName = jParams.optString("method_name", null);
-        this.otherFuncParams = jParams.optJSONObject("other_func_parameters", null);
+        this.otherFuncParams = jParams.optJSONObject("other_func_parameters");
 
         // Initialize the Python server
         this.pythonHandler = new PythonHandler(moduleName);

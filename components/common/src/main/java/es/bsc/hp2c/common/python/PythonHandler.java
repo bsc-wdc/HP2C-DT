@@ -3,6 +3,7 @@ package es.bsc.hp2c.common.python;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.File;
 
 import java.util.Map;
 import java.util.UUID;
@@ -15,7 +16,7 @@ import java.util.UUID;
  *
  */
 public class PythonHandler extends Thread {
-    private final String serverPath = "/home/eiraola/projects/hp2cdt/components/udsServer/uds_server.py";  // TODO: implement for relative folders and Docker
+    private String serverPath;
     private final String moduleName;
     private final String socketPath;
 
@@ -26,6 +27,12 @@ public class PythonHandler extends Thread {
      *                   server. Func modules must be located in the 'udsServer/funcs' directory
      */
     public PythonHandler(String moduleName) {
+        File dockerEnvFile = new File("/.dockerenv");
+        if (dockerEnvFile.isFile()){
+            serverPath = "/app/udsServer/uds_server.py";
+        } else{
+            serverPath = "components/udsServer/uds_server.py";  // TODO: implement for relative folders and Docker
+        }
         this.moduleName = moduleName;
         UUID uuid = UUID.randomUUID();
         this.socketPath = "/tmp/hp2c_" + moduleName + "_" + uuid + ".sock";
@@ -36,7 +43,7 @@ public class PythonHandler extends Thread {
      */
     public void run() {
         ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("python", serverPath, socketPath, moduleName);
+        processBuilder.command("python3", serverPath, socketPath, moduleName);
 
         // Set environment variables
         // TODO: Set PYTHONUNBUFFERED to flush Python prints (but lower performance!)
