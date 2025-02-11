@@ -37,7 +37,7 @@ RUN mvn clean package
 
 FROM compss/python_agents:${COMPSS_VERSION}
 # Copy built JAR from the builder stage
-COPY --from=builder /app/server/target/*.jar /app/server.jar
+COPY --from=builder /app/server/target/server*.jar /app/server.jar
 
 # Copy Python requirements
 COPY ./udsServer/ /app/udsServer

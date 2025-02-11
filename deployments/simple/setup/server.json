@@ -83,6 +83,34 @@
           "frequency": 10
         }
       }
+    },
+    {
+      "label": "Fibonacci",
+      "lang": "Python",
+      "parameters": {
+        "sensors": {
+          "edge1": ["Voltmeter Gen1"]
+        },
+        "actuators": {
+          "edge1": ["Three-Phase Switch Gen1"]
+        },
+        "other": {
+          "module_name": "fibonacci",
+          "method_name": "main",
+          "other_func_parameters": {
+            "n": 4
+          }
+        }
+      },
+      "trigger": {
+        "type": "onRead",
+        "parameters": {
+          "trigger-sensor": {
+            "edge1": ["Voltmeter Gen1"]
+          },
+          "interval": 1
+        }
+      }
     }
   ]
 }
