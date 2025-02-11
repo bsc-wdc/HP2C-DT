@@ -22,5 +22,5 @@ fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-docker build -t ${ORG_NAME}/server:${HP2C_VERSION} -f Dockerfile.server ${SCRIPT_DIR}/../../components/
+docker build -t ${ORG_NAME}/server:${HP2C_VERSION} --build-arg="COMPSS_VERSION=${COMPSS_VERSION}" -f Dockerfile.server ${SCRIPT_DIR}/../../components/
 docker tag ${ORG_NAME}/server:${HP2C_VERSION} ${ORG_NAME}/server:latest
