@@ -153,6 +153,16 @@ public abstract class Device {
     }
 
     /**
+     * Get a JSONObject containing the info from a device. Useful for passing devices to python funcs
+     * @return JSONObject containing: classtype, datatypes, and measurement (if sensor)
+     */
+    public abstract JSONObject  getDeviceInfo();
+
+    public abstract int getSize();
+
+    public abstract JSONObject getDataTypes();
+
+    /**
      * Returns the type of the device, which we take from the "highest" subclass.
      *
      * @return type of the device

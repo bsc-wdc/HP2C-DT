@@ -81,4 +81,19 @@ public class OpalVarmeter extends Varmeter<Float[]> implements OpalSensor<Float[
     public final Float[] decodeValuesSensor(byte[] message) {
         return BytesToFloatArray(message);
     }
+
+    @Override
+    public int getSize(){
+        return this.indexes.length;
+    }
+
+    @Override
+    public JSONObject getDataTypes(){
+        JSONObject result = new JSONObject();
+        JSONObject sensorTypes = new JSONObject();
+        sensorTypes.put("human-readable", Float[].class.getSimpleName());
+        sensorTypes.put("raw", Float[].class.getSimpleName());
+        result.put("sensor", sensorTypes);
+        return result;
+    }
 }

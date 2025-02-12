@@ -1,8 +1,11 @@
 package es.bsc.hp2c.common.utils;
 
+import org.json.JSONObject;
+
 import java.io.*;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 
 /**
  * Class in charge of storing an array of measurements. In order to send and receive windows, it implements serializable
@@ -122,5 +125,23 @@ public class MeasurementWindow<T> implements Serializable{
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public ArrayList<JSONObject> getMeasurementsArray() {
+        ArrayList<JSONObject> measurementsList = new ArrayList<>();
+
+        for (int i = 0; i < size; i++) {
+            int index = (start + i) % window.length;
+            Measurement<T> measurement = window[index];
+
+            if (measurement != null) {
+                JSONObject json = new JSONObject();
+                json.put("timestamp", measurement.getTimestamp().toString());
+                json.put("value", measurement.getValue());
+                measurementsList.add(json);
+            }
+        }
+
+        return measurementsList;
     }
 }

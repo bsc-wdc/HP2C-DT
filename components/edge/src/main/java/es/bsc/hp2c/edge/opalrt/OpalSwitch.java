@@ -128,4 +128,20 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
         Float[] floatArray = BytesToFloatArray(message);
         return sensedValues(floatArray);
     }
+
+    @Override
+    public int getSize(){
+        return this.indexes.length;
+    }
+
+    @Override
+    public JSONObject getDataTypes(){
+        JSONObject result = new JSONObject();
+        JSONObject sensorTypes = new JSONObject();
+        sensorTypes.put("human-readable", Switch.State[].class.getSimpleName());
+        sensorTypes.put("raw", Float[].class.getSimpleName());
+        result.put("sensor", sensorTypes);
+        result.put("actuator", Switch.State[].class.getSimpleName());
+        return result;
+    }
 }

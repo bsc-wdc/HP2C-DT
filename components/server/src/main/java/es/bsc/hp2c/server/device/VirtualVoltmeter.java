@@ -97,4 +97,14 @@ public class VirtualVoltmeter extends Voltmeter<Float[]> implements VirtualSenso
     public Object getUnits() {
         return units;
     }
+
+    @Override
+    public JSONObject getDataTypes(){
+        JSONObject result = new JSONObject();
+        JSONObject sensorTypes = new JSONObject();
+        sensorTypes.put("human-readable", Float[].class.getTypeName());
+        sensorTypes.put("raw", Float[].class.getTypeName());
+        result.put("sensor", sensorTypes);
+        return result;
+    }
 }

@@ -44,4 +44,19 @@ public class MsgBox extends MsgAlert {
 
     @Override
     public String decodeValuesActuator(byte[] messageBytes) { return null; }
+
+    @Override
+    public JSONObject getDeviceInfo() {
+        return null;
+    }
+
+    @Override
+    public int getSize() {
+        return 0;
+    }
+
+    @Override
+    public JSONObject getDataTypes() {
+        return null;
+    }
 }

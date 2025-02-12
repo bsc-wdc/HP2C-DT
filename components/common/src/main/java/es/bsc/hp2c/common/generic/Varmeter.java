@@ -139,4 +139,17 @@ public abstract class Varmeter<R> extends Device implements Sensor<R, Float[]> {
         return true;
     }
 
+    @Override
+    public JSONObject getDeviceInfo(){
+        JSONObject result = new JSONObject();
+        int size = this.getSize();
+        String className = this.getClass().getSimpleName();
+        JSONObject types = getDataTypes();
+        result.put("size", size);
+        result.put("class-name", className);
+        result.put("measurements", this.window.getMeasurementsArray());
+        result.put("types", types);
+        return result;
+    }
+
 }

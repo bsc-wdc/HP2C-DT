@@ -129,9 +129,9 @@ public class UDSClient {
         for (String edgeLabel:sensors.keySet()){
             JSONObject jEdge = new JSONObject();
             for (Sensor<?,?> sensor:sensors.get(edgeLabel)){
-                Object[] values = (Object[]) sensor.getCurrentValues();
-                String name = ((Device) sensor).getLabel();
-                jEdge.put(name, values);
+                Device d = (Device) sensor;
+                String name = d.getLabel();
+                jEdge.put(name, d.getDeviceInfo());
             }
             jSensors.put(edgeLabel, jEdge);
         }
@@ -142,8 +142,9 @@ public class UDSClient {
         for (String edgeLabel:actuators.keySet()){
             JSONObject jEdge = new JSONObject();
             for (Actuator<?> actuator:actuators.get(edgeLabel)){
-                String name = ((Device) actuator).getLabel();
-                jEdge.put(name, actuator.getClass().getSimpleName());
+                Device d = (Device) actuator;
+                String name = d.getLabel();
+                jEdge.put(name, d.getDeviceInfo());
             }
             jActuators.put(edgeLabel, jEdge);
         }

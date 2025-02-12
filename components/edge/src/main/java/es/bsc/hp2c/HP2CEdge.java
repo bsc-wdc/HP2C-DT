@@ -122,7 +122,6 @@ public class HP2CEdge {
                         throw new IllegalArgumentException("Unsupported 'units' type for device: " + deviceLabel);
                     }
                 }
-
             }
 
             Timer timer = new Timer();

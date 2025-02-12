@@ -82,4 +82,19 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
         return BytesToFloatArray(message);
     }
 
+    @Override
+    public int getSize(){
+        return this.indexes.length;
+    }
+
+    @Override
+    public JSONObject getDataTypes(){
+        JSONObject result = new JSONObject();
+        JSONObject sensorTypes = new JSONObject();
+        sensorTypes.put("human-readable", Float[].class.getSimpleName());
+        sensorTypes.put("raw", Float[].class.getSimpleName());
+        result.put("sensor", sensorTypes);
+        return result;
+    }
+
 }

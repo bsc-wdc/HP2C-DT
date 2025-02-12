@@ -106,5 +106,21 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     public final Float[] decodeValuesActuator(byte[] message) {
         return BytesToFloatArray(message);
     }
+
+    @Override
+    public int getSize(){
+        return this.indexes.length;
+    }
+
+    @Override
+    public JSONObject getDataTypes(){
+        JSONObject result = new JSONObject();
+        JSONObject sensorTypes = new JSONObject();
+        sensorTypes.put("human-readable", Float[].class.getSimpleName());
+        sensorTypes.put("raw", Float[].class.getSimpleName());
+        result.put("sensor", sensorTypes);
+        result.put("actuator", Float[].class.getSimpleName());
+        return result;
+    }
 }
 
