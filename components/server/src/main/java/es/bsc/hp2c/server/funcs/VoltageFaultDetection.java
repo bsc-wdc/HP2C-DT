@@ -22,7 +22,8 @@ public class VoltageFaultDetection extends Func {
     private float threshold;
     private AlarmHandler alarms;
 
-    public VoltageFaultDetection(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
+    public VoltageFaultDetection(Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String,
+            ArrayList<Actuator<?>>> actuators, JSONObject others)
             throws FunctionInstantiationException {
         super(sensors, actuators, others);
         try {

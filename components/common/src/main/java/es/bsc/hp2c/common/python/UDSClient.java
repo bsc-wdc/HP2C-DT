@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Connects to an existing UNIX socket as a client to make periodic calls of a Python function and handles its output
@@ -54,13 +55,13 @@ public class UDSClient {
     /**
      * Runs the Python function, passing the list of parameters funcParams parsed inside a JSON object.
      *
-     * @param sensors List of sensors to add to the python parameters
-     * @param actuators List of actuators to add to the python parameters
+     * @param sensors Map of edge-sensors to add to the python parameters
+     * @param actuators Map of edge-actuators to add to the python parameters
      * @param otherFuncParams list of parameters of the destination function
      * @return Result of the Python operation
      */
-    public synchronized JSONObject call(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators,
-                                        JSONObject otherFuncParams) {
+    public synchronized JSONObject call(Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String,
+            ArrayList<Actuator<?>>> actuators, JSONObject otherFuncParams) {
         if (socket == null || !socket.isConnected()) {
             throw new IllegalStateException("[UDSClient] " + moduleName + ": Socket is not connected.");
         }
@@ -93,8 +94,8 @@ public class UDSClient {
      *
      * @param moduleName      The module name to include in the JSON.
      * @param methodName    The function name to include in the JSON.
-     * @param sensors         List of sensor objects, each having a `getCurrentValues()` method.
-     * @param actuators       List of actuator objects
+     * @param sensors         Map of edge-sensor objects, each having a `getCurrentValues()` method.
+     * @param actuators       Map of edge-actuator objects
      * @param otherFuncParams A JSONObject containing additional function parameters.
      * @return A JSONObject with the complete key-value set of params with the following structure
      * {
@@ -102,10 +103,14 @@ public class UDSClient {
      *   "method_name": <METHOD_NAME>,
      *   "parameters": {
      *     "sensors": {
-     *       "VoltmeterGen1": [<SENSOR_VALUE_1>, <SENSOR_VALUE_2>],
+     *          "edge1":{
+     *              "VoltmeterGen1": [<SENSOR_VALUE_1>, <SENSOR_VALUE_2>]
+     *           },
      *     },
      *     "actuators": {
-     *       "ThreePhaseSwitchGen1": <ACTUATOR_TYPE_1>,
+     *          "edge1":{
+     *              "ThreePhaseSwitchGen1": <ACTUATOR_TYPE_1>
+     *          },
      *     },
      *     "param1": <PARAM1_VALUE>,
      *     "param2": <PARAM2_VALUE>,
@@ -113,31 +118,40 @@ public class UDSClient {
      *   }
      * }
      */
-    public static JSONObject composeJSON(String moduleName, String methodName, ArrayList<Sensor<?, ?>> sensors,
-                                         ArrayList<Actuator<?>> actuators, JSONObject otherFuncParams) {
+    public static JSONObject composeJSON(String moduleName, String methodName, Map<String, ArrayList<Sensor<?, ?>>> sensors,
+                                         Map<String, ArrayList<Actuator<?>>> actuators, JSONObject otherFuncParams) {
         JSONObject jPyParams = new JSONObject();
         jPyParams.put("module_name", moduleName);
         jPyParams.put("method_name", methodName);
 
-        // Constructing actuators map
-        HashMap<String, Object[]> sensorMap = new HashMap<>();
-        for (Sensor<?,?> sensor : sensors) {
-            Object[] values = (Object[]) sensor.getCurrentValues();
-            String name = ((Device) sensor).getLabel();
-            sensorMap.put(name, values);
+        // Constructing sensors JSON
+        JSONObject jSensors = new JSONObject();
+        for (String edgeLabel:sensors.keySet()){
+            JSONObject jEdge = new JSONObject();
+            for (Sensor<?,?> sensor:sensors.get(edgeLabel)){
+                Object[] values = (Object[]) sensor.getCurrentValues();
+                String name = ((Device) sensor).getLabel();
+                jEdge.put(name, values);
+            }
+            jSensors.put(edgeLabel, jEdge);
         }
 
-        // Constructing actuators map
-        HashMap<String, String> actuatorMap = new HashMap<>();
-        for (Actuator<?> actuator : actuators) {
-            String name = ((Device) actuator).getLabel();
-            actuatorMap.put(name, actuator.getClass().getSimpleName());
+
+        // Constructing actuators JSON
+        JSONObject jActuators = new JSONObject();
+        for (String edgeLabel:actuators.keySet()){
+            JSONObject jEdge = new JSONObject();
+            for (Actuator<?> actuator:actuators.get(edgeLabel)){
+                String name = ((Device) actuator).getLabel();
+                jEdge.put(name, actuator.getClass().getSimpleName());
+            }
+            jActuators.put(edgeLabel, jEdge);
         }
 
         // Constructing parameters object
         JSONObject parameters = new JSONObject();
-        parameters.put("sensors", sensorMap);
-        parameters.put("actuators", actuatorMap);
+        parameters.put("sensors", jSensors);
+        parameters.put("actuators", jActuators);
 
         // Merging otherFuncParams into parameters
         for (String key : otherFuncParams.keySet()) {

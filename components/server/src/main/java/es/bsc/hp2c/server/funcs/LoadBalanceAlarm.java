@@ -16,7 +16,8 @@ public class LoadBalanceAlarm extends Func {
     private float imbalance_range;
     private AlarmHandler alarms;
 
-    public LoadBalanceAlarm(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
+    public LoadBalanceAlarm(Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String,
+            ArrayList<Actuator<?>>> actuators, JSONObject others)
             throws FunctionInstantiationException {
         super(sensors, actuators, others);
         alarms = getAlarms();

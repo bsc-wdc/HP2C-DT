@@ -7,6 +7,7 @@ import es.bsc.hp2c.common.funcs.Func;
 import es.bsc.hp2c.common.types.Sensor;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.json.JSONObject;
 
@@ -21,40 +22,56 @@ public class VoltLimitation extends Func {
     /**
      * VoltLimitation method constructor.
      *
-     * @param sensors   List of sensors declared for the function.
-     * @param actuators List of actuators declared for the function.
+     * @param sensors   Map of edge-sensors declared for the function.
+     * @param actuators List of edge-actuators declared for the function.
      * @param others    Rest of parameters declared for de function.
      */
-    public VoltLimitation(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
+    public VoltLimitation(Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String, ArrayList<Actuator<?>>> actuators, JSONObject others)
             throws FunctionInstantiationException {
 
         super(sensors, actuators, others);
 
-        if (!(sensors.size() == 1)) {
+        ArrayList<Sensor<?,?>> sensorsList;
+        if (sensors != null && !sensors.isEmpty()) {
+            sensorsList = sensors.values().iterator().next();
+        } else {
+            throw new IllegalArgumentException("The sensors map is empty or null.");
+        }
+
+        ArrayList<Actuator<?>> actuatorsList;
+        if (actuators != null && !actuators.isEmpty()) {
+            actuatorsList = actuators.values().iterator().next();
+        } else {
+            throw new IllegalArgumentException("The actuators map is empty or null.");
+        }
+
+        if (sensorsList.size() != 1) {
             throw new FunctionInstantiationException("Sensors must be exactly one voltmeter");
         }
 
-        if (!(sensors.get(0) instanceof Voltmeter)) {
-            throw new FunctionInstantiationException("The sensor must be a voltmeter");
-        }
-
-        if (!(actuators.size() == 1)) {
+        if (actuatorsList.size() != 1) {
             throw new FunctionInstantiationException("Actuators must be exactly one switch");
         }
 
-        if (!(actuators.get(0) instanceof Switch)) {
+        Sensor<?, ?> sensor = sensorsList.get(0);
+        if (!(sensor instanceof Voltmeter)) {
+            throw new FunctionInstantiationException("The sensor must be a voltmeter");
+        }
+        this.voltmeter = (Voltmeter<?>) sensor;
+
+        Actuator<?> actuator = actuatorsList.get(0);
+        if (!(actuator instanceof Switch)) {
             throw new FunctionInstantiationException("The actuator must be a switch");
         }
+        this.sw = (Switch) actuator;
 
-        this.voltmeter = (Voltmeter) sensors.get(0);
-        this.sw = (Switch) actuators.get(0);
         try {
             this.threshold = others.getFloat("threshold");
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new FunctionInstantiationException("'threshold' field must be provided");
         }
-
     }
+
 
     @Override
     public void run() {

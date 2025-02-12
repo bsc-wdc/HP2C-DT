@@ -5,6 +5,7 @@ import es.bsc.hp2c.common.types.Sensor;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 
 import es.bsc.hp2c.common.python.PythonHandler;
 import es.bsc.hp2c.common.python.UDSClient;
@@ -18,8 +19,8 @@ import static java.lang.Thread.sleep;
 public class PythonFunc extends Func {
     private final UDSClient socket;
     private final PythonHandler pythonHandler;
-    private final ArrayList<Sensor<?, ?>> sensors;
-    private final ArrayList<Actuator<?>> actuators;
+    private final Map<String, ArrayList<Sensor<?, ?>>> sensors;
+    private final Map<String, ArrayList<Actuator<?>>> actuators;
     private final String moduleName;
     private final String methodName;
     private final JSONObject otherFuncParams;
@@ -27,11 +28,12 @@ public class PythonFunc extends Func {
     /**
      * PythonFunc method constructor.
      *
-     * @param sensors   List of sensors declared for the function.
-     * @param actuators List of actuators declared for the function.
+     * @param sensors   Map of edge-sensors declared for the function.
+     * @param actuators Map of edge-actuators declared for the function.
      * @param jParams   Contains the Python module and function names, and other parameters to the function
      */
-    public PythonFunc(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject jParams)
+    public PythonFunc(Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String,
+            ArrayList<Actuator<?>>> actuators, JSONObject jParams)
             throws FunctionInstantiationException, IOException, InterruptedException {
 
         super(sensors, actuators, jParams);

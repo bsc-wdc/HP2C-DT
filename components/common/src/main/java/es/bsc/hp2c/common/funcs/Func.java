@@ -16,6 +16,7 @@
 package es.bsc.hp2c.common.funcs;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
@@ -290,9 +291,8 @@ public abstract class Func implements Runnable {
 
         // Process Sensors
         JSONObject jSensors = parameters.optJSONObject("sensors");
-        ArrayList<Sensor<?, ?>> sensors = new ArrayList<>();
+        Map<String, ArrayList<Sensor<?, ?>>> sensors = new HashMap<>();
         if (jSensors != null) {
-
             // Search the Sensors for every edge
             for (String edgeLabel : jSensors.keySet()) {
                 JSONArray edgeSensors = jSensors.getJSONArray(edgeLabel);
@@ -307,7 +307,15 @@ public abstract class Func implements Runnable {
                                         edgeLabel + " was not found");
                     }
                     if (d.isSensitive()) {
-                        sensors.add((Sensor<?, ?>) d);
+                        if(sensors.containsKey(edgeLabel)) {
+                            System.out.println("Adding" + d.getLabel());
+                            sensors.get(edgeLabel).add((Sensor<?, ?>) d);
+                        }
+                        else{
+                            ArrayList<Sensor<?,?>> aux = new ArrayList<>();
+                            aux.add((Sensor<?, ?>) d);
+                            sensors.put(edgeLabel, aux);
+                        }
                     } else {
                         throw new FunctionInstantiationException(
                                 "Function " + funcLabel + " cannot be instantiated because " + label + " on edge " +
@@ -319,7 +327,7 @@ public abstract class Func implements Runnable {
 
         // Process Actuators
         JSONObject jActuators = parameters.optJSONObject("actuators");
-        ArrayList<Actuator<?>> actuators = new ArrayList<>();
+        Map<String, ArrayList<Actuator<?>>> actuators = new HashMap<>();
         if (jActuators != null) {
 
             // Search the Actuators for every edge
@@ -335,7 +343,14 @@ public abstract class Func implements Runnable {
                                         edgeLabel + " was not found");
                     }
                     if (d.isActionable()) {
-                        actuators.add((Actuator<?>) d);
+                        if(actuators.containsKey(edgeLabel)) {
+                            actuators.get(edgeLabel).add((Actuator<?>) d);
+                        }
+                        else{
+                            ArrayList <Actuator<?>> aux = new ArrayList<>();
+                            aux.add((Actuator<?>) d);
+                            actuators.put(edgeLabel, aux);
+                        }
                     } else {
                         throw new FunctionInstantiationException(
                                 "Function " + funcLabel + " cannot be instantiated because " + label + " on edge " +
@@ -348,7 +363,8 @@ public abstract class Func implements Runnable {
     }
 
     private static Runnable getAction(String funcLabel, String driver, JSONObject parameters,
-                                      ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, String lang)
+                                      Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String,
+                                      ArrayList<Actuator<?>>> actuators, String lang)
             throws FunctionInstantiationException {
         // Use a specific driver for Python funcs if driver is not specified
         if (driver.isEmpty() && (lang.equals("python") || lang.equals("Python") || lang.equals("PYTHON"))) {
@@ -359,10 +375,9 @@ public abstract class Func implements Runnable {
         JSONObject jOther;
         try {
             Class<?> c = Class.forName(driver);
-            ct = c.getConstructor(ArrayList.class, ArrayList.class, JSONObject.class);
+            ct = c.getConstructor(Map.class, Map.class, JSONObject.class);
             jOther = parameters.getJSONObject("other");
-            Runnable action = (Runnable) ct.newInstance(sensors, actuators, jOther);
-            return action;
+            return (Runnable) ct.newInstance(sensors, actuators, jOther);
 
         } catch (ClassNotFoundException e) {
             throw new FunctionInstantiationException("Error finding the driver " + driver, e);
@@ -524,11 +539,11 @@ public abstract class Func implements Runnable {
     /**
      * Function constructor.
      * 
-     * @param sensors   List of sensors declared for the function.
-     * @param actuators List of actuators declared for the function.
+     * @param sensors   Map of sensors declared for the function.
+     * @param actuators Map of actuators declared for the function.
      * @param others    Rest of parameters declared for de function.
      */
-    protected Func(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others) {
+    protected Func(Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String, ArrayList<Actuator<?>>> actuators, JSONObject others) {
 
     }
 }

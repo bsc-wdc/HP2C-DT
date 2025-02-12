@@ -6,7 +6,9 @@ import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.funcs.Func;
 import es.bsc.hp2c.common.types.Sensor;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.json.JSONObject;
 
@@ -20,32 +22,42 @@ public class CalcPower extends Func {
     /**
      * Calcpower method constructor.
      * 
-     * @param sensors   List of sensors declared for the function.
-     * @param actuators List of actuators declared for the function.
+     * @param sensors   Map of edge-sensors declared for the function.
+     * @param actuators Map of edge-actuators declared for the function.
      * @param others    Rest of parameters declared for de function.
      */
-    public CalcPower(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
+    public CalcPower(Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String, ArrayList<Actuator<?>>> actuators, JSONObject others)
             throws IllegalArgumentException {
 
         super(sensors, actuators, others);
 
-        if (sensors.size() != 2) {
+        Sensor<?, ?> sensor1 = null;
+        Sensor<?, ?> sensor2 = null;
+
+        try {
+            ArrayList<Sensor<?, ?>> sensorsList = sensors.values().iterator().next();
+            sensor1 = sensorsList.get(0);
+            if (sensorsList.size() == 2) {
+                sensor2 = sensorsList.get(1);
+            } else if (sensors.size() == 2) {
+                sensor2 = sensors.values().iterator().next().get(0);
+            }
+        }
+        catch (Exception e){
             throw new IllegalArgumentException("Sensors must be exactly two: one voltmeter and one ammeter");
         }
 
-        if (!(sensors.get(0) instanceof Voltmeter && sensors.get(1) instanceof Ammeter)
-                && !((sensors.get(1) instanceof Voltmeter && sensors.get(0) instanceof Ammeter))) {
+        if (!(sensor1 instanceof Voltmeter && sensor2 instanceof Ammeter)
+                && !(sensor2 instanceof Voltmeter && sensor1 instanceof Ammeter)) {
             throw new IllegalArgumentException("Sensors must be one voltmeter and one ammeter");
         }
 
-        if (sensors.get(0) instanceof Voltmeter && sensors.get(1) instanceof Ammeter) {
-            this.voltmeter = (Voltmeter<?>) sensors.get(0);
-            this.ammeter = (Ammeter<?>) sensors.get(1);
-        }
-
-        else {
-            this.voltmeter = (Voltmeter<?>) sensors.get(1);
-            this.ammeter = (Ammeter<?>) sensors.get(0);
+        if (sensor1 instanceof Voltmeter) {
+            this.voltmeter = (Voltmeter<?>) sensor1;
+            this.ammeter = (Ammeter<?>) sensor2;
+        } else {
+            this.voltmeter = (Voltmeter<?>) sensor2;
+            this.ammeter = (Ammeter<?>) sensor1;
         }
     }
 
