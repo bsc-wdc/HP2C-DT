@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.time.Instant;
 
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
+import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
 
 /**
  * Represent a switch implemented accessible within a local OpalRT.
@@ -81,6 +82,21 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
         // Actuate
         Float[] rawValues = actuatedValues(values);
         OpalComm.commitActuation(this, rawValues);
+    }
+
+    @Override
+    public void actuate(String[] stringValues) throws IOException {
+        Float[] values = new Float[stringValues.length];
+        for (int i = 0; i < stringValues.length; i++) {
+            if (stringValues[i].equalsIgnoreCase("null") || stringValues[i].equalsIgnoreCase("none")) {
+                values[i] = Float.NEGATIVE_INFINITY;
+            } else if (isNumeric(stringValues[i])){
+                values[i] = Float.parseFloat(stringValues[i]);
+            } else {
+                throw new IOException("Values passed to Generator must be numeric or null/none.");
+            }
+        }
+        actuate(values);
     }
 
     protected Float[] actuatedValues(Float[] values){

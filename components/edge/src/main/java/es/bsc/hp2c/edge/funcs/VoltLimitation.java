@@ -34,8 +34,6 @@ public class VoltLimitation extends Func {
         ArrayList<Sensor<?,?>> sensorsList;
         if (sensors != null && !sensors.isEmpty()) {
             sensorsList = sensors.values().iterator().next();
-            System.out.println("Sensors: " + sensors.toString());
-            System.out.println("Sensors list: " + sensorsList.toString());
         } else {
             throw new IllegalArgumentException("The sensors map is empty or null.");
         }

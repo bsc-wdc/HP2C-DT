@@ -36,6 +36,13 @@ public class Console extends MsgAlert {
     }
 
     @Override
+    public void actuate(String[] message){
+        for (String s : message){
+            actuate(s);
+        }
+    }
+
+    @Override
     public void actuate(byte[] byteValues) throws IOException { }
 
     @Override

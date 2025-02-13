@@ -1,6 +1,7 @@
 package es.bsc.hp2c.common.funcs;
 
 import es.bsc.hp2c.common.types.Actuator;
+import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.util.Map;
 
 import es.bsc.hp2c.common.python.PythonHandler;
 import es.bsc.hp2c.common.python.UDSClient;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import static java.lang.Thread.sleep;
@@ -56,7 +58,51 @@ public class PythonFunc extends Func {
     public void run() {
         System.out.println("[PythonFunc] Calling Python function " + moduleName);
         JSONObject jResponse = socket.call(sensors, actuators, otherFuncParams);
+        if (jResponse.get("actuations") != null){
+            JSONObject actuations = jResponse.getJSONObject("actuations");
+            for (String edgeName:actuations.keySet()){
+                JSONObject edge = actuations.getJSONObject(edgeName);
+                for (String deviceName:edge.keySet()){
+                    JSONArray values = edge.optJSONArray(deviceName);
+                    if (values != null){
+                        Actuator<?> actuator = getActuator(edgeName, deviceName);
+                        try {
+                            actuator.actuate(getStringArray(values));
+                        } catch (IOException e) {
+                            System.err.print("[PythonFunc] Error actuating over actuator " +
+                                    ((Device) actuator).getLabel() + " in func " + moduleName + ": " + e);
+                        }
+                    }
+                }
+            }
+        }
         System.out.println("[PythonFunc] " + moduleName + " results: \n" + jResponse.toString(4));
+    }
+
+    public Actuator<?> getActuator(String edgeName, String deviceName){
+        while(actuators.values().iterator().hasNext()){
+            String currentEdgeName = actuators.keySet().iterator().next();
+            if(currentEdgeName.equals(edgeName)){
+                for (Actuator<?> actuator:actuators.get(currentEdgeName)){
+                    if (deviceName.equals(((Device) actuator).getLabel())){
+                        return actuator;
+                    }
+                }
+                return null;
+            }
+        }
+        return null;
+    }
+
+    public static String[] getStringArray(JSONArray jsonArray) {
+        if (jsonArray == null) {
+            return new String[0];
+        }
+        String[] stringArray = new String[jsonArray.length()];
+        for (int i = 0; i < jsonArray.length(); i++) {
+            stringArray[i] = jsonArray.optString(i);
+        }
+        return stringArray;
     }
 
 }

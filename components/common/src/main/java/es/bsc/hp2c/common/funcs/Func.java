@@ -308,7 +308,6 @@ public abstract class Func implements Runnable {
                     }
                     if (d.isSensitive()) {
                         if(sensors.containsKey(edgeLabel)) {
-                            System.out.println("Adding" + d.getLabel());
                             sensors.get(edgeLabel).add((Sensor<?, ?>) d);
                         }
                         else{

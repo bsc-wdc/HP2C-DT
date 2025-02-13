@@ -27,7 +27,7 @@ def main(sensors, actuators, n):
         result = [0, 1]
         for _ in range(2, n):
             result.append(result[-1] + result[-2])
-    return result
+    return result, {} # Return the result and an empty dictionary (actuations)
 
 
 def other_main(sensors, actuators, n):

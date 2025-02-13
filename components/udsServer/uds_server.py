@@ -112,9 +112,9 @@ def call_func(f, module_name, method_name, func_params):
         print(f"Running {module_name}.{method_name}")
         if f:
             # Compute function
-            result = f(**func_params)
+            result, actuations = f(**func_params)
             # Wrap result in a JSON object and return
-            result_json = json.dumps({"result": result})
+            result_json = json.dumps({"result": result, "actuations":actuations})
             return result_json
         else:
             print(f"Warning: Method {method_name} not found in module.")
