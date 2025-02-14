@@ -24,10 +24,11 @@ def import_function(module_name, method_name):
     return getattr(module, method_name)
 
 
-def main(socket_path, func_module, buffer_size=1024):
+def main(socket_path, func_module, buffer_size=5000):
     print("Instantiating socket", socket_path)
     print("func_module:", func_module)
     print("buffer_size:", buffer_size)
+    buffer_size = int(buffer_size)
 
     # Preload function for fast response
     func_handler = import_function(func_module, DEFAULT_METHOD_NAME)

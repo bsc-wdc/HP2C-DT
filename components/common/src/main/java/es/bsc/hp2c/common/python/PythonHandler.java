@@ -19,6 +19,7 @@ public class PythonHandler extends Thread {
     private String serverPath;
     private final String moduleName;
     private final String socketPath;
+    private final String bufferSize;
 
     /**
      * Constructs a new PythonHandler.
@@ -26,7 +27,7 @@ public class PythonHandler extends Thread {
      * @param moduleName The Python function module name (without .py) that will ultimately be called by the Python
      *                   server. Func modules must be located in the 'udsServer/funcs' directory
      */
-    public PythonHandler(String moduleName) {
+    public PythonHandler(String moduleName, int bufferSize) {
         File dockerEnvFile = new File("/.dockerenv");
         if (dockerEnvFile.isFile()){
             serverPath = "/app/udsServer/uds_server.py";
@@ -36,6 +37,7 @@ public class PythonHandler extends Thread {
         this.moduleName = moduleName;
         UUID uuid = UUID.randomUUID();
         this.socketPath = "/tmp/hp2c_" + moduleName + "_" + uuid + ".sock";
+        this.bufferSize = String.valueOf(bufferSize);
     }
 
     /**
@@ -43,7 +45,7 @@ public class PythonHandler extends Thread {
      */
     public void run() {
         ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("python3", serverPath, socketPath, moduleName);
+        processBuilder.command("python3", serverPath, socketPath, moduleName, bufferSize);
 
         // Set environment variables
         // TODO: Set PYTHONUNBUFFERED to flush Python prints (but lower performance!)

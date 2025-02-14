@@ -2,7 +2,7 @@
     "global-properties":{
         "type": "edge",
         "label": "edge1",
-        "window-size": 100,
+        "window-size": 10,
         "comms":{
             "opal-udp": {
                 "protocol": "udp",

@@ -46,7 +46,8 @@ public class PythonFunc extends Func {
         this.otherFuncParams = jParams.optJSONObject("other_func_parameters");
 
         // Initialize the Python server
-        this.pythonHandler = new PythonHandler(moduleName);
+        int bufferSize = getBufferSize(sensors, actuators);
+        this.pythonHandler = new PythonHandler(moduleName, bufferSize);
         this.pythonHandler.start();
 
         // Now UDSClient connects to that socket as a client
@@ -105,4 +106,36 @@ public class PythonFunc extends Func {
         return stringArray;
     }
 
+    public static int getBufferSize(Map<String, ArrayList<Sensor<?, ?>>> sensors,
+                                    Map<String, ArrayList<Actuator<?>>> actuators){
+        int bufferSize = 0;
+        // Sensors
+        for (String edgeName:sensors.keySet()){
+            for (Sensor<?,?> sensor:sensors.get(edgeName)){
+                Device d = (Device) sensor;
+                int sensorSize = d.getSize();
+                int sensorCapacity = sensor.getWindow().getCapacity();
+                // [                          "measurement" field                        ] + [restOfFields]
+                // (approxEmptyMeasurementSize + doubleSize * sensorSize) * sensorCapacity + deviceJSONSize
+                // deviceJSONSize --> approximated number of bytes for "size", "class-name" and "types" fields
+                bufferSize += (50 + 20 * sensorSize) * sensorCapacity + 200;
+            }
+        }
+
+        // Actuators
+        for (String edgeName:actuators.keySet()) {
+            for (Actuator<?> actuator : actuators.get(edgeName)) {
+                bufferSize += 200; // approximated number of bytes for "size", "class-name" and "types"
+                Device d = (Device) actuator;
+                if (d.isSensitive()){
+                    Sensor<?,?> s = (Sensor<?, ?>) d;
+                    int sensorSize = d.getSize();
+                    int sensorCapacity = s.getWindow().getCapacity();
+                    bufferSize += (50 + 20 * sensorSize) * sensorCapacity;
+                }
+            }
+        }
+
+        return bufferSize;
+    }
 }
