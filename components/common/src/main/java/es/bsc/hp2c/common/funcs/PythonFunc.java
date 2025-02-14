@@ -46,7 +46,7 @@ public class PythonFunc extends Func {
         this.otherFuncParams = jParams.optJSONObject("other_func_parameters");
 
         // Initialize the Python server
-        int bufferSize = getBufferSize(sensors, actuators);
+        int bufferSize = getBufferSize(sensors, actuators, jParams);
         this.pythonHandler = new PythonHandler(moduleName, bufferSize);
         this.pythonHandler.start();
 
@@ -107,8 +107,9 @@ public class PythonFunc extends Func {
     }
 
     public static int getBufferSize(Map<String, ArrayList<Sensor<?, ?>>> sensors,
-                                    Map<String, ArrayList<Actuator<?>>> actuators){
-        int bufferSize = 0;
+                                    Map<String, ArrayList<Actuator<?>>> actuators, JSONObject jParams){
+        int bufferSize = jParams.toString().length();
+
         // Sensors
         for (String edgeName:sensors.keySet()){
             for (Sensor<?,?> sensor:sensors.get(edgeName)){

@@ -32,7 +32,7 @@ public class PythonHandler extends Thread {
         if (dockerEnvFile.isFile()){
             serverPath = "/app/udsServer/uds_server.py";
         } else{
-            serverPath = "components/udsServer/uds_server.py";  // TODO: implement for relative folders and Docker
+            serverPath = "components/udsServer/uds_server.py";
         }
         this.moduleName = moduleName;
         UUID uuid = UUID.randomUUID();

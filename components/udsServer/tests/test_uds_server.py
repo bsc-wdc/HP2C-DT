@@ -43,6 +43,7 @@ class TestUDSServer(unittest.TestCase):
             print(response)
             json_result = json.loads(response)
             self.assertEqual(json_result["result"], f"Test: {msg}")
+            self.assertEqual(json_result["actuations"], None)
 
         client.close()
 
