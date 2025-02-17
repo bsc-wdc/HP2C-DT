@@ -2,7 +2,6 @@ package es.bsc.hp2c.edge.funcs;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DeliverCallback;
-import es.bsc.hp2c.HP2CEdge;
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.funcs.Func;
@@ -14,7 +13,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Map;
 
-import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
+import es.bsc.hp2c.HP2CEdgeContext;
 
 /**
  * Start listener for incoming actuation AMQP messages
@@ -58,9 +57,9 @@ public class AmqpConsume extends Func {
         actuatorLabel = ((Device) actuator).getLabel();
 
         // Initialize AMQP communication
-        edgeLabel = getEdgeLabel();
-        channel = HP2CEdge.getChannel();
-        EXCHANGE_NAME = HP2CEdge.getExchangeName();
+        edgeLabel = HP2CEdgeContext.getEdgeLabel();
+        channel = HP2CEdgeContext.getChannel();
+        EXCHANGE_NAME = HP2CEdgeContext.getExchangeName();
         String baseTopic = "edge";
         String intermediateTopic = "actuators";
         routingKey = baseTopic + "." + edgeLabel + "." + intermediateTopic + "." + actuatorLabel;

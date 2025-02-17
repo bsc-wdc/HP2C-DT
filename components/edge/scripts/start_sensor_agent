@@ -10,6 +10,7 @@ curl -s -XPUT http://127.0.0.1:${REST_AGENT_PORT}/COMPSs/startApplication -H "co
 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <startApplication>
     <lang>JAVA</lang>
+    <ceiClass>es.bsc.hp2c.HP2CEdgeItf</ceiClass>
     
     <className>es.bsc.hp2c.HP2CEdge</className>
     <hasResult>false</hasResult>
