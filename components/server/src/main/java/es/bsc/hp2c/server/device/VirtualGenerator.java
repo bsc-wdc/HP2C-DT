@@ -19,13 +19,14 @@ import es.bsc.hp2c.common.generic.Generator;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.server.modules.AmqpManager;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 
-import static es.bsc.hp2c.HP2CServer.amqp;
+import static es.bsc.hp2c.HP2CServerContext.getAmqp;
 import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
 
 
@@ -65,6 +66,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     @Override
     public void actuate(Float[] values) throws IOException {
         byte[] byteValues = encodeValuesActuator(values);
+        AmqpManager amqp = getAmqp();
         amqp.virtualActuate(this, edgeLabel, byteValues);
     }
 

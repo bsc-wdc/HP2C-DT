@@ -13,8 +13,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static es.bsc.hp2c.HP2CServer.*;
-import static es.bsc.hp2c.server.modules.AlarmHandler.*;
+import static es.bsc.hp2c.HP2CServerContext.*;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 public class VoltageFaultDetection extends Func {

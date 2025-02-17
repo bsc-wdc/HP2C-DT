@@ -26,8 +26,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static es.bsc.hp2c.HP2CServer.getDevicesMap;
-import static es.bsc.hp2c.HP2CServer.getPathToSetup;
+import static es.bsc.hp2c.HP2CServerContext.getDevicesMap;
+import static es.bsc.hp2c.HP2CServerContext.getPathToSetup;
 import static es.bsc.hp2c.common.funcs.Func.loadFunctions;
 
 /**

@@ -32,7 +32,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static es.bsc.hp2c.HP2CServer.isVerbose;
+import static es.bsc.hp2c.HP2CServerContext.isVerbose;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 public class DatabaseHandler {
