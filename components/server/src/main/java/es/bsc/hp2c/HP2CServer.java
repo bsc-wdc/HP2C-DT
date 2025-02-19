@@ -44,11 +44,13 @@ public class HP2CServer {
     private static AlarmHandler alarms;
     private static final Map<String, VirtualEdge> edgeMap = new HashMap<>();
     private static boolean verbose = true;
-    private static String pathToSetup = "";
+    private static boolean useMetrics = false;
+    private static String pathToSetup = "deployments/simple/setup/server.json";
+    private static MetricsHandler metrics = null;
 
     /** Start and run Server modules. */
     public static void main(String[] args) {
-        pathToSetup = initPathToSetup(args);
+        parseArgs(args);
         // Load setup files
         String hostIp = getHostIp();
         // Deploy listener
@@ -59,6 +61,31 @@ public class HP2CServer {
             System.err.println("Server error: " + e.getMessage());
         }
     }
+
+
+    public static void parseArgs(String[] args) {
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "--setup_path":
+                    if (i + 1 < args.length) {
+                        pathToSetup = validateSetupPath(args[++i]);
+                    } else {
+                        System.err.println("Error: --setup_path requires a value.");
+                        System.exit(1);
+                    }
+                    break;
+                case "--metrics":
+                case "-m":
+                    useMetrics = true;
+                    break;
+                default:
+                    System.err.println("Warning: Ignoring unrecognized argument: " + args[i]);
+            }
+        }
+        System.out.println("Setup file: " + pathToSetup);
+        System.out.println("Use metrics: " + useMetrics);
+    }
+
 
     /**
      * Initialize AmqpManager, InfluxDB, and CLI connections.
@@ -72,42 +99,33 @@ public class HP2CServer {
         heartbeat = new EdgeHeartbeat(amqp, edgeMap);
         restServer = new RestListener(edgeMap);
         cli = new CLI(edgeMap);
+        if (useMetrics){
+            metrics = new MetricsHandler();
+        }
     }
 
-    private static String initPathToSetup(String[] args) {
-        String pathToSetup = "";
-        if (args.length == 1) {
-            File fileOrDir = new File(args[0]);
-
-            if (fileOrDir.isDirectory()) {
-                File[] jsonFiles = fileOrDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));
-
-                if (jsonFiles != null) {
-                    for (File jsonFile : jsonFiles) {
-                        try {
-                            JSONObject jsonObject = getJsonObject(jsonFile.getAbsolutePath());
-                            JSONObject globalProperties = jsonObject.optJSONObject("global-properties");
-
-                            if (globalProperties != null && "server".equals(globalProperties.optString("type"))) {
-                                pathToSetup = jsonFile.getAbsolutePath();
-                                System.out.println("Selected setup file: " + pathToSetup);
-                                return pathToSetup;
-                            }
-                        } catch (IOException e) {
-                            System.err.println("Error reading file: " + jsonFile.getName() + " - " + e.getMessage());
+    private static String validateSetupPath(String path) {
+        File fileOrDir = new File(path);
+        if (fileOrDir.isDirectory()) {
+            File[] jsonFiles = fileOrDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));
+            if (jsonFiles != null) {
+                for (File jsonFile : jsonFiles) {
+                    try {
+                        JSONObject jsonObject = getJsonObject(jsonFile.getAbsolutePath());
+                        JSONObject globalProperties = jsonObject.optJSONObject("global-properties");
+                        if (globalProperties != null && "server".equals(globalProperties.optString("type"))) {
+                            System.out.println("Selected setup file: " + jsonFile.getAbsolutePath());
+                            return jsonFile.getAbsolutePath();
                         }
+                    } catch (IOException e) {
+                        System.err.println("Error reading file: " + jsonFile.getName() + " - " + e.getMessage());
                     }
                 }
-                System.err.println("No valid server JSON file found in directory: " + args[0]);
-            } else {
-                System.err.println("Invalid path provided: " + args[0]);
-                System.exit(1);
             }
+            System.err.println("No valid server JSON file found in directory: " + path);
         } else {
-            pathToSetup = "deployments/simple/setup/server.json";
-        }
-        if (!pathToSetup.isEmpty()) {
-            System.out.println("Using server setup file: " + pathToSetup);
+            System.err.println("Invalid path provided: " + path);
+            System.exit(1);
         }
         return pathToSetup;
     }
@@ -279,5 +297,9 @@ public class HP2CServer {
 
     public static DatabaseHandler getDB(){
         return db;
+    }
+
+    public static MetricsHandler getMetrics(){
+        return metrics;
     }
 }

@@ -7,6 +7,7 @@ import es.bsc.hp2c.common.funcs.Func;
 import es.bsc.hp2c.common.types.Sensor;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -29,17 +30,17 @@ public class CalcPower extends Func {
             throws IllegalArgumentException {
 
         super(sensors, actuators, others);
-
         Sensor<?, ?> sensor1 = null;
         Sensor<?, ?> sensor2 = null;
 
         try {
-            ArrayList<Sensor<?, ?>> sensorsList = sensors.values().iterator().next();
+            Iterator<ArrayList<Sensor<?, ?>>> iterator = sensors.values().iterator();
+            ArrayList<Sensor<?, ?>> sensorsList = iterator.next();
             sensor1 = sensorsList.get(0);
             if (sensorsList.size() == 2) {
                 sensor2 = sensorsList.get(1);
             } else if (sensors.size() == 2) {
-                sensor2 = sensors.values().iterator().next().get(0);
+                sensor2 = iterator.next().get(0);
             }
         }
         catch (Exception e){

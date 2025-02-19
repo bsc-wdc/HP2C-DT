@@ -24,7 +24,6 @@ import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import es.bsc.hp2c.common.utils.Measurement;
 import es.bsc.hp2c.common.utils.MeasurementWindow;
-import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 
@@ -32,12 +31,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class AmqpManager {
     private final DatabaseHandler db;
     private static Channel channel = null;
     private final Map<String, VirtualEdge> edgeMap;
     private static final String EXCHANGE_NAME = "measurements";
+    private static MetricsHandler metrics = null;
 
     /**
      * Initialize AMQP Channel.
@@ -80,11 +82,20 @@ public class AmqpManager {
         channel.queueBind(queueName, EXCHANGE_NAME, routingKey);
         System.out.println("[AmqpManager] Awaiting requests");
 
+        metrics = HP2CServer.getMetrics();
+        Timer timer = new Timer();
+        if (metrics != null){
+            timer.scheduleAtFixedRate(metrics, 10000, 10000);
+        }
+
         DeliverCallback callback = (consumerTag, delivery) -> {
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
             try {
                 // Parse message. For instance: routingKey = "edge.edge1.sensors.voltmeter1"
                 byte[] message = delivery.getBody();
+                if (metrics != null){
+                    metrics.recordMessage(message.length);
+                }
                 // Check existence of pair edge-device
                 String edgeLabel = getEdgeLabel(senderRoutingKey);
                 String deviceName = getDeviceName(senderRoutingKey);

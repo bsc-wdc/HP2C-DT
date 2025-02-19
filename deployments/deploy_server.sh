@@ -12,6 +12,7 @@ usage() {
                     bsc
                     bsc_subnet
                     (default: None)" 1>&2
+    echo " --metrics, -m: Use the metrics logger (default: false)"
     exit 1
 }
 
@@ -23,6 +24,8 @@ COMM_SETUP=""
 
 # Parse command line arguments
 pos=1
+ENABLE_METRICS=0
+
 for arg in "$@"; do
     case $arg in
         -h)
@@ -36,6 +39,9 @@ for arg in "$@"; do
             ;;
         --comm=*)
             COMM_SETUP="${arg#*=}"
+            ;;
+        --metrics|-m)
+            ENABLE_METRICS=1
             ;;
         *)
             if [ $pos -eq 1 ]; then
@@ -144,6 +150,7 @@ docker run \
     -p 8080:8080 \
     -e LOCAL_IP=$ip_address \
     -e CUSTOM_IP=$custom_ip_address \
+    -e ENABLE_METRICS=$ENABLE_METRICS \
     ${DOCKER_IMAGE}
 
 echo "Testbed properly deployed"

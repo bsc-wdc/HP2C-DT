@@ -45,6 +45,8 @@ COPY ./udsServer/ /app/udsServer
 # Install Python dependencies
 RUN pip install --no-cache-dir -r /app/udsServer/requirements.txt
 
+ENV ENABLE_METRICS=${ENABLE_METRICS}
 
 # Specify the command to start the application using the desired main class
-CMD ["java", "-cp", "/app/server.jar", "es.bsc.hp2c.HP2CServer", "/data/server/"]
+CMD sh -c 'java -cp /app/server.jar es.bsc.hp2c.HP2CServer --setup_path /data/server/ $( [ "$ENABLE_METRICS" -eq 1 ] && echo "-m" )'
+
