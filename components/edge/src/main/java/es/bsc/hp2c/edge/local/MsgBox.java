@@ -40,8 +40,30 @@ public class MsgBox extends MsgAlert {
     }
 
     @Override
+    public void actuate(String[] message){
+        for (String s : message){
+            actuate(s);
+        }
+    }
+
+    @Override
     public void actuate(byte[] byteValues) throws IOException { }
 
     @Override
     public String decodeValuesActuator(byte[] messageBytes) { return null; }
+
+    @Override
+    public JSONObject getDeviceInfo() {
+        return null;
+    }
+
+    @Override
+    public int getSize() {
+        return 0;
+    }
+
+    @Override
+    public JSONObject getDataTypes() {
+        return null;
+    }
 }

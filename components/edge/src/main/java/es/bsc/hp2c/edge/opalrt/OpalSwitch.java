@@ -25,6 +25,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Arrays;
 
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
@@ -82,6 +83,20 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
         OpalComm.commitActuation(this, rawValues);
     }
 
+    @Override
+    public void actuate(String[] stringValues) throws IOException{
+        State[] values = new State[stringValues.length];
+        for (int i = 0; i < stringValues.length; i++) {
+            if (isState(stringValues[i])) {
+                values[i] = State.valueOf(stringValues[i].toUpperCase());
+            } else{
+                throw new IOException("Values passed to Switch must be of type State.\n" +
+                        "Options are: " + printableArray(State.values()));
+            }
+        }
+        actuate(values);
+    }
+
     protected Float[] actuatedValues(State[] values){
         Float[] outputValues = new Float[values.length];
         for (int i = 0; i < values.length; ++i) {
@@ -127,5 +142,21 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     public final State[] decodeValuesActuator(byte[] message) {
         Float[] floatArray = BytesToFloatArray(message);
         return sensedValues(floatArray);
+    }
+
+    @Override
+    public int getSize(){
+        return this.indexes.length;
+    }
+
+    @Override
+    public JSONObject getDataTypes(){
+        JSONObject result = new JSONObject();
+        JSONObject sensorTypes = new JSONObject();
+        sensorTypes.put("human-readable", Switch.State[].class.getSimpleName());
+        sensorTypes.put("raw", Float[].class.getSimpleName());
+        result.put("sensor", sensorTypes);
+        result.put("actuator", Switch.State[].class.getSimpleName());
+        return result;
     }
 }

@@ -30,11 +30,16 @@ public class Console extends MsgAlert {
         super(label, position);
     }
 
-
-
     @Override
     public void actuate(String message) {
         System.out.println(message);
+    }
+
+    @Override
+    public void actuate(String[] message){
+        for (String s : message){
+            actuate(s);
+        }
     }
 
     @Override
@@ -43,4 +48,18 @@ public class Console extends MsgAlert {
     @Override
     public String decodeValuesActuator(byte[] messageBytes) { return null; }
 
+    @Override
+    public JSONObject getDeviceInfo() {
+        return null;
+    }
+
+    @Override
+    public int getSize() {
+        return 0;
+    }
+
+    @Override
+    public JSONObject getDataTypes() {
+        return null;
+    }
 }

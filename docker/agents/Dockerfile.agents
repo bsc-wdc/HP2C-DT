@@ -1,4 +1,6 @@
-FROM compss/compss:3.2 as framework
+ARG COMPSS_VERSION
+
+FROM compss/compss:${COMPSS_VERSION} as framework
 
 
 ##################
@@ -26,9 +28,12 @@ WORKDIR /opt/COMPSs/Runtime/scripts/user
 ##################
 # JAVA + Setup
 ##################
-FROM openjdk:8-jdk-alpine as java_agent
+FROM openjdk:11-jdk-slim as java_agent
 
-RUN apk add --no-cache bash=4.4.19-r1 curl=7.64.0-r5 jq=1.6-r0
+RUN apt-get update && \
+    apt-get install -y curl bash jq && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=framework /opt/COMPSs/Runtime/compss-agent-impl.jar /opt/COMPSs/Runtime/compss-agent-impl.jar
 COPY --from=framework /opt/COMPSs/Runtime/compss-engine.jar /opt/COMPSs/Runtime/compss-engine.jar
@@ -63,7 +68,7 @@ FROM java_agent as python_agent
 
 RUN # Install python/pip
 ENV PYTHONUNBUFFERED=1
-RUN apk add --update --no-cache python3==3.6.9-r3 && \
+RUN apt-get update && apt-get install -y python3 python3-pip --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/* && \
     ln -sf python3 /usr/bin/python && \
-    python3 -m ensurepip && \
     pip3 install --no-cache-dir --upgrade pip setuptools

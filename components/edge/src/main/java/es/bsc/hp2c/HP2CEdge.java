@@ -20,7 +20,7 @@ import es.bsc.hp2c.common.utils.EdgeMap;
 import es.bsc.hp2c.edge.opalrt.OpalComm;
 import es.bsc.hp2c.common.types.Device;
 
-import es.bsc.hp2c.common.types.Func;
+import es.bsc.hp2c.common.funcs.Func;
 
 import com.rabbitmq.client.*;
 import org.json.JSONArray;
@@ -122,7 +122,6 @@ public class HP2CEdge {
                         throw new IllegalArgumentException("Unsupported 'units' type for device: " + deviceLabel);
                     }
                 }
-
             }
 
             Timer timer = new Timer();

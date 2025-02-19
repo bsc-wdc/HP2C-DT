@@ -2,7 +2,7 @@
     "global-properties":{
         "type": "edge",
         "label": "edge1",
-        "window-size": 100,
+        "window-size": 10,
         "comms":{
             "opal-udp": {
                 "protocol": "udp",
@@ -99,6 +99,28 @@
     "funcs":[
         {
             "label": "VoltLimitation",
+            "lang": "Python",
+            "parameters": {
+                "sensors": ["Voltmeter Gen1"],
+                "actuators": ["Three-Phase Switch Gen1"],
+                "other": {
+                    "module_name": "volt_limitation",
+                    "method_name": "main",
+                    "other_func_parameters": {
+                        "threshold": 100
+                    }
+                }
+            },
+            "trigger": {
+                "type": "onRead",
+                "parameters": {
+                    "trigger-sensor": ["Voltmeter Gen1"],
+                    "interval": 1
+                }
+            }
+        },
+        {
+            "label": "VoltLimitation",
             "lang": "Java",
             "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
             "parameters": {
@@ -118,7 +140,7 @@
         },
         {
             "label": "CalcPower",
-            "lang": "Python",
+            "lang": "Java",
             "method-name": "es.bsc.hp2c.edge.funcs.CalcPower",
             "parameters": {
                 "sensors": ["Voltmeter Gen1", "Ammeter Gen1"],
@@ -128,7 +150,7 @@
             "trigger": {
                 "type": "onFrequency",
                 "parameters": {
-                    "frequency": 10
+                    "frequency": 2
                 }
             }
         }

@@ -28,7 +28,7 @@ import java.util.TimerTask;
 
 import static es.bsc.hp2c.HP2CServer.getDevicesMap;
 import static es.bsc.hp2c.HP2CServer.getPathToSetup;
-import static es.bsc.hp2c.common.types.Func.loadFunctions;
+import static es.bsc.hp2c.common.funcs.Func.loadFunctions;
 
 /**
  * Heartbeat handler that starts:

@@ -1,31 +1,50 @@
 
-ARG COMPSS_VERSION=3.2
+ARG COMPSS_VERSION
 
-
-FROM openjdk:8-jdk-alpine as builder
+# ---------- Builder Stage ----------
+FROM openjdk:11-jdk-slim as builder
 ARG MAVEN_VERSION=3.9.3
 
-RUN apk add --no-cache bash=4.4.19-r1 curl=7.64.0-r5 tar=1.32-r0
+# Install necessary tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        bash \
+        curl \
+        tar && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Maven
 RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
-  && curl -fsSL -o /tmp/apache-maven.tar.gz https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
-  && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
-  && rm -f /tmp/apache-maven.tar.gz \
-  && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
+    && curl -fsSL -o /tmp/apache-maven.tar.gz https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+    && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
+    && rm -f /tmp/apache-maven.tar.gz \
+    && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
 
+ENV MAVEN_HOME=/usr/share/maven
+ENV MAVEN_CONFIG="$HOME/.m2"
 
-ENV MAVEN_HOME /usr/share/maven
-ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
- 
+# Build common module
 COPY ./common/ /app/common
 WORKDIR /app/common
 RUN mvn clean install
 
+# Build server module
 COPY ./server/ /app/server/
 WORKDIR /app/server/
 RUN mvn clean package
 
-FROM openjdk:8-jdk-alpine
-COPY --from=builder /app/server/target/*.jar /app/server.jar
+
+
+FROM compss/python_agents:${COMPSS_VERSION}
+# Copy built JAR from the builder stage
+COPY --from=builder /app/server/target/server*.jar /app/server.jar
+
+# Copy Python requirements
+COPY ./udsServer/ /app/udsServer
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r /app/udsServer/requirements.txt
+
 
 # Specify the command to start the application using the desired main class
 CMD ["java", "-cp", "/app/server.jar", "es.bsc.hp2c.HP2CServer", "/data/server/"]

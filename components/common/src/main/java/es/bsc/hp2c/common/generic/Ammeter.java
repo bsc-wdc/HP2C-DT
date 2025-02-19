@@ -16,6 +16,7 @@
 
 package es.bsc.hp2c.common.generic;
 
+import java.lang.reflect.Array;
 import java.time.Instant;
 import java.util.Arrays;
 
@@ -32,6 +33,8 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
     private Float[] values = null;
     private MeasurementWindow<Float[]> window;
     private OnReadFunctions onReadFunctions;
+    private Class<R> type;
+
 
     /**
      * Creates a new instance of ammeter;
@@ -139,6 +142,19 @@ public abstract class Ammeter<R> extends Device implements Sensor<R, Float[]> {
     @Override
     public final boolean isSensitive() {
         return true;
+    }
+
+    @Override
+    public JSONObject getDeviceInfo(){
+        JSONObject result = new JSONObject();
+        int size = this.getSize();
+        String className = this.getClass().getSimpleName();
+        JSONObject types = getDataTypes();
+        result.put("size", size);
+        result.put("class-name", className);
+        result.put("measurements", this.window.getMeasurementsArray());
+        result.put("types", types);
+        return result;
     }
 
 }

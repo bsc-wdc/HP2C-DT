@@ -2,7 +2,7 @@ package es.bsc.hp2c.server.funcs;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
-import es.bsc.hp2c.common.types.Func;
+import es.bsc.hp2c.common.funcs.Func;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.server.device.VirtualAmmeter;
 import es.bsc.hp2c.server.modules.AlarmHandler;
@@ -16,7 +16,8 @@ public class LoadBalanceAlarm extends Func {
     private float imbalance_range;
     private AlarmHandler alarms;
 
-    public LoadBalanceAlarm(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
+    public LoadBalanceAlarm(Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String,
+            ArrayList<Actuator<?>>> actuators, JSONObject others)
             throws FunctionInstantiationException {
         super(sensors, actuators, others);
         alarms = getAlarms();

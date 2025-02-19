@@ -168,12 +168,7 @@ public class DatabaseHandler {
         String configPath = "/run/secrets/config.json";
         File configFile = new File(configPath);
         if (!configFile.isFile()) {
-            String cwd = Paths.get("").toAbsolutePath().toString();
-            if (cwd.endsWith("server")) {
-                configPath = "../../config.json";
-            } else {
-                configPath = "config.json";
-            }
+            configPath = "config.json";
         }
         // Parse config file
         return getAuth(configPath);

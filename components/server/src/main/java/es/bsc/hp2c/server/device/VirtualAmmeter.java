@@ -16,6 +16,7 @@
 package es.bsc.hp2c.server.device;
 
 import es.bsc.hp2c.common.generic.Ammeter;
+import es.bsc.hp2c.common.generic.Switch;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import org.json.JSONObject;
@@ -98,5 +99,16 @@ public class VirtualAmmeter extends Ammeter<Float[]> implements VirtualSensor<Fl
     @Override
     public Object getUnits() {
         return units;
+    }
+
+    @Override
+    public JSONObject getDataTypes(){
+        JSONObject result = new JSONObject();
+        JSONObject sensorTypes = new JSONObject();
+        sensorTypes.put("human-readable", Switch.State[].class.getTypeName());
+        sensorTypes.put("raw", Float[].class.getTypeName());
+        result.put("sensor", sensorTypes);
+        result.put("actuator", Switch.State[].class.getTypeName());
+        return result;
     }
 }

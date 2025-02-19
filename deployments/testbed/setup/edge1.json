@@ -117,7 +117,7 @@
         },
         {
             "label": "CalcPower",
-            "lang": "Python",
+            "lang": "Java",
             "method-name": "es.bsc.hp2c.edge.funcs.CalcPower",
             "parameters": {
                 "sensors": ["Voltmeter Gen1", "Ammeter Gen1"],

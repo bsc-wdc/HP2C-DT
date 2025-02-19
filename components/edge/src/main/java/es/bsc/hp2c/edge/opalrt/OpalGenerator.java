@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.time.Instant;
 
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
+import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
 
 /**
  * Represent a switch implemented accessible within a local OpalRT.
@@ -83,6 +84,21 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
         OpalComm.commitActuation(this, rawValues);
     }
 
+    @Override
+    public void actuate(String[] stringValues) throws IOException {
+        Float[] values = new Float[stringValues.length];
+        for (int i = 0; i < stringValues.length; i++) {
+            if (stringValues[i].equalsIgnoreCase("null") || stringValues[i].equalsIgnoreCase("none")) {
+                values[i] = Float.NEGATIVE_INFINITY;
+            } else if (isNumeric(stringValues[i])){
+                values[i] = Float.parseFloat(stringValues[i]);
+            } else {
+                throw new IOException("Values passed to Generator must be numeric or null/none.");
+            }
+        }
+        actuate(values);
+    }
+
     protected Float[] actuatedValues(Float[] values){
         return values;
     }
@@ -105,6 +121,22 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     @Override
     public final Float[] decodeValuesActuator(byte[] message) {
         return BytesToFloatArray(message);
+    }
+
+    @Override
+    public int getSize(){
+        return this.indexes.length;
+    }
+
+    @Override
+    public JSONObject getDataTypes(){
+        JSONObject result = new JSONObject();
+        JSONObject sensorTypes = new JSONObject();
+        sensorTypes.put("human-readable", Float[].class.getSimpleName());
+        sensorTypes.put("raw", Float[].class.getSimpleName());
+        result.put("sensor", sensorTypes);
+        result.put("actuator", Float[].class.getSimpleName());
+        return result;
     }
 }
 

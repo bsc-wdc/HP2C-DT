@@ -5,12 +5,14 @@ import com.rabbitmq.client.DeliverCallback;
 import es.bsc.hp2c.HP2CEdge;
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
-import es.bsc.hp2c.common.types.Func;
+import es.bsc.hp2c.common.funcs.Func;
 import es.bsc.hp2c.common.types.Sensor;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Map;
 
 import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
 
@@ -20,7 +22,7 @@ import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
  *      edge.<EDGE_ID>.actuators.<DEVICE_ID>
  */
 public class AmqpConsume extends Func {
-    private final Actuator actuator;
+    private final Actuator<?> actuator;
     private final String edgeLabel;
     private final String actuatorLabel;
     private static String EXCHANGE_NAME;
@@ -30,23 +32,29 @@ public class AmqpConsume extends Func {
     /**
      * Method constructor.
      *
-     * @param sensors   List of sensors declared for the function.
-     * @param actuators List of actuators declared for the function.
+     * @param sensors   Map of edge-sensors declared for the function.
+     * @param actuators List of edge-actuators declared for the function.
      * @param others    Rest of parameters declared for de function.
      */
-    public AmqpConsume(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
+    public AmqpConsume(Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String, ArrayList<Actuator<?>>> actuators, JSONObject others)
             throws IllegalArgumentException {
 
         super(sensors, actuators, others);
+        ArrayList<Actuator<?>> actuatorsList;
+        if (actuators != null && !actuators.isEmpty()) {
+            actuatorsList = actuators.values().iterator().next();
+        } else {
+            throw new IllegalArgumentException("The actuators map is empty or null.");
+        }
 
-        if (actuators.size() != 1) {
+        if (actuatorsList.size() != 1) {
             throw new IllegalArgumentException("There should be one sensor for each AmqpPublish Func");
         }
         if (!sensors.isEmpty()) {
             throw new IllegalArgumentException("AmqpPublish does not use actuators");
         }
         // Sensor setup (remove whitespaces and dashes to avoid Influx especial characters)
-        actuator = actuators.get(0);
+        actuator = actuatorsList.get(0);
         actuatorLabel = ((Device) actuator).getLabel();
 
         // Initialize AMQP communication

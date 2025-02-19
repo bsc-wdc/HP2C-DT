@@ -2,7 +2,7 @@ package es.bsc.hp2c.server.funcs;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
-import es.bsc.hp2c.common.types.Func;
+import es.bsc.hp2c.common.funcs.Func;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.server.device.VirtualVoltmeter;
 import es.bsc.hp2c.server.modules.AlarmHandler;
@@ -22,7 +22,8 @@ public class VoltageFaultDetection extends Func {
     private float threshold;
     private AlarmHandler alarms;
 
-    public VoltageFaultDetection(ArrayList<Sensor<?, ?>> sensors, ArrayList<Actuator<?>> actuators, JSONObject others)
+    public VoltageFaultDetection(Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String,
+            ArrayList<Actuator<?>>> actuators, JSONObject others)
             throws FunctionInstantiationException {
         super(sensors, actuators, others);
         try {
@@ -35,9 +36,6 @@ public class VoltageFaultDetection extends Func {
 
             if (file.exists() && file.isFile()) {
                 path = "/data/nominal_voltages.json";
-            }
-            else if (cwd.endsWith("server")) {
-                path = "../../deployments/defaults/nominal_voltages.json";
             } else {
                 path = "deployments/defaults/nominal_voltages.json";
             }
