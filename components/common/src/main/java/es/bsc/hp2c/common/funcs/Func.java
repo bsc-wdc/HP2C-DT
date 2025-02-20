@@ -16,7 +16,6 @@
 package es.bsc.hp2c.common.funcs;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
@@ -57,7 +56,7 @@ public abstract class Func implements Runnable {
      * @param setupFile String containing JSON file.
      * @param edgeMap   EdgeMap object containing the devices within each edge.
      */
-    public static void loadFunctions(String setupFile, EdgeMap edgeMap) throws IOException {
+    public static void loadFunctions(String setupFile, EdgeMap edgeMap, Class<?> runtimeHostClass) throws IOException {
         // Load setup file
         JSONObject object = getJsonObject(setupFile);
 
@@ -79,7 +78,7 @@ public abstract class Func implements Runnable {
             String funcLabel = jFunc.optString("label", "");
             try {
                 // Perform Func initialization
-                Runnable action = functionParseJSON(jFunc, edgeMap, funcLabel);
+                Action action = functionParseJSON(jFunc, edgeMap, funcLabel, runtimeHostClass);
                 setupTrigger(jFunc, edgeMap, action);
             } catch (FunctionInstantiationException e) {
                 System.err.println("Error loading function " + funcLabel + ": " + e.getMessage());
@@ -262,7 +261,7 @@ public abstract class Func implements Runnable {
                     // Transform to server format
                     transformFuncToServerFormat(jGlobalFunc, edgeLabel);
 
-                    Runnable action = functionParseJSON(jGlobalFunc, edgeMap, funcLabel);
+                    Action action = functionParseJSON(jGlobalFunc, edgeMap, funcLabel, null);
                     setupTrigger(jGlobalFunc, edgeMap, action);
                 } catch (FunctionInstantiationException e) {
                     System.err.println("Error initializing general function: " + e.getMessage());
@@ -282,12 +281,13 @@ public abstract class Func implements Runnable {
      * @throws FunctionInstantiationException Error raised during the instantiation
      *                                        of the function.
      */
-    public static Runnable functionParseJSON(JSONObject jFunc, EdgeMap edgeMap, String funcLabel)
-            throws FunctionInstantiationException {
+    public static Action functionParseJSON(JSONObject jFunc, EdgeMap edgeMap, String funcLabel,
+            Class<?> runtimeHostClass) throws FunctionInstantiationException {
 
         String driver = jFunc.optString("method-name", "");
         JSONObject parameters = jFunc.getJSONObject("parameters");
         String lang = jFunc.getString("lang");
+        String functionType = jFunc.optString("type", "");
 
         // Process Sensors
         JSONObject jSensors = parameters.optJSONObject("sensors");
@@ -358,13 +358,12 @@ public abstract class Func implements Runnable {
                 }
             }
         }
-        return getAction(funcLabel, driver, parameters, sensors, actuators, lang);
+        return getAction(funcLabel, driver, parameters, sensors, actuators, lang, functionType, runtimeHostClass);
     }
 
-    private static Runnable getAction(String funcLabel, String driver, JSONObject parameters,
-                                      Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String,
-                                      ArrayList<Actuator<?>>> actuators, String lang)
-            throws FunctionInstantiationException {
+    private static Action getAction(String funcLabel, String driver, JSONObject parameters,
+          Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String, ArrayList<Actuator<?>>> actuators, String lang,
+          String functionType, Class<?> runtimeHostClass) throws FunctionInstantiationException {
         // Use a specific driver for Python funcs if driver is not specified
         if (driver.isEmpty() && (lang.equals("python") || lang.equals("Python") || lang.equals("PYTHON"))) {
             driver = "es.bsc.hp2c.common.funcs.PythonFunc";
@@ -374,21 +373,38 @@ public abstract class Func implements Runnable {
         JSONObject jOther;
         try {
             Class<?> c = Class.forName(driver);
+            // Handle COMPSs workflow cases
+            if (functionType.equals("workflow") && runtimeHostClass != null) {
+                if (lang.equalsIgnoreCase("java")) {
+                    // Initialize COMPSs Java Handler
+                    COMPSsHandler compssHandler = new COMPSsHandler(runtimeHostClass, driver, c);
+                    // Instrument class
+                    System.out.println("CHECKPOINT 2");
+                    c = compssHandler.instrumentClass(driver);
+                } else {
+                    throw new UnsupportedOperationException(
+                            "Lang " + lang + "for driver " + driver + " is not supported");
+                }
+            }
+            // Get constructor
             ct = c.getConstructor(Map.class, Map.class, JSONObject.class);
+            //Instantiate function class
             jOther = parameters.getJSONObject("other");
-            return (Runnable) ct.newInstance(sensors, actuators, jOther);
+            Object classInstance = ct.newInstance(sensors, actuators, jOther);
+
+            // Return the action with both instance and class (in case is needed for workflows mode)
+            return new Action(classInstance, c);
 
         } catch (ClassNotFoundException e) {
             throw new FunctionInstantiationException("Error finding the driver " + driver, e);
         } catch (NoSuchMethodException | SecurityException e) {
             throw new FunctionInstantiationException("Error finding the constructor for " + driver, e);
         } catch (Exception e) {
-            e.printStackTrace();
             throw new FunctionInstantiationException("Error instantiating " + funcLabel + " function. ", e);
         }
     }
 
-    private static void setupOnReadTrigger(JSONObject triggerParams, EdgeMap edgeMap, Runnable action, String label,
+    private static void setupOnReadTrigger(JSONObject triggerParams, EdgeMap edgeMap, Action action, String label,
             boolean onRead) throws FunctionInstantiationException {
         JSONObject jTriggerSensorMap = triggerParams.optJSONObject("trigger-sensor");
 
@@ -427,7 +443,7 @@ public abstract class Func implements Runnable {
 
         for (Sensor<?, ?> triggerSensor : triggerSensors.keySet()) {
             int interval = triggerSensors.get(triggerSensor);
-            triggerSensor.addOnReadFunction(action, interval, label, onRead);
+            triggerSensor.addOnReadFunction(action.getRunnable(), interval, label, onRead);
         }
     }
 
@@ -444,23 +460,31 @@ public abstract class Func implements Runnable {
      * @param edgeMap EdgeMap object containing the devices within each edge.
      * @param action  Runnable that implements the function to trigger.
      */
-    public static void setupTrigger(JSONObject jFunc, EdgeMap edgeMap, Runnable action)
+    public static void setupTrigger(JSONObject jFunc, EdgeMap edgeMap, Action action)
             throws FunctionInstantiationException {
         JSONObject jTrigger = jFunc.getJSONObject("trigger");
         String label = jFunc.optString("label", null);
         String triggerType = jTrigger.optString("type", "");
         JSONObject triggerParams = jTrigger.getJSONObject("parameters");
 
+        String funcType = jFunc.optString("type", "");
+        if (funcType.equals("workflow")) {
+            System.out.println("MAKE SURE THIS BLOCK EXECUTES");
+            triggerType = "onWorkflow";
+        }
+
         // Print Func summary
         printFuncSummary(jFunc, edgeMap, triggerParams, label, triggerType);
+        Runnable runnableAction;
         switch (triggerType) {
             case "onFrequency":
                 int freq = triggerParams.getInt("frequency") * 1000;
+                runnableAction = action.getRunnable();
                 new Timer().scheduleAtFixedRate(new TimerTask() {
                     @Override
                     public void run() {
                         System.out.println("label: " + label + ".  frequency: " + freq);
-                        action.run();
+                        runnableAction.run();
                     }
                 }, 0, freq);
                 break;
@@ -474,11 +498,19 @@ public abstract class Func implements Runnable {
                 break;
 
             case "onStart":
-                action.run();
+                runnableAction = action.getRunnable();
+                runnableAction.run();
+                break;
+
+            case "onWorkflow":
+                // TODO: Could this just be executed as a runnable above?
+                Class<?> instrumentedClass = action.getInstrumentedClass();
+                Object classInstance = action.getInstance();
+                COMPSsHandler.runWorkflow(instrumentedClass, classInstance);
                 break;
 
             default:
-                System.out.print("Wrong trigger: " + triggerType + " defined on the setup file");
+                System.out.println("Wrong trigger: " + triggerType + " defined on the setup file");
         }
     }
 
@@ -533,6 +565,41 @@ public abstract class Func implements Runnable {
         };
         tSummary.setName("func-summary-thread");
         tSummary.start();
+    }
+
+    /**
+     * Wrapper of the Instance/Runnable and Workflow objects obtained from reflection.
+     * Holds the different action objects that may be loaded from using standalone funcs or COMPSs-related funcs.
+     * Possible cases:
+     * - Function is synchronous: therefore `classInstance` will be a Runnable object.
+     *   The class `c` will be stored but not used by the trigger procedure
+     * - Function is asynchronous (workflow or task): `classInstance` is Object and Class `c` will be required by the
+     *   trigger to deploy the workflow/task
+     */
+    private static class Action {
+        private final Object classInstance;
+        private final Class<?> c;
+
+        public Action(Object classInstance, Class<?> c) {
+            this.classInstance = classInstance;
+            this.c = c;
+        }
+
+        public Object getInstance() {
+            return classInstance;
+        }
+
+        public Class<?> getInstrumentedClass() {
+            return c;
+        }
+
+        public Runnable getRunnable() {
+            if (classInstance instanceof Runnable) {
+                return (Runnable) classInstance;
+            } else {
+                throw new IllegalArgumentException("Instance " + classInstance + " does not implement Runnable");
+            }
+        }
     }
 
     /**

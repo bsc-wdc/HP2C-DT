@@ -6,11 +6,16 @@ import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.funcs.Func;
 import es.bsc.hp2c.common.types.Sensor;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Map;
 
 import org.json.JSONObject;
+
+import es.bsc.compss.types.annotations.Parameter;
+import es.bsc.compss.types.annotations.Constraints;
+import es.bsc.compss.types.annotations.parameter.Direction;
+import es.bsc.compss.types.annotations.parameter.Type;
+import es.bsc.compss.types.annotations.task.Method;
 
 /**
  * The method calculates the power and prints it through standard output.
@@ -63,6 +68,10 @@ public class CalcPower extends Func {
 
     @Override
     public void run() {
+        int counter = 0;
+        for (int i = 0; i < 10; i++) {
+            increment(counter);
+        }
         boolean voltmeterIsAvailable = voltmeter.getSensorAvailability();
         boolean ammeterIsAvailable = ammeter.getSensorAvailability();
         Float[] voltage = this.voltmeter.getCurrentValues();
@@ -79,4 +88,17 @@ public class CalcPower extends Func {
             System.out.println("[CalcPower]     Power is: " + voltage[0] * current[0] + " W");
         }
     }
+
+    public static void increment(int input) {
+        System.out.println("INCREMENTED INPUT IS NOW " + input);
+    }
+
+    public static interface COMPSsItf {
+        @Constraints(computingUnits = "1")
+        @Method(declaringClass = "es.bsc.hp2c.edge.funcs.CalcPower")
+        void increment(
+                @Parameter(type = Type.INT, direction = Direction.IN) int input
+        );
+    }
+
 }

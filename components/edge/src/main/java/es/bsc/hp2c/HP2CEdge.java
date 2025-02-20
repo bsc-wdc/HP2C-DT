@@ -92,7 +92,7 @@ public class HP2CEdge {
         for (Map.Entry<String, Device> entry : devices.entrySet()) {
             edgeMap.addDevice(edgeLabel, entry.getKey(), entry.getValue());
         }
-        Func.loadFunctions(setupFile, edgeMap);
+        Func.loadFunctions(setupFile, edgeMap, HP2CEdge.class);
         Map<String, String> amqpAggregates = Func.loadGlobalFunctions(setupFile, defaultsPath, devices, amqpOn);
         JSONObject sensorUnits = getSensorUnits(setupFile, defaultUnitsPath, devices);
 
