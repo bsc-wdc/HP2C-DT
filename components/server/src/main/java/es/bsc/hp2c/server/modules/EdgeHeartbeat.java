@@ -42,13 +42,15 @@ public class EdgeHeartbeat {
     private static final int HEARTBEAT_TIMEOUT = 30000;  // milliseconds
     private final Map<String, VirtualEdge> edgeMap;
     private final Channel channel;
+    private final Class<?> runtimeHost;
 
-    public EdgeHeartbeat(AmqpManager amqp, Map<String, VirtualEdge> edgeMap) throws IOException {
+    public EdgeHeartbeat(AmqpManager amqp, Map<String, VirtualEdge> edgeMap, Class<?> runtimeHost) throws IOException {
         this.channel = amqp.getChannel();
         channel.exchangeDeclare(amqp.getExchangeName(), "topic");
         this.channel.queueDeclare(QUEUE_NAME, true, false, false, null);
         this.channel.queueBind(QUEUE_NAME, amqp.getExchangeName(), routingKey);
         this.edgeMap = edgeMap;
+        this.runtimeHost = runtimeHost;
     }
 
     /** Start the AMQP listener and checkInactiveEdges threads */
@@ -113,7 +115,7 @@ public class EdgeHeartbeat {
             EdgeMap edgeDevices = getDevicesMap();
             String pathToSetup = getPathToSetup();
             try {
-                loadFunctions(pathToSetup, edgeDevices);
+                loadFunctions(pathToSetup, edgeDevices, runtimeHost);
             } catch (IOException e) {
                 System.out.println("Error loading functions: " + e);
             }

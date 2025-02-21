@@ -35,7 +35,7 @@ public class HP2CServer {
         String hostIp = getHostIp();
         // Deploy listener
         try {
-            init(hostIp);
+            init(hostIp, HP2CServer.class);
             start();
         } catch (IOException | TimeoutException | InterruptedException e) {
             System.err.println("Server error: " + e.getMessage());

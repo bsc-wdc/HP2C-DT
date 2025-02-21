@@ -31,12 +31,12 @@ public class HP2CServerContext {
      * Initialize AmqpManager, InfluxDB, and CLI connections.
      * @param hostIp IP of AmqpManager broker and database. TODO: use custom IPs for each module
      */
-    public static void init(String hostIp) throws IOException, TimeoutException {
+    public static void init(String hostIp, Class<?> runtimeHost) throws IOException, TimeoutException {
         // Initialize modules
         db = new DatabaseHandler(hostIp);
         alarms = new AlarmHandler(pathToSetup, db);
         amqp = new AmqpManager(hostIp, edgeMap, db);
-        heartbeat = new EdgeHeartbeat(amqp, edgeMap);
+        heartbeat = new EdgeHeartbeat(amqp, edgeMap, runtimeHost);
         restServer = new RestListener(edgeMap);
         cli = new CLI(edgeMap);
     }

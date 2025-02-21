@@ -18,7 +18,6 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
 ENV MAVEN_HOME=/usr/share/maven
 ENV MAVEN_CONFIG="/root/.m2"
 ENV COMPSS_VERSION=${COMPSS_VERSION}
-EXPOSE 8080
 
 # Add COMPSs jar if using local install
 COPY ./tmp/* /tmp/
