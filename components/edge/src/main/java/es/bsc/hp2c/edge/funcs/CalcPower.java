@@ -70,7 +70,7 @@ public class CalcPower extends Func {
     public void run() {
         int counter = 0;
         for (int i = 0; i < 10; i++) {
-            increment(counter);
+            counter = increment(counter);
         }
         boolean voltmeterIsAvailable = voltmeter.getSensorAvailability();
         boolean ammeterIsAvailable = ammeter.getSensorAvailability();
@@ -89,14 +89,15 @@ public class CalcPower extends Func {
         }
     }
 
-    public static void increment(int input) {
+    public static int increment(int input) {
         System.out.println("INCREMENTED INPUT IS NOW " + input);
+        return input + 1;
     }
 
     public static interface COMPSsItf {
         @Constraints(computingUnits = "1")
         @Method(declaringClass = "es.bsc.hp2c.edge.funcs.CalcPower")
-        void increment(
+        int increment(
                 @Parameter(type = Type.INT, direction = Direction.IN) int input
         );
     }
