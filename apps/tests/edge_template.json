@@ -45,9 +45,7 @@
                 "comm-type": "opal-udp",
                 "indexes": [0],
                 "amqp-aggregate": "phasor",
-                "amqp-agg-args": {
-                    "phasor-freq": "%frequency%"
-                }
+                "amqp-frequency": "%frequency%"
             }
         }
     ],
