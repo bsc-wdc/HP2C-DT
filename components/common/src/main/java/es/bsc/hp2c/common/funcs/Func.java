@@ -455,7 +455,7 @@ public abstract class Func implements Runnable {
         printFuncSummary(jFunc, edgeMap, triggerParams, label, triggerType);
         switch (triggerType) {
             case "onFrequency":
-                int freq = triggerParams.getInt("frequency") * 1000;
+                int freq = triggerParams.getInt("frequency");
                 new Timer().scheduleAtFixedRate(new TimerTask() {
                     @Override
                     public void run() {

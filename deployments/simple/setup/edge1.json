@@ -63,7 +63,7 @@
                 "indexes": [0,1,2],
                 "amqp-aggregate": "last",
                 "amqp-trigger": "onFrequency",
-                "amqp-frequency": 4
+                "amqp-frequency": 4000
             }
         },
         {
@@ -150,7 +150,7 @@
             "trigger": {
                 "type": "onFrequency",
                 "parameters": {
-                    "frequency": 2
+                    "frequency": 2000
                 }
             }
         }

@@ -18,7 +18,7 @@
                     "type": "onFrequency",
                     "parameters": {
                         "trigger-sensor": "",
-                        "frequency": 10
+                        "frequency": 10000
                     }
                 }
             },
