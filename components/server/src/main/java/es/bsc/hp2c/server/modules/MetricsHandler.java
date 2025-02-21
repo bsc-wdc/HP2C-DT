@@ -13,9 +13,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 public class MetricsHandler extends TimerTask {
-    private final AtomicLong totalMessages;
-    private final AtomicLong totalBytes;
-    private final AtomicLong startTime;
+    private AtomicLong totalMessages;
+    private AtomicLong totalBytes;
+    private AtomicLong startTime;
     private final String csvFile;
     private static final String METRICS_DIR = "metrics";
 
@@ -49,6 +49,11 @@ public class MetricsHandler extends TimerTask {
         // Avoid division by zero
         double messagesPerMillisecond = elapsedTime > 0 ? (double) totalMessages.get() / elapsedTime : 0;
         double bytesPerMillisecond = elapsedTime > 0 ? (double) totalBytes.get() / elapsedTime : 0;
+
+        // Reset interval variables
+        totalBytes.set(0);
+        totalMessages.set(0);
+        startTime.set(Instant.now().toEpochMilli());
 
         // Write metrics to CSV
         writeToCsv(elapsedTime, messagesPerMillisecond, bytesPerMillisecond);
