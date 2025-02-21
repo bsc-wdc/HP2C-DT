@@ -196,7 +196,6 @@ public abstract class Func implements Runnable {
                             JSONObject amqp_aggArgs = jDevice.getJSONObject("properties")
                                     .optJSONObject("amqp-agg-args");
                             if (amqp_aggArgs != null) {
-                                System.out.println(amqp_aggArgs);
                                 JSONObject jOther = new JSONObject();
                                 JSONObject jAggregate = new JSONObject();
                                 jAggregate.put("type", amqp_aggregate);
@@ -379,7 +378,6 @@ public abstract class Func implements Runnable {
                     // Initialize COMPSs Java Handler
                     COMPSsHandler compssHandler = new COMPSsHandler(runtimeHostClass, driver, c);
                     // Instrument class
-                    System.out.println("CHECKPOINT 2");
                     c = compssHandler.instrumentClass(driver);
                 } else {
                     throw new UnsupportedOperationException(
@@ -469,7 +467,6 @@ public abstract class Func implements Runnable {
 
         String funcType = jFunc.optString("type", "");
         if (funcType.equals("workflow")) {
-            System.out.println("MAKE SURE THIS BLOCK EXECUTES");
             triggerType = "onWorkflow";
         }
 
@@ -483,7 +480,6 @@ public abstract class Func implements Runnable {
                 new Timer().scheduleAtFixedRate(new TimerTask() {
                     @Override
                     public void run() {
-                        System.out.println("label: " + label + ".  frequency: " + freq);
                         runnableAction.run();
                     }
                 }, 0, freq);
