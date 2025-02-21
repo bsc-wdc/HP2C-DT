@@ -14,7 +14,7 @@ REMOTE_USER = "ubuntu"
 
 def main():
     time_steps = [1, 10, 100, 1000]
-    window_frequencies = [1, 10, 100, 1000, 10000, 30000, 60000]
+    window_frequencies = [1, 10, 100, 1000, 10000, 20000]
 
     script_dir = os.path.dirname(__file__)
 
@@ -37,12 +37,12 @@ def main():
 
             print(f"Updated JSON with window-size {window_size} and frequency {frequency} (time_step {time_step})")
 
+            print("Deploying opal simulator and edge...")
+            deploy_opal_simulator_and_edge(time_step)
             print("Deploying broker...")
             deploy_broker()
             print("Deploying server...")
             deploy_server()
-            print("Deploying opal simulator and edge...")
-            deploy_opal_simulator_and_edge(time_step)
             print("Sleep...")
             subprocess.run("sleep 200", shell=True)
             print("Copying metrics from server...")

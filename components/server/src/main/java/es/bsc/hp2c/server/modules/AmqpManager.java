@@ -85,7 +85,7 @@ public class AmqpManager {
         metrics = HP2CServer.getMetrics();
         Timer timer = new Timer();
         if (metrics != null){
-            timer.scheduleAtFixedRate(metrics, 20000, 10000);
+            timer.scheduleAtFixedRate(metrics, 10000, 30000);
         }
 
         DeliverCallback callback = (consumerTag, delivery) -> {

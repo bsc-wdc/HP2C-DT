@@ -50,13 +50,16 @@ public class MetricsHandler extends TimerTask {
         double messagesPerMillisecond = elapsedTime > 0 ? (double) totalMessages.get() / elapsedTime : 0;
         double bytesPerMillisecond = elapsedTime > 0 ? (double) totalBytes.get() / elapsedTime : 0;
 
+        long currentTotalMessages = totalMessages.get();
+        long currentTotalBytes = totalBytes.get();
+
         // Reset interval variables
         totalBytes.set(0);
         totalMessages.set(0);
         startTime.set(Instant.now().toEpochMilli());
 
         // Write metrics to CSV
-        writeToCsv(elapsedTime, messagesPerMillisecond, bytesPerMillisecond);
+        writeToCsv(elapsedTime, messagesPerMillisecond, bytesPerMillisecond, currentTotalMessages, currentTotalBytes);
     }
 
     private String getNextFilename() {
@@ -74,14 +77,15 @@ public class MetricsHandler extends TimerTask {
         totalBytes.addAndGet(bytes);
     }
 
-    private void writeToCsv(long elapsedTime, double messagesPerMillisecond, double bytesPerMillisecond) {
+    private void writeToCsv(long elapsedTime, double messagesPerMillisecond, double bytesPerMillisecond,
+                            long currentTotalMessages, long currentTotalBytes) {
         try (FileWriter writer = new FileWriter(csvFile, true)) {
             writer.write(String.format(Locale.US, "%d,%d,%.8f,%d,%d,%.8f\n",
                     Instant.now().toEpochMilli(),
-                    totalMessages.get(),
+                    currentTotalMessages,
                     messagesPerMillisecond,
                     elapsedTime,
-                    totalBytes.get(),
+                    currentTotalBytes,
                     bytesPerMillisecond
             ));
         } catch (IOException e) {
