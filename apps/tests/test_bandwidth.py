@@ -31,7 +31,7 @@ def main(args):
             window_size = int(frequency / time_step)
             os.chdir(script_dir)
             template_path = "edge_template_phasor.json"
-            if args is not None and args[1] == "all":
+            if len(args) > 1 and args[1] == "all":
                 template_path = "edge_template_all.json"
             with open(template_path, "r") as file:
                 edge_json = json.load(file)
