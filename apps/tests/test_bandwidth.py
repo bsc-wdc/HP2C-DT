@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 import time
 
 import paramiko
@@ -12,12 +13,10 @@ BROKER_IP = "212.128.226.53"
 REMOTE_USER = "ubuntu"
 
 
-def main():
+def main(args):
     time_steps = [1, 10, 100, 1000]
     window_frequencies = [1, 10, 100, 1000, 10000, 20000]
-
     script_dir = os.path.dirname(__file__)
-
 
     for time_step in time_steps:
         for frequency in window_frequencies:
@@ -25,9 +24,11 @@ def main():
                 continue
 
             window_size = int(frequency/ time_step)
-
             os.chdir(script_dir)
-            with open("edge_template.json", "r") as file:
+            template_path = "edge_template_phasor.json"
+            if args is not None and args[1] == "all":
+                template_path = "edge_template_all.json"
+            with open(template_path, "r") as file:
                 edge_json = json.load(file)
                 edge_json["global-properties"]["window-size"] = window_size
                 edge_json["devices"][0]["properties"]["amqp-frequency"] = frequency
@@ -89,10 +90,8 @@ def execute_ssh_command(client, command):
 def deploy_broker():
     """Connect to broker and deploy docker."""
     client = connect_ssh()
-
     full_command = "nohup ./hp2cdt/deployments/deploy_broker.sh --comm=bsc_subnet >/dev/null 2>&1 &"
     execute_ssh_command(client, full_command)
-
     client.close()
 
 
@@ -113,7 +112,6 @@ def deploy_server():
                         "nohup ./hp2cdt/deployments/deploy_server.sh "
                         "-m --deployment_name=test_bandwidth --comm=bsc_subnet "
                         ">/dev/null 2>&1 &")
-
     server_client.close()
     broker_client.close()
 
@@ -165,6 +163,9 @@ def copy_metrics_to_local(time_step, window_size):
 
     local_path = f"/home/mauro/BSC/tests/test_bandwidth/ts{time_step}_ws{window_size}.csv"
 
+    if args is not None and args[1] == "all":
+        local_path = f"/home/mauro/BSC/tests/test_bandwidth/all_ts{time_step}_ws{window_size}.csv"
+
     # Ensure local directory exists before copying
     os.makedirs(os.path.dirname(local_path), exist_ok=True)
 
@@ -192,4 +193,5 @@ def stop_opal_simulator_and_edge():
 
 
 if __name__ == "__main__":
-    main()
+    args = sys.argv
+    main(args)
