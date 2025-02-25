@@ -14,16 +14,21 @@ REMOTE_USER = "ubuntu"
 
 
 def main(args):
-    time_steps = [1, 10, 100, 1000]
-    window_frequencies = [1, 10, 100, 1000, 10000, 20000]
+    time_steps = [1, 10, 100, 1000, 10000]
+    window_frequencies = [1, 10, 100, 1000, 10000]
     script_dir = os.path.dirname(__file__)
 
     for time_step in time_steps:
         for frequency in window_frequencies:
-            if (frequency) <= time_step:
-                continue
+            if len(args) > 1 and args[1] == "all":
+                if frequency < time_step:
+                    continue
 
-            window_size = int(frequency/ time_step)
+            else:
+                if frequency <= time_step:
+                    continue
+
+            window_size = int(frequency / time_step)
             os.chdir(script_dir)
             template_path = "edge_template_phasor.json"
             if args is not None and args[1] == "all":
@@ -163,7 +168,7 @@ def copy_metrics_to_local(time_step, window_size):
 
     local_path = f"/home/mauro/BSC/tests/test_bandwidth/ts{time_step}_ws{window_size}.csv"
 
-    if args is not None and args[1] == "all":
+    if len(args) > 1 and args[1] == "all":
         local_path = f"/home/mauro/BSC/tests/test_bandwidth/all_ts{time_step}_ws{window_size}.csv"
 
     # Ensure local directory exists before copying
