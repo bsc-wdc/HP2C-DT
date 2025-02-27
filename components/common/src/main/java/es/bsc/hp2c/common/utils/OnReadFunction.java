@@ -1,6 +1,7 @@
 package es.bsc.hp2c.common.utils;
 
-import java.lang.reflect.Array;
+import es.bsc.hp2c.common.funcs.Action;
+
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -10,15 +11,15 @@ import java.util.Objects;
  *
  */
 public class OnReadFunction<T> {
-    private Runnable runnable;
+    private Action action;
     private int interval; // Number of reads needed for each execution
     private int counter; // Current number of reads
     private String label;
     private T last;
     private boolean onRead;
 
-    public OnReadFunction(Runnable runnable, int interval, String label, boolean onRead) {
-        this.runnable = runnable;
+    public OnReadFunction(Action action, int interval, String label, boolean onRead) {
+        this.action = action;
         if (interval == -1){
             interval = 1;
         }
@@ -28,8 +29,8 @@ public class OnReadFunction<T> {
         this.onRead = onRead;
     }
 
-    public Runnable getRunnable() {
-        return runnable;
+    public Action getAction() {
+        return action;
     }
 
     public boolean isOnChange(){ return !this.onRead; }
@@ -74,7 +75,7 @@ public class OnReadFunction<T> {
     @Override
     public String toString() {
         return "OnReadFunction{" +
-                "runnable=" + runnable +
+                "action=" + action +
                 ", interval=" + interval +
                 ", counter=" + counter +
                 '}';

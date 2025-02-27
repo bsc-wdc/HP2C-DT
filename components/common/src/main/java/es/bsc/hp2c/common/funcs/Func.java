@@ -441,7 +441,7 @@ public abstract class Func implements Runnable {
 
         for (Sensor<?, ?> triggerSensor : triggerSensors.keySet()) {
             int interval = triggerSensors.get(triggerSensor);
-            triggerSensor.addOnReadFunction(action.getRunnable(), interval, label, onRead);
+            triggerSensor.addOnReadFunction(action, interval, label, onRead);
         }
     }
 
@@ -465,22 +465,15 @@ public abstract class Func implements Runnable {
         String triggerType = jTrigger.optString("type", "");
         JSONObject triggerParams = jTrigger.getJSONObject("parameters");
 
-        String funcType = jFunc.optString("type", "");
-        if (funcType.equals("workflow")) {
-            triggerType = "onWorkflow";
-        }
-
         // Print Func summary
         printFuncSummary(jFunc, edgeMap, triggerParams, label, triggerType);
-        Runnable runnableAction;
         switch (triggerType) {
             case "onFrequency":
                 int freq = triggerParams.getInt("frequency") * 1000;
-                runnableAction = action.getRunnable();
                 new Timer().scheduleAtFixedRate(new TimerTask() {
                     @Override
                     public void run() {
-                        runnableAction.run();
+                        action.run();
                     }
                 }, 0, freq);
                 break;
@@ -494,15 +487,7 @@ public abstract class Func implements Runnable {
                 break;
 
             case "onStart":
-                runnableAction = action.getRunnable();
-                runnableAction.run();
-                break;
-
-            case "onWorkflow":
-                // TODO: Could this just be executed as a runnable above?
-                Class<?> instrumentedClass = action.getInstrumentedClass();
-                Object classInstance = action.getInstance();
-                COMPSsHandler.runWorkflow(instrumentedClass, classInstance);
+                action.run();
                 break;
 
             default:
@@ -561,41 +546,6 @@ public abstract class Func implements Runnable {
         };
         tSummary.setName("func-summary-thread");
         tSummary.start();
-    }
-
-    /**
-     * Wrapper of the Instance/Runnable and Workflow objects obtained from reflection.
-     * Holds the different action objects that may be loaded from using standalone funcs or COMPSs-related funcs.
-     * Possible cases:
-     * - Function is synchronous: therefore `classInstance` will be a Runnable object.
-     *   The class `c` will be stored but not used by the trigger procedure
-     * - Function is asynchronous (workflow or task): `classInstance` is Object and Class `c` will be required by the
-     *   trigger to deploy the workflow/task
-     */
-    private static class Action {
-        private final Object classInstance;
-        private final Class<?> c;
-
-        public Action(Object classInstance, Class<?> c) {
-            this.classInstance = classInstance;
-            this.c = c;
-        }
-
-        public Object getInstance() {
-            return classInstance;
-        }
-
-        public Class<?> getInstrumentedClass() {
-            return c;
-        }
-
-        public Runnable getRunnable() {
-            if (classInstance instanceof Runnable) {
-                return (Runnable) classInstance;
-            } else {
-                throw new IllegalArgumentException("Instance " + classInstance + " does not implement Runnable");
-            }
-        }
     }
 
     /**

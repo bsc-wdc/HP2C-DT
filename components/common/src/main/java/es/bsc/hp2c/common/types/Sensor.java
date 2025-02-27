@@ -15,6 +15,7 @@
  */
 package es.bsc.hp2c.common.types;
 
+import es.bsc.hp2c.common.funcs.Action;
 import es.bsc.hp2c.common.utils.MeasurementWindow;
 
 import java.time.Instant;
@@ -32,7 +33,7 @@ public interface Sensor<R, V> {
      *
      * @param action Runnable that implements the function to handle.
      */
-    public void addOnReadFunction(Runnable action, int interval, String label, boolean onRead);
+    public void addOnReadFunction(Action action, int interval, String label, boolean onRead);
 
     /**
      * Call the functions triggered by a read value in the sensor.
