@@ -101,7 +101,7 @@ public class CalcPower extends Func {
 
     public static interface COMPSsItf {
         @Constraints(computingUnits = "1")
-        @Method(declaringClass = "es.bsc.hp2c.edge.funcs.CalcPower")
+        @Method(declaringClass = "es.bsc.hp2c.server.funcs.CalcPower")
         int increment(
                 @Parameter(type = Type.INT, direction = Direction.IN) int input
         );
