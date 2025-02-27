@@ -38,12 +38,18 @@ public class HP2CServerContext {
         amqp = new AmqpManager(hostIp, edgeMap, db);
         heartbeat = new EdgeHeartbeat(amqp, edgeMap, runtimeHost);
         restServer = new RestListener(edgeMap);
-        cli = new CLI(edgeMap);
     }
 
     public static String initPathToSetup(String[] args) {
+        String defaultPath = "/data/setup.json";
+        String fallbackPath = "deployments/simple/setup/server.json";
         String pathToSetup = "";
-        if (args.length == 1) {
+
+        // Check if /data/setup.json exists
+        File defaultFile = new File(defaultPath);
+        if (defaultFile.exists()) {
+            pathToSetup = defaultPath;
+        } else if (args.length == 1) {
             File fileOrDir = new File(args[0]);
 
             if (fileOrDir.isDirectory()) {
@@ -71,11 +77,10 @@ public class HP2CServerContext {
                 System.exit(1);
             }
         } else {
-            pathToSetup = "deployments/simple/setup/server.json";
+            pathToSetup = fallbackPath;
         }
-        if (!pathToSetup.isEmpty()) {
-            System.out.println("Using server setup file: " + pathToSetup);
-        }
+
+        System.out.println("Using server setup file: " + pathToSetup);
         return pathToSetup;
     }
 
@@ -86,7 +91,6 @@ public class HP2CServerContext {
         db.start();
         amqp.startListener();
         restServer.start();
-        cli.start();
     }
 
     public static String getHostIp() {

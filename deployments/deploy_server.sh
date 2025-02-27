@@ -97,6 +97,25 @@ if [ ! -d "${setup_folder}" ];then
   exit 1
 fi
 
+path_to_setup=""
+json_files=("$setup_folder"/*.json)
+for json_file in "${json_files[@]}"; do
+    if [[ -f "$json_file" ]]; then
+        global_properties=$(jq -r '.["global-properties"]' "$json_file" 2>/dev/null)
+        if [[ "$global_properties" != "null" ]]; then
+            type=$(jq -r '.["global-properties"].type' "$json_file" 2>/dev/null)
+            if [[ "$type" == "server" ]]; then
+                path_to_setup="$json_file"
+                echo "Selected setup file: $path_to_setup"
+            fi
+        fi
+    fi
+done
+
+if [[ -z "$path_to_setup" ]]; then
+  echo "No valid server JSON file found in directory: $setup_file" >&2
+  exit 1
+fi
 
 # Get the IPv4 address from wlp or eth interfaces
 ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'wlp[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
@@ -137,7 +156,7 @@ echo "Deploying container for SERVER with REST API listening on port 8080..."
 docker run \
     -d -it --rm \
     --name ${DEPLOYMENT_PREFIX}_server \
-    -v ${setup_folder}:/data/server/ \
+    -v ${path_to_setup}:/data/setup.json \
     -v ${deployment_json}:/data/deployment_setup.json \
     -v ${nominal_voltages_file}:/data/nominal_voltages.json \
     -v ${config_json}:/run/secrets/config.json \

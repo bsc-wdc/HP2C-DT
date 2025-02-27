@@ -21,9 +21,9 @@ public class AlarmHandler {
     public AlarmHandler (String pathToSetup, DatabaseHandler database){
         db = database;
 
-        // Check if the server is running in Docker
-        File server = new File("/data/server");
-        if (server.exists()) {
+        // Check if the server is running in Docker (look for a random file)
+        File setup = new File("/data/setup.json");
+        if (setup.exists()) {
             alarmFilePath = "/tmp/alarms.json"; // Docker path
         } else {
             String cwd = Paths.get("").toAbsolutePath().toString();

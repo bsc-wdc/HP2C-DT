@@ -27,8 +27,6 @@ public class VoltageFaultDetection extends Func {
         super(sensors, actuators, others);
         try {
             alarms = getAlarms();
-            String cwd = Paths.get("").toAbsolutePath().toString();
-            System.out.println("Current path: " + cwd);
 
             String path = "";
             File file = new File("/data/nominal_voltages.json");
