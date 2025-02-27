@@ -17,6 +17,9 @@ package es.bsc.hp2c.common.generic;
 
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
+import org.json.JSONObject;
+
+import java.io.IOException;
 
 /**
  * This class interacts with a switch of the electrical network.
@@ -38,10 +41,22 @@ public abstract class MsgAlert extends Device implements Actuator<String> {
     }
 
     @Override
-    public abstract void actuate(String values);
+    public abstract void actuate(String values) throws IOException;
 
     @Override
     public final byte[] encodeValuesActuator(String values) {
-        return new byte[0];
+        return values.getBytes();
+    }
+
+    @Override
+    public JSONObject getDeviceInfo(){
+        JSONObject result = new JSONObject();
+        int size = this.getSize();
+        String className = this.getClass().getSimpleName();
+        JSONObject types = getDataTypes();
+        result.put("size", size);
+        result.put("class-name", className);
+        result.put("types", types);
+        return result;
     }
 }

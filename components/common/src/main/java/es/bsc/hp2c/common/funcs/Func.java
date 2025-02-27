@@ -398,6 +398,7 @@ public abstract class Func implements Runnable {
         } catch (NoSuchMethodException | SecurityException e) {
             throw new FunctionInstantiationException("Error finding the constructor for " + driver, e);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new FunctionInstantiationException("Error instantiating " + funcLabel + " function. ", e);
         }
     }
