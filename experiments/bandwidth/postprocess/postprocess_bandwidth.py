@@ -3,6 +3,8 @@ import sys
 import pandas as pd
 import re
 
+dirname = os.path.dirname(__file__)
+
 def extract_parameters(filename):
     """Extracts ts and ws from the filename."""
     match = re.search(r'ts(\d+)_ws(\d+)', filename)
@@ -17,7 +19,7 @@ def process_csv_files(args):
     if len(args) > 1:
         directory = args[1]
     else:
-        raise Exception("The CSV directory must be an argument of the execution.")
+        directory = f"{dirname}/../results/raw"
 
     all_data = {}
     phasor_data = {}
@@ -54,11 +56,12 @@ def process_csv_files(args):
     all_df = pd.DataFrame.from_dict(all_data, orient='index').sort_index().reindex(columns=all_columns_sorted)
     phasor_df = pd.DataFrame.from_dict(phasor_data, orient='index').sort_index().reindex(columns=phasor_columns_sorted)
 
-    os.makedirs("results", exist_ok=True)
-    all_df.to_csv("results/all_table.csv")
-    phasor_df.to_csv("results/phasor_table.csv")
+    output_dir = f"{dirname}/../results"
+    os.makedirs(output_dir, exist_ok=True)
+    all_df.to_csv(f"{output_dir}/all_table.csv")
+    phasor_df.to_csv(f"{output_dir}/phasor_table.csv")
 
-    print("Tables stored in 'results/'")
+    print(f"Tables stored in {output_dir}")
 
 if __name__ == "__main__":
     process_csv_files(sys.argv)

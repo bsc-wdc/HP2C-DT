@@ -8,15 +8,16 @@ import paramiko
 from scp import SCPClient
 
 # Constants
+# Insert the path to the local ncloud.pem file
 SSH_KEY = "/home/mauro/claves/hp2cdt-ncloud.pem" # chmod 600
 BROKER_IP = "212.128.226.53"
 REMOTE_USER = "ubuntu"
+dirname = os.path.dirname(__file__)
 
 
 def main(args):
     time_steps = [1, 10, 100, 1000, 10000]
     window_frequencies = [1, 10, 100, 1000, 10000]
-    script_dir = os.path.dirname(__file__)
 
     for time_step in time_steps:
         for frequency in window_frequencies:
@@ -29,7 +30,7 @@ def main(args):
                     continue
 
             window_size = int(frequency / time_step)
-            os.chdir(script_dir)
+            os.chdir(dirname)
             template_path = "edge_template_phasor.json"
             if len(args) > 1 and args[1] == "all":
                 template_path = "edge_template_all.json"
@@ -38,7 +39,7 @@ def main(args):
                 edge_json["global-properties"]["window-size"] = window_size
                 edge_json["devices"][0]["properties"]["amqp-frequency"] = frequency
 
-            with open("../../deployments/test_bandwidth/setup/edge1.json", "w") as file:
+            with open(f"{dirname}/../../../deployments/test_bandwidth/setup/edge1.json", "w") as file:
                 json.dump(edge_json, file)
 
             print(f"Updated JSON with window-size {window_size} and frequency {frequency} (time_step {time_step})")
@@ -166,10 +167,10 @@ def copy_metrics_to_local(time_step, window_size):
     """Copy execution0.csv from the remote broker machine to the local machine."""
     server_client, broker_client = connect_to_server()
 
-    local_path = f"/home/mauro/BSC/tests/test_bandwidth/ts{time_step}_ws{window_size}.csv"
+    local_path = f"{dirname}/../results/raw/ts{time_step}_ws{window_size}.csv"
 
     if len(args) > 1 and args[1] == "all":
-        local_path = f"/home/mauro/BSC/tests/test_bandwidth/all_ts{time_step}_ws{window_size}.csv"
+        local_path = f"{dirname}/../results/raw/all_ts{time_step}_ws{window_size}.csv"
 
     # Ensure local directory exists before copying
     os.makedirs(os.path.dirname(local_path), exist_ok=True)
@@ -184,7 +185,7 @@ def copy_metrics_to_local(time_step, window_size):
 
 
 def deploy_opal_simulator_and_edge(time_step):
-    os.chdir("../../deployments")
+    os.chdir(f"{dirname}/../../../deployments")
 
     subprocess.run("nohup ./deploy_opal_simulator.sh "
                    f"--deployment_name=simple --time_step={time_step} "
