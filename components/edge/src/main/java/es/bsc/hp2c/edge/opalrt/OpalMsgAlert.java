@@ -1,12 +1,12 @@
 package es.bsc.hp2c.edge.opalrt;
 
 import es.bsc.hp2c.common.generic.MsgAlert;
-import es.bsc.hp2c.common.generic.Switch;
 import es.bsc.hp2c.edge.opalrt.OpalComm.OpalActuator;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 
 /**
  * Represents a message alert system implemented within a local OpalRT environment.
@@ -38,13 +38,20 @@ public class OpalMsgAlert extends MsgAlert implements OpalActuator<String> {
         if (message == null || message.isEmpty()) {
             throw new IOException("OpalMsgAlert received an empty message.");
         }
-        System.out.println("[OpalMsgAlert] Received alert: " + message);
+
+        try {
+            long originalTimestamp = Long.parseLong(message);
+            long timestampNanos = Instant.now().getEpochSecond() * 1_000_000_000L
+                    + Instant.now().getNano();
+            String currentTimestamp = Long.toString(timestampNanos);
+            System.out.println("[OpalMsgAlert] Original timestamp: " + message);
+            System.out.println("[OpalMsgAlert] Current timestamp: " + currentTimestamp);
+            System.out.println("[OpalMsgAlert] Timestamp difference: " + (timestampNanos - originalTimestamp));
+        } catch (NumberFormatException e) {
+            System.out.println("[OpalMsgAlert] Received message: " + message);
+        }
     }
 
-    @Override
-    public void actuate(byte[] byteValues) throws IOException {
-        actuate(decodeValuesActuator(byteValues));
-    }
 
     @Override
     public void actuate(String[] values) throws IOException {

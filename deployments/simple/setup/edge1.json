@@ -93,6 +93,19 @@
                 "comm-type": "opal-tcp",
                 "indexes": [3,4]
             }
+        },
+        {
+            "label": "msgAlert1",
+            "driver": "es.bsc.hp2c.edge.opalrt.OpalMsgAlert",
+            "driver-dt": "es.bsc.hp2c.server.device.VirtualMsgAlert",
+            "position": {
+                "x":0,
+                "y":0
+            },
+            "properties": {
+                "comm-type": "opal-tcp",
+                "indexes": [5]
+            }
         }
     ],
 
@@ -116,25 +129,6 @@
                 "parameters": {
                     "trigger-sensor": ["Voltmeter Gen1"],
                     "interval": 1
-                }
-            }
-        },
-        {
-            "label": "VoltLimitation",
-            "lang": "Java",
-            "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
-            "parameters": {
-                "sensors": ["Voltmeter Gen1"],
-                "actuators": ["Three-Phase Switch Gen1"],
-                "other": {
-                    "threshold": 200
-                }
-            },
-            "trigger": {
-                "type": "onRead",
-                "parameters": {
-                    "trigger-sensor": ["Voltmeter Gen1"],
-                    "interval": 5
                 }
             }
         },

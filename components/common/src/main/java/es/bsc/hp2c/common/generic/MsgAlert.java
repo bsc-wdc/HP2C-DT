@@ -44,6 +44,11 @@ public abstract class MsgAlert extends Device implements Actuator<String> {
     public abstract void actuate(String values) throws IOException;
 
     @Override
+    public void actuate(byte[] byteValues) throws IOException {
+        actuate(decodeValuesActuator(byteValues));
+    }
+
+    @Override
     public final byte[] encodeValuesActuator(String values) {
         return values.getBytes();
     }
