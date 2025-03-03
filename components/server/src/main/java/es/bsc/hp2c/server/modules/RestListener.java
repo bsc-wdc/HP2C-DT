@@ -19,7 +19,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 
-import es.bsc.hp2c.HP2CServer.ActuatorValidity;
+import es.bsc.hp2c.HP2CServerContext.ActuatorValidity;
 import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 import org.json.JSONArray;
@@ -33,8 +33,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static es.bsc.hp2c.HP2CServer.checkActuator;
-import static es.bsc.hp2c.HP2CServer.getDB;
+import static es.bsc.hp2c.HP2CServerContext.checkActuator;
+import static es.bsc.hp2c.HP2CServerContext.getDB;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 
 /**

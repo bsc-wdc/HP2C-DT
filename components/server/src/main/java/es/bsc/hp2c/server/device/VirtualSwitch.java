@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 
-import static es.bsc.hp2c.HP2CServer.amqp;
+import static es.bsc.hp2c.HP2CServerContext.amqp;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 
 

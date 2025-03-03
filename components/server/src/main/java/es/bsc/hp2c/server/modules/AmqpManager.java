@@ -18,7 +18,7 @@ package es.bsc.hp2c.server.modules;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.DeliverCallback;
-import es.bsc.hp2c.HP2CServer;
+import es.bsc.hp2c.HP2CServerContext;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.Timer;
-import java.util.TimerTask;
 
 public class AmqpManager {
     private final DatabaseHandler db;
@@ -82,7 +81,7 @@ public class AmqpManager {
         channel.queueBind(queueName, EXCHANGE_NAME, routingKey);
         System.out.println("[AmqpManager] Awaiting requests");
 
-        metrics = HP2CServer.getMetrics();
+        metrics = HP2CServerContext.getMetrics();
         Timer timer = new Timer();
         if (metrics != null){
             timer.scheduleAtFixedRate(metrics, 10000, 30000);
@@ -99,7 +98,7 @@ public class AmqpManager {
                 // Check existence of pair edge-device
                 String edgeLabel = getEdgeLabel(senderRoutingKey);
                 String deviceName = getDeviceName(senderRoutingKey);
-                if (!HP2CServer.isInMap(edgeLabel, deviceName, edgeMap)) {
+                if (!HP2CServerContext.isInMap(edgeLabel, deviceName, edgeMap)) {
                     System.err.println("Edge " + edgeLabel + ", Device " + deviceName
                             + ": message received but device not listed as " + edgeLabel + " digital twin devices.");
                     return;

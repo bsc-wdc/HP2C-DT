@@ -15,8 +15,7 @@
  */
 package es.bsc.hp2c.server.modules;
 
-import es.bsc.hp2c.HP2CServer.ActuatorValidity;
-import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.HP2CServerContext.ActuatorValidity;
 import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.edge.VirtualEdge;
@@ -25,8 +24,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Scanner;
 
-import static es.bsc.hp2c.HP2CServer.checkActuator;
-import static es.bsc.hp2c.HP2CServer.setVerbose;
+import static es.bsc.hp2c.HP2CServerContext.checkActuator;
+import static es.bsc.hp2c.HP2CServerContext.setVerbose;
 
 public class CLI implements Runnable {
     private boolean isRunning = false;
