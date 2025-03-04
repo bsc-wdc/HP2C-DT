@@ -199,6 +199,7 @@ public class VirtualEdge {
                     throw new IllegalArgumentException("Unsupported 'units' type for device type: " + device.getType());
                 }
             }
+            jDevice.put("isSensitive", device.isSensitive());
             jDevice.put("isActionable", isActionable);
             jDevicesInfo.put(deviceLabel, jDevice);
         }

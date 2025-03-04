@@ -237,6 +237,8 @@ def get_devices(deployment_model, panels, edges_info, grafana_url):
         edge_model.save()
 
         for device, attributes in edge_info["info"].items():
+            if not attributes["isSensitive"]:
+                continue
             device_available = attributes["is_available"]
             device_type = attributes["type"]
             device_model, _ = Device.objects.get_or_create(
