@@ -22,5 +22,27 @@ fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-docker build -t ${ORG_NAME}/opal_simulator:${HP2C_VERSION} -f Dockerfile.opal_simulator ${SCRIPT_DIR}/../../components/
+# Copy local compilation of the COMPSs engine
+TMP_DIR="${SCRIPT_DIR}/../../components/tmp"
+mkdir -p ${TMP_DIR}
+touch "${TMP_DIR}/.keep"  # Avoid copying errors in Dockerfile if directory is empty
+if [ "$COMPSS_VERSION" = "trunk" ]; then
+    echo "WARNING: Copying compss-engine.jar from /opt/COMPSs/"
+    echo "Make sure COMPSs is correctly installed locally!"
+    cp /opt/COMPSs/Runtime/compss-engine.jar ${TMP_DIR}/compss-engine.jar
+fi
+
+# Build image
+docker build \
+    -t ${ORG_NAME}/opal_simulator:${HP2C_VERSION} \
+    --build-arg="COMPSS_VERSION=${COMPSS_VERSION}" \
+    -f ${SCRIPT_DIR}/Dockerfile.opal_simulator \
+    ${SCRIPT_DIR}/../../components/
+docker tag ${ORG_NAME}/opal_simulator:${HP2C_VERSION} ${ORG_NAME}/opal_simulator:latest
+
+# Remove temporary files
+if [ -d "$TMP_DIR" ]; then
+    rm -rf "$TMP_DIR"
+    echo "Deleted: $TMP_DIR"
+fi
 
