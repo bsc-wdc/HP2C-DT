@@ -16,7 +16,6 @@
 package es.bsc.hp2c.common.funcs;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
@@ -57,7 +56,7 @@ public abstract class Func implements Runnable {
      * @param setupFile String containing JSON file.
      * @param edgeMap   EdgeMap object containing the devices within each edge.
      */
-    public static void loadFunctions(String setupFile, EdgeMap edgeMap) throws IOException {
+    public static void loadFunctions(String setupFile, EdgeMap edgeMap, Class<?> runtimeHostClass) throws IOException {
         // Load setup file
         JSONObject object = getJsonObject(setupFile);
 
@@ -79,7 +78,7 @@ public abstract class Func implements Runnable {
             String funcLabel = jFunc.optString("label", "");
             try {
                 // Perform Func initialization
-                Runnable action = functionParseJSON(jFunc, edgeMap, funcLabel);
+                Action action = functionParseJSON(jFunc, edgeMap, funcLabel, runtimeHostClass);
                 setupTrigger(jFunc, edgeMap, action);
             } catch (FunctionInstantiationException e) {
                 System.err.println("Error loading function " + funcLabel + ": " + e.getMessage());
@@ -197,7 +196,6 @@ public abstract class Func implements Runnable {
                             JSONObject amqp_aggArgs = jDevice.getJSONObject("properties")
                                     .optJSONObject("amqp-agg-args");
                             if (amqp_aggArgs != null) {
-                                System.out.println(amqp_aggArgs);
                                 JSONObject jOther = new JSONObject();
                                 JSONObject jAggregate = new JSONObject();
                                 jAggregate.put("type", amqp_aggregate);
@@ -262,7 +260,7 @@ public abstract class Func implements Runnable {
                     // Transform to server format
                     transformFuncToServerFormat(jGlobalFunc, edgeLabel);
 
-                    Runnable action = functionParseJSON(jGlobalFunc, edgeMap, funcLabel);
+                    Action action = functionParseJSON(jGlobalFunc, edgeMap, funcLabel, null);
                     setupTrigger(jGlobalFunc, edgeMap, action);
                 } catch (FunctionInstantiationException e) {
                     System.err.println("Error initializing general function: " + e.getMessage());
@@ -282,12 +280,13 @@ public abstract class Func implements Runnable {
      * @throws FunctionInstantiationException Error raised during the instantiation
      *                                        of the function.
      */
-    public static Runnable functionParseJSON(JSONObject jFunc, EdgeMap edgeMap, String funcLabel)
-            throws FunctionInstantiationException {
+    public static Action functionParseJSON(JSONObject jFunc, EdgeMap edgeMap, String funcLabel,
+            Class<?> runtimeHostClass) throws FunctionInstantiationException {
 
         String driver = jFunc.optString("method-name", "");
         JSONObject parameters = jFunc.getJSONObject("parameters");
         String lang = jFunc.getString("lang");
+        String functionType = jFunc.optString("type", "");
 
         // Process Sensors
         JSONObject jSensors = parameters.optJSONObject("sensors");
@@ -358,13 +357,12 @@ public abstract class Func implements Runnable {
                 }
             }
         }
-        return getAction(funcLabel, driver, parameters, sensors, actuators, lang);
+        return getAction(funcLabel, driver, parameters, sensors, actuators, lang, functionType, runtimeHostClass);
     }
 
-    private static Runnable getAction(String funcLabel, String driver, JSONObject parameters,
-                                      Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String,
-                                      ArrayList<Actuator<?>>> actuators, String lang)
-            throws FunctionInstantiationException {
+    private static Action getAction(String funcLabel, String driver, JSONObject parameters,
+          Map<String, ArrayList<Sensor<?, ?>>> sensors, Map<String, ArrayList<Actuator<?>>> actuators, String lang,
+          String functionType, Class<?> runtimeHostClass) throws FunctionInstantiationException {
         // Use a specific driver for Python funcs if driver is not specified
         if (driver.isEmpty() && (lang.equals("python") || lang.equals("Python") || lang.equals("PYTHON"))) {
             driver = "es.bsc.hp2c.common.funcs.PythonFunc";
@@ -374,9 +372,26 @@ public abstract class Func implements Runnable {
         JSONObject jOther;
         try {
             Class<?> c = Class.forName(driver);
+            // Handle COMPSs workflow cases
+            if (functionType.equals("workflow") && runtimeHostClass != null) {
+                if (lang.equalsIgnoreCase("java")) {
+                    // Initialize COMPSs Java Handler
+                    COMPSsHandler compssHandler = new COMPSsHandler(runtimeHostClass, driver, c);
+                    // Instrument class
+                    c = compssHandler.instrumentClass(driver);
+                } else {
+                    throw new UnsupportedOperationException(
+                            "Lang " + lang + "for driver " + driver + " is not supported");
+                }
+            }
+            // Get constructor
             ct = c.getConstructor(Map.class, Map.class, JSONObject.class);
+            //Instantiate function class
             jOther = parameters.getJSONObject("other");
-            return (Runnable) ct.newInstance(sensors, actuators, jOther);
+            Object classInstance = ct.newInstance(sensors, actuators, jOther);
+
+            // Return the action with both instance and class (in case is needed for workflows mode)
+            return new Action(classInstance, c);
 
         } catch (ClassNotFoundException e) {
             throw new FunctionInstantiationException("Error finding the driver " + driver, e);
@@ -388,7 +403,7 @@ public abstract class Func implements Runnable {
         }
     }
 
-    private static void setupOnReadTrigger(JSONObject triggerParams, EdgeMap edgeMap, Runnable action, String label,
+    private static void setupOnReadTrigger(JSONObject triggerParams, EdgeMap edgeMap, Action action, String label,
             boolean onRead) throws FunctionInstantiationException {
         JSONObject jTriggerSensorMap = triggerParams.optJSONObject("trigger-sensor");
 
@@ -444,7 +459,7 @@ public abstract class Func implements Runnable {
      * @param edgeMap EdgeMap object containing the devices within each edge.
      * @param action  Runnable that implements the function to trigger.
      */
-    public static void setupTrigger(JSONObject jFunc, EdgeMap edgeMap, Runnable action)
+    public static void setupTrigger(JSONObject jFunc, EdgeMap edgeMap, Action action)
             throws FunctionInstantiationException {
         JSONObject jTrigger = jFunc.getJSONObject("trigger");
         String label = jFunc.optString("label", null);
@@ -459,7 +474,6 @@ public abstract class Func implements Runnable {
                 new Timer().scheduleAtFixedRate(new TimerTask() {
                     @Override
                     public void run() {
-                        System.out.println("label: " + label + ".  frequency: " + freq);
                         action.run();
                     }
                 }, 0, freq);
@@ -478,7 +492,7 @@ public abstract class Func implements Runnable {
                 break;
 
             default:
-                System.out.print("Wrong trigger: " + triggerType + " defined on the setup file");
+                System.out.println("Wrong trigger: " + triggerType + " defined on the setup file");
         }
     }
 

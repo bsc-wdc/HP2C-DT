@@ -5,7 +5,6 @@ import com.rabbitmq.client.AMQP;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import es.bsc.hp2c.HP2CEdge;
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.funcs.Func;
@@ -19,8 +18,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
-
-import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
+import es.bsc.hp2c.HP2CEdgeContext;
 
 /**
  * Publish current measurement to the corresponding AMQP topic if the requirements are satisfied.
@@ -80,9 +78,9 @@ public class AmqpPublish extends Func {
         String sensorLabel = ((Device) sensor).getLabel();
 
         // Initialize AMQP communication
-        String edgeLabel = getEdgeLabel();
-        channel = HP2CEdge.getChannel();
-        EXCHANGE_NAME = HP2CEdge.getExchangeName();
+        String edgeLabel = HP2CEdgeContext.getEdgeLabel();
+        channel = HP2CEdgeContext.getChannel();
+        EXCHANGE_NAME = HP2CEdgeContext.getExchangeName();
         String intermediateTopic = "sensors";
         String baseTopic = "edge";
         routingKey = baseTopic + "." + edgeLabel+ "." + intermediateTopic + "." + sensorLabel;

@@ -30,42 +30,56 @@ public class HP2CServerContext {
     private static MetricsHandler metrics = null;
 
     public static void parseArgs(String[] args) {
-        for (int i = 0; i < args.length; i++) {
-            switch (args[i]) {
-                case "--setup_path":
-                    if (i + 1 < args.length) {
-                        pathToSetup = validateSetupPath(args[++i]);
-                    } else {
-                        System.err.println("Error: --setup_path requires a value.");
-                        System.exit(1);
-                    }
-                    break;
-                case "--metrics":
-                case "-m":
-                    useMetrics = true;
-                    break;
-                default:
-                    System.err.println("Warning: Ignoring unrecognized argument: " + args[i]);
+        // The server is running on docker
+        File dockerEnv = new File(".dockerenv");
+        if (dockerEnv.isFile()) {
+            pathToSetup = "/data/setup.json"; // take the path mounted in deploy_server.sh
+            String useMetricsString = System.getenv("ENABLE_METRICS"); // take the env declared in deploy_server.sh
+            useMetrics = (useMetricsString != null && useMetricsString.equals("1"));
+            System.out.println("PATH" + pathToSetup);
+            System.out.println("ASD " + useMetrics);
+        }
+
+        // The server is running locally
+        else {
+            for (int i = 0; i < args.length; i++) {
+                switch (args[i]) {
+                    case "--setup_path":
+                        if (i + 1 < args.length) {
+                            pathToSetup = validateSetupPath(args[++i]);
+                        } else {
+                            System.err.println("Error: --setup_path requires a value.");
+                            System.exit(1);
+                        }
+                        break;
+                    case "--metrics":
+                    case "-m":
+                        useMetrics = true;
+                        break;
+                    default:
+                        System.err.println("Warning: Ignoring unrecognized argument: " + args[i]);
+                }
             }
         }
         System.out.println("Setup file: " + pathToSetup);
         System.out.println("Use metrics: " + useMetrics);
     }
 
-
     /**
      * Initialize AmqpManager, InfluxDB, and CLI connections.
-     * @param hostIp IP of AmqpManager broker and database. TODO: use custom IPs for each module
+     * 
+     * @param hostIp IP of AmqpManager broker and database. TODO: use custom IPs for
+     *               each module
      */
-    public static void init(String hostIp) throws IOException, TimeoutException {
+    public static void init(String hostIp, Class<?> runtimeHost) throws IOException, TimeoutException {
         // Initialize modules
         db = new DatabaseHandler(hostIp);
         alarms = new AlarmHandler(pathToSetup, db);
         amqp = new AmqpManager(hostIp, edgeMap, db);
-        heartbeat = new EdgeHeartbeat(amqp, edgeMap);
+        heartbeat = new EdgeHeartbeat(amqp, edgeMap, runtimeHost);
         restServer = new RestListener(edgeMap);
         cli = new CLI(edgeMap);
-        if (useMetrics){
+        if (useMetrics) {
             metrics = new MetricsHandler();
         }
     }
@@ -102,7 +116,6 @@ public class HP2CServerContext {
         db.start();
         amqp.startListener();
         restServer.start();
-        cli.start();
     }
 
     public static String getHostIp() {
@@ -114,7 +127,7 @@ public class HP2CServerContext {
         return hostIp;
     }
 
-    /** Check actuator validity and return a custom error message upon error.*/
+    /** Check actuator validity and return a custom error message upon error. */
     public static ActuatorValidity checkActuator(String edgeLabel, String actuatorName) {
         // Check if the provided actuator name exists in the map of edge nodes
         StringBuilder msg = new StringBuilder();
@@ -145,23 +158,27 @@ public class HP2CServerContext {
     public static class ActuatorValidity {
         boolean isValid;
         String msg;
+
         ActuatorValidity(boolean isValid, String msg) {
             this.isValid = isValid;
             this.msg = msg;
         }
+
         public boolean isValid() {
             return isValid;
         }
+
         public String getMessage() {
             return msg;
         }
     }
 
     /**
-     * Check if the combination "edgeLabel" and "deviceName" is in the given nested HashMap
+     * Check if the combination "edgeLabel" and "deviceName" is in the given nested
+     * HashMap
      */
     public static boolean isInMap(String edgeLabel, String deviceName, Map<String, VirtualEdge> edgeMap) {
-        if (edgeMap.containsKey(edgeLabel)){
+        if (edgeMap.containsKey(edgeLabel)) {
             return edgeMap.get(edgeLabel).containsDevice(deviceName);
         } else {
             return false;
@@ -179,11 +196,11 @@ public class HP2CServerContext {
     /**
      * Get a Map containing the devices in every VirtualEdge
      */
-    public static EdgeMap getDevicesMap(){
+    public static EdgeMap getDevicesMap() {
         EdgeMap edgeDevices = new EdgeMap();
-        for (VirtualEdge virtualEdge:edgeMap.values()){
+        for (VirtualEdge virtualEdge : edgeMap.values()) {
             Map<String, VirtualComm.VirtualDevice> devices = virtualEdge.getDeviceMap();
-            for (String deviceLabel:devices.keySet()){
+            for (String deviceLabel : devices.keySet()) {
                 edgeDevices.addDevice(virtualEdge.getLabel(), deviceLabel, (Device) devices.get(deviceLabel));
             }
         }
@@ -199,16 +216,16 @@ public class HP2CServerContext {
         return null;
     }
 
-    public static String getPathToSetup(){
+    public static String getPathToSetup() {
         return pathToSetup;
     }
 
-    public static ArrayList<Sensor> getSensorsByType(String type){
+    public static ArrayList<Sensor> getSensorsByType(String type) {
         ArrayList<Sensor> sensors = new ArrayList<>();
-        for (VirtualEdge e : edgeMap.values()){
-            for (VirtualComm.VirtualDevice d : e.getDeviceMap().values()){
+        for (VirtualEdge e : edgeMap.values()) {
+            for (VirtualComm.VirtualDevice d : e.getDeviceMap().values()) {
                 if (((Device) d).isSensitive() &&
-                        Objects.equals(((Device) d).getType(), type)){
+                        Objects.equals(((Device) d).getType(), type)) {
                     sensors.add((Sensor) d);
                 }
             }
@@ -216,13 +233,13 @@ public class HP2CServerContext {
         return sensors;
     }
 
-    public static ArrayList<Device> getDevicesByTypeAndEdge(String type, String edgeLabel){
+    public static ArrayList<Device> getDevicesByTypeAndEdge(String type, String edgeLabel) {
         ArrayList<Device> devices = new ArrayList<>();
-        if (edgeMap.containsKey(edgeLabel)){
+        if (edgeMap.containsKey(edgeLabel)) {
             VirtualEdge e = edgeMap.get(edgeLabel);
-            for (VirtualComm.VirtualDevice d : e.getDeviceMap().values()){
+            for (VirtualComm.VirtualDevice d : e.getDeviceMap().values()) {
                 Device device = (Device) d;
-                if ((Objects.equals(device.getType(), type))){
+                if ((Objects.equals(device.getType(), type))) {
                     devices.add(device);
                 }
             }
@@ -230,22 +247,23 @@ public class HP2CServerContext {
         return devices;
     }
 
-    public static ArrayList<String> getEdgeLabels(){
+    public static ArrayList<String> getEdgeLabels() {
         ArrayList<String> edgeLabels = new ArrayList<>();
-        for (String edgeLabel : edgeMap.keySet()){
+        for (String edgeLabel : edgeMap.keySet()) {
             edgeLabels.add(edgeLabel);
         }
         return edgeLabels;
     }
 
     public static void turnOffSwitches(String edgeLabel) throws IOException {
-        if (edgeMap.containsKey(edgeLabel)){
-            for (Device d : getDevicesByTypeAndEdge("Switch", edgeLabel)){
+        if (edgeMap.containsKey(edgeLabel)) {
+            for (Device d : getDevicesByTypeAndEdge("Switch", edgeLabel)) {
                 Switch sw = (Switch) d;
                 int size = sw.getCurrentValues().length;
 
-                if (!sw.getActuatorAvailability()){
-                    System.err.println("Switch is not available"); return;
+                if (!sw.getActuatorAvailability()) {
+                    System.err.println("Switch is not available");
+                    return;
                 }
                 Switch.State[] values = new Switch.State[size];
 
@@ -256,15 +274,15 @@ public class HP2CServerContext {
         }
     }
 
-    public static AlarmHandler getAlarms(){
+    public static AlarmHandler getAlarms() {
         return alarms;
     }
 
-    public static DatabaseHandler getDB(){
+    public static DatabaseHandler getDB() {
         return db;
     }
 
-    public static MetricsHandler getMetrics(){
+    public static MetricsHandler getMetrics() {
         return metrics;
     }
 }

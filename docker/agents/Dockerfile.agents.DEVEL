@@ -39,27 +39,28 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=framework /opt/COMPSs/Runtime/compss-agent-impl.jar /opt/COMPSs/Runtime/compss-agent-impl.jar
-COPY --from=framework /opt/COMPSs/Runtime/compss-engine.jar /opt/COMPSs/Runtime/compss-engine.jar
-COPY --from=framework /opt/COMPSs/Runtime/scheduler /opt/COMPSs/Runtime/scheduler
-COPY --from=framework /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-base.jar /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-base.jar 
-COPY --from=framework /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-no-checkpoint.jar /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-no-checkpoint.jar 
+# Use --from=framework to import from the official COMPSs image, otherwise remove for development purposes
+COPY COMPSs/Runtime/compss-agent-impl.jar /opt/COMPSs/Runtime/compss-agent-impl.jar
+COPY COMPSs/Runtime/compss-engine.jar /opt/COMPSs/Runtime/compss-engine.jar
+COPY COMPSs/Runtime/scheduler /opt/COMPSs/Runtime/scheduler
+COPY COMPSs/Runtime/checkpointer/compss-checkpointer-base.jar /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-base.jar 
+COPY COMPSs/Runtime/checkpointer/compss-checkpointer-no-checkpoint.jar /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-no-checkpoint.jar 
 RUN mkdir -p /opt/COMPSs/Runtime/connectors /opt/COMPSs/Runtime/
 
-COPY --from=framework /opt/COMPSs/Runtime/adaptors/CommAgent /opt/COMPSs/Runtime/adaptors/CommAgent
-COPY --from=framework /opt/COMPSs/Runtime/adaptors/RESTagent /opt/COMPSs/Runtime/adaptors/RESTagent
-COPY --from=framework /opt/COMPSs/Runtime/adaptors/local /opt/COMPSs/Runtime/adaptors/local
+COPY COMPSs/Runtime/adaptors/CommAgent /opt/COMPSs/Runtime/adaptors/CommAgent
+COPY COMPSs/Runtime/adaptors/RESTagent /opt/COMPSs/Runtime/adaptors/RESTagent
+COPY COMPSs/Runtime/adaptors/local /opt/COMPSs/Runtime/adaptors/local
 
 # Agents scripts
-COPY --from=framework /opt/COMPSs/Runtime/scripts/user/compss_agent_start /opt/COMPSs/Runtime/scripts/user/compss_agent_start
-COPY --from=framework /opt/COMPSs/Runtime/scripts/system /opt/COMPSs/Runtime/scripts/system 
+COPY COMPSs/Runtime/scripts/user/compss_agent_start /opt/COMPSs/Runtime/scripts/user/compss_agent_start
+COPY COMPSs/Runtime/scripts/system /opt/COMPSs/Runtime/scripts/system 
 
 # Configuration file
-COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/projects/examples/local/project.xml /opt/COMPSs/Runtime/configuration/xml/projects/examples/local/project.xml 
-COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/resources/examples/local/resources.xml /opt/COMPSs/Runtime/configuration/xml/resources/examples/local/resources.xml
-COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/projects/project_schema.xsd /opt/COMPSs/Runtime/configuration/xml/projects/project_schema.xsd
-COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd /opt/COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd
-COPY --from=framework /opt/COMPSs//Runtime/configuration/agents/all.json /opt/COMPSs//Runtime/configuration/agents/all.json
+COPY COMPSs/Runtime/configuration/xml/projects/examples/local/project.xml /opt/COMPSs/Runtime/configuration/xml/projects/examples/local/project.xml 
+COPY COMPSs/Runtime/configuration/xml/resources/examples/local/resources.xml /opt/COMPSs/Runtime/configuration/xml/resources/examples/local/resources.xml
+COPY COMPSs/Runtime/configuration/xml/projects/project_schema.xsd /opt/COMPSs/Runtime/configuration/xml/projects/project_schema.xsd
+COPY COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd /opt/COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd
+COPY COMPSs//Runtime/configuration/agents/all.json /opt/COMPSs//Runtime/configuration/agents/all.json
 
 ENV PATH="${PATH}:/opt/COMPSs/Runtime/scripts/user/" AGENT_NAME=localhost REST_AGENT_PORT=46101 COMM_AGENT_PORT=46102 DEBUG=debug
 

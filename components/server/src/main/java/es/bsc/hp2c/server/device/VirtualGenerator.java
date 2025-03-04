@@ -19,6 +19,7 @@ import es.bsc.hp2c.common.generic.Generator;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.server.modules.AmqpManager;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -27,7 +28,6 @@ import java.util.ArrayList;
 
 import static es.bsc.hp2c.HP2CServerContext.amqp;
 import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
-
 
 /**
  * Digital twin Generator.
@@ -41,11 +41,12 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     /**
      * Creates a new instance of VirtualGenerator.
      *
-     * @param label device label
-     * @param position device position
-     * @param properties JSONObject representing device properties
-     * @param jGlobalProperties JSONObject representing the global properties of the edge
-     * */
+     * @param label             device label
+     * @param position          device position
+     * @param properties        JSONObject representing device properties
+     * @param jGlobalProperties JSONObject representing the global properties of the
+     *                          edge
+     */
     public VirtualGenerator(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position, properties, jGlobalProperties);
         this.edgeLabel = jGlobalProperties.getString("label");
@@ -74,7 +75,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
         for (int i = 0; i < stringValues.length; i++) {
             if (stringValues[i].equalsIgnoreCase("null") || stringValues[i].equalsIgnoreCase("none")) {
                 values[i] = Float.NEGATIVE_INFINITY;
-            } else if (isNumeric(stringValues[i])){
+            } else if (isNumeric(stringValues[i])) {
                 values[i] = Float.parseFloat(stringValues[i]);
             } else {
                 throw new IOException("Values passed to Generator " +
@@ -90,7 +91,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     }
 
     @Override
-    public Float[] actuatedValues(Float[] values){
+    public Float[] actuatedValues(Float[] values) {
         return values;
     }
 
@@ -98,6 +99,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     public final Float[] decodeValuesSensor(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
     }
+
     @Override
     public final Float[] decodeValuesActuator(byte[] message) {
         return CommUtils.BytesToFloatArray(message);
@@ -109,7 +111,9 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     }
 
     @Override
-    public int getSize() { return this.size; }
+    public int getSize() {
+        return this.size;
+    }
 
     @Override
     public boolean isCategorical() {
@@ -132,7 +136,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     }
 
     @Override
-    public void setUnits(Object units){
+    public void setUnits(Object units) {
         this.units = units;
     }
 
@@ -142,7 +146,7 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
     }
 
     @Override
-    public JSONObject getDataTypes(){
+    public JSONObject getDataTypes() {
         JSONObject result = new JSONObject();
         JSONObject sensorTypes = new JSONObject();
         sensorTypes.put("human-readable", Float[].class.getTypeName());
@@ -152,4 +156,3 @@ public class VirtualGenerator extends Generator<Float[]> implements VirtualSenso
         return result;
     }
 }
-

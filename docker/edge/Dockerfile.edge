@@ -2,16 +2,11 @@
 ARG COMPSS_VERSION
 
 # ---------- Builder Stage ----------
-FROM openjdk:11-jdk-slim as builder
+FROM compss/java_agents:${COMPSS_VERSION} as builder
 ARG MAVEN_VERSION=3.9.3
 
-# Install necessary tools
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        bash \
-        curl \
-        tar && \
-    rm -rf /var/lib/apt/lists/*
+# Redeclare the ARG after FROM
+ARG COMPSS_VERSION
 
 # Install Maven
 RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
@@ -21,8 +16,16 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
     && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
 
 ENV MAVEN_HOME=/usr/share/maven
-ENV MAVEN_CONFIG="$HOME/.m2"
-EXPOSE 8080
+ENV MAVEN_CONFIG="/root/.m2"
+ENV COMPSS_VERSION=${COMPSS_VERSION}
+
+# Add COMPSs jar if using local install
+COPY ./tmp/* /tmp/
+RUN if [ "${COMPSS_VERSION}" = "trunk" ]; then \
+        mkdir -p /root/.m2/repository/es/bsc/compss/compss-engine/3.3.rc2409/; \
+        mv /tmp/compss-engine.jar \
+            /root/.m2/repository/es/bsc/compss/compss-engine/3.3.rc2409/compss-engine-3.3.rc2409.jar; \
+    fi
 
 # Build common module
 COPY ./common/ /app/common

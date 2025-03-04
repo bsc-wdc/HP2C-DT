@@ -19,6 +19,7 @@ import es.bsc.hp2c.common.generic.Switch;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualSensor;
 import es.bsc.hp2c.common.utils.CommUtils;
+import es.bsc.hp2c.server.modules.AmqpManager;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -28,11 +29,11 @@ import java.util.ArrayList;
 import static es.bsc.hp2c.HP2CServerContext.amqp;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
 
-
 /**
  * Digital twin Switch.
  */
-public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Switch.State[]>, VirtualActuator<Switch.State[]> {
+public class VirtualSwitch extends Switch<Float[]>
+        implements VirtualSensor<Switch.State[]>, VirtualActuator<Switch.State[]> {
     private final String edgeLabel;
     private final int size;
     private String aggregate;
@@ -41,10 +42,11 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     /**
      * Creates a new instance of VirtualSwitch.
      *
-     * @param label device label
-     * @param position device position
-     * @param properties JSONObject representing device properties
-     * @param jGlobalProperties JSONObject representing the global properties of the edge
+     * @param label             device label
+     * @param position          device position
+     * @param properties        JSONObject representing device properties
+     * @param jGlobalProperties JSONObject representing the global properties of the
+     *                          edge
      */
     public VirtualSwitch(String label, float[] position, JSONObject properties, JSONObject jGlobalProperties) {
         super(label, position, properties.getJSONArray("indexes").length(), properties, jGlobalProperties);
@@ -60,7 +62,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     @Override
     public void sensed(Float[] values, Instant timestamp) {
         Float[] sensedValues = new Float[values.length];
-        for (int i = 0; i < values.length; i++){
+        for (int i = 0; i < values.length; i++) {
             sensedValues[i] = values[i];
         }
         setValues(sensedValues(sensedValues), timestamp);
@@ -73,12 +75,12 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     }
 
     @Override
-    public void actuate(String[] stringValues) throws IOException{
+    public void actuate(String[] stringValues) throws IOException {
         State[] values = new State[stringValues.length];
         for (int i = 0; i < stringValues.length; i++) {
             if (isState(stringValues[i])) {
                 values[i] = State.valueOf(stringValues[i].toUpperCase());
-            } else{
+            } else {
                 throw new IOException("Values passed to Switch " +
                         "(" + edgeLabel + "." + getLabel() + ") must be of type State.\n" +
                         "Options are: " + printableArray(State.values()));
@@ -107,7 +109,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     public Float[] actuatedValues(State[] values) {
         Float[] outputValues = new Float[values.length];
         for (int i = 0; i < values.length; ++i) {
-            if (values[i] == State.ON){
+            if (values[i] == State.ON) {
                 outputValues[i] = 1.0f;
             } else if (values[i] == State.OFF) {
                 outputValues[i] = 0.0f;
@@ -136,7 +138,9 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     }
 
     @Override
-    public int getSize() { return this.size; }
+    public int getSize() {
+        return this.size;
+    }
 
     @Override
     public boolean isCategorical() {
@@ -163,7 +167,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     }
 
     @Override
-    public void setUnits(Object units){
+    public void setUnits(Object units) {
         this.units = units;
     }
 
@@ -173,7 +177,7 @@ public class VirtualSwitch extends Switch<Float[]> implements VirtualSensor<Swit
     }
 
     @Override
-    public JSONObject getDataTypes(){
+    public JSONObject getDataTypes() {
         JSONObject result = new JSONObject();
         JSONObject sensorTypes = new JSONObject();
         sensorTypes.put("human-readable", Switch.State[].class.getTypeName());

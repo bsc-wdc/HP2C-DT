@@ -4,37 +4,34 @@
 /opt/COMPSs/Runtime/scripts/user/compss_agent_start --hostname=${AGENT_NAME} --rest_port=${REST_AGENT_PORT} --comm_port=${COMM_AGENT_PORT} &
 AGENT_PID=$!
 
+setup_path_flag="--setup_path"
 sleep 10
 
 curl -s -XPUT http://127.0.0.1:${REST_AGENT_PORT}/COMPSs/startApplication -H "content-type: application/xml" -d \
-'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
   <startApplication>
     <lang>JAVA</lang>
-    <ceiClass>es.bsc.hp2c.HP2CEdgeItf</ceiClass>
-    
-    <className>es.bsc.hp2c.HP2CEdge</className>
+    <ceiClass>es.bsc.hp2c.HP2CServerItf</ceiClass>
+
+    <className>es.bsc.hp2c.HP2CServer</className>
     <hasResult>false</hasResult>
     <methodName>main</methodName>
-    
+
     <parameters>
-      <params paramId="0">
+      <params paramId=\"0\">
         <direction>IN</direction>
         <paramName>args</paramName>
         <prefix></prefix>
         <contentType></contentType>
         <stdIOStream>UNSPECIFIED</stdIOStream>
         <type>OBJECT_T</type>
-        <array paramId="0">
+        <array paramId=\"0\">
           <componentClassname>java.lang.String</componentClassname>
           <values>
-            <element paramId="0">
-              <className>java.lang.String</className>
-              <value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">/data/setup.json</value>
-            </element>
           </values>
         </array>
       </params>
     </parameters>
-  </startApplication>'
+  </startApplication>"
 
 wait ${AGENT_PID}

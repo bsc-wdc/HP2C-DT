@@ -55,6 +55,10 @@ public class OpalSimulator {
         } else {
             inDocker = true;
             deploymentFile = "/data/edge/";
+            File setupDirectory = new File(deploymentFile);
+            if (!setupDirectory.exists()){
+                deploymentFile = "deployments/simple/setup/";
+            }
         }
         File setupDirectory = new File(deploymentFile);
         if (!setupDirectory.exists()){
@@ -347,7 +351,7 @@ public class OpalSimulator {
                             System.err.println("Error closing server socket: " + e1.getMessage());
                         }
                         try {
-                            Thread.sleep(2000); // Esperar antes de intentar reconectar
+                            Thread.sleep(2000);
                         } catch (InterruptedException ex) {
                             throw new RuntimeException(ex);
                         }
@@ -367,7 +371,6 @@ public class OpalSimulator {
             }
         }
     }
-
 
 
     /*
@@ -556,7 +559,8 @@ public class OpalSimulator {
 
         for (Object jo : jDevices){
             JSONObject jDevice = (JSONObject) jo;
-            JSONObject jDProperties = jDevice.getJSONObject("properties");
+            JSONObject jDProperties = jDevice.optJSONObject("properties");
+            if (jDProperties == null) continue;
             String label = formatLabel(jDevice.getString("label"));
 
             String protocol = jDProperties.getString("comm-type");

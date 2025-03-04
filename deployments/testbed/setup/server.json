@@ -32,6 +32,7 @@
     {
       "label": "CalcPower",
       "lang": "Java",
+      "type": "workflow",
       "method-name": "es.bsc.hp2c.server.funcs.CalcPower",
       "parameters": {
         "sensors": {

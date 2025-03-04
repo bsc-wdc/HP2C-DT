@@ -15,7 +15,6 @@
  */
 package es.bsc.hp2c;
 
-
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 import static es.bsc.hp2c.HP2CServerContext.*;
@@ -33,7 +32,7 @@ public class HP2CServer {
         String hostIp = getHostIp();
         // Deploy listener
         try {
-            init(hostIp);
+            init(hostIp, HP2CServer.class);
             start();
         } catch (IOException | TimeoutException | InterruptedException e) {
             System.err.println("Server error: " + e.getMessage());

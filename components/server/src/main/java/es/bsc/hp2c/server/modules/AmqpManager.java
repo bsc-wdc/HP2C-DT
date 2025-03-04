@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.Timer;
 
+import static es.bsc.hp2c.HP2CServerContext.isInMap;
+
 public class AmqpManager {
     private final DatabaseHandler db;
     private static Channel channel = null;
@@ -83,7 +85,7 @@ public class AmqpManager {
 
         metrics = HP2CServerContext.getMetrics();
         Timer timer = new Timer();
-        if (metrics != null){
+        if (metrics != null) {
             timer.scheduleAtFixedRate(metrics, 10000, 30000);
         }
 
@@ -92,7 +94,7 @@ public class AmqpManager {
             try {
                 // Parse message. For instance: routingKey = "edge.edge1.sensors.voltmeter1"
                 byte[] message = delivery.getBody();
-                if (metrics != null){
+                if (metrics != null) {
                     metrics.recordMessage(message.length);
                 }
                 // Check existence of pair edge-device
@@ -105,7 +107,8 @@ public class AmqpManager {
                 }
 
                 Sensor<?, ?> sensor = (Sensor<?, ?>) edgeMap.get(edgeLabel).getDevice(deviceName);
-                // Decode the MeasurementWindow, setValues in the sensors, and get the new MeasurementWindow<Float[]>
+                // Decode the MeasurementWindow, setValues in the sensors, and get the new
+                // MeasurementWindow<Float[]>
                 MeasurementWindow<Float[]> window = sensor.sensed(message);
                 sensor.onRead();
 
@@ -118,7 +121,8 @@ public class AmqpManager {
                         + ": " + e.getMessage());
             }
         };
-        channel.basicConsume(queueName, true, callback, consumerTag -> { });
+        channel.basicConsume(queueName, true, callback, consumerTag -> {
+        });
     }
 
     public void virtualActuate(VirtualActuator actuator, String edgeLabel, byte[] message)
@@ -135,13 +139,13 @@ public class AmqpManager {
     }
 
     /** Parse device name from the routing key in deliverer's message. */
-    private String getEdgeLabel(String routingKey){
+    private String getEdgeLabel(String routingKey) {
         String[] routingKeyParts = routingKey.split("\\.");
         return routingKeyParts[1];
     }
 
     /** Parse device name from the routing key in deliverer's message. */
-    private String getDeviceName(String routingKey){
+    private String getDeviceName(String routingKey) {
         String[] routingKeyParts = routingKey.split("\\.");
         return routingKeyParts[3];
     }
