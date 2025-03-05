@@ -13,6 +13,8 @@ usage() {
                     bsc_subnet
                     (default: None)" 1>&2
     echo " --metrics, -m: Use the metrics logger (default: false)"
+    echo " -e: Execute the edge response test"
+    echo " -s: Execute the server response test"
     exit 1
 }
 
@@ -25,6 +27,8 @@ COMM_SETUP=""
 # Parse command line arguments
 pos=1
 ENABLE_METRICS=0
+EDGE_TEST=0
+SERVER_TEST=0
 
 for arg in "$@"; do
     case $arg in
@@ -43,6 +47,12 @@ for arg in "$@"; do
         --metrics|-m)
             ENABLE_METRICS=1
             ;;
+        -e)
+            EDGE_TEST=1
+            ;;
+        -s)
+            SERVER_TEST=1
+            ;;
         *)
             if [ $pos -eq 1 ]; then
                 DEPLOYMENT_NAME=$1
@@ -56,7 +66,13 @@ for arg in "$@"; do
 done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/server:latest"
-
+resources_path="/opt/COMPSs/Runtime/configuration/xml/resources/default_resources.xml"
+if [ $EDGE_TEST == 1 ]; then
+  resources_path="${SCRIPT_DIR}/../experiments/response_time/scripts/edge_resources.xml"
+elif [ $SERVER_TEST == 1 ]; then
+  resources_path="${SCRIPT_DIR}/../experiments/response_time/scripts/server_resources.xml"
+fi
+remote_resources_path="/opt/COMPSs/Runtime/configuration/xml/resources/resources.xml"
 
 # Initialize configuration files and directories
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
@@ -166,8 +182,10 @@ docker run \
     -v ${deployment_json}:/data/deployment_setup.json \
     -v ${nominal_voltages_file}:/data/nominal_voltages.json \
     -v ${config_json}:/run/secrets/config.json \
+    -v ${resources_path}:${remote_resources_path} \
     -p 8080:8080 \
     -e LOCAL_IP=$ip_address \
+    -e RESOURCES_PATH=$remote_resources_path \
     -e CUSTOM_IP=$custom_ip_address \
     -e ENABLE_METRICS=$ENABLE_METRICS \
     ${DOCKER_IMAGE}
