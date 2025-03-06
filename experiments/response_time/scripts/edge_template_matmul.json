@@ -72,7 +72,8 @@
         "sensors": ["Voltmeter Gen1"],
         "actuators": ["msgAlert1"],
         "other": {
-            "n": "%n%"
+            "msize": "%msize%",
+            "bsize": "%bsize%"
         }
       },
       "trigger": {

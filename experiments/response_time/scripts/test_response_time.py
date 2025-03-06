@@ -58,47 +58,60 @@ def wait_for_log_lines(log_file, min_lines=15):
         time.sleep(1)  # Check every second
 
 def main(args):
-    matrix_sizes = [0, 1, 10, 100, 1000, 10000]
+    msizes = [1, 10, 100, 1000]
+    bsizes = [1, 10, 100, 1000]
     time_steps = [1000, 10000]
     dirname = os.path.dirname(__file__)
     file_path = "/home/mauro/BSC/hp2cdt/deployments/test_response_time/setup/edge1.json"
     dir_path = os.path.dirname(file_path)
     os.makedirs(dir_path, exist_ok=True)
+    test_host = "edge"
+    if len(args) > 1 and args[1] == "server":
+        test_host = "server"
 
     for i in range(2):
         for time_step in time_steps:
-            for n in matrix_sizes:
+            for msize in msizes:
+                for bsize in bsizes:
+                    if test_host == "edge":
+                        if msize > 1 or bsize > 100:
+                            continue
+                    if msize == 0 and bsize > 1:
+                        continue
 
-                os.chdir(dirname)
-                template_path = "edge_template_matmul.json"
+                    os.chdir(dirname)
+                    template_path = "edge_template_matmul.json"
 
-                with open(template_path, "r") as file:
-                    edge_json = json.load(file)
-                    edge_json["funcs"][0]["parameters"]["other"]["n"] = n
+                    with open(template_path, "r") as file:
+                        edge_json = json.load(file)
+                        edge_json["funcs"][0]["parameters"]["other"]["msize"] = msize
+                        edge_json["funcs"][0]["parameters"]["other"]["bsize"] = bsize
 
-                with open(file_path, "w") as file:
-                    json.dump(edge_json, file, indent=2)
+                    with open(file_path, "w") as file:
+                        json.dump(edge_json, file, indent=2)
 
-                print(f"Updated JSON with n={n} (time_step {time_step})")
+                    print(f"Updated JSON with msize={msize}, bsize={bsize} "
+                          f"(time_step {time_step})")
 
-                print("Deploying opal simulator and edge...")
-                deploy_opal_simulator_and_edge(time_step, "test_response_time")
-                print("Deploying broker...")
-                deploy_broker()
-                print("Deploying server...")
-                deploy_server("test_response_time")
+                    print("Deploying opal simulator and edge...")
+                    deploy_opal_simulator_and_edge(time_step, "test_response_time")
+                    print("Deploying broker...")
+                    deploy_broker()
+                    print("Deploying server...")
+                    deploy_server("test_response_time")
 
-                mode = "wf" if i == 0 else "seq"
-                log_file = f"{dirname}/../results/ts{time_step}_n{n}_{mode}.log"
-                log_path = os.path.dirname(log_file)
-                os.makedirs(log_path, exist_ok=True)
+                    mode = "wf" if i == 0 else "seq"
+                    log_file = (f"{dirname}/../results/ts{time_step}_m{msize}"
+                                f"_b{bsize}_{mode}.log")
+                    log_path = os.path.dirname(log_file)
+                    os.makedirs(log_path, exist_ok=True)
 
-                # Wait until the log file has at least 15 lines
-                wait_for_log_lines(log_file, 200)
+                    # Wait until the log file has at least 15 lines
+                    wait_for_log_lines(log_file, 15)
 
-                cleanup()
-                print("Iteration end")
-                print("///////////////////////////////////////////\n")
+                    cleanup()
+                    print("Iteration end")
+                    print("///////////////////////////////////////////\n")
 
         # Run sequentially: delete the entry workflow from matmul
         del edge_json["funcs"][0]["type"]

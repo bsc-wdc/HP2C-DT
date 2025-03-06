@@ -20,6 +20,12 @@ import java.util.Map;
  * This class implements a COMPSs function to multiply two matrices.
  */
 public class MatMul extends Func {
+    private static int MSIZE;
+    private static int BSIZE;
+
+    private static double [][][] A;
+    private static double [][][] B;
+    private static double [][][] C;
     private int n; // matrix size --> nxn
     private Voltmeter<?> voltmeter;
     private MsgAlert msgAlert;
@@ -64,7 +70,10 @@ public class MatMul extends Func {
         this.msgAlert = (MsgAlert) actuator;
 
         try {
-            this.n = others.getInt("n");
+            MSIZE =  others.getInt("msize");
+            BSIZE =  others.getInt("bsize");
+            A = initializeMatrix();
+            B = initializeMatrix();
         } catch (Exception e) {
             throw new FunctionInstantiationException("'n' field must be provided");
         }
@@ -72,16 +81,21 @@ public class MatMul extends Func {
 
     @Override
     public void run() {
-        double[][] A = new double[n][n];
-        double[][] B = new double[n][n];
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                A[i][j] = i + j;
-                B[i][j] = i - j;
+        // Allocate result matrix C
+        System.out.println("[LOG] Allocating C matrix space");
+        C = new double[MSIZE][MSIZE][BSIZE*BSIZE];
+
+        // Compute result
+        System.out.println("[LOG] Computing Result");
+        for (int i = 0; i < MSIZE; i++) {
+            for (int j = 0; j < MSIZE; j++) {
+                for (int k = 0; k < MSIZE; k++) {
+                    multiplyAccumulative(A[i][k], B[k][j], C[i][j]);
+                }
             }
         }
-        // Call the COMPSs task to multiply matrices
-        double[][] C = multiplyMatrices(A, B);
+
+        printMatrix(C);
 
         long timestampNanos = voltmeter.getWindow().getLastMeasurement().getTimestamp().getEpochSecond() * 1_000_000_000L
                 + voltmeter.getWindow().getLastMeasurement().getTimestamp().getNano();
@@ -92,35 +106,66 @@ public class MatMul extends Func {
         }
     }
 
-    public static double[][] multiplyMatrices(double[][] A, double[][] B) {
-        int n = A.length;
-        double[][] C = new double[n][n];
 
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                for (int k = 0; k < n; k++) {
-                    C[i][j] += A[i][k] * B[k][j];
+    private static double[][][] initializeMatrix() {
+        double[][][] matrix = new double[MSIZE][MSIZE][BSIZE*BSIZE];
+        for (int i = 0; i < MSIZE; ++i) {
+            for (int j = 0; j < MSIZE; ++j) {
+                matrix[i][j] = initializeBlock(BSIZE);
+            }
+        }
+
+        return matrix;
+    }
+
+    private static void printMatrix(double[][][] matrix) {
+        System.out.println("COMPUTED MATRIX: ");
+        for (int i = 0; i < MSIZE; i++) {
+            for (int j = 0; j < MSIZE; j++) {
+                printBlock(matrix[i][j]);
+            }
+            System.out.println("");
+        }
+    }
+
+    private static void printBlock(double[] block) {
+        for (int k = 0; k < block.length; k++) {
+            System.out.print(block[k] + " ");
+        }
+        System.out.println("");
+    }
+
+    public static void multiplyAccumulative(double[] a, double[] b, double[] c) {
+        int M = (int)Math.sqrt(a.length);
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < M; j++) {
+                for (int k = 0; k < M; k++) {
+                    c[i*M + j] += a[i*M + k] * b[k*M + j];
                 }
             }
         }
+    }
 
-        System.out.println("[MatMul] Matrix multiplication result:");
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                System.out.print(C[i][j] + "\t");
-            }
-            System.out.println();
+    public static double[] initializeBlock(int size) {
+        double[] block = new double[size*size];
+        for (int i = 0; i < size*size; ++i) {
+            block[i] = (double)(Math.random()*10.0);
         }
-
-        return C;
+        return block;
     }
 
     public static interface COMPSsItf {
-        @Constraints(computingUnits = "1")
+
+        @Constraints(computingUnits = "1", processorArchitecture = "arm")
         @Method(declaringClass = "es.bsc.hp2c.edge.funcs.MatMul")
-        double[][] multiplyMatrices(
-                @Parameter(type = Type.OBJECT, direction = Direction.IN) double[][] A,
-                @Parameter(type = Type.OBJECT, direction = Direction.IN) double[][] B
+        void multiplyAccumulative(
+                @Parameter double[] A,
+                @Parameter double[] B,
+                @Parameter(direction = Direction.INOUT)	double[] C
+        );
+        @Method(declaringClass = "es.bsc.hp2c.edge.funcs.MatMul")
+        double[] initializeBlock(
+                @Parameter int size
         );
     }
 }
