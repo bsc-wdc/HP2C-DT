@@ -67,7 +67,7 @@
       "label": "MatMul",
       "type": "workflow",
       "lang": "Java",
-      "method-name": "es.bsc.hp2c.server.funcs.MatMul",
+      "method-name": "es.bsc.hp2c.edge.funcs.MatMul",
       "parameters": {
         "sensors": ["Voltmeter Gen1"],
         "actuators": ["msgAlert1"],

@@ -534,7 +534,8 @@ public abstract class Func implements Runnable {
                 }
 
                 System.out.println("Loading Func " + label + "\n" +
-                        "    Type: " + triggerType + "\n" +
+                        "    Type: " + jFunc.optString("type") + "\n" +
+                        "    Trigger type: " + triggerType + "\n" +
                         "    Trigger Sensors (onRead): " + "\n\t\t" + (triggerSensorDetails.length() > 0
                                 ? triggerSensorDetails.toString()
                                 : "None")

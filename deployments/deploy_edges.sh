@@ -12,6 +12,7 @@ usage() {
                     bsc
                     bsc_subnet
                     (default: None)" 1>&2
+    echo " -t: Execute the response time test"
     exit 1
 }
 
@@ -23,6 +24,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
 DEPLOYMENT_NAME="testbed"
 COMM_SETUP=""
+TEST=0
 
 # Parse command line arguments
 pos=1
@@ -40,6 +42,9 @@ for arg in "$@"; do
         --comm=*)
             COMM_SETUP="${arg#*=}"
             ;;
+        -t)
+            TEST=1
+            ;;
         *)
             if [ $pos -eq 1 ]; then
                 DEPLOYMENT_NAME=$1
@@ -53,6 +58,11 @@ for arg in "$@"; do
 done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/edge:latest"
+resources_path="/opt/COMPSs/Runtime/configuration/xml/resources/default_resources.xml"
+if [ $TEST == 1 ]; then
+  resources_path="${SCRIPT_DIR}/../experiments/response_time/scripts/edge_resources.xml"
+fi
+remote_resources_path="/opt/COMPSs/Runtime/configuration/xml/resources/resources.xml"
 
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
@@ -193,6 +203,7 @@ for label in "${!labels_paths[@]}"; do
     COMM_AGENT_PORT=$((4610 + edge_idx))2
     echo "$label REST port: ${REST_AGENT_PORT}"
     echo "$label COMM port: ${COMM_AGENT_PORT}"
+    echo $resources_path
 
     echo "deploying container for $label"
     docker \
@@ -204,9 +215,11 @@ for label in "${!labels_paths[@]}"; do
         -v ${labels_paths[$label]}:/data/setup.json \
         -v ${defaults_json}:/data/edge_default.json \
         -v ${deployment_json}:/data/deployment_setup.json \
+        -v ${resources_path}:${remote_resources_path} \
         -v ${units_file}:/data/default_units.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
+        -e RESOURCES_PATH=$remote_resources_path \
         -e LOCAL_IP=$ip_address \
         -e CUSTOM_IP=$custom_ip_address \
         ${DOCKER_IMAGE}
@@ -216,4 +229,3 @@ done
 echo "Testbed properly deployed"
 wait_containers
 echo "Ended properly"
-

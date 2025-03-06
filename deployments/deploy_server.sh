@@ -13,8 +13,7 @@ usage() {
                     bsc_subnet
                     (default: None)" 1>&2
     echo " --metrics, -m: Use the metrics logger (default: false)"
-    echo " -e: Execute the edge response test"
-    echo " -s: Execute the server response test"
+    echo " -t: Execute response time test"
     exit 1
 }
 
@@ -27,8 +26,7 @@ COMM_SETUP=""
 # Parse command line arguments
 pos=1
 ENABLE_METRICS=0
-EDGE_TEST=0
-SERVER_TEST=0
+TEST=0
 
 for arg in "$@"; do
     case $arg in
@@ -47,11 +45,8 @@ for arg in "$@"; do
         --metrics|-m)
             ENABLE_METRICS=1
             ;;
-        -e)
-            EDGE_TEST=1
-            ;;
-        -s)
-            SERVER_TEST=1
+        -t)
+            TEST=1
             ;;
         *)
             if [ $pos -eq 1 ]; then
@@ -67,9 +62,7 @@ done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/server:latest"
 resources_path="/opt/COMPSs/Runtime/configuration/xml/resources/default_resources.xml"
-if [ $EDGE_TEST == 1 ]; then
-  resources_path="${SCRIPT_DIR}/../experiments/response_time/scripts/edge_resources.xml"
-elif [ $SERVER_TEST == 1 ]; then
+if [ $TEST == 1 ]; then
   resources_path="${SCRIPT_DIR}/../experiments/response_time/scripts/server_resources.xml"
 fi
 remote_resources_path="/opt/COMPSs/Runtime/configuration/xml/resources/resources.xml"

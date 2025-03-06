@@ -50,20 +50,19 @@ def stop_broker():
     client.close()
 
 
-def deploy_server(test_type=""):
+def deploy_server(test_name):
+    flag=""
+    if test_name == "test_response_time":
+        flag = "-t"
+
     """Connect to the server via broker and deploy it in the background."""
     server_client, broker_client = connect_to_server()
-    print()
-    print("nohup ./hp2cdt/deployments/deploy_server.sh "
-                                  f"-m --deployment_name=test_bandwidth --comm=bsc_subnet "
-                                  f"{test_type} >/dev/null 2>&1 &")
-    print()
 
     # Run server deployment in background with nohup
     execute_ssh_command(server_client,
                         "nohup ./hp2cdt/deployments/deploy_server.sh "
                         f"-m --deployment_name=test_bandwidth --comm=bsc_subnet "
-                        f"{test_type} >/dev/null 2>&1 &")
+                        f"{flag} >/dev/null 2>&1 &")
     server_client.close()
     broker_client.close()
 
@@ -131,6 +130,10 @@ def copy_metrics_to_local(time_step, window_size, dirname, aggregate):
 
 
 def deploy_opal_simulator_and_edge(time_step, test_name):
+    flag = ""
+    if test_name == "test_response_time":
+        flag = "-t"
+
     dirname = os.path.dirname(__file__)
     os.chdir(f"{dirname}/../deployments")
 
@@ -138,7 +141,7 @@ def deploy_opal_simulator_and_edge(time_step, test_name):
                    f"--deployment_name=simple --time_step={time_step} "
                    f">/dev/null 2>&1 &", shell=True)
     subprocess.run(f"nohup ./deploy_edges.sh "
-                   f"--deployment_name={test_name} --comm=bsc >/dev/null 2>&1 &", shell=True)
+                   f"--deployment_name={test_name} {flag} --comm=bsc >/dev/null 2>&1 &", shell=True)
 
 
 def stop_opal_simulator_and_edge():

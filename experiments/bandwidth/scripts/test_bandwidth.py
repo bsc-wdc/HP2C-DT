@@ -1,9 +1,33 @@
 import json
 import sys
 import os
+import signal
+import atexit
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 from experiments.remote_commands import *
+
+# Ensure cleanup on exit (CTRL+C or normal exit)
+def cleanup():
+    print("Stopping broker...")
+    stop_broker()
+    print("Stopping server...")
+    stop_server()
+    print("Stopping opal simulator and edge...")
+    stop_opal_simulator_and_edge()
+    print("Cleanup done.")
+
+# Register cleanup for normal exit
+atexit.register(cleanup)
+
+# Handle CTRL+C (SIGINT)
+def signal_handler(sig, frame):
+    print("\nCTRL+C detected! Cleaning up before exit...")
+    cleanup()
+    sys.exit(1)
+
+signal.signal(signal.SIGINT, signal_handler)
+
 
 
 def main(args):
@@ -43,7 +67,7 @@ def main(args):
             print("Deploying broker...")
             deploy_broker()
             print("Deploying server...")
-            deploy_server()
+            deploy_server("test_bandwidth")
             print("Sleep...")
             subprocess.run("sleep 20", shell=True)
             print("Copying metrics from server...")
@@ -53,12 +77,7 @@ def main(args):
             if len(args) > 1 and args[1] == "all":
                 aggregate = "all"
             copy_metrics_to_local(time_step, window_size, dirname, aggregate)
-            print("Stopping broker...")
-            stop_broker()
-            print("Stopping server...")
-            stop_server()
-            print("Stopping opal simulator and edge...")
-            stop_opal_simulator_and_edge()
+            cleanup()
             print("Iteration end")
             print("///////////////////////////////////////////")
             print("///////////////////////////////////////////")
