@@ -64,6 +64,26 @@ if ! pgrep -f "socat TCP-LISTEN:8030"; then
   /usr/bin/socat TCP-LISTEN:8030,fork,reuseaddr TCP:192.168.0.154:8030 &
 fi
 
+# Ensure socat is forwarding on port 8080
+if ! pgrep -f "socat TCP-LISTEN:8080"; then
+  /usr/bin/socat TCP-LISTEN:8080,fork,reuseaddr TCP:192.168.0.203:8080 &
+fi
+
+# Ensure socat is forwarding on port 8086
+if ! pgrep -f "socat TCP-LISTEN:8086"; then
+  /usr/bin/socat TCP-LISTEN:8086,fork,reuseaddr TCP:192.168.0.171:8086 &
+fi
+
+# Ensure socat is forwarding on port 8001
+if ! pgrep -f "socat TCP-LISTEN:8001"; then
+  /usr/bin/socat TCP-LISTEN:8001,fork,reuseaddr TCP:192.168.0.203:8001 &
+fi
+
+# Ensure socat is forwarding on port 8002
+if ! pgrep -f "socat TCP-LISTEN:8002"; then
+  /usr/bin/socat TCP-LISTEN:8002,fork,reuseaddr TCP:192.168.0.203:8002 &
+fi
+
 # Wait to keep the script running
 wait
 ```
@@ -103,8 +123,9 @@ Press Ctrl + X, then Y, and Enter to save and exit nano.
 
 6. Reload systemd and Enable the Service
 
-Run the following commands to reload systemd and enable the newly created service:
+Run the following commands to reload systemd and enable the newly created service (also stop the service before restart in case it was running previously):
 ```bash
+sudo systemctl stop socat-forwarding.service
 sudo systemctl daemon-reload
 sudo systemctl enable socat-forwarding.service
 ```
