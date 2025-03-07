@@ -1,6 +1,5 @@
-package es.bsc.hp2c.edge.funcs;
+package es.bsc.hp2c.common.funcs;
 
-import es.bsc.hp2c.common.funcs.Func;
 import es.bsc.hp2c.common.generic.MsgAlert;
 import es.bsc.hp2c.common.generic.Voltmeter;
 import es.bsc.hp2c.common.types.Actuator;
@@ -10,7 +9,6 @@ import es.bsc.compss.types.annotations.Parameter;
 import es.bsc.compss.types.annotations.Constraints;
 import es.bsc.compss.types.annotations.task.Method;
 import es.bsc.compss.types.annotations.parameter.Direction;
-import es.bsc.compss.types.annotations.parameter.Type;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -136,6 +134,7 @@ public class MatMul extends Func {
     }
 
     public static void multiplyAccumulative(double[] a, double[] b, double[] c) {
+        System.out.println("MULTIPLY");
         int M = (int)Math.sqrt(a.length);
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < M; j++) {
@@ -147,6 +146,7 @@ public class MatMul extends Func {
     }
 
     public static double[] initializeBlock(int size) {
+        System.out.println("INIT BLOCK");
         double[] block = new double[size*size];
         for (int i = 0; i < size*size; ++i) {
             block[i] = (double)(Math.random()*10.0);
@@ -156,14 +156,14 @@ public class MatMul extends Func {
 
     public static interface COMPSsItf {
 
-        @Constraints(computingUnits = "1", processorArchitecture = "arm")
-        @Method(declaringClass = "es.bsc.hp2c.edge.funcs.MatMul")
+        @Constraints(computingUnits = "1", processorArchitecture = "amd64")
+        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMul")
         void multiplyAccumulative(
                 @Parameter double[] A,
                 @Parameter double[] B,
                 @Parameter(direction = Direction.INOUT)	double[] C
         );
-        @Method(declaringClass = "es.bsc.hp2c.edge.funcs.MatMul")
+        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMul")
         double[] initializeBlock(
                 @Parameter int size
         );

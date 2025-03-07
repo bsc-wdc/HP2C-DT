@@ -27,6 +27,8 @@ COMM_SETUP=""
 pos=1
 ENABLE_METRICS=0
 TEST=0
+REST_AGENT_PORT=8001
+COMM_AGENT_PORT=8002
 
 for arg in "$@"; do
     case $arg in
@@ -178,9 +180,13 @@ docker run \
     -v ${project_path}:${remote_project_path} \
     -p 8080:8080 \
     -e LOCAL_IP=$ip_address \
+    -e REST_AGENT_PORT=$REST_AGENT_PORT \
+    -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
     -e PROJECT_PATH=$remote_project_path \
     -e CUSTOM_IP=$custom_ip_address \
     -e ENABLE_METRICS=$ENABLE_METRICS \
+    -p $COMM_AGENT_PORT:$COMM_AGENT_PORT \
+    -p $REST_AGENT_PORT:$REST_AGENT_PORT \
     ${DOCKER_IMAGE}
 
 echo "Testbed properly deployed"

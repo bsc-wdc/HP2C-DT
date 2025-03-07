@@ -222,6 +222,8 @@ for label in "${!labels_paths[@]}"; do
         -e PROJECT_PATH=$remote_project_path \
         -e LOCAL_IP=$ip_address \
         -e CUSTOM_IP=$custom_ip_address \
+        -p $REST_AGENT_PORT:$REST_AGENT_PORT \
+        -p $COMM_AGENT_PORT:$COMM_AGENT_PORT \
         ${DOCKER_IMAGE}
     edge_idx=$(( edge_idx + 1 ))
 done

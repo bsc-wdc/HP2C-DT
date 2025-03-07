@@ -8,7 +8,7 @@
       "label": "MatMul",
       "type": "workflow",
       "lang": "Java",
-      "method-name": "es.bsc.hp2c.server.funcs.MatMul",
+      "method-name": "es.bsc.hp2c.common.funcs.MatMul",
       "parameters": {
         "sensors": {
           "edge1": [
