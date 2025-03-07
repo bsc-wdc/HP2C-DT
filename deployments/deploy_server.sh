@@ -61,11 +61,11 @@ for arg in "$@"; do
 done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/server:latest"
-resources_path="/opt/COMPSs/Runtime/configuration/xml/resources/default_resources.xml"
+project_path="/opt/COMPSs/Runtime/configuration/xml/projects/default_project.xml"
 if [ $TEST == 1 ]; then
-  resources_path="${SCRIPT_DIR}/../experiments/response_time/scripts/server_resources.xml"
+  project_path="${SCRIPT_DIR}/../experiments/response_time/scripts/server_project.xml"
 fi
-remote_resources_path="/opt/COMPSs/Runtime/configuration/xml/resources/resources.xml"
+remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
 
 # Initialize configuration files and directories
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
@@ -175,10 +175,10 @@ docker run \
     -v ${deployment_json}:/data/deployment_setup.json \
     -v ${nominal_voltages_file}:/data/nominal_voltages.json \
     -v ${config_json}:/run/secrets/config.json \
-    -v ${resources_path}:${remote_resources_path} \
+    -v ${project_path}:${remote_project_path} \
     -p 8080:8080 \
     -e LOCAL_IP=$ip_address \
-    -e RESOURCES_PATH=$remote_resources_path \
+    -e PROJECT_PATH=$remote_project_path \
     -e CUSTOM_IP=$custom_ip_address \
     -e ENABLE_METRICS=$ENABLE_METRICS \
     ${DOCKER_IMAGE}

@@ -58,11 +58,11 @@ for arg in "$@"; do
 done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/edge:latest"
-resources_path="/opt/COMPSs/Runtime/configuration/xml/resources/default_resources.xml"
+project_path="/opt/COMPSs/Runtime/configuration/xml/projects/default_project.xml"
 if [ $TEST == 1 ]; then
-  resources_path="${SCRIPT_DIR}/../experiments/response_time/scripts/edge_resources.xml"
+  project_path="${SCRIPT_DIR}/../experiments/response_time/scripts/edge_project.xml"
 fi
-remote_resources_path="/opt/COMPSs/Runtime/configuration/xml/resources/resources.xml"
+remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
 
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
@@ -203,7 +203,7 @@ for label in "${!labels_paths[@]}"; do
     COMM_AGENT_PORT=$((4610 + edge_idx))2
     echo "$label REST port: ${REST_AGENT_PORT}"
     echo "$label COMM port: ${COMM_AGENT_PORT}"
-    echo $resources_path
+    echo $project_path
 
     echo "deploying container for $label"
     docker \
@@ -215,11 +215,11 @@ for label in "${!labels_paths[@]}"; do
         -v ${labels_paths[$label]}:/data/setup.json \
         -v ${defaults_json}:/data/edge_default.json \
         -v ${deployment_json}:/data/deployment_setup.json \
-        -v ${resources_path}:${remote_resources_path} \
+        -v ${project_path}:${remote_project_path} \
         -v ${units_file}:/data/default_units.json \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
-        -e RESOURCES_PATH=$remote_resources_path \
+        -e PROJECT_PATH=$remote_project_path \
         -e LOCAL_IP=$ip_address \
         -e CUSTOM_IP=$custom_ip_address \
         ${DOCKER_IMAGE}
