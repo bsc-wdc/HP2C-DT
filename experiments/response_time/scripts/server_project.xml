@@ -7,10 +7,10 @@
             <Speed>3.0</Speed>
         </Processor>
         <Memory>
-            <Size>16</Size>
+            <Size>8</Size>
         </Memory>
         <Storage>
-            <Size>200.0</Size>
+            <Size>30</Size>
         </Storage>
     </MasterNode>
 </Project>
