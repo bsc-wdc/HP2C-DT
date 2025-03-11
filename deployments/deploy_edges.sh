@@ -157,6 +157,9 @@ fi
 if [ -z "$ip_address" ]; then
     ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'enxcc[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
 fi
+if [ -z "$ip_address" ]; then
+    ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'ens3' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
+fi
 
 custom_ip_address="172.31.144.1"
 
