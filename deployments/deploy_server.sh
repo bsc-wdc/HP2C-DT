@@ -163,6 +163,7 @@ on_exit(){
 trap 'on_exit' EXIT
 
 wait_containers(){
+    docker logs -f ${DEPLOYMENT_PREFIX}_server
     docker wait ${DEPLOYMENT_PREFIX}_server
 }
 

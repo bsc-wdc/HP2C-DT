@@ -58,13 +58,6 @@ for arg in "$@"; do
 done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/edge:latest"
-if [ $TEST == 1 ]; then
-  project_path="${SCRIPT_DIR}/../experiments/response_time/scripts/server_project.xml"
-  remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
-else
-  project_path=""
-  remote_project_path=""
-fi
 
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
@@ -163,6 +156,16 @@ fi
 
 custom_ip_address="172.31.144.1"
 
+if [ $TEST == 1 ]; then
+  project_path="${SCRIPT_DIR}/../experiments/response_time/scripts/server_project.xml"
+  remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
+  agent_name="$ip_address"
+else
+  project_path=""
+  remote_project_path=""
+  agent_name="localhost"
+fi
+
 echo "Local IPv4 Address: $ip_address"
 echo "Custom IP Address: $custom_ip_address"
 echo
@@ -187,6 +190,7 @@ trap 'on_exit' EXIT
 # Auxiliar application to wait for all container deployed
 wait_containers(){
     for label in "${!labels_paths[@]}"; do
+        docker logs -f ${DEPLOYMENT_PREFIX}_"$label"
         docker wait ${DEPLOYMENT_PREFIX}_"$label"
     done
 }
@@ -227,6 +231,7 @@ for label in "${!labels_paths[@]}"; do
         -e PROJECT_PATH=$remote_project_path \
         -e LOCAL_IP=$ip_address \
         -e CUSTOM_IP=$custom_ip_address \
+        -e AGENT_NAME=$agent_name \
         -p $REST_AGENT_PORT:$REST_AGENT_PORT \
         -p $COMM_AGENT_PORT:$COMM_AGENT_PORT \
         ${DOCKER_IMAGE}
