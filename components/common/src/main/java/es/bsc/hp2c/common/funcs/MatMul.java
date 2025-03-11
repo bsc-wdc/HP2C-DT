@@ -156,7 +156,7 @@ public class MatMul extends Func {
 
     public static interface COMPSsItf {
 
-        @Constraints(computingUnits = "1", processorArchitecture = "amd64")
+        @Constraints(computingUnits = "1", processorArchitecture = "arm")
         @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMul")
         void multiplyAccumulative(
                 @Parameter double[] A,
