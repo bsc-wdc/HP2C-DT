@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * This class implements a COMPSs function to multiply two matrices.
  */
-public class MatMul extends Func {
+public class MatMulServer extends Func {
     private static int MSIZE;
     private static int BSIZE;
 
@@ -28,9 +28,9 @@ public class MatMul extends Func {
     private Voltmeter<?> voltmeter;
     private MsgAlert msgAlert;
 
-    public MatMul(Map<String, ArrayList<Sensor<?, ?>>> sensors,
-                  Map<String, ArrayList<Actuator<?>>> actuators,
-                  JSONObject others) throws IllegalArgumentException, FunctionInstantiationException {
+    public MatMulServer(Map<String, ArrayList<Sensor<?, ?>>> sensors,
+                      Map<String, ArrayList<Actuator<?>>> actuators,
+                      JSONObject others) throws IllegalArgumentException, FunctionInstantiationException {
         super(sensors, actuators, others);
 
         ArrayList<Sensor<?,?>> sensorsList;
@@ -156,14 +156,14 @@ public class MatMul extends Func {
 
     public static interface COMPSsItf {
 
-        @Constraints(computingUnits = "1", processorArchitecture = "arm")
-        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMul")
+        @Constraints(computingUnits = "1", processorArchitecture = "amd64")
+        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulServer")
         void multiplyAccumulative(
                 @Parameter double[] A,
                 @Parameter double[] B,
                 @Parameter(direction = Direction.INOUT)	double[] C
         );
-        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMul")
+        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulServer")
         double[] initializeBlock(
                 @Parameter int size
         );

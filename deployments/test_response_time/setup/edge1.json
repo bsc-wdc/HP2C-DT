@@ -1,9 +1,9 @@
 {
-  "global-properties":{
+  "global-properties": {
     "type": "edge",
     "label": "edge1",
     "window-size": 10,
-    "comms":{
+    "comms": {
       "opal-udp": {
         "protocol": "udp",
         "sensors": {
@@ -18,7 +18,10 @@
           "port": "20102"
         },
         "actuators": {
-          "ip": ["$LOCAL_IP", "localhost"],
+          "ip": [
+            "$LOCAL_IP",
+            "localhost"
+          ],
           "port": "30102"
         }
       }
@@ -42,7 +45,9 @@
       },
       "properties": {
         "comm-type": "opal-udp",
-        "indexes": [0],
+        "indexes": [
+          0
+        ],
         "window-size": 5,
         "amqp-aggregate": "phasor"
       }
@@ -52,34 +57,41 @@
       "driver": "es.bsc.hp2c.edge.opalrt.OpalMsgAlert",
       "driver-dt": "es.bsc.hp2c.server.device.VirtualMsgAlert",
       "position": {
-        "x":0,
-        "y":0
+        "x": 0,
+        "y": 0
       },
       "properties": {
         "comm-type": "opal-tcp",
-        "indexes": [0]
+        "indexes": [
+          0
+        ]
       }
     }
   ],
-
-  "funcs":[
+  "funcs": [
     {
       "label": "MatMul",
       "type": "workflow",
       "lang": "Java",
       "method-name": "es.bsc.hp2c.common.funcs.MatMulEdge",
       "parameters": {
-        "sensors": ["Voltmeter Gen1"],
-        "actuators": ["msgAlert1"],
+        "sensors": [
+          "Voltmeter Gen1"
+        ],
+        "actuators": [
+          "msgAlert1"
+        ],
         "other": {
-            "msize": "%msize%",
-            "bsize": "%bsize%"
+          "msize": 1,
+          "bsize": 1
         }
       },
       "trigger": {
         "type": "onRead",
         "parameters": {
-          "trigger-sensor": ["Voltmeter Gen1"],
+          "trigger-sensor": [
+            "Voltmeter Gen1"
+          ],
           "interval": 1
         }
       }
