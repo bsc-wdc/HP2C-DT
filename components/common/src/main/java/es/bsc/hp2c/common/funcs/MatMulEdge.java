@@ -134,7 +134,7 @@ public class MatMulEdge extends Func {
     }
 
     public static void multiplyAccumulative(double[] a, double[] b, double[] c) {
-        System.out.println("MULTIPLY");
+        System.out.println("MULTIPLY EDGE");
         int M = (int)Math.sqrt(a.length);
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < M; j++) {
@@ -146,7 +146,7 @@ public class MatMulEdge extends Func {
     }
 
     public static double[] initializeBlock(int size) {
-        System.out.println("INIT BLOCK");
+        System.out.println("INIT BLOCK EDGE");
         double[] block = new double[size*size];
         for (int i = 0; i < size*size; ++i) {
             block[i] = (double)(Math.random()*10.0);

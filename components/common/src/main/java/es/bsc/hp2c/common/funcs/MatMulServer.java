@@ -134,7 +134,7 @@ public class MatMulServer extends Func {
     }
 
     public static void multiplyAccumulative(double[] a, double[] b, double[] c) {
-        System.out.println("MULTIPLY");
+        System.out.println("MULTIPLY SERVER");
         int M = (int)Math.sqrt(a.length);
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < M; j++) {
@@ -146,7 +146,7 @@ public class MatMulServer extends Func {
     }
 
     public static double[] initializeBlock(int size) {
-        System.out.println("INIT BLOCK");
+        System.out.println("INIT BLOCK SERVER");
         double[] block = new double[size*size];
         for (int i = 0; i < size*size; ++i) {
             block[i] = (double)(Math.random()*10.0);
@@ -156,7 +156,7 @@ public class MatMulServer extends Func {
 
     public static interface COMPSsItf {
 
-        @Constraints(computingUnits = "1", processorArchitecture = "amd64")
+        @Constraints(computingUnits = "2", processorArchitecture = "amd64")
         @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulServer")
         void multiplyAccumulative(
                 @Parameter double[] A,
