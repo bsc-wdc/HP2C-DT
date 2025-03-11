@@ -51,7 +51,7 @@ COPY --from=framework /opt/COMPSs/Runtime/adaptors/RESTagent /opt/COMPSs/Runtime
 COPY --from=framework /opt/COMPSs/Runtime/adaptors/local /opt/COMPSs/Runtime/adaptors/local
 
 # Agents scripts
-COPY --from=framework /opt/COMPSs/Runtime/scripts/user/compss_agent_start /opt/COMPSs/Runtime/scripts/user/compss_agent_start
+COPY --from=framework /opt/COMPSs/Runtime/scripts/user /opt/COMPSs/Runtime/scripts/user
 COPY --from=framework /opt/COMPSs/Runtime/scripts/system /opt/COMPSs/Runtime/scripts/system 
 
 # Configuration file
@@ -60,6 +60,7 @@ COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/resources/examples/l
 COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/projects/project_schema.xsd /opt/COMPSs/Runtime/configuration/xml/projects/project_schema.xsd
 COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd /opt/COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd
 COPY --from=framework /opt/COMPSs//Runtime/configuration/agents/all.json /opt/COMPSs//Runtime/configuration/agents/all.json
+COPY --from=framework /opt/COMPSs/Runtime/configuration/log/ /opt/COMPSs/Runtime/configuration/log/
 
 ENV PATH="${PATH}:/opt/COMPSs/Runtime/scripts/user/" AGENT_NAME=localhost REST_AGENT_PORT=46101 COMM_AGENT_PORT=46102 DEBUG=debug
 
