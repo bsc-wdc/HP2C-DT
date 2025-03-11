@@ -45,8 +45,6 @@ for arg in "$@"; do
     ((pos++))
 done
 
-DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/opal_simulator:1.0"
-
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
 
 if [ ! -d $setup_folder ];then
@@ -95,7 +93,7 @@ docker run \
     -e LOCAL_IP=${ip_address} \
     -e TIME_STEP=$TIME_STEP \
     -e SIMULATION_NAME=$SIMULATION_NAME \
-    ${DOCKER_IMAGE}
+    ${DEPLOYMENT_PREFIX}/opal_simulator:latest
 
 echo "Testbed properly deployed"
 wait_containers
