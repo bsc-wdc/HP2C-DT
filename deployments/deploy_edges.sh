@@ -58,11 +58,13 @@ for arg in "$@"; do
 done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/edge:latest"
-project_path="/opt/COMPSs/Runtime/configuration/xml/projects/default_project.xml"
 if [ $TEST == 1 ]; then
-  project_path="${SCRIPT_DIR}/../experiments/response_time/scripts/edge_project.xml"
+  project_path="${SCRIPT_DIR}/../experiments/response_time/scripts/server_project.xml"
+  remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
+else
+  project_path=""
+  remote_project_path=""
 fi
-remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
 
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"

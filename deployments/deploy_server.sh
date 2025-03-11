@@ -63,11 +63,13 @@ for arg in "$@"; do
 done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/server:latest"
-project_path="/opt/COMPSs/Runtime/configuration/xml/projects/default_project.xml"
 if [ $TEST == 1 ]; then
   project_path="${SCRIPT_DIR}/../experiments/response_time/scripts/server_project.xml"
+  remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
+else
+  project_path=""
+  remote_project_path=""
 fi
-remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
 
 # Initialize configuration files and directories
 setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
