@@ -157,7 +157,7 @@ fi
 custom_ip_address="172.31.144.1"
 
 if [ $TEST == 1 ]; then
-  project_path="${SCRIPT_DIR}/../experiments/response_time/scripts/server_project.xml"
+  project_path="${SCRIPT_DIR}/../experiments/response_time/scripts/edge_project.xml"
   remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
   agent_name="$ip_address"
 else
