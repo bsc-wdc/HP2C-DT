@@ -14,7 +14,7 @@ def cleanup():
     print("Stopping server...")
     stop_server()
     print("Stopping opal simulator and edge...")
-    stop_opal_simulator_and_edge()
+    stop_opal_simulator_and_edge("test_bandwidth")
     print("Cleanup done.")
 
 # Register cleanup for normal exit
@@ -34,7 +34,7 @@ def main(args):
     time_steps = [1, 10, 100, 1000, 10000]
     window_frequencies = [1, 10, 100, 1000, 10000]
     dirname = os.path.dirname(__file__)
-    file_path = "/home/mauro/BSC/hp2cdt/deployments/test_bandwidth/setup/edge1.json"
+    file_path = f"{dirname}/../../../deployments/test_bandwidth/setup/edge1.json"
     dir_path = os.path.dirname(file_path)
     os.makedirs(dir_path, exist_ok=True)
 

@@ -134,16 +134,45 @@ def deploy_opal_simulator_and_edge(time_step, test_name):
     if test_name == "test_response_time":
         flag = "-t"
 
-    dirname = os.path.dirname(__file__)
-    os.chdir(f"{dirname}/../deployments")
+        client = connect_ssh()  # connect to broker machine
+        print("Deploying opalsim")
 
-    subprocess.run("nohup ./deploy_opal_simulator.sh "
-                   f"--deployment_name=simple --time_step={time_step} "
-                   f">/dev/null 2>&1 &", shell=True)
-    subprocess.run(f"nohup ./deploy_edges.sh "
-                   f"--deployment_name={test_name} {flag} --comm=bsc >/dev/null 2>&1 &", shell=True)
+        opal_command = (
+            f"nohup ./hp2cdt/deployments/deploy_opal_simulator.sh "
+            f"--deployment_name=simple --time_step={time_step} "
+            f">/dev/null 2>&1 &"
+        )
+        execute_ssh_command(client, opal_command)
+        print("Deploying edge")
+
+        edge_command = (
+            f"nohup ./hp2cdt/deployments/deploy_edges.sh "
+            f"--deployment_name={test_name} {flag} --comm=bsc_subnet "
+            f">/dev/null 2>&1 &"
+        )
+        execute_ssh_command(client, edge_command)
+
+        client.close()
+
+    else:
+        dirname = os.path.dirname(__file__)
+        os.chdir(f"{dirname}/../deployments")
+
+        subprocess.run("nohup ./deploy_opal_simulator.sh "
+                       f"--deployment_name=simple --time_step={time_step} "
+                       f">/dev/null 2>&1 &", shell=True)
+        subprocess.run(f"nohup ./deploy_edges.sh "
+                       f"--deployment_name={test_name} {flag} --comm=bsc >/dev/null 2>&1 &", shell=True)
 
 
-def stop_opal_simulator_and_edge():
-    subprocess.run("docker stop hp2c_opal_simulator", shell=True)
-    subprocess.run("docker stop hp2c_edge1", shell=True)
+def stop_opal_simulator_and_edge(test_name):
+    if test_name == "test_response_time":
+        client = connect_ssh()
+        execute_ssh_command(client,
+                            "docker stop hp2c_opal_simulator && docker rm hp2c_opal_simulator")
+        execute_ssh_command(client,
+                            "docker stop hp2c_edge1 && docker rm hp2c_edge1")
+        client.close()
+    else:
+        subprocess.run("docker stop hp2c_opal_simulator", shell=True)
+        subprocess.run("docker stop hp2c_edge1", shell=True)
