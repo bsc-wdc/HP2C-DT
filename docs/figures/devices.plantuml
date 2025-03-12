@@ -1,0 +1,70 @@
+@startuml
+
+abstract class Device {
+  - label: String
+  - position: String
+  - availability: boolean
+  # Device(JSONObject, Instant)
+  + parseJSON(JSONObject): void
+  + isSensitive(): boolean
+  + isActionable(): boolean
+  + getValues(): V
+  + getWindow(): MeasurementWindow<V>
+}
+
+interface Sensor<R, V>
+
+interface Actuator<V> {
+  + actuate(V): void
+}
+
+abstract class AbstractSensor1<R> {
+  - values: Float[]
+  - window: MeasurementWindow<Float[]>
+  # AbstractSensor1(JSONObject)
+  + {abstract} sensed(R, Instant): void
+  + onRead(): void
+  + isActionable(): boolean
+  + isSensitive(): boolean
+}
+
+abstract class AbstractSensorActuator1<R> {
+  - values: Integer[]
+  # AbstractSensorActuator1(JSONObject)
+  + {abstract} sensed(R, Instant): void
+  + {abstract} actuate(Integer[]): void
+  + isActionable(): boolean
+  + isSensitive(): boolean
+}
+
+class ConcreteSensor1
+class ConcreteSensorActuator1
+
+interface VendorBSensor<V>
+interface VendorBActuator<V>
+interface VendorBDevice
+interface VendorASensor<V>
+
+AbstractSensor1 --|> Device
+AbstractSensor1 ..|> Sensor
+
+AbstractSensorActuator1 --|> Device
+AbstractSensorActuator1 ..|> Sensor
+AbstractSensorActuator1 ..|> Actuator
+
+ConcreteSensor1 --|> AbstractSensor1
+ConcreteSensor1 ..|> VendorASensor
+
+ConcreteSensorActuator1 --|> AbstractSensorActuator1
+ConcreteSensorActuator1 ..|> VendorBSensor
+ConcreteSensorActuator1 ..|> VendorBActuator
+
+VendorBSensor ..|> Sensor
+VendorBSensor ..|> VendorBDevice
+
+VendorBActuator ..|> Actuator
+VendorBActuator ..|> VendorBDevice
+
+VendorASensor ..|> Sensor
+
+@enduml
