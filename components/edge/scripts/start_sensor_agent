@@ -1,21 +1,30 @@
 #!/bin/bash
 
 
-/opt/COMPSs/Runtime/scripts/user/compss_agent_start --hostname=${AGENT_NAME} --rest_port=${REST_AGENT_PORT} --comm_port=${COMM_AGENT_PORT} --project=${PROJECT_PATH} &
+/opt/COMPSs/Runtime/scripts/user/compss_agent_start -d --hostname=${AGENT_NAME} --rest_port=${REST_AGENT_PORT} --comm_port=${COMM_AGENT_PORT} --project=${PROJECT_PATH} &
 AGENT_PID=$!
 
 sleep 10
+echo "ADDING RESOURCES: "
+if [ "$TEST" -eq 1 ]; then
+  echo "ADD"
+  compss_agent_add_resources \
+     --agent_node=127.0.0.1 \
+     --agent_port=46101 \
+     --cpu=4 \
+     212.128.226.53 Port=8002
+fi
 
 curl -s -XPUT http://127.0.0.1:${REST_AGENT_PORT}/COMPSs/startApplication -H "content-type: application/xml" -d \
 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <startApplication>
     <lang>JAVA</lang>
     <ceiClass>es.bsc.hp2c.HP2CEdgeItf</ceiClass>
-    
+
     <className>es.bsc.hp2c.HP2CEdge</className>
     <hasResult>false</hasResult>
     <methodName>main</methodName>
-    
+
     <parameters>
       <params paramId="0">
         <direction>IN</direction>
@@ -36,5 +45,6 @@ curl -s -XPUT http://127.0.0.1:${REST_AGENT_PORT}/COMPSs/startApplication -H "co
       </params>
     </parameters>
   </startApplication>'
+
 
 wait ${AGENT_PID}

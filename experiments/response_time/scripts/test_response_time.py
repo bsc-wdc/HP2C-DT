@@ -134,9 +134,7 @@ def run_simulations(bsizes, dirname, file_path, i, msizes, test_host,
                 print("Deploying server...")
                 deploy_server("test_response_time")
 
-                if test_host == "server":
-                    subprocess.run("sleep 5", shell=True)
-                    add_resources()
+                
 
                 mode = "wf" if i == 0 else "seq"
                 log_file = (f"{dirname}/../results/ts{time_step}_m{msize}"

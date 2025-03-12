@@ -232,6 +232,7 @@ for label in "${!labels_paths[@]}"; do
         -e LOCAL_IP=$ip_address \
         -e CUSTOM_IP=$custom_ip_address \
         -e AGENT_NAME=$agent_name \
+        -e TEST=$TEST \
         -p $REST_AGENT_PORT:$REST_AGENT_PORT \
         -p $COMM_AGENT_PORT:$COMM_AGENT_PORT \
         ${DOCKER_IMAGE}
