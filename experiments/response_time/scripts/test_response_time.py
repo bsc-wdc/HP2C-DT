@@ -108,7 +108,7 @@ def run_simulations(bsizes, dirname, file_path, i, msizes, test_host,
                     else:
                         edge_json["funcs"][0][
                             "method-name"] = "es.bsc.hp2c.common.funcs.MatMulServer"
-                    if mode == "wf":
+                    if mode == "seq":
                         del edge_json["funcs"][0]["type"]
 
                 # Write inside broker

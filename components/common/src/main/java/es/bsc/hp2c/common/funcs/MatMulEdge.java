@@ -1,5 +1,6 @@
 package es.bsc.hp2c.common.funcs;
 
+import es.bsc.compss.api.COMPSs;
 import es.bsc.hp2c.common.generic.MsgAlert;
 import es.bsc.hp2c.common.generic.Voltmeter;
 import es.bsc.hp2c.common.types.Actuator;
@@ -11,6 +12,7 @@ import es.bsc.compss.types.annotations.task.Method;
 import es.bsc.compss.types.annotations.parameter.Direction;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -79,29 +81,35 @@ public class MatMulEdge extends Func {
 
     @Override
     public void run() {
+        long timestampStart = voltmeter.getWindow().getLastMeasurement().getTimestamp().getEpochSecond() * 1_000_000_000L
+                + voltmeter.getWindow().getLastMeasurement().getTimestamp().getNano();
+
+        calcMatmul(timestampStart, A, B, MSIZE, BSIZE);
+    }
+
+    public static void calcMatmul(long timestampStart, double[][][] a, double[][][] b, int msize, int bsize) {
+        System.out.println("RUNNING MATMUL EDGE");
         // Allocate result matrix C
         System.out.println("[LOG] Allocating C matrix space");
-        C = new double[MSIZE][MSIZE][BSIZE*BSIZE];
+        double[][][] c = new double[msize][msize][bsize*bsize];
 
         // Compute result
         System.out.println("[LOG] Computing Result");
-        for (int i = 0; i < MSIZE; i++) {
-            for (int j = 0; j < MSIZE; j++) {
-                for (int k = 0; k < MSIZE; k++) {
-                    multiplyAccumulative(A[i][k], B[k][j], C[i][j]);
+        for (int i = 0; i < msize; i++) {
+            for (int j = 0; j < msize; j++) {
+                for (int k = 0; k < msize; k++) {
+                    multiplyAccumulative(a[i][k], b[k][j], c[i][j]);
                 }
             }
         }
-
-        printMatrix(C);
-
-        long timestampNanos = voltmeter.getWindow().getLastMeasurement().getTimestamp().getEpochSecond() * 1_000_000_000L
-                + voltmeter.getWindow().getLastMeasurement().getTimestamp().getNano();
-        try {
-            msgAlert.actuate(Long.toString(timestampNanos));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        COMPSs.barrier();
+        //printMatrix(C);
+        long timestampEnd = Instant.now().getEpochSecond() * 1_000_000_000L
+                + Instant.now().getNano();
+        System.out.println("Timestamp difference: " + (timestampEnd - timestampStart));
+        new Thread(() -> {
+            System.out.println("Timestamp difference: " + (timestampEnd - timestampStart));
+        }).start();
     }
 
 
@@ -134,7 +142,6 @@ public class MatMulEdge extends Func {
     }
 
     public static void multiplyAccumulative(double[] a, double[] b, double[] c) {
-        System.out.println("MULTIPLY EDGE");
         int M = (int)Math.sqrt(a.length);
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < M; j++) {
@@ -155,7 +162,6 @@ public class MatMulEdge extends Func {
     }
 
     public static interface COMPSsItf {
-
         @Constraints(computingUnits = "1", processorArchitecture = "arm")
         @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulEdge")
         void multiplyAccumulative(
@@ -163,10 +169,14 @@ public class MatMulEdge extends Func {
                 @Parameter double[] B,
                 @Parameter(direction = Direction.INOUT)	double[] C
         );
+        @Constraints(computingUnits = "1", processorArchitecture = "arm")
         @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulEdge")
-        double[] initializeBlock(
-                @Parameter int size
+        void calcMatmul(
+                @Parameter long timestampStart,
+                @Parameter double[][][] A,
+                @Parameter double[][][] B,
+                @Parameter int msize,
+                @Parameter int bsize
         );
     }
 }
-

@@ -29,8 +29,8 @@ public class MatMulServer extends Func {
     private MsgAlert msgAlert;
 
     public MatMulServer(Map<String, ArrayList<Sensor<?, ?>>> sensors,
-                      Map<String, ArrayList<Actuator<?>>> actuators,
-                      JSONObject others) throws IllegalArgumentException, FunctionInstantiationException {
+                        Map<String, ArrayList<Actuator<?>>> actuators,
+                        JSONObject others) throws IllegalArgumentException, FunctionInstantiationException {
         super(sensors, actuators, others);
 
         ArrayList<Sensor<?,?>> sensorsList;
@@ -79,6 +79,9 @@ public class MatMulServer extends Func {
 
     @Override
     public void run() {
+        long timestampNanos = voltmeter.getWindow().getLastMeasurement().getTimestamp().getEpochSecond() * 1_000_000_000L
+                + voltmeter.getWindow().getLastMeasurement().getTimestamp().getNano();
+
         // Allocate result matrix C
         System.out.println("[LOG] Allocating C matrix space");
         C = new double[MSIZE][MSIZE][BSIZE*BSIZE];
@@ -93,10 +96,7 @@ public class MatMulServer extends Func {
             }
         }
 
-        printMatrix(C);
-
-        long timestampNanos = voltmeter.getWindow().getLastMeasurement().getTimestamp().getEpochSecond() * 1_000_000_000L
-                + voltmeter.getWindow().getLastMeasurement().getTimestamp().getNano();
+        //printMatrix(C);
         try {
             msgAlert.actuate(Long.toString(timestampNanos));
         } catch (IOException e) {
@@ -163,10 +163,5 @@ public class MatMulServer extends Func {
                 @Parameter double[] B,
                 @Parameter(direction = Direction.INOUT)	double[] C
         );
-        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulServer")
-        double[] initializeBlock(
-                @Parameter int size
-        );
     }
 }
-
