@@ -92,6 +92,8 @@ def run_simulations(bsizes, dirname, file_path, i, msizes, test_host,
                 if msize == 0 and bsize > 1:
                     continue
 
+                mode = "wf" if i == 0 else "seq"
+
                 os.chdir(dirname)
 
                 with open("edge_template_matmul.json", "r") as file:
@@ -106,6 +108,8 @@ def run_simulations(bsizes, dirname, file_path, i, msizes, test_host,
                     else:
                         edge_json["funcs"][0][
                             "method-name"] = "es.bsc.hp2c.common.funcs.MatMulServer"
+                    if mode == "wf":
+                        del edge_json["funcs"][0]["type"]
 
                 # Write inside broker
                 client = connect_ssh()
@@ -134,10 +138,7 @@ def run_simulations(bsizes, dirname, file_path, i, msizes, test_host,
                 print("Deploying server...")
                 deploy_server("test_response_time")
 
-                
-
-                mode = "wf" if i == 0 else "seq"
-                log_file = (f"{dirname}/../results/ts{time_step}_m{msize}"
+                log_file = (f"{dirname}/../results/raw/ts{time_step}_m{msize}"
                             f"_b{bsize}_{mode}_{test_host}.log")
                 log_path = os.path.dirname(log_file)
                 os.makedirs(log_path, exist_ok=True)
