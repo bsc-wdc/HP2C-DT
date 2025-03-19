@@ -104,10 +104,11 @@ def run_simulations(bsizes, dirname, file_path, i, msizes, test_host,
                         "bsize"] = bsize
                     if test_host == "edge":
                         edge_json["funcs"][0][
+                            "method-name"] = "es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier"
                         del edge_json["resources"]
                     else:
                         edge_json["funcs"][0][
-                            "method-name"] = "es.bsc.hp2c.common.funcs.MatMulServer"
+                            "method-name"] = "es.bsc.hp2c.common.funcs.MatMulServerSimple"
                     if mode == "seq":
                         del edge_json["funcs"][0]["type"]
 

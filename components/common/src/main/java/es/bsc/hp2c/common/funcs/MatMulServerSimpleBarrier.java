@@ -1,5 +1,6 @@
 package es.bsc.hp2c.common.funcs;
 
+import es.bsc.compss.api.COMPSs;
 import es.bsc.hp2c.common.generic.MsgAlert;
 import es.bsc.hp2c.common.generic.Voltmeter;
 import es.bsc.hp2c.common.types.Actuator;
@@ -17,7 +18,7 @@ import java.util.Map;
 /**
  * This class implements a COMPSs function to multiply two matrices.
  */
-public class MatMulServer extends Func {
+public class MatMulServerSimpleBarrier extends Func {
     private static int MSIZE;
     private static int BSIZE;
 
@@ -28,9 +29,9 @@ public class MatMulServer extends Func {
     private Voltmeter<?> voltmeter;
     private MsgAlert msgAlert;
 
-    public MatMulServer(Map<String, ArrayList<Sensor<?, ?>>> sensors,
-                        Map<String, ArrayList<Actuator<?>>> actuators,
-                        JSONObject others) throws IllegalArgumentException, FunctionInstantiationException {
+    public MatMulServerSimpleBarrier(Map<String, ArrayList<Sensor<?, ?>>> sensors,
+                                     Map<String, ArrayList<Actuator<?>>> actuators,
+                                     JSONObject others) throws IllegalArgumentException, FunctionInstantiationException {
         super(sensors, actuators, others);
 
         ArrayList<Sensor<?,?>> sensorsList;
@@ -95,6 +96,7 @@ public class MatMulServer extends Func {
                 }
             }
         }
+        COMPSs.barrier();
 
         //printMatrix(C);
         try {
@@ -156,8 +158,8 @@ public class MatMulServer extends Func {
 
     public static interface COMPSsItf {
 
-        @Constraints(computingUnits = "2", processorArchitecture = "amd64")
-        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulServer")
+        @Constraints(computingUnits = "1", processorArchitecture = "amd64")
+        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulServerSimpleBarrier")
         void multiplyAccumulative(
                 @Parameter double[] A,
                 @Parameter double[] B,
