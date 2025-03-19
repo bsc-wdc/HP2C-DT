@@ -5,15 +5,6 @@
 AGENT_PID=$!
 
 sleep 10
-echo "ADDING RESOURCES: "
-if [ "$TEST" -eq 1 ]; then
-  echo "ADD"
-  compss_agent_add_resources \
-     --agent_node=127.0.0.1 \
-     --agent_port=46101 \
-     --cpu=4 \
-     212.128.226.53 Port=8002
-fi
 
 curl -s -XPUT http://127.0.0.1:${REST_AGENT_PORT}/COMPSs/startApplication -H "content-type: application/xml" -d \
 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
