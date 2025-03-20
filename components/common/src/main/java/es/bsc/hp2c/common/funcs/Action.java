@@ -1,5 +1,7 @@
 package es.bsc.hp2c.common.funcs;
 
+import es.bsc.compss.api.COMPSsRuntime;
+
 /**
  * Wrapper of the Instance/Runnable and Workflow objects obtained from reflection.
  * Holds the different action objects that may be loaded from using standalone funcs or COMPSs-related funcs.
@@ -13,9 +15,12 @@ public class Action {
     private final Object classInstance;
     private final Class<?> c;
 
-    public Action(Object classInstance, Class<?> c) {
+    private final COMPSsHandler compssHandler;
+
+    public Action(Object classInstance, Class<?> c, COMPSsHandler compssHandler) {
         this.classInstance = classInstance;
         this.c = c;
+        this.compssHandler = compssHandler;
     }
 
     public Object getInstance() {
@@ -39,7 +44,7 @@ public class Action {
             Runnable r = (Runnable) classInstance;
             r.run();
         } else {
-            COMPSsHandler.runWorkflow(c, classInstance);
+            compssHandler.runWorkflow(c, classInstance);
         }
     }
 }

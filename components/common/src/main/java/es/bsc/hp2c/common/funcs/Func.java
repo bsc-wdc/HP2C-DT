@@ -371,12 +371,13 @@ public abstract class Func implements Runnable {
         Constructor<?> ct;
         JSONObject jOther;
         try {
+            COMPSsHandler compssHandler = null;
             Class<?> c = Class.forName(driver);
             // Handle COMPSs workflow cases
             if (functionType.equals("workflow") && runtimeHostClass != null) {
                 if (lang.equalsIgnoreCase("java")) {
                     // Initialize COMPSs Java Handler
-                    COMPSsHandler compssHandler = new COMPSsHandler(runtimeHostClass, driver, c);
+                    compssHandler = new COMPSsHandler(runtimeHostClass, driver, c);
                     // Instrument class
                     c = compssHandler.instrumentClass(driver);
                 } else {
@@ -391,7 +392,7 @@ public abstract class Func implements Runnable {
             Object classInstance = ct.newInstance(sensors, actuators, jOther);
 
             // Return the action with both instance and class (in case is needed for workflows mode)
-            return new Action(classInstance, c);
+            return new Action(classInstance, c, compssHandler);
 
         } catch (ClassNotFoundException e) {
             throw new FunctionInstantiationException("Error finding the driver " + driver, e);

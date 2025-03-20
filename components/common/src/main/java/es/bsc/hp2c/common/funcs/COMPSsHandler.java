@@ -42,22 +42,17 @@ public class COMPSsHandler {
         this.getVariables(runtimeHostClass);
     }
 
-    static void runWorkflow(Class<?> instrumentedClass, Object classInstance) {
-        // Get method to execute (run)
-        Method method = null;
-        try {
-            method = instrumentedClass.getMethod("run");
-        } catch (NoSuchMethodException e) {
-            System.err.println("[COMPSsHandler] Could not get run method from instrumented class");
-            throw new RuntimeException(e);
-        }
-
+    public void runWorkflow(Class<?> instrumentedClass, Object classInstance) {
         // Invoke
         try {
             method.invoke(classInstance);
         } catch (IllegalAccessException | InvocationTargetException e) {
             System.err.println("[COMPSsHandler] Could not invoke method run of instance " + classInstance);
             throw new RuntimeException(e);
+        } finally {
+            // Wait for all nested tasks to end
+            runtime.barrier(appId);
+            runtime.deregisterApplication(appId);
         }
     }
 
@@ -77,6 +72,10 @@ public class COMPSsHandler {
                     + runtimeHostClass.getName() + " through reflection");
             throw new RuntimeException(e);
         }
+    }
+
+    public COMPSsRuntime getRuntime(){
+        return this.runtime;
     }
 
     public Class<?> instrumentClass(String driver)
@@ -105,26 +104,12 @@ public class COMPSsHandler {
         instrumentedClass = ITAppModifier.modifyToMemory(driver, driver, annotItf, false,
                 true, true, false);
 
-        // Initialize COMPSs variables at the instrumented class
-        try {
-            Method setter = instrumentedClass.getDeclaredMethod("setCOMPSsVariables",
-                    Class.forName(LoaderConstants.CLASS_COMPSSRUNTIME_API),
-                    Class.forName(LoaderConstants.CLASS_STREAM_REGISTRY),
-                    Class.forName(LoaderConstants.CLASS_OBJECT_REGISTRY),
-                    Class.forName(LoaderConstants.CLASS_APP_ID));
-            setter.invoke(null, runtime, streamRegistry, objectRegistry, appId);
-        } catch (NoSuchMethodException | ClassNotFoundException | IllegalAccessException |
-                 InvocationTargetException e) {
-            System.err.println("[COMPSsHandler] Error obtaining or invoking COMPSs setter methods "
-                    + "for instrumented class " + instrumentedClass.getName() + " through reflection");
-            throw new RuntimeException(e);
-        }
-
         // Debug: Print to check for instrumentation
         // printVariables();
 
         // Get method to be run
         String methodName = "run";
+        appId = runtime.registerApplication(annotItf.getName(), null);
         try {
             // Get the "run" method with no parameters
             method = instrumentedClass.getMethod(methodName, new Class<?>[]{});
@@ -139,6 +124,21 @@ public class COMPSsHandler {
             throw new RuntimeException(e);
         } catch (SecurityException e) {
             System.err.println("[COMPSsHandler] Access to the method is not allowed.");
+            throw new RuntimeException(e);
+        }
+
+        // Initialize COMPSs variables at the instrumented class
+        try {
+            Method setter = instrumentedClass.getDeclaredMethod("setCOMPSsVariables",
+                    Class.forName(LoaderConstants.CLASS_COMPSSRUNTIME_API),
+                    Class.forName(LoaderConstants.CLASS_STREAM_REGISTRY),
+                    Class.forName(LoaderConstants.CLASS_OBJECT_REGISTRY),
+                    Class.forName(LoaderConstants.CLASS_APP_ID));
+            setter.invoke(null, runtime, streamRegistry, objectRegistry, appId);
+        } catch (NoSuchMethodException | ClassNotFoundException | IllegalAccessException |
+                 InvocationTargetException e) {
+            System.err.println("[COMPSsHandler] Error obtaining or invoking COMPSs setter methods "
+                    + "for instrumented class " + instrumentedClass.getName() + " through reflection");
             throw new RuntimeException(e);
         }
         return instrumentedClass;
