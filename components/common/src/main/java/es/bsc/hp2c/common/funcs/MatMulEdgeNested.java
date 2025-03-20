@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * This class implements a COMPSs function to multiply two matrices.
  */
-public class MatMulEdgeNestedBarrier extends Func {
+public class MatMulEdgeNested extends Func {
     private static int MSIZE;
     private static int BSIZE;
 
@@ -28,7 +28,7 @@ public class MatMulEdgeNestedBarrier extends Func {
     private Voltmeter<?> voltmeter;
     private MsgAlert msgAlert;
 
-    public MatMulEdgeNestedBarrier(Map<String, ArrayList<Sensor<?, ?>>> sensors,
+    public MatMulEdgeNested(Map<String, ArrayList<Sensor<?, ?>>> sensors,
                                    Map<String, ArrayList<Actuator<?>>> actuators,
                                    JSONObject others) throws IllegalArgumentException, FunctionInstantiationException {
         super(sensors, actuators, others);
@@ -79,10 +79,10 @@ public class MatMulEdgeNestedBarrier extends Func {
 
     @Override
     public void run() {
-        long timestampStart = voltmeter.getWindow().getLastMeasurement().getTimestamp().getEpochSecond() * 1_000_000_000L
-                + voltmeter.getWindow().getLastMeasurement().getTimestamp().getNano();
+//        long timestampStart = voltmeter.getWindow().getLastMeasurement().getTimestamp().getEpochSecond() * 1_000_000_000L
+//                + voltmeter.getWindow().getLastMeasurement().getTimestamp().getNano();
 
-        calcMatmul(timestampStart, A, B, MSIZE, BSIZE);
+        calcMatmul(Instant.now().getEpochSecond(), A, B, MSIZE, BSIZE);
     }
 
     public static void calcMatmul(long timestampStart, double[][][] a, double[][][] b, int msize, int bsize) {
@@ -162,14 +162,14 @@ public class MatMulEdgeNestedBarrier extends Func {
 
     public static interface COMPSsItf {
         @Constraints(computingUnits = "1", processorArchitecture = "arm")
-        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier")
+        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulEdgeNested")
         void multiplyAccumulative(
                 @Parameter double[] A,
                 @Parameter double[] B,
                 @Parameter(direction = Direction.INOUT)	double[] C
         );
         @Constraints(computingUnits = "1", processorArchitecture = "arm")
-        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier")
+        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulEdgeNested")
         void calcMatmul(
                 @Parameter long timestampStart,
                 @Parameter double[][][] A,

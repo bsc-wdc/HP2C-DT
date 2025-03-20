@@ -73,7 +73,7 @@
       "label": "MatMul",
       "type": "workflow",
       "lang": "Java",
-      "method-name": "es.bsc.hp2c.common.funcs.MatMulEdge",
+      "method-name": "es.bsc.hp2c.common.funcs.MatMulEdgeNested",
       "parameters": {
         "sensors": [
           "Voltmeter Gen1"
@@ -82,12 +82,12 @@
           "msgAlert1"
         ],
         "other": {
-          "msize": 1,
-          "bsize": 1
+          "msize": 2,
+          "bsize": 100
         }
       },
       "trigger": {
-        "type": "onRead",
+        "type": "onStart",
         "parameters": {
           "trigger-sensor": [
             "Voltmeter Gen1"
@@ -95,14 +95,6 @@
           "interval": 1
         }
       }
-    }
-  ],
-  "resources": [
-    {
-      "ip": "212.128.226.53",
-      "port": "8002",
-      "cpu": "4",
-      "arch": "amd64"
     }
   ]
 }
