@@ -160,6 +160,7 @@ These AMQP options can be defined for each sensor by editing the `deployments/de
 }
 ```
 
+
 ## Functions
 
 To perform any action or evaluation within the system, we can declare **functions**. A function is a Java method (`method-name`) that receives specific parameters (sensors and/or actuators) along with additional user-defined parameters (in the `other` section).
@@ -176,6 +177,7 @@ We can also define how or when the function is triggered, allowing the following
 "funcs": [
     {
         "label": "VoltLimitation",
+        "type": "workflow", #optional
         "lang": "Java",
         "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
         "parameters": {
@@ -200,6 +202,49 @@ A function is a method that can read from one or more sensors and actuate over o
 3. `method-name`: the path to the method's implementation (e.g., es.bsc.hp2c.<SUBPACKAGE>.<CLASS>).
 4. `parameters`: the user must define lists of `sensors`, `actuators`, and additional parameters called `others` that are needed by the function.
 5. `trigger`: the event that triggers the execution of the function. 
+
+Functions can be executed either as an instantaneous function or as a COMPSs workflow, designed for non-instantaneous, 
+larger tasks. In this case, the computational work will be distributed among the available COMPSs agents (explained below). 
+To use this COMPSs workflow functionality, the user must specify the `type` field as `workflow`.
+
+### COMPSs Workflows
+As every edge device and the server are COMPSs agents, we implemented an optional section, `compss`, allowing the user to
+declare both the COMPSs architecture and external resources (other agents to which the declaring agent can offload computational work).
+This section applies to both edge and server setups. You can check examples of this section in `deployments/test_response_time/setup/edge1.json`.
+
+This is defined by two subsections:
+
+- `project`: Defines the agent architecture. Every field is optional.
+  - `cpu`: Number of computing units (Default: 1)
+  - `arch`: Agent architecture (Default: unassigned)
+  - `memory`: Available memory of the agent
+  - `storage`: Available storage of the agent
+
+- `resources`: List of external agents where computational work can be offloaded.
+  - `ip`: Destination IP (Mandatory)
+  - `port`: COMM port of the destination agent (Mandatory)
+  - `cpu`: Number of CPUs on the remote agent (Default: 1)
+  - `arch`: Architecture of the remote agent (Default: unassigned)
+
+
+```json
+"compss": {
+    "project":{
+      "cpu": "1",
+      "arch": "arm",
+      "memory": "2",
+      "storage": "10"
+    },
+    "resources": [
+      {
+        "ip": "212.128.226.53",
+        "port": "8002",
+        "cpu": "4",
+        "arch": "amd64"
+      }
+    ]
+  }
+```
 
 ## Server
 Another key component in our architecture is the Server, which is responsible for receiving data from the edges, storing it in the InfluxDB database, executing functions, and providing data to the User Interface, among other tasks.

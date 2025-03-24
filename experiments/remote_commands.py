@@ -51,9 +51,6 @@ def stop_broker():
 
 
 def deploy_server(test_name):
-    flag=""
-    if test_name == "test_response_time":
-        flag = "-t"
 
     """Connect to the server via broker and deploy it in the background."""
     server_client, broker_client = connect_to_server()
@@ -61,8 +58,8 @@ def deploy_server(test_name):
     # Run server deployment in background with nohup
     execute_ssh_command(server_client,
                         "nohup ./hp2cdt/deployments/deploy_server.sh "
-                        f"-m --deployment_name=test_bandwidth --comm=bsc_subnet "
-                        f"{flag} >/dev/null 2>&1 &")
+                        f"-m --deployment_name={test_name} --comm=bsc_subnet "
+                        f">/dev/null 2>&1 &")
     server_client.close()
     broker_client.close()
 

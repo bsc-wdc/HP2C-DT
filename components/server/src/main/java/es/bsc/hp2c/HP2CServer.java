@@ -26,7 +26,7 @@ import static es.bsc.hp2c.HP2CServerContext.*;
 public class HP2CServer {
 
     /** Start and run Server modules. */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         parseArgs(args);
         // Load setup files
         String hostIp = getHostIp();

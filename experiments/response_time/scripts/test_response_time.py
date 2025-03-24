@@ -105,7 +105,7 @@ def run_simulations(bsizes, dirname, file_path, i, msizes, test_host,
                     if test_host == "edge":
                         edge_json["funcs"][0][
                             "method-name"] = "es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier"
-                        del edge_json["resources"]
+                        del edge_json["compss"]["resources"]
                     else:
                         edge_json["funcs"][0][
                             "method-name"] = "es.bsc.hp2c.common.funcs.MatMulServerSimple"
@@ -127,7 +127,6 @@ def run_simulations(bsizes, dirname, file_path, i, msizes, test_host,
                     print(f"Error writing in broker: {e}")
                 finally:
                     client.close()
-
 
                 print(f"Updated JSON with msize={msize}, bsize={bsize} "
                       f"(time_step {time_step})")

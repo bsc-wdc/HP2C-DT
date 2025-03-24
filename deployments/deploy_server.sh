@@ -13,7 +13,6 @@ usage() {
                     bsc_subnet
                     (default: None)" 1>&2
     echo " --metrics, -m: Use the metrics logger (default: false)"
-    echo " -t: Execute response time test"
     exit 1
 }
 
@@ -26,7 +25,6 @@ COMM_SETUP=""
 # Parse command line arguments
 pos=1
 ENABLE_METRICS=0
-TEST=0
 REST_AGENT_PORT=8001
 COMM_AGENT_PORT=8002
 
@@ -47,9 +45,6 @@ for arg in "$@"; do
         --metrics|-m)
             ENABLE_METRICS=1
             ;;
-        -t)
-            TEST=1
-            ;;
         *)
             if [ $pos -eq 1 ]; then
                 DEPLOYMENT_NAME=$1
@@ -63,22 +58,15 @@ for arg in "$@"; do
 done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/server:latest"
-if [ $TEST == 1 ]; then
-  project_path="${SCRIPT_DIR}/../experiments/response_time/scripts/server_project.xml"
-  remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
-else
-  project_path=""
-  remote_project_path=""
-fi
 
 # Initialize configuration files and directories
-setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
+setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Server configuration files
 config_json="${SCRIPT_DIR}/../config.json"  # Authentication configuration
 
 # Deployment communications configuration (IP addresses and ports)
 if [ -z "$COMM_SETUP" ]; then
     # If no communication setup is provided, use the one in the corresponding deployment directory
-    deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  
+    deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"
 else
     # If a communication setup is provided, override the deployment configuration and use the one in the defaults directory
     deployment_json="${SCRIPT_DIR}/defaults/deployment_setup_${COMM_SETUP}.json"
@@ -96,9 +84,7 @@ fi
 
 echo "Using JSON for deployment communications:   $deployment_json"
 echo "Using setup folder:                         $setup_folder"
-echo "Using defaults JSON for default edge funcs: $defaults_json"
 echo "Using nominal voltages file: $nominal_voltages_file"
-
 
 # Verify the provided files and directories exist
 if [ ! -f "${SCRIPT_DIR}/../config.json" ]; then
@@ -112,7 +98,7 @@ if [ ! -f "${deployment_json}" ];then
 fi
 
 if [ ! -d "${setup_folder}" ];then
-  echo"Error: Setup directory not found in ${setup_folder}."
+  echo "Error: Setup directory not found in ${setup_folder}."
   exit 1
 fi
 
@@ -148,10 +134,43 @@ fi
 
 custom_ip_address="172.29.128.1"
 
+# Generate the project XML if compss-project exists in the JSON
+project_path=""
+remote_project_path=""  # Fixed remote path
+
+compss_project=$(jq -r '.compss.project' "$path_to_setup")
+if [[ "$compss_project" != "null" ]]; then
+    project_path="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/project_server.xml"
+    remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
+
+    cpu=$(jq -r '.compss.project.cpu' "$path_to_setup")
+    arch=$(jq -r '.compss.project.arch' "$path_to_setup")
+    memory=$(jq -r '.compss.project.memory' "$path_to_setup")
+    storage=$(jq -r '.compss.project.storage' "$path_to_setup")
+
+    xml_content="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Project>\n    <MasterNode>\n        <Processor Name=\"MainProcessor\">"
+    if [[ "$cpu" != "null" ]]; then
+        xml_content+="\n            <ComputingUnits>$cpu</ComputingUnits>"
+    fi
+    if [[ "$arch" != "null" ]]; then
+        xml_content+="\n            <Architecture>$arch</Architecture>"
+    fi
+    xml_content+="\n        </Processor>"
+    if [[ "$memory" != "null" ]]; then
+        xml_content+="\n        <Memory>\n            <Size>$memory</Size>\n        </Memory>"
+    fi
+    if [[ "$storage" != "null" ]]; then
+        xml_content+="\n        <Storage>\n            <Size>$storage</Size>\n        </Storage>"
+    fi
+    xml_content+="\n    </MasterNode>\n</Project>"
+
+    echo -e "$xml_content" > "$project_path"
+    echo "Generated project XML for server at $project_path"
+fi
+
 echo "Local IPv4 Address: $ip_address"
 echo "Custom IP Address: $custom_ip_address"
 echo
-
 
 # Auxiliar functions
 on_exit(){
@@ -166,7 +185,6 @@ wait_containers(){
     docker logs -f ${DEPLOYMENT_PREFIX}_server
     docker wait ${DEPLOYMENT_PREFIX}_server
 }
-
 
 ####################
 # SCRIPT MAIN CODE #

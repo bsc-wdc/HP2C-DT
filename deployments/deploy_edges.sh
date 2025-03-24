@@ -12,7 +12,6 @@ usage() {
                     bsc
                     bsc_subnet
                     (default: None)" 1>&2
-    echo " -t: Execute the response time test"
     exit 1
 }
 
@@ -24,7 +23,6 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEPLOYMENT_PREFIX="hp2c"
 DEPLOYMENT_NAME="testbed"
 COMM_SETUP=""
-TEST=0
 
 # Parse command line arguments
 pos=1
@@ -42,9 +40,6 @@ for arg in "$@"; do
         --comm=*)
             COMM_SETUP="${arg#*=}"
             ;;
-        -t)
-            TEST=1
-            ;;
         *)
             if [ $pos -eq 1 ]; then
                 DEPLOYMENT_NAME=$1
@@ -58,10 +53,8 @@ for arg in "$@"; do
 done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/edge:latest"
-
 MANAGER_DOCKER_IMAGE="compss/agents_manager:3.2"
 NETWORK_NAME="${DEPLOYMENT_PREFIX}-net"
-
 
 # Initialize configuration files and directories
 defaults_json="${SCRIPT_DIR}/defaults/setup/edge_default.json"  # Edge default configuration
@@ -70,7 +63,7 @@ setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup")
 # Deployment communications configuration (IP addresses and ports)
 if [ -z "$COMM_SETUP" ]; then
     # If no communication setup is provided, use the one in the corresponding deployment directory
-    deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  
+    deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"
 else
     # If a communication setup is provided, override the deployment configuration and use the one in the defaults directory
     deployment_json="${SCRIPT_DIR}/defaults/deployment_setup_${COMM_SETUP}.json"
@@ -91,7 +84,6 @@ echo "Using setup folder:                         $setup_folder"
 echo "Using defaults JSON for default edge funcs: $defaults_json"
 echo "Using units JSON:                           $units_file"
 
-
 # Verify the provided files and directories exist
 if [ ! -f "${defaults_json}" ]; then
   echo "Error: edge_default not found in ${defaults_json}"
@@ -104,12 +96,11 @@ if [ ! -f "${deployment_json}" ];then
 fi
 
 if [ ! -d "${setup_folder}" ];then
-  echo"Error: Setup directory not found in ${setup_folder}."
+  echo "Error: Setup directory not found in ${setup_folder}."
   exit 1
 fi
 
-
-# Create a dictionary containg pairs of label-files (JSON files)
+# Create a dictionary containing pairs of label-files (JSON files)
 declare -A labels_paths
 declare -A labels_udp_ports
 declare -A labels_tcp_sensors_ports
@@ -140,7 +131,6 @@ for f in "${sorted_setup_folder[@]}"; do
     fi
 done
 
-
 # Get the IPv4 address from wlp or eth interfaces
 ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'wlp[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
 
@@ -156,20 +146,53 @@ fi
 
 custom_ip_address="172.31.144.1"
 
-if [ $TEST == 1 ]; then
-  project_path="${SCRIPT_DIR}/../experiments/response_time/scripts/edge_project.xml"
-  remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
-  agent_name="$ip_address"
-else
-  project_path=""
-  remote_project_path=""
-  agent_name="localhost"
-fi
+
+# Generate the project XML for each edge if compss-project exists in the JSON
+declare -A project_paths
+declare -A remote_project_paths
+remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"  # Fixed remote path
+
+for label in "${!labels_paths[@]}"; do
+    remote_project_paths["${label}"]=""
+    compss_project=$(jq -r '.compss.project' "${labels_paths[$label]}")
+    if [[ "$compss_project" != "null" ]]; then
+        project_path="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/project_${label}.xml"
+        remote_project_paths["${label}"]="${remote_project_path}"
+
+        cpu=$(jq -r '.compss.project.cpu' "${labels_paths[$label]}")
+        arch=$(jq -r '.compss.project.arch' "${labels_paths[$label]}")
+        memory=$(jq -r '.compss.project.memory' "${labels_paths[$label]}")
+        storage=$(jq -r '.compss.project.storage' "${labels_paths[$label]}")
+
+        xml_content="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Project>\n    <MasterNode>\n        <Processor Name=\"MainProcessor\">"
+        if [[ "$cpu" != "null" ]]; then
+            xml_content+="\n            <ComputingUnits>$cpu</ComputingUnits>"
+        fi
+        if [[ "$arch" != "null" ]]; then
+            xml_content+="\n            <Architecture>$arch</Architecture>"
+        fi
+        xml_content+="\n        </Processor>"
+        if [[ "$memory" != "null" ]]; then
+            xml_content+="\n        <Memory>\n            <Size>$memory</Size>\n        </Memory>"
+        fi
+        if [[ "$storage" != "null" ]]; then
+            xml_content+="\n        <Storage>\n            <Size>$storage</Size>\n        </Storage>"
+        fi
+        xml_content+="\n    </MasterNode>\n</Project>"
+
+        echo -e "$xml_content" > "$project_path"
+        echo "Generated project XML for $label at $project_path"
+
+        project_paths["${label}"]="${project_path}"
+    else
+        project_paths["${label}"]=""
+    fi
+done
+
 
 echo "Local IPv4 Address: $ip_address"
 echo "Custom IP Address: $custom_ip_address"
 echo
-
 
 # Setting up trap to clear environment
 on_exit(){
@@ -195,15 +218,12 @@ wait_containers(){
     done
 }
 
-
 ################
 # SCRIPT MAIN CODE
 #################
 
-
 # Create network
 docker network create hp2c-net > /dev/null 2>/dev/null || { echo "Cannot create network"; exit 1; }
-
 
 # Start edge containers
 edge_idx=0
@@ -212,7 +232,9 @@ for label in "${!labels_paths[@]}"; do
     COMM_AGENT_PORT=$((4610 + edge_idx))2
     echo "$label REST port: ${REST_AGENT_PORT}"
     echo "$label COMM port: ${COMM_AGENT_PORT}"
-    echo $project_path
+
+    project_path="${project_paths[$label]}"
+    remote_project_path="${remote_project_paths[$label]}"
 
     echo "deploying container for $label"
     docker \
@@ -231,7 +253,7 @@ for label in "${!labels_paths[@]}"; do
         -e PROJECT_PATH=$remote_project_path \
         -e LOCAL_IP=$ip_address \
         -e CUSTOM_IP=$custom_ip_address \
-        -e AGENT_NAME=$agent_name \
+        -e AGENT_NAME=$ip_address \
         -p $REST_AGENT_PORT:$REST_AGENT_PORT \
         -p $COMM_AGENT_PORT:$COMM_AGENT_PORT \
         ${DOCKER_IMAGE}

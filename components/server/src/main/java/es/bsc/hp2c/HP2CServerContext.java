@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
+import static es.bsc.hp2c.common.utils.COMPSsUtils.setResources;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 public class HP2CServerContext {
@@ -29,15 +30,13 @@ public class HP2CServerContext {
     private static String pathToSetup = "deployments/simple/setup/server.json";
     private static MetricsHandler metrics = null;
 
-    public static void parseArgs(String[] args) {
+    public static void parseArgs(String[] args) throws IOException {
         // The server is running on docker
         File dockerEnv = new File(".dockerenv");
         if (dockerEnv.isFile()) {
             pathToSetup = "/data/setup.json"; // take the path mounted in deploy_server.sh
             String useMetricsString = System.getenv("ENABLE_METRICS"); // take the env declared in deploy_server.sh
             useMetrics = (useMetricsString != null && useMetricsString.equals("1"));
-            System.out.println("PATH" + pathToSetup);
-            System.out.println("ASD " + useMetrics);
         }
 
         // The server is running locally
@@ -63,6 +62,9 @@ public class HP2CServerContext {
         }
         System.out.println("Setup file: " + pathToSetup);
         System.out.println("Use metrics: " + useMetrics);
+
+        // Add resources to server agent
+        setResources(pathToSetup);
     }
 
     /**
@@ -72,6 +74,7 @@ public class HP2CServerContext {
      *               each module
      */
     public static void init(String hostIp, Class<?> runtimeHost) throws IOException, TimeoutException {
+
         // Initialize modules
         db = new DatabaseHandler(hostIp);
         alarms = new AlarmHandler(pathToSetup, db);

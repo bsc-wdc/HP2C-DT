@@ -85,12 +85,20 @@
       }
     }
   ],
-  "resources": [
-    {
-      "ip": "212.128.226.53",
-      "port": "8002",
-      "cpu": "4",
-      "arch": "amd64"
-    }
-  ]
+  "compss": {
+    "project":{
+      "cpu": "1",
+      "arch": "arm",
+      "memory": "2",
+      "storage": "10"
+    },
+    "resources": [
+      {
+        "ip": "212.128.226.53",
+        "port": "8002",
+        "cpu": "4",
+        "arch": "amd64"
+      }
+    ]
+  }
 }

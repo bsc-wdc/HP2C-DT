@@ -32,6 +32,7 @@ import java.util.*;
 
 import static es.bsc.hp2c.HP2CEdgeContext.*;
 import static es.bsc.hp2c.common.types.Device.formatLabel;
+import static es.bsc.hp2c.common.utils.COMPSsUtils.*;
 import static es.bsc.hp2c.common.utils.FileUtils.*;
 
 /**
@@ -93,7 +94,7 @@ public class HP2CEdge {
             edgeMap.addDevice(edgeLabel, entry.getKey(), entry.getValue());
         }
 
-        // Add the declared resources to the agent
+        // Add resources to edge agent
         setResources(setupFile);
 
         //Load funcs

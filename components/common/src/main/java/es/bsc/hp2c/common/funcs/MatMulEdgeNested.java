@@ -1,5 +1,6 @@
 package es.bsc.hp2c.common.funcs;
 
+import es.bsc.compss.api.COMPSs;
 import es.bsc.hp2c.common.generic.MsgAlert;
 import es.bsc.hp2c.common.generic.Voltmeter;
 import es.bsc.hp2c.common.types.Actuator;
@@ -101,7 +102,7 @@ public class MatMulEdgeNested extends Func {
             }
         }
 
-        //COMPSs.barrier();
+        COMPSs.barrier();
         //printMatrix(C);
         long timestampEnd = Instant.now().getEpochSecond() * 1_000_000_000L
                 + Instant.now().getNano();
