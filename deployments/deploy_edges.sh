@@ -100,6 +100,7 @@ if [ ! -d "${setup_folder}" ];then
   exit 1
 fi
 
+
 # Create a dictionary containing pairs of label-files (JSON files)
 declare -A labels_paths
 declare -A labels_udp_ports
@@ -150,11 +151,20 @@ custom_ip_address="172.31.144.1"
 # Generate the project XML for each edge if compss-project exists in the JSON
 declare -A project_paths
 declare -A remote_project_paths
-remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"  # Fixed remote path
+remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
+resources_template_path="${SCRIPT_DIR}/templates/resources_template.xml"
+project_template_path="${SCRIPT_DIR}/templates/project_template.xml"
+
+echo "Using project template:                     $project_template_path"
+if [ ! -f "${project_template_path}" ]; then
+  echo "Error: Project template not found in ${project_template_path}."
+  exit 1
+fi
 
 for label in "${!labels_paths[@]}"; do
     remote_project_paths["${label}"]=""
     compss_project=$(jq -r '.compss.project' "${labels_paths[$label]}")
+
     if [[ "$compss_project" != "null" ]]; then
         project_path="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/project_${label}.xml"
         remote_project_paths["${label}"]="${remote_project_path}"
@@ -164,25 +174,20 @@ for label in "${!labels_paths[@]}"; do
         memory=$(jq -r '.compss.project.memory' "${labels_paths[$label]}")
         storage=$(jq -r '.compss.project.storage' "${labels_paths[$label]}")
 
-        xml_content="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Project>\n    <MasterNode>\n        <Processor Name=\"MainProcessor\">"
-        if [[ "$cpu" != "null" ]]; then
-            xml_content+="\n            <ComputingUnits>$cpu</ComputingUnits>"
-        fi
-        if [[ "$arch" != "null" ]]; then
-            xml_content+="\n            <Architecture>$arch</Architecture>"
-        fi
-        xml_content+="\n        </Processor>"
-        if [[ "$memory" != "null" ]]; then
-            xml_content+="\n        <Memory>\n            <Size>$memory</Size>\n        </Memory>"
-        fi
-        if [[ "$storage" != "null" ]]; then
-            xml_content+="\n        <Storage>\n            <Size>$storage</Size>\n        </Storage>"
-        fi
-        xml_content+="\n    </MasterNode>\n</Project>"
+        # Build optional lines only if the values exist
+        [[ "$cpu" != "null" ]] && CPU_LINE="<ComputingUnits>$cpu</ComputingUnits>" || CPU_LINE=""
+        [[ "$arch" != "null" ]] && ARCH_LINE="<Architecture>$arch</Architecture>" || ARCH_LINE=""
+        [[ "$memory" != "null" ]] && MEMORY_LINE="<Memory><Size>$memory</Size></Memory>" || MEMORY_LINE=""
+        [[ "$storage" != "null" ]] && STORAGE_LINE="<Storage><Size>$storage</Size></Storage>" || STORAGE_LINE=""
 
-        echo -e "$xml_content" > "$project_path"
+        # Replace placeholders in the template
+        sed -e "s|{{CPU_LINE}}|$CPU_LINE|" \
+            -e "s|{{ARCH_LINE}}|$ARCH_LINE|" \
+            -e "s|{{MEMORY_LINE}}|$MEMORY_LINE|" \
+            -e "s|{{STORAGE_LINE}}|$STORAGE_LINE|" \
+            "$project_template_path" > "$project_path"
+
         echo "Generated project XML for $label at $project_path"
-
         project_paths["${label}"]="${project_path}"
     else
         project_paths["${label}"]=""
@@ -218,10 +223,6 @@ wait_containers(){
     done
 }
 
-################
-# SCRIPT MAIN CODE
-#################
-
 # Create network
 docker network create hp2c-net > /dev/null 2>/dev/null || { echo "Cannot create network"; exit 1; }
 
@@ -248,6 +249,7 @@ for label in "${!labels_paths[@]}"; do
         -v ${deployment_json}:/data/deployment_setup.json \
         -v ${project_path}:${remote_project_path} \
         -v ${units_file}:/data/default_units.json \
+        -v "${resources_template_path}:/data/resources_template.xml" \
         -e REST_AGENT_PORT=$REST_AGENT_PORT \
         -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
         -e PROJECT_PATH=$remote_project_path \

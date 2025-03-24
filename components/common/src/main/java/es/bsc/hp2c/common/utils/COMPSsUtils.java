@@ -5,14 +5,26 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 public class COMPSsUtils {
+
     public static void setResources(String setupFile) throws IOException {
         File dockerEnvFile = new File("/.dockerenv");
-        if (!dockerEnvFile.isFile()){
+        if (!dockerEnvFile.isFile()) {
             return;
+        }
+
+        // Load XML template
+        String templatePath = "/data/resources_template.xml";
+        String xmlTemplate;
+        try {
+            xmlTemplate = new String(Files.readAllBytes(Paths.get(templatePath)));
+        } catch (IOException e) {
+            throw new IOException("Failed to read XML template from " + templatePath, e);
         }
 
         JSONObject object = getJsonObject(setupFile);
@@ -32,44 +44,12 @@ public class COMPSsUtils {
             String cpu = jResource.optString("cpu", "1");
             String arc = jResource.optString("arch", "[unassigned]");
 
-            String xmlData = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-                    + "<newResource>"
-                    + "<externalResource>"
-                    + "<name>" + ip + "</name>"
-                    + "<description>"
-                    + "<processors>"
-                    + "<processor>"
-                    + "<name>MainProcessor</name>"
-                    + "<type>CPU</type>"
-                    + "<architecture>" + arc + "</architecture>"
-                    + "<computingUnits>" + cpu + "</computingUnits>"
-                    + "<internalMemory>-1.0</internalMemory>"
-                    + "<propName>[unassigned]</propName>"
-                    + "<propValue>[unassigned]</propValue>"
-                    + "<speed>-1.0</speed>"
-                    + "</processor>"
-                    + "</processors>"
-                    + "<memorySize>-1</memorySize>"
-                    + "<memoryType>[unassigned]</memoryType>"
-                    + "<storageSize>-1.0</storageSize>"
-                    + "<storageType>[unassigned]</storageType>"
-                    + "<operatingSystemDistribution>[unassigned]</operatingSystemDistribution>"
-                    + "<operatingSystemType>[unassigned]</operatingSystemType>"
-                    + "<operatingSystemVersion>[unassigned]</operatingSystemVersion>"
-                    + "<pricePerUnit>-1.0</pricePerUnit>"
-                    + "<priceTimeUnit>-1</priceTimeUnit>"
-                    + "<value>0.0</value>"
-                    + "<wallClockLimit>-1</wallClockLimit>"
-                    + "</description>"
-                    + "<adaptor>es.bsc.compss.agent.comm.CommAgentAdaptor</adaptor>"
-                    + "<resourceConf xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"ResourcesExternalAdaptorProperties\">"
-                    + "<Property>"
-                    + "<Name>Port</Name>"
-                    + "<Value>" + port + "</Value>"
-                    + "</Property>"
-                    + "</resourceConf>"
-                    + "</externalResource>"
-                    + "</newResource>";
+            // Replace placeholders in the template
+            String xmlData = xmlTemplate
+                    .replace("{{IP}}", ip)
+                    .replace("{{ARCH}}", arc)
+                    .replace("{{CPU}}", cpu)
+                    .replace("{{PORT}}", port);
 
             String restPort = System.getenv("REST_AGENT_PORT");
             String command = "curl -s -X PUT http://127.0.0.1:" + restPort + "/COMPSs/addResources "

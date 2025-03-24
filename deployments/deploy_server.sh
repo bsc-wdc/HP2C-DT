@@ -137,6 +137,8 @@ custom_ip_address="172.29.128.1"
 # Generate the project XML if compss-project exists in the JSON
 project_path=""
 remote_project_path=""  # Fixed remote path
+resources_template_path="${SCRIPT_DIR}/templates/resources_template.xml"
+project_template_path="${SCRIPT_DIR}/templates/project_template.xml"
 
 compss_project=$(jq -r '.compss.project' "$path_to_setup")
 if [[ "$compss_project" != "null" ]]; then
@@ -148,23 +150,19 @@ if [[ "$compss_project" != "null" ]]; then
     memory=$(jq -r '.compss.project.memory' "$path_to_setup")
     storage=$(jq -r '.compss.project.storage' "$path_to_setup")
 
-    xml_content="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Project>\n    <MasterNode>\n        <Processor Name=\"MainProcessor\">"
-    if [[ "$cpu" != "null" ]]; then
-        xml_content+="\n            <ComputingUnits>$cpu</ComputingUnits>"
-    fi
-    if [[ "$arch" != "null" ]]; then
-        xml_content+="\n            <Architecture>$arch</Architecture>"
-    fi
-    xml_content+="\n        </Processor>"
-    if [[ "$memory" != "null" ]]; then
-        xml_content+="\n        <Memory>\n            <Size>$memory</Size>\n        </Memory>"
-    fi
-    if [[ "$storage" != "null" ]]; then
-        xml_content+="\n        <Storage>\n            <Size>$storage</Size>\n        </Storage>"
-    fi
-    xml_content+="\n    </MasterNode>\n</Project>"
+    # Build optional lines only if the values exist
+    [[ "$cpu" != "null" ]] && CPU_LINE="<ComputingUnits>$cpu</ComputingUnits>" || CPU_LINE="<ComputingUnits>1</ComputingUnits>"
+    [[ "$arch" != "null" ]] && ARCH_LINE="<Architecture>$arch</Architecture>" || ARCH_LINE=""
+    [[ "$memory" != "null" ]] && MEMORY_LINE="<Memory><Size>$memory</Size></Memory>" || MEMORY_LINE=""
+    [[ "$storage" != "null" ]] && STORAGE_LINE="<Storage><Size>$storage</Size></Storage>" || STORAGE_LINE=""
 
-    echo -e "$xml_content" > "$project_path"
+    # Replace placeholders in the template
+    sed -e "s|{{CPU_LINE}}|$CPU_LINE|" \
+        -e "s|{{ARCH_LINE}}|$ARCH_LINE|" \
+        -e "s|{{MEMORY_LINE}}|$MEMORY_LINE|" \
+        -e "s|{{STORAGE_LINE}}|$STORAGE_LINE|" \
+        "$project_template_path" > "$project_path"
+
     echo "Generated project XML for server at $project_path"
 fi
 
@@ -199,6 +197,7 @@ docker run \
     -v ${nominal_voltages_file}:/data/nominal_voltages.json \
     -v ${config_json}:/run/secrets/config.json \
     -v ${project_path}:${remote_project_path} \
+    -v ${resources_template_path}:/data/resources_template.xml \
     -p 8080:8080 \
     -e LOCAL_IP=$ip_address \
     -e REST_AGENT_PORT=$REST_AGENT_PORT \
