@@ -2,7 +2,7 @@
 <Project>
     <MasterNode>
         <Processor Name="MainProcessor">
-            <ComputingUnits>1</ComputingUnits>
+            <ComputingUnits>2</ComputingUnits>
             <Architecture>arm</Architecture>
             <Speed>3.0</Speed>
         </Processor>
