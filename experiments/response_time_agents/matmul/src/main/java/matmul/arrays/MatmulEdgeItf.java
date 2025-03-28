@@ -24,7 +24,7 @@ import es.bsc.compss.types.annotations.task.Method;
 public interface MatmulEdgeItf {
 
 	@Constraints(processorArchitecture = "arm")
-	@Method(declaringClass = "matmul.arrays.MatmulEdgeImpl")
+	@Method(declaringClass = "matmul.arrays.MatmulImpl")
 	void multiplyAccumulative(
 		@Parameter double[] A,
 		@Parameter double[] B,
@@ -32,7 +32,7 @@ public interface MatmulEdgeItf {
 	);
 
 	@Constraints(processorArchitecture = "arm")
-	@Method(declaringClass = "matmul.arrays.MatmulEdgeImpl")
+	@Method(declaringClass = "matmul.arrays.MatmulImpl")
 	double[] initializeBlock(
 		@Parameter int size
 	);

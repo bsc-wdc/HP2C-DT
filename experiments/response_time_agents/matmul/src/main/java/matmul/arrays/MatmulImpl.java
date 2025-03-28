@@ -16,7 +16,7 @@
 package matmul.arrays;
 
 
-public class MatmulEdgeImpl {
+public class MatmulImpl {
 	
 	public static void multiplyAccumulative(double[] a, double[] b, double[] c) {
 		int M = (int)Math.sqrt(a.length);

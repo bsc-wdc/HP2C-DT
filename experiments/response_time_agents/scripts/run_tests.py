@@ -11,13 +11,8 @@ BROKER_IP = "212.128.226.53"
 SERVER_IP = "192.168.0.203"
 REMOTE_USER = "ubuntu"
 
-msizes = [1, 2, 4, 8, 16, 32, 64]
-bsizes = [1, 2, 4, 8, 16, 32, 64]
-
-# Global variables for logging
-log_data = []
-log_lock = threading.Lock()
-stop_logging = False
+msizes = [1, 2, 4, 8]
+bsizes = [1, 2, 4, 8, 16]
 
 
 def connect_ssh(ip):
@@ -62,26 +57,25 @@ def connect_to_server_through_broker():
 
 def monitor_edge_log(broker_client, results_file):
     """Monitors the edge log and saves execution times."""
-    log_entries = set()
-
     while True:
-        output = execute_ssh_command(broker_client, "cat /tmp/edge.log", False)
-        new_entries = [line for line in output.split("\n") if
-                       "App completed after" in line and line not in log_entries]
+        output = execute_ssh_command(broker_client, "grep 'Job completed after' /tmp/edge.log", False)
+        lines = output.strip().split("\n")
 
-        if new_entries:
-            with open(results_file, 'a') as f:
-                for line in new_entries:
-                    log_entries.add(line)
-                    f.write(line + '\n')
-                    print(f"Logged: {line}")
+        with open(results_file, 'w') as f:
+            for line in lines:
+                f.write(line + '\n')
 
-        if len(log_entries) >= 5:
+        print(f"Logged {len(lines)} execution times")
+
+        if len(lines) >= 15:
+            print("break")
             break
 
         time.sleep(5)
 
-    print(f"Saved {len(log_entries)} execution times to {results_file}")
+    print(f"Final count: {len(lines)}")
+    print(f"Storing results in {results_file}")
+
 
 
 def cleanup(server_client, broker_client):
@@ -92,7 +86,7 @@ def cleanup(server_client, broker_client):
                         False)
     execute_ssh_command(server_client,
                         "docker stop matmul-server && docker rm matmul-server",
-                        False)
+                        True)
     execute_ssh_command(broker_client, "pkill -f deploy_image.sh")
     execute_ssh_command(server_client, "pkill -f deploy_image.sh")
 
@@ -105,6 +99,7 @@ def signal_handler(sig, frame):
 
 
 signal.signal(signal.SIGINT, signal_handler)
+
 
 # Main loop for executing the tests
 for mode in ["Edge", "Server"]:
@@ -125,11 +120,7 @@ for mode in ["Edge", "Server"]:
                                 "nohup /home/ubuntu/hp2cdt/experiments/response_time_agents/scripts/deploy_image.sh edge > /tmp/edge.log 2>&1 &",
                                 False)
             time.sleep(10)
-            execute_ssh_command(broker_client,
-                                "docker exec matmul-edge compss_agent_add_resources "
-                                "--agent_node=192.168.0.118 --agent_port=46101 "
-                                "--mem_size=2 192.168.0.118", True)
-            time.sleep(4)
+
             execute_ssh_command(broker_client,
                                 "docker exec matmul-edge curl -XGET http://192.168.0.118:46101/COMPSs/resources | jq", True)
 
@@ -141,29 +132,29 @@ for mode in ["Edge", "Server"]:
                 print(
                     f"Deploying server container for msize={msize}, bsize={bsize}")
                 execute_ssh_command(server_client,
-                                    "nohup ./deploy_image.sh server > /tmp/server.log 2>&1 &",
-                                    False)
+                                    "nohup /home/ubuntu/hp2cdt/experiments/response_time_agents/scripts/deploy_image.sh server > /tmp/server.log 2>&1 &",
+                                    True)
                 time.sleep(10)
 
                 execute_ssh_command(broker_client,
                                     "docker exec matmul-edge compss_agent_add_resources "
                                     "--agent_node=192.168.0.118 --agent_port=46101 "
-                                    "--cpu=1 192.168.0.203 Port=46202", False)
+                                    "--cpu=1 192.168.0.203 Port=46202", True)
                 time.sleep(5)
 
             print(
                 f"Executing Matmul operation for msize={msize}, bsize={bsize}")
-            for _ in range(5):
+            for _ in range(15):
                 execute_ssh_command(broker_client,
                                     "docker exec matmul-edge compss_agent_call_operation "
                                     "--master_node=192.168.0.118 --master_port=46101 "
                                     f"--cei=\"matmul.arrays.Matmul{mode}Itf\" "
                                     f"matmul.arrays.Matmul {msize} {bsize}",
                                     False)
-                time.sleep(5)
+                time.sleep(msize * msize * bsize / 3)
 
             log_thread.join()
-
+            print("------------------------------------------------------")
             cleanup(server_client, broker_client)
 
             broker_client.close()

@@ -1,6 +1,19 @@
 #!/bin/bash
 set -e  # Stop on error
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Build the matmul project first
+echo "Building matmul.jar with Maven..."
+(cd "$SCRIPT_DIR/../matmul" && mvn clean package)
+
+# Verify the JAR was created
+MATMUL_JAR="$SCRIPT_DIR/../matmul/target/matmul.jar"
+if [ ! -f "$MATMUL_JAR" ]; then
+    echo "Error: matmul.jar was not created by Maven build!"
+    exit 1
+fi
+
 # Define a temporary build directory
 BUILD_DIR="./docker_build"
 APP_DIR="$BUILD_DIR/app"
@@ -9,16 +22,14 @@ APP_DIR="$BUILD_DIR/app"
 rm -rf "$BUILD_DIR"
 mkdir -p "$APP_DIR"
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-
 # Copy necessary files into the build context
-cp $SCRIPT_DIR/../matmul/target/matmul.jar "$APP_DIR/"
-cp $SCRIPT_DIR/../../response_time/scripts/edge_project.xml "$APP_DIR/"
-cp $SCRIPT_DIR/../../response_time/scripts/server_project.xml "$APP_DIR/"
+cp "$MATMUL_JAR" "$APP_DIR/"
+cp "$SCRIPT_DIR/../../response_time/scripts/edge_project.xml" "$APP_DIR/"
+cp "$SCRIPT_DIR/../../response_time/scripts/server_project.xml" "$APP_DIR/"
 
 # Create Dockerfile with curl and jq installation
 cat > "$BUILD_DIR/Dockerfile" <<EOF
-FROM compss/compss:trunk
+FROM compss/compss
 
 # Install curl and jq
 RUN apt-get update && \\
@@ -34,9 +45,10 @@ CMD ["tail", "-f", "/dev/null"]
 EOF
 
 # Build the Docker image using the build context
+echo "Building Docker image..."
 docker build -t hp2c/matmul-image "$BUILD_DIR"
 
-echo "Docker image 'hp2c/matmul-image' created successfully with curl and jq installed!"
+echo "Docker image 'hp2c/matmul-image' created successfully"
 
 # Remove the temporary build directory
 rm -rf "$BUILD_DIR"

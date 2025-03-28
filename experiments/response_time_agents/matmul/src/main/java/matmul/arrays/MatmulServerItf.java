@@ -8,7 +8,7 @@ import es.bsc.compss.types.annotations.task.Method;
 public interface MatmulServerItf {
 
     @Constraints(processorArchitecture = "amd64")
-    @Method(declaringClass = "matmul.arrays.MatmulServerImpl")
+    @Method(declaringClass = "matmul.arrays.MatmulImpl")
     void multiplyAccumulative(
             @Parameter double[] A,
             @Parameter double[] B,
@@ -16,7 +16,7 @@ public interface MatmulServerItf {
     );
 
     @Constraints(processorArchitecture = "amd64")
-    @Method(declaringClass = "matmul.arrays.MatmulServerImpl")
+    @Method(declaringClass = "matmul.arrays.MatmulImpl")
     double[] initializeBlock(
             @Parameter int size
     );

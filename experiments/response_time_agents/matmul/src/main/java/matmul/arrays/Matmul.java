@@ -67,7 +67,7 @@ public class Matmul {
 		double[][][] matrix = new double[MSIZE][MSIZE][BSIZE*BSIZE];
 		for (int i = 0; i < MSIZE; ++i) {
 			for (int j = 0; j < MSIZE; ++j) {
-				matrix[i][j] = MatmulEdgeImpl.initializeBlock(BSIZE);
+				matrix[i][j] = MatmulImpl.initializeBlock(BSIZE);
 			}
 		}
 		
@@ -84,7 +84,7 @@ public class Matmul {
 		for (int i = 0; i < MSIZE; i++) {
 			for (int j = 0; j < MSIZE; j++) {
 				for (int k = 0; k < MSIZE; k++) {
-					MatmulEdgeImpl.multiplyAccumulative(A[i][k], B[k][j], C[i][j]);
+					MatmulImpl.multiplyAccumulative(A[i][k], B[k][j], C[i][j]);
 				}
             }
 		}
