@@ -26,15 +26,7 @@ public interface MatmulEdgeItf {
 	@Constraints(processorArchitecture = "arm")
 	@Method(declaringClass = "matmul.arrays.MatmulImpl")
 	void multiplyAccumulative(
-		@Parameter double[] A,
-		@Parameter double[] B,
-		@Parameter(direction = Direction.INOUT)	double[] C
-	);
-
-	@Constraints(processorArchitecture = "arm")
-	@Method(declaringClass = "matmul.arrays.MatmulImpl")
-	double[] initializeBlock(
-		@Parameter int size
+		@Parameter int M
 	);
 
 }

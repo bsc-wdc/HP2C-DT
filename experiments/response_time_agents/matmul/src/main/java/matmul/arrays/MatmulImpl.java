@@ -18,24 +18,13 @@ package matmul.arrays;
 
 public class MatmulImpl {
 	
-	public static void multiplyAccumulative(double[] a, double[] b, double[] c) {
-		int M = (int)Math.sqrt(a.length);
+	public static void multiplyAccumulative(int M) {
 		for (int i = 0; i < M; i++) {
 			for (int j = 0; j < M; j++) {
 				for (int k = 0; k < M; k++) {
-					c[i*M + j] += a[i*M + k] * b[k*M + j];
+					double z = (double)(Math.random()*10.0) * (double)(Math.random()*10.0);
 				}
 			}
 		}
 	}
-	
-	public static double[] initializeBlock(int size) {
-		double[] block = new double[size*size];
-		for (int i = 0; i < size*size; ++i) {
-			block[i] = (double)(Math.random()*10.0);
-		}
-		
-		return block;
-	}
-	
 }

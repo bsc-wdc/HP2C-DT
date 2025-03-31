@@ -47,14 +47,12 @@ public class Matmul {
 		// Initialize matrices
 		System.out.println("[LOG] MSIZE parameter value = " + MSIZE);
 		System.out.println("[LOG] BSIZE parameter value = " + BSIZE);
-		A = initializeMatrix();
-		B = initializeMatrix();
 		
 		// Compute matrix multiplication C = A x B
 		computeMultiplication();
 		
 		// Uncomment the following line if you wish to see the result in the stdout
-		printMatrix(C, "C (Result)  ");
+		//printMatrix(C, "C (Result)  ");
 		// Uncomment the following line if you wish to store the result in a file
 		//storeMatrix("c_result.txt");
 		
@@ -63,28 +61,16 @@ public class Matmul {
 		System.out.println("[LOG] Main program finished. Elapsed time: " + Duration.between(t0,t1));
 	}
 	
-	private static double[][][] initializeMatrix() {
-		double[][][] matrix = new double[MSIZE][MSIZE][BSIZE*BSIZE];
-		for (int i = 0; i < MSIZE; ++i) {
-			for (int j = 0; j < MSIZE; ++j) {
-				matrix[i][j] = MatmulImpl.initializeBlock(BSIZE);
-			}
-		}
-		
-		return matrix;
-	}
-	
 	private static void computeMultiplication() {
 		// Allocate result matrix C
 		System.out.println("[LOG] Allocating C matrix space");
-		C = new double[MSIZE][MSIZE][BSIZE*BSIZE];
-		
+
 		// Compute result
 		System.out.println("[LOG] Computing Result");
 		for (int i = 0; i < MSIZE; i++) {
 			for (int j = 0; j < MSIZE; j++) {
 				for (int k = 0; k < MSIZE; k++) {
-					MatmulImpl.multiplyAccumulative(A[i][k], B[k][j], C[i][j]);
+					MatmulImpl.multiplyAccumulative(BSIZE);
 				}
             }
 		}
