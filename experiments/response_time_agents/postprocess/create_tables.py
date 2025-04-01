@@ -36,7 +36,7 @@ def process_logs(directory):
             std_dev = statistics.stdev(times) if len(times) > 1 else 0
             results[mode].append((msize, bsize, avg_time, std_dev))
 
-    output_dir = os.path.join(os.path.dirname(__file__), "results")
+    output_dir = os.path.join(os.path.dirname(__file__), "../results")
     os.makedirs(output_dir, exist_ok=True)
 
     for mode, data in results.items():
