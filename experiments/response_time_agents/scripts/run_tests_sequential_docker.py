@@ -111,7 +111,7 @@ signal.signal(signal.SIGINT, signal_handler)
 for msize in msizes:
     for bsize in bsizes:
         line_count = 0
-        results_dir = os.path.abspath("../results")
+        results_dir = os.path.abspath("../results/raw/")
         os.makedirs(results_dir, exist_ok=True)
         results_file = os.path.join(results_dir,
                                     f"msize{msize}-bsize{bsize}-mode{mode}.log")
