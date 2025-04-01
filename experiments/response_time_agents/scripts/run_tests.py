@@ -11,8 +11,8 @@ BROKER_IP = "212.128.226.53"
 SERVER_IP = "192.168.0.203"
 REMOTE_USER = "ubuntu"
 
-msizes = [1, 2, 4]
-bsizes = [1, 4, 16, 64, 256]
+msizes = [1, 2, 4, 8]
+bsizes = [1, 4, 8, 16 ,32, 64, 256]
 
 line_count = 0
 
@@ -73,9 +73,6 @@ def monitor_edge_log(broker_client, results_file):
 
         if len(lines) != line_count:
             line_count = len(lines)
-
-        for line in lines:
-            print("((((((((((((((((((((((", line)
 
         print(f"Logged {len(lines)} execution times")
 
