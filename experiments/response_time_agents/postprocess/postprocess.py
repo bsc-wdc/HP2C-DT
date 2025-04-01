@@ -24,8 +24,12 @@ def process_logs(directory):
         filepath = os.path.join(directory, filename)
 
         with open(filepath, 'r') as f:
-            times = [int(re.search(r'\d+', line).group()) for line in f if
-                     "Job completed after" in line]
+            # Read all lines that contain "Job completed after"
+            times_lines = [line for line in f if "Job completed after" in line]
+            # Take only the last 10 lines (or fewer if there aren't enough)
+            last_10_lines = times_lines[-10:] if len(times_lines) >= 10 else times_lines
+            # Extract the times from these lines
+            times = [int(re.search(r'\d+', line).group()) for line in last_10_lines]
 
         if times:
             avg_time = sum(times) / len(times)
@@ -35,8 +39,7 @@ def process_logs(directory):
     os.makedirs(output_dir, exist_ok=True)
 
     for mode, data in results.items():
-        data.sort(
-            key=lambda x: (x[0], x[1]))  # Ordenar por msize y luego por bsize
+        data.sort(key=lambda x: (x[0], x[1]))  # Sort by msize then bsize
         output_file = os.path.join(output_dir, f"results_{mode}.csv")
 
         with open(output_file, 'w', newline='') as csvfile:
