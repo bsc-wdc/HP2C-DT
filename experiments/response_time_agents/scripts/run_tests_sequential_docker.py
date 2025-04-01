@@ -141,8 +141,8 @@ for msize in msizes:
         while(line_count < 15):
             print("CALL")
             old_counter = line_count
-            execute_ssh_command(broker_client, "docker exec matmul-edge compss_agent_call_operation "
-                                "--master_node=192.168.0.118 --master_port=46101 "
+            execute_ssh_command(broker_client, "docker exec matmul-sequential compss_agent_call_operation "
+                                "--master_node=192.168.0.118 --master_port=46301 "
                                 f"--cei=\"matmul.arrays.MatmulEdgeItf\" "
                                 f"matmul.arrays.Matmul {msize} {bsize}",
                                 True)
