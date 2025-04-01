@@ -30,8 +30,7 @@ def plot_results(edge_df, server_df):
     os.makedirs(output_dir, exist_ok=True)
 
     msize_values = sorted(edge_df['msize'].unique())
-    color_map = {msize: COLORS(i / len(msize_values)) for i, msize in
-                 enumerate(msize_values)}
+    color_map = {msize: COLORS(i / len(msize_values)) for i, msize in enumerate(msize_values)}
 
     plt.figure(figsize=(8, 6))
 
@@ -55,13 +54,48 @@ def plot_results(edge_df, server_df):
     plt.yscale("log")
     plt.xlabel("Block Size (bsize)")
     plt.ylabel("Average Execution Time (ms)")
-    plt.title("Execution Time Comparison)")
+    plt.title("Execution Time Comparison")
     plt.legend()
     plt.grid(True, which="both", linestyle="--", linewidth=0.5)
 
     output_path = os.path.join(output_dir, "execution_time.png")
     plt.savefig(output_path, dpi=300)
     plt.close()
+
+    # Additional plot with execution times displayed next to points
+    """plt.figure(figsize=(8, 6))
+
+    for msize in msize_values:
+        edge_subset = edge_df[edge_df['msize'] == msize]
+        server_subset = server_df[server_df['msize'] == msize]
+
+        # Plot Edge
+        plt.plot(edge_subset['bsize'], edge_subset['average_time'],
+                 marker=MARKERS["Edge"], linestyle='-',
+                 label=f'Edge, msize={msize}',
+                 color=color_map[msize])
+        for i, txt in enumerate(edge_subset['average_time']):
+            plt.text(edge_subset['bsize'].iloc[i], txt, f'{txt:.2f}', fontsize=8, ha='right')
+
+        # Plot Server
+        plt.plot(server_subset['bsize'], server_subset['average_time'],
+                 marker=MARKERS["Server"], linestyle='--',
+                 label=f'Server, msize={msize}',
+                 color=color_map[msize])
+        for i, txt in enumerate(server_subset['average_time']):
+            plt.text(server_subset['bsize'].iloc[i], txt, f'{txt:.2f}', fontsize=8, ha='left')
+
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlabel("Block Size (bsize)")
+    plt.ylabel("Average Execution Time (ms)")
+    plt.title("Execution Time Comparison with Labels")
+    plt.legend()
+    plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+
+    output_path = os.path.join(output_dir, "execution_time_with_labels.png")
+    plt.savefig(output_path, dpi=300)
+    plt.close()"""
 
 
 def main():
