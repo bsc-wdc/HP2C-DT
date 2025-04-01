@@ -24,6 +24,7 @@ mkdir -p "$APP_DIR"
 
 # Copy necessary files into the build context
 cp "$MATMUL_JAR" "$APP_DIR/"
+cp "$SCRIPT_DIR/single_cpu_project.xml" "$APP_DIR/"
 cp "$SCRIPT_DIR/../../response_time/scripts/edge_project.xml" "$APP_DIR/"
 cp "$SCRIPT_DIR/../../response_time/scripts/server_project.xml" "$APP_DIR/"
 

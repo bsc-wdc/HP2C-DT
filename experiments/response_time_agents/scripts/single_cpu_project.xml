@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project>
+    <MasterNode>
+        <Processor Name="MainProcessor">
+            <ComputingUnits>1</ComputingUnits>
+            <Architecture>arm</Architecture>
+            <Speed>3.0</Speed>
+        </Processor>
+        <Memory>
+            <Size>2</Size>
+        </Memory>
+        <Storage>
+            <Size>10</Size>
+        </Storage>
+    </MasterNode>
+</Project>

@@ -2,8 +2,8 @@
 set -e  # Stop on error
 
 # Validate arguments
-if [ $# -ne 1 ] || ([ "$1" != "edge" ] && [ "$1" != "server" ]); then
-    echo "Usage: $0 <edge|server>"
+if [ $# -ne 1 ] || ([ "$1" != "edge" ] && [ "$1" != "server" ] && [ "$1" != "sequential" ]); then
+    echo "Usage: $0 <edge|server|sequential>"
     exit 1
 fi
 
@@ -44,6 +44,10 @@ elif [ "$MODE" == "server" ]; then
     REST_PORT=46201
     COMM_PORT=46202
     PROJECT_FILE="/app/server_project.xml"
+elif [ "$MODE" == "sequential" ]; then
+    REST_PORT=46301
+    COMM_PORT=46302
+    PROJECT_FILE="/app/single_cpu_project.xml"
 fi
 
 # Run the container with appropriate ports and command
