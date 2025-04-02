@@ -107,57 +107,69 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 
-# Main loop for executing the tests
-for msize in msizes:
-    for bsize in bsizes:
-        line_count = 0
-        results_dir = os.path.abspath("../results/raw/")
-        os.makedirs(results_dir, exist_ok=True)
-        results_file = os.path.join(results_dir,
-                                    f"msize{msize}-bsize{bsize}-mode{mode}.log")
+def main(version):
+    global server_client, broker_client
+    # Main loop for executing the tests
+    for msize in msizes:
+        for bsize in bsizes:
+            line_count = 0
+            results_dir = os.path.abspath(f"../results/{version}/raw/")
+            os.makedirs(results_dir, exist_ok=True)
+            results_file = os.path.join(results_dir,
+                                        f"msize{msize}-bsize{bsize}-mode{mode}.log")
 
-        # Clear log file before running
-        open(results_file, 'w').close()
+            # Clear log file before running
+            open(results_file, 'w').close()
 
-        server_client, broker_client = connect_to_server_through_broker()
+            server_client, broker_client = connect_to_server_through_broker()
 
-        print(f"Deploying container for msize={msize}, bsize={bsize}")
-        execute_ssh_command(broker_client,
-                            "nohup /home/ubuntu/hp2cdt/experiments/response_time_agents/scripts/deploy_image.sh sequential > /tmp/edge.log 2>&1 &",
-                            False)
-        time.sleep(10)
+            print(f"Deploying container for msize={msize}, bsize={bsize}")
+            execute_ssh_command(broker_client,
+                                "nohup /home/ubuntu/hp2cdt/experiments/response_time_agents/scripts/deploy_image.sh sequential > /tmp/edge.log 2>&1 &",
+                                False)
+            time.sleep(10)
 
-        execute_ssh_command(broker_client,
-                            "docker exec matmul-edge curl -XGET http://192.168.0.118:46101/COMPSs/resources | jq", True)
+            execute_ssh_command(broker_client,
+                                "docker exec matmul-edge curl -XGET http://192.168.0.118:46101/COMPSs/resources | jq", True)
 
 
-        log_thread = threading.Thread(target=monitor_edge_log,
-                                      args=(broker_client, results_file))
-        log_thread.start()
+            log_thread = threading.Thread(target=monitor_edge_log,
+                                          args=(broker_client, results_file))
+            log_thread.start()
 
-        print(
-            f"Executing Matmul operation for msize={msize}, bsize={bsize}")
+            print(
+                f"Executing Matmul operation for msize={msize}, bsize={bsize}")
 
-        while(line_count < 15):
-            print("CALL")
-            old_counter = line_count
-            execute_ssh_command(broker_client, "docker exec matmul-sequential compss_agent_call_operation "
-                                "--master_node=192.168.0.118 --master_port=46301 "
-                                f"--cei=\"matmul.arrays.MatmulEdgeItf\" "
-                                f"matmul.arrays.Matmul {msize} {bsize}",
-                                True)
+            while(line_count < 15):
+                print("CALL")
+                old_counter = line_count
+                execute_ssh_command(broker_client, "docker exec matmul-sequential compss_agent_call_operation "
+                                    "--master_node=192.168.0.118 --master_port=46301 "
+                                    f"--cei=\"matmul.arrays.MatmulEdgeItf\" "
+                                    f"matmul.arrays.Matmul {msize} {bsize}",
+                                    True)
 
-            """execute_ssh_command(broker_client,"docker exec matmul-edge compss_agent_call_operation "
-                                              "--master_node=127.0.0.1    "
-                                              "--master_port=46101    --method_name=demoFunction    "
-                                              "--cei=\"es.bsc.compss.test.DemoClassItf\"    "
-                                              "es.bsc.compss.test.DemoClass 12")"""
-            while old_counter == line_count:
-                time.sleep(0.5)
+                """execute_ssh_command(broker_client,"docker exec matmul-edge compss_agent_call_operation "
+                                                  "--master_node=127.0.0.1    "
+                                                  "--master_port=46101    --method_name=demoFunction    "
+                                                  "--cei=\"es.bsc.compss.test.DemoClassItf\"    "
+                                                  "es.bsc.compss.test.DemoClass 12")"""
+                while old_counter == line_count:
+                    time.sleep(0.5)
 
-        log_thread.join()
-        print("------------------------------------------------------")
-        cleanup(server_client, broker_client)
+            log_thread.join()
+            print("------------------------------------------------------")
+            cleanup(server_client, broker_client)
 
-        broker_client.close()
-        server_client.close()
+            broker_client.close()
+            server_client.close()
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python run_tests_sequential_docker.py <simple|simple_external")
+        sys.exit(1)
+
+    version = sys.argv[1]
+
+    main(version)

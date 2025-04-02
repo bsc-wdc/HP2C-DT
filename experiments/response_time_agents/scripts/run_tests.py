@@ -12,7 +12,7 @@ SERVER_IP = "192.168.0.203"
 REMOTE_USER = "ubuntu"
 
 msizes = [1, 2, 4, 8]
-bsizes = [1, 4, 8, 16 ,32, 64, 256]
+bsizes = [1, 4, 8, 16, 32, 64, 256]
 
 line_count = 0
 
@@ -109,86 +109,100 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 
-# Main loop for executing the tests
-for mode in ["Server"]:
-    for msize in msizes:
-        for bsize in bsizes:
-            line_count = 0
-            results_dir = os.path.abspath("../results")
-            os.makedirs(results_dir, exist_ok=True)
-            results_file = os.path.join(results_dir,
-                                        f"msize{msize}-bsize{bsize}-mode{mode}.log")
+def main(version):
+    global server_client, broker_client
 
-            # Clear log file before running
-            open(results_file, 'w').close()
+    print(f"Running experiment with version: {version}")
 
-            server_client, broker_client = connect_to_server_through_broker()
+    # Main loop for executing the tests
+    for mode in ["Server"]:
+        for msize in msizes:
+            for bsize in bsizes:
+                line_count = 0
+                results_dir = os.path.abspath(f"../results/{version}/raw")
+                os.makedirs(results_dir, exist_ok=True)
+                results_file = os.path.join(results_dir,
+                                            f"msize{msize}-bsize{bsize}-mode{mode}-{version}.log")
 
-            print(f"Deploying edge container for msize={msize}, bsize={bsize}")
-            execute_ssh_command(broker_client,
-                                "nohup /home/ubuntu/hp2cdt/experiments/response_time_agents/scripts/deploy_image.sh edge > /tmp/edge.log 2>&1 &",
-                                False)
-            time.sleep(10)
+                # Clear log file before running
+                open(results_file, 'w').close()
 
-            execute_ssh_command(broker_client,
-                                "docker exec matmul-edge curl -XGET http://192.168.0.118:46101/COMPSs/resources | jq", True)
+                server_client, broker_client = connect_to_server_through_broker()
 
-            if mode == "Server":
                 print(
-                    f"Deploying server container for msize={msize}, bsize={bsize}")
-                execute_ssh_command(server_client,
-                                    "nohup /home/ubuntu/hp2cdt/experiments/response_time_agents/scripts/deploy_image.sh server > /tmp/server.log 2>&1 &",
-                                    True)
+                    f"Deploying edge container for msize={msize}, bsize={bsize}")
+                execute_ssh_command(broker_client,
+                                    f"nohup /home/ubuntu/hp2cdt/experiments/response_time_agents/scripts/deploy_image.sh edge {version} > /tmp/edge.log 2>&1 &",
+                                    False)
                 time.sleep(10)
 
-                curl_command = ("docker exec matmul-edge curl -s -XPUT http://192.168.0.118:46101/COMPSs/addResources -H "
-                                "\"content-type: application/xml\" -d '<?xml version=\"1.0\" encoding=\"UTF-8\" "
-                                "standalone=\"yes\"?><newResource><externalResource><name>192.168.0.203</name>"
-                                "<description><processors><processor><name>MainProcessor</name><type>CPU</type>"
-                                "<architecture>amd64</architecture><computingUnits>4</computingUnits>"
-                                "<internalMemory>-1.0</internalMemory><propName>[unassigned]</propName>"
-                                "<propValue>[unassigned]</propValue><speed>-1.0</speed></processor></processors>"
-                                "<memorySize>8</memorySize><memoryType>[unassigned]</memoryType><storageSize>-1.0</storageSize>"
-                                "<storageType>[unassigned]</storageType><operatingSystemDistribution>[unassigned]</operatingSystemDistribution>"
-                                "<operatingSystemType>[unassigned]</operatingSystemType>"
-                                "<operatingSystemVersion>[unassigned]</operatingSystemVersion><pricePerUnit>-1.0</pricePerUnit>"
-                                "<priceTimeUnit>-1</priceTimeUnit><value>0.0</value><wallClockLimit>-1</wallClockLimit></description>"
-                                "<adaptor>es.bsc.compss.agent.comm.CommAgentAdaptor</adaptor>"
-                                "<resourceConf xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
-                                "xsi:type=\"ResourcesExternalAdaptorProperties\"><Property><Name>Port</Name>"
-                                "<Value>46202</Value></Property></resourceConf></externalResource></newResource>'"
-                )
-
-                execute_ssh_command(broker_client, curl_command, True)
-                time.sleep(5)
-
-            log_thread = threading.Thread(target=monitor_edge_log,
-                                          args=(broker_client, results_file))
-            log_thread.start()
-
-            print(
-                f"Executing Matmul operation for msize={msize}, bsize={bsize}")
-
-            while(line_count < 15):
-                print("CALL")
-                old_counter = line_count
-                execute_ssh_command(broker_client, "docker exec matmul-edge compss_agent_call_operation "
-                                    "--master_node=192.168.0.118 --master_port=46101 "
-                                    f"--cei=\"matmul.arrays.Matmul{mode}Itf\" "
-                                    f"matmul.arrays.Matmul {msize} {bsize}",
+                execute_ssh_command(broker_client,
+                                    "docker exec matmul-edge curl -XGET http://192.168.0.118:46101/COMPSs/resources | jq",
                                     True)
 
-                """execute_ssh_command(broker_client,"docker exec matmul-edge compss_agent_call_operation "
-                                                  "--master_node=127.0.0.1    "
-                                                  "--master_port=46101    --method_name=demoFunction    "
-                                                  "--cei=\"es.bsc.compss.test.DemoClassItf\"    "
-                                                  "es.bsc.compss.test.DemoClass 12")"""
-                while old_counter == line_count:
-                    time.sleep(0.5)
+                if mode == "Server":
+                    print(
+                        f"Deploying server container for msize={msize}, bsize={bsize}")
+                    execute_ssh_command(server_client,
+                                        f"nohup /home/ubuntu/hp2cdt/experiments/response_time_agents/scripts/deploy_image.sh server {version} > /tmp/server.log 2>&1 &",
+                                        True)
+                    time.sleep(10)
 
-            log_thread.join()
-            print("------------------------------------------------------")
-            cleanup(server_client, broker_client)
+                    curl_command = (
+                        "docker exec matmul-edge curl -s -XPUT http://192.168.0.118:46101/COMPSs/addResources -H "
+                        "\"content-type: application/xml\" -d '<?xml version=\"1.0\" encoding=\"UTF-8\" "
+                        "standalone=\"yes\"?><newResource><externalResource><name>192.168.0.203</name>"
+                        "<description><processors><processor><name>MainProcessor</name><type>CPU</type>"
+                        "<architecture>amd64</architecture><computingUnits>4</computingUnits>"
+                        "<internalMemory>-1.0</internalMemory><propName>[unassigned]</propName>"
+                        "<propValue>[unassigned]</propValue><speed>-1.0</speed></processor></processors>"
+                        "<memorySize>8</memorySize><memoryType>[unassigned]</memoryType><storageSize>-1.0</storageSize>"
+                        "<storageType>[unassigned]</storageType><operatingSystemDistribution>[unassigned]</operatingSystemDistribution>"
+                        "<operatingSystemType>[unassigned]</operatingSystemType>"
+                        "<operatingSystemVersion>[unassigned]</operatingSystemVersion><pricePerUnit>-1.0</pricePerUnit>"
+                        "<priceTimeUnit>-1</priceTimeUnit><value>0.0</value><wallClockLimit>-1</wallClockLimit></description>"
+                        "<adaptor>es.bsc.compss.agent.comm.CommAgentAdaptor</adaptor>"
+                        "<resourceConf xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                        "xsi:type=\"ResourcesExternalAdaptorProperties\"><Property><Name>Port</Name>"
+                        "<Value>46202</Value></Property></resourceConf></externalResource></newResource>'"
+                        )
 
-            broker_client.close()
-            server_client.close()
+                    execute_ssh_command(broker_client, curl_command, True)
+                    time.sleep(5)
+
+                log_thread = threading.Thread(target=monitor_edge_log,
+                                              args=(
+                                              broker_client, results_file))
+                log_thread.start()
+
+                print(
+                    f"Executing Matmul operation for msize={msize}, bsize={bsize}")
+
+                while (line_count < 15):
+                    old_counter = line_count
+                    execute_ssh_command(broker_client,
+                                        "docker exec matmul-edge compss_agent_call_operation "
+                                        "--master_node=192.168.0.118 --master_port=46101 "
+                                        f"--cei=\"matmul.arrays.Matmul{mode}Itf\" "
+                                        f"matmul.arrays.Matmul {msize} {bsize}",
+                                        True)
+
+                    while old_counter == line_count:
+                        time.sleep(0.5)
+
+                log_thread.join()
+                print("------------------------------------------------------")
+                cleanup(server_client, broker_client)
+
+                broker_client.close()
+                server_client.close()
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python run_tests.py <simple|simple_external")
+        sys.exit(1)
+
+    version = sys.argv[1]
+
+    main(version)

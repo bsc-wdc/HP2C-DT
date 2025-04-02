@@ -1,14 +1,19 @@
 #!/bin/bash
 set -e  # Stop on error
 
+if [ $# -ne 1 ] || ([ "$1" != "simple" ] && [ "$1" != "simple_external" ]); then
+    echo "Usage: $1 <simple|simple_external>"
+    exit 1
+fi
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Build the matmul project first
 echo "Building matmul.jar with Maven..."
-(cd "$SCRIPT_DIR/../matmul" && mvn clean package)
+(cd "$SCRIPT_DIR/../matmul_$1" && mvn clean package)
 
 # Verify the JAR was created
-MATMUL_JAR="$SCRIPT_DIR/../matmul/target/matmul.jar"
+MATMUL_JAR="$SCRIPT_DIR/../matmul_$1/target/matmul.jar"
 if [ ! -f "$MATMUL_JAR" ]; then
     echo "Error: matmul.jar was not created by Maven build!"
     exit 1
@@ -47,9 +52,9 @@ EOF
 
 # Build the Docker image using the build context
 echo "Building Docker image..."
-docker build -t hp2c/matmul-image "$BUILD_DIR"
+docker build -t hp2c/matmul_$1-image "$BUILD_DIR"
 
-echo "Docker image 'hp2c/matmul-image' created successfully"
+echo "Docker image 'hp2c/matmul_$1-image' created successfully"
 
 # Remove the temporary build directory
 rm -rf "$BUILD_DIR"

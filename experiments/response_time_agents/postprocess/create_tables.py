@@ -13,7 +13,7 @@ def extract_params(filename):
     return None
 
 
-def process_logs(directory):
+def process_logs(directory, version):
     results = {"Edge": [], "Server": [], "Sequential": []}
 
     for filename in os.listdir(directory):
@@ -36,7 +36,7 @@ def process_logs(directory):
             std_dev = statistics.stdev(times) if len(times) > 1 else 0
             results[mode].append((msize, bsize, avg_time, std_dev))
 
-    output_dir = os.path.join(os.path.dirname(__file__), "../results")
+    output_dir = os.path.join(os.path.dirname(__file__), f"../results/{version}")
     os.makedirs(output_dir, exist_ok=True)
 
     for mode, data in results.items():
@@ -53,12 +53,13 @@ def process_logs(directory):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python script.py <directory>")
+    if len(sys.argv) != 3:
+        print("Usage: python create_tables.py <directory> <simple|simple_external")
         sys.exit(1)
 
     directory = sys.argv[1]
-    process_logs(directory)
+    version = sys.argv[2]
+    process_logs(directory, version)
 
 
 if __name__ == "__main__":
