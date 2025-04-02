@@ -110,7 +110,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 
 def main(version):
-    global server_client, broker_client
+    global server_client, broker_client, line_count
 
     print(f"Running experiment with version: {version}")
 

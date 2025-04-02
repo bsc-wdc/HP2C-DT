@@ -108,7 +108,8 @@ signal.signal(signal.SIGINT, signal_handler)
 
 
 def main(version):
-    global server_client, broker_client
+    global server_client, broker_client, line_count
+
     # Main loop for executing the tests
     for msize in msizes:
         for bsize in bsizes:
