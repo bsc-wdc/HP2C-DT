@@ -15,9 +15,14 @@
  */
 package matmul.arrays;
 
-public class MatmulImpl {
-	
-	public static void multiplyAccumulative(int M) {
-		ExternalMultiplication.multiply(M);
-	}
+public class ExternalMultiplication{
+    public static void multiply(int M) {
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < M; j++) {
+                for (int k = 0; k < M; k++) {
+                    double z = (double)(Math.random()*10.0) * (double)(Math.random()*10.0);
+                }
+            }
+        }
+    }
 }

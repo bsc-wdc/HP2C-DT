@@ -168,7 +168,7 @@ def main(version):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python run_tests_sequential_docker.py <simple|simple_external")
+        print("Usage: python run_tests_sequential_docker.py <simple|simple_external>")
         sys.exit(1)
 
     version = sys.argv[1]
