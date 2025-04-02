@@ -7,7 +7,7 @@ import scienceplots
 plt.style.use("science")
 
 # Marker styles for Edge and Server
-MARKERS = {"Edge": "o", "Server": "s"}
+MARKERS = {"Edge Parallel": "o", "Server": "s", "Edge Sequential": "^"}
 
 # Color map for different msize values
 COLORS = plt.cm.viridis
@@ -17,14 +17,16 @@ def load_data(version):
     results_path = os.path.join(os.path.dirname(__file__), f"../results/{version}")
     edge_file = os.path.join(results_path, "results_Edge.csv")
     server_file = os.path.join(results_path, "results_Server.csv")
+    sequential_file = os.path.join(results_path, "results_Sequential.csv")
 
     edge_df = pd.read_csv(edge_file)
     server_df = pd.read_csv(server_file)
+    sequential_df = pd.read_csv(sequential_file)
 
-    return edge_df, server_df
+    return edge_df, server_df, sequential_df
 
 
-def plot_results(edge_df, server_df, version):
+def plot_results(edge_df, server_df, sequential_df, version):
     filepath = os.path.dirname(__file__)
     output_dir = f"{filepath}/../results/{version}"
     os.makedirs(output_dir, exist_ok=True)
@@ -37,11 +39,19 @@ def plot_results(edge_df, server_df, version):
     for msize in msize_values:
         edge_subset = edge_df[edge_df['msize'] == msize]
         server_subset = server_df[server_df['msize'] == msize]
+        sequential_subset = sequential_df[sequential_df['msize'] == msize]
 
         # Plot Edge
         plt.plot(edge_subset['bsize'], edge_subset['average_time'],
-                 marker=MARKERS["Edge"], linestyle='-',
-                 label=f'Edge, msize={msize}',
+                 marker=MARKERS["Edge Parallel"], linestyle='dotted',
+                 label=f'Edge Parallel, msize={msize}',
+                 color=color_map[msize])
+
+        # Plot Edge Sequential
+        plt.plot(sequential_subset['bsize'],
+                 sequential_subset['average_time'],
+                 marker=MARKERS["Edge Sequential"], linestyle='-',
+                 label=f'Edge Sequential, msize={msize}',
                  color=color_map[msize])
 
         # Plot Server
@@ -58,7 +68,9 @@ def plot_results(edge_df, server_df, version):
     plt.legend()
     plt.grid(True, which="both", linestyle="--", linewidth=0.5)
 
-    output_path = os.path.join(output_dir, "execution_time.png")
+    output_path = os.path.join(output_dir, "execution_time_exp2.pdf")
+    plt.savefig(output_path, dpi=300)
+    output_path = os.path.join(output_dir, "execution_time_exp2.png")
     plt.savefig(output_path, dpi=300)
     plt.close()
 
@@ -99,8 +111,8 @@ def plot_results(edge_df, server_df, version):
 
 
 def main(version):
-    edge_df, server_df = load_data(version)
-    plot_results(edge_df, server_df, version)
+    edge_df, server_df, sequential_df = load_data(version)
+    plot_results(edge_df, server_df, sequential_df, version)
 
 
 if __name__ == "__main__":
