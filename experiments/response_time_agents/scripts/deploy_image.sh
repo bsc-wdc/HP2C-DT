@@ -2,14 +2,25 @@
 set -e  # Stop on error
 
 # Validate arguments
-if [ $# -ne 2 ] || ([ "$1" != "edge" ] && [ "$1" != "server" ] && [ "$1" != "sequential" ]) || ([ "$2" != "simple" ] && [ "$2" != "simple_external" ]); then
-    echo "Usage: $0 <edge|server|sequential> <simple|simple_external>"
+if [ $# -ne 2 ] || ([ "$1" != "edge" ] && [ "$1" != "server" ] && [ "$1" != "sequential" ]) || ([ "$2" != "simple" ] && [ "$2" != "simple_external" ] && [ "$2" != "matmul" ]); then
+    echo "Usage: $0 <edge|server|sequential> <simple|simple_external|matmul>"
     exit 1
 fi
 
 MODE=$1
 CONTAINER_NAME="matmul-$MODE"
-IMAGE_NAME="hp2c/matmul_$2-image"
+
+version=""
+if [ "$2" != "matmul" ]; then
+    version="$2"
+fi
+
+version_suffix=""
+if [ -n "$version" ]; then
+    version_suffix="_$version"
+fi
+
+IMAGE_NAME="hp2c/matmul${version_suffix}-image"
 
 # Function to handle cleanup
 cleanup() {

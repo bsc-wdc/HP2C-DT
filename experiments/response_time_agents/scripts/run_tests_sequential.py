@@ -38,8 +38,12 @@ def setup_container(client):
 
 
 def extract_time_ms(output):
-    match = re.search(r"Elapsed time: PT(\d+\.?\d*)S", output)
-    return int(float(match.group(1)) * 1000) if match else None
+    match = re.search(r"Elapsed time: PT(?:(\d+)M)?([\d.]+)S", output)
+    if match:
+        minutes = int(match.group(1)) * 60 * 1000 if match.group(1) else 0
+        seconds = float(match.group(2)) * 1000
+        return int(minutes + seconds)
+    return None
 
 def main(version):
     results_dir = os.path.abspath(f"../results/{version}/raw/")
@@ -66,7 +70,9 @@ def main(version):
                 for exec_num in range(1, NUM_EXECUTIONS + 1):
                     output, _ = execute_ssh_command(broker_client,
                                                     f"docker exec {CONTAINER_NAME} java -cp {JAR_PATH} matmul.arrays.Matmul {msize} {bsize}")
-
+                    print("&&&&&&&&&&&&&&&&&&&")
+                    print(output)
+                    print("&&&&&&&&&&&&&&&&&&&")
                     elapsed_ms = extract_time_ms(output)
 
                     if elapsed_ms is not None:
@@ -91,7 +97,7 @@ def main(version):
 if __name__ == "__main__":
     import sys
     if len(sys.argv) != 2:
-        print("Usage: python run_tests_sequential.py <simple|simple_external>")
+        print("Usage: python run_tests_sequential.py <simple|simple_external|matmul>")
         sys.exit(1)
 
     version = sys.argv[1]

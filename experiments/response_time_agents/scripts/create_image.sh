@@ -1,19 +1,29 @@
 #!/bin/bash
 set -e  # Stop on error
 
-if [ $# -ne 1 ] || ([ "$1" != "simple" ] && [ "$1" != "simple_external" ]); then
-    echo "Usage: $1 <simple|simple_external>"
+if [ $# -ne 1 ] || ([ "$1" != "simple" ] && [ "$1" != "simple_external" ] && [ "$1" != "matmul" ]); then
+    echo "Usage: $0 <simple|simple_external|matmul>"
     exit 1
+fi
+
+version="$1"
+if [ "$version" == "matmul" ]; then
+    version=""
+fi
+
+version_suffix=""
+if [ -n "$version" ]; then
+    version_suffix="_$version"
 fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Build the matmul project first
 echo "Building matmul.jar with Maven..."
-(cd "$SCRIPT_DIR/../matmul_$1" && mvn clean package)
+(cd "$SCRIPT_DIR/../matmul$version_suffix" && mvn clean package)
 
 # Verify the JAR was created
-MATMUL_JAR="$SCRIPT_DIR/../matmul_$1/target/matmul.jar"
+MATMUL_JAR="$SCRIPT_DIR/../matmul$version_suffix/target/matmul.jar"
 if [ ! -f "$MATMUL_JAR" ]; then
     echo "Error: matmul.jar was not created by Maven build!"
     exit 1
@@ -52,9 +62,9 @@ EOF
 
 # Build the Docker image using the build context
 echo "Building Docker image..."
-docker build -t hp2c/matmul_$1-image "$BUILD_DIR"
+docker build -t hp2c/matmul${version_suffix}-image "$BUILD_DIR"
 
-echo "Docker image 'hp2c/matmul_$1-image' created successfully"
+echo "Docker image 'hp2c/matmul${version_suffix}-image' created successfully"
 
 # Remove the temporary build directory
 rm -rf "$BUILD_DIR"

@@ -76,7 +76,7 @@ def monitor_edge_log(broker_client, results_file):
 
         print(f"Logged {len(lines)} execution times")
 
-        if len(lines) >= 15:
+        if len(lines) >= 1:
             print("break")
             break
 
@@ -178,7 +178,7 @@ def main(version):
                 print(
                     f"Executing Matmul operation for msize={msize}, bsize={bsize}")
 
-                while (line_count < 15):
+                while (line_count < 1):
                     old_counter = line_count
                     execute_ssh_command(broker_client,
                                         "docker exec matmul-edge compss_agent_call_operation "
@@ -200,7 +200,7 @@ def main(version):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python run_tests.py <simple|simple_external>")
+        print("Usage: python run_tests.py <simple|simple_external|matmul>")
         sys.exit(1)
 
     version = sys.argv[1]
