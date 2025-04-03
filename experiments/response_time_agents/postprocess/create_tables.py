@@ -6,16 +6,17 @@ import statistics
 
 
 def extract_params(filename):
-    match = re.match(r'msize(\d+)-bsize(\d+)-mode(\w+)\.log', filename)
+    match = re.match(r'msize(\d+)-bsize(\d+)-mode([\w\-_]+)\.log', filename)
     if match:
         msize, bsize, mode = match.groups()
+        mode = mode.split("-")[0]
         return int(msize), int(bsize), mode
     return None
 
 
 def process_logs(directory, version):
     results = {"Edge": [], "Server": [], "Sequential": []}
-
+    n = 1
     for filename in os.listdir(directory):
         params = extract_params(filename)
         if not params:
@@ -26,14 +27,16 @@ def process_logs(directory, version):
 
         with open(filepath, 'r') as f:
             times_lines = [line for line in f if "Job completed after" in line]
-            last_10_lines = times_lines[-10:] if len(
-                times_lines) >= 10 else times_lines
+            last_n_lines = times_lines[-n:] if len(
+                times_lines) >= n else times_lines
             times = [int(re.search(r'\d+', line).group()) for line in
-                     last_10_lines]
+                     last_n_lines]
 
         if times:
             avg_time = sum(times) / len(times)
             std_dev = statistics.stdev(times) if len(times) > 1 else 0
+            if mode == "Seq":
+                continue
             results[mode].append((msize, bsize, avg_time, std_dev))
 
     output_dir = os.path.join(os.path.dirname(__file__), f"../results/{version}")

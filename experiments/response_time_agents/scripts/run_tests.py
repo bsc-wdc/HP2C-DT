@@ -122,7 +122,7 @@ def main(version):
                 results_dir = os.path.abspath(f"../results/{version}/raw")
                 os.makedirs(results_dir, exist_ok=True)
                 results_file = os.path.join(results_dir,
-                                            f"msize{msize}-bsize{bsize}-mode{mode}-{version}.log")
+                                            f"msize{msize}-bsize{bsize}-mode{mode}.log")
 
                 # Clear log file before running
                 open(results_file, 'w').close()
