@@ -48,24 +48,25 @@ def plot_results(edge_df, server_df, sequential_df, version):
 
     plt.figure(figsize=(8, 6))
 
+    # Plot all Edge Sequential first
     for i, msize in enumerate(msize_values):
-        edge_subset = edge_df[edge_df['msize'] == msize]
-        server_subset = server_df[server_df['msize'] == msize]
         sequential_subset = sequential_df[sequential_df['msize'] == msize]
-
-        # Edge Parallel
-        plt.plot(edge_subset['bsize'], edge_subset['average_time'],
-                 marker='o', markersize=MARKER_SIZE,
-                 label=f'Edge Parallel, $m={msize}$',
-                 color=color_maps["Edge Parallel"][msize])
-
-        # Edge Sequential
         plt.plot(sequential_subset['bsize'], sequential_subset['average_time'],
                  marker='o', markersize=MARKER_SIZE,
                  label=f'Edge Sequential, $m={msize}$',
                  color=color_maps["Edge Sequential"][msize])
 
-        # Cloud
+    # Then plot all Edge Parallel
+    for i, msize in enumerate(msize_values):
+        edge_subset = edge_df[edge_df['msize'] == msize]
+        plt.plot(edge_subset['bsize'], edge_subset['average_time'],
+                 marker='o', markersize=MARKER_SIZE,
+                 label=f'Edge Parallel, $m={msize}$',
+                 color=color_maps["Edge Parallel"][msize])
+
+    # Finally plot all Cloud
+    for i, msize in enumerate(msize_values):
+        server_subset = server_df[server_df['msize'] == msize]
         plt.plot(server_subset['bsize'], server_subset['average_time'],
                  marker='o', markersize=MARKER_SIZE,
                  label=f'Cloud, $m={msize}$',
@@ -75,13 +76,14 @@ def plot_results(edge_df, server_df, sequential_df, version):
     plt.yscale("log")
     plt.xlabel("Block Size ($b$)")
     plt.ylabel("Average Execution Time (ms)")
+
     plt.legend(
         frameon=True,
         framealpha=0.7,
         facecolor='white'
     )
-    plt.grid(True, which="both", linestyle="--", linewidth=0.5)
 
+    plt.grid(True, which="both", linestyle="--", linewidth=0.5)
     output_path = os.path.join(output_dir, "execution_time_exp2.pdf")
     plt.savefig(output_path, dpi=300)
     output_path = os.path.join(output_dir, "execution_time_exp2.png")
