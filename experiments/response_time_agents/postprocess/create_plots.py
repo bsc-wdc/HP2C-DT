@@ -6,11 +6,10 @@ import scienceplots
 
 plt.style.use("science")
 
-# Paleta de colores corregida
 COLOR_PALETTES = {
-    "Edge Parallel": ["#E58606", "#D55E00", "#FF9900"],  # Naranja corregido para m=1
-    "Edge Sequential": ["#56B4E9", "#0072B2", "#1E90FF"],  # Tonos de azul
-    "Cloud": ["#009E73", "#3CB371", "#2E8B57"]  # Tonos de verde
+    "Edge Sequential": ["#56B4E9", "#1E90FF", "#0072B2"],
+    "Edge Parallel": ["#FFB74D", "#E58606", "#D55E00"],
+    "Cloud": ["#3CB371", "#009E73", "#006400"]
 }
 
 MARKER_SIZE = 3
@@ -48,27 +47,36 @@ def plot_results(edge_df, server_df, sequential_df, version):
 
     plt.figure(figsize=(8, 6))
 
-    # Plot all Edge Sequential first
+    MARKERS = {
+        "Edge Sequential": "o",
+        "Edge Parallel": "s",
+        "Cloud": "^"
+    }
+
+    # Plot Edge Sequential (circles)
     for i, msize in enumerate(msize_values):
         sequential_subset = sequential_df[sequential_df['msize'] == msize]
         plt.plot(sequential_subset['bsize'], sequential_subset['average_time'],
-                 marker='o', markersize=MARKER_SIZE,
+                 marker=MARKERS["Edge Sequential"],
+                 markersize=MARKER_SIZE,
                  label=f'Edge Sequential, $m={msize}$',
                  color=color_maps["Edge Sequential"][msize])
 
-    # Then plot all Edge Parallel
+    # Plot Edge Parallel (squares)
     for i, msize in enumerate(msize_values):
         edge_subset = edge_df[edge_df['msize'] == msize]
         plt.plot(edge_subset['bsize'], edge_subset['average_time'],
-                 marker='o', markersize=MARKER_SIZE,
+                 marker=MARKERS["Edge Parallel"],
+                 markersize=MARKER_SIZE,
                  label=f'Edge Parallel, $m={msize}$',
                  color=color_maps["Edge Parallel"][msize])
 
-    # Finally plot all Cloud
+    # Plot Cloud (triangles)
     for i, msize in enumerate(msize_values):
         server_subset = server_df[server_df['msize'] == msize]
         plt.plot(server_subset['bsize'], server_subset['average_time'],
-                 marker='o', markersize=MARKER_SIZE,
+                 marker=MARKERS["Cloud"],
+                 markersize=MARKER_SIZE,
                  label=f'Cloud, $m={msize}$',
                  color=color_maps["Cloud"][msize])
 
