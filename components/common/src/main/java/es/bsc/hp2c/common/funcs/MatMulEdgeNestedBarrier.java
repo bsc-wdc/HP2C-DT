@@ -103,7 +103,7 @@ public class MatMulEdgeNested extends Func {
         }
 
         COMPSs.barrier();
-        //printMatrix(C);
+        printMatrix(C);
         long timestampEnd = Instant.now().getEpochSecond() * 1_000_000_000L
                 + Instant.now().getNano();
         System.out.println("Timestamp difference: " + (timestampEnd - timestampStart));
