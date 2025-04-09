@@ -108,7 +108,7 @@ def run_simulations(bsizes, dirname, file_path, i, msizes, test_host,
                         del edge_json["compss"]["resources"]
                     else:
                         edge_json["funcs"][0][
-                            "method-name"] = "es.bsc.hp2c.common.funcs.MatMulServerSimple"
+                            "method-name"] = "es.bsc.hp2c.common.funcs.MatMulServerNestedBarrier"
                     if mode == "seq":
                         del edge_json["funcs"][0]["type"]
 
@@ -152,20 +152,6 @@ def run_simulations(bsizes, dirname, file_path, i, msizes, test_host,
 
     return edge_json
 
-
-def add_resources():
-    client = connect_ssh()
-    command = (
-        "docker exec hp2c_edge1 compss_agent_add_resources "
-        "--agent_node=127.0.0.1 "
-        "--agent_port=46101 "
-        "--cpu=4 "
-        "212.128.226.53 Port=8002"
-    )
-    print("Adding COMPSs resources directly...")
-    execute_ssh_command(client, command)
-
-    client.close()
 
 if __name__ == "__main__":
     args = sys.argv

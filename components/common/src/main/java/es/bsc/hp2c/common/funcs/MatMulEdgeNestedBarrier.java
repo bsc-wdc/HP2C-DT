@@ -18,7 +18,7 @@ import java.util.Map;
 /**
  * This class implements a COMPSs function to multiply two matrices.
  */
-public class MatMulEdgeNested extends Func {
+public class MatMulEdgeNestedBarrier extends Func {
     private static int MSIZE;
     private static int BSIZE;
 
@@ -29,7 +29,7 @@ public class MatMulEdgeNested extends Func {
     private Voltmeter<?> voltmeter;
     private MsgAlert msgAlert;
 
-    public MatMulEdgeNested(Map<String, ArrayList<Sensor<?, ?>>> sensors,
+    public MatMulEdgeNestedBarrier(Map<String, ArrayList<Sensor<?, ?>>> sensors,
                                    Map<String, ArrayList<Actuator<?>>> actuators,
                                    JSONObject others) throws IllegalArgumentException, FunctionInstantiationException {
         super(sensors, actuators, others);
