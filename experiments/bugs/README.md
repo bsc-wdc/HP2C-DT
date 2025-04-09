@@ -134,7 +134,7 @@ Caused by: java.lang.NullPointerException
 When comparing execution times of COMPSs agents with different CPU counts:
 - The agent with only 1 CPU outperformed those with 2 and 4 CPUs
 - This occurred even for large matrices
-- Initial executions were similar to non-COMPSs executions (which also outperformed the 2/4 CPU cases)
+- Initial executions were similar to executions without COMPSs (which also outperformed the 2/4 CPU cases)
 
 After moving the code within the task to an external class:
 - 2 and 4 CPU agents improved by 2x
@@ -151,16 +151,17 @@ The image is using `compss/compss:3.3`.
 #### Steps to Reproduce
 1. Clone HP2CDT repository: `git clone https://gitlab.bsc.es/wdc/projects/hp2cdt.git`
 2. Checkout to branch implement-compss-section: `git checkout implement-compss-section`
-3. Pull edge image: `docker pull hp2c/matmul_simple`
-4. Go to response_time agents scripts directory: `cd path/to/repo/experiments/response_time_agents/scripts`
+3. Pull matmul simple image: `docker pull hp2c/matmul_simple-image`
+4. Pull matmul simple external image: `docker pull hp2c/matmul_simple-image`
+5. Go to response_time agents scripts directory: `cd path/to/repo/experiments/response_time_agents/scripts`
 
 **Test 4 CPU agent (simple version):**
-5. Run: `./deploy_image.sh server simple`
-6. Call: `compss_agent_call_operation --master_node=127.0.0.1 --master_port=46201 --cei="matmul.arrays.MatmulServerItf" matmul.arrays.Matmul 4 64` (Result: ~8s)
+6. Run: `./deploy_image.sh server simple`
+7. Call: `compss_agent_call_operation --master_node=127.0.0.1 --master_port=46201 --cei="matmul.arrays.MatmulServerItf" matmul.arrays.Matmul 4 64` (Result: ~8s)
 
 **Test 1 CPU agent (simple version):**
-7. Run: `./deploy_image.sh sequential simple`
-8. Call: `compss_agent_call_operation --master_node=127.0.0.1 --master_port=46301 --cei="matmul.arrays.MatmulEdgeItf" matmul.arrays.Matmul 4 64` (Result: ~20s)
+8. Run: `./deploy_image.sh sequential simple`
+9. Call: `compss_agent_call_operation --master_node=127.0.0.1 --master_port=46301 --cei="matmul.arrays.MatmulEdgeItf" matmul.arrays.Matmul 4 64` (Result: ~20s)
 
 **Test 4 CPU agent (external version):**
 9. Run: `./deploy_image.sh server simple_external`
