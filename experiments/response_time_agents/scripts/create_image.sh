@@ -43,22 +43,8 @@ cp "$SCRIPT_DIR/single_cpu_project.xml" "$APP_DIR/"
 cp "$SCRIPT_DIR/../../response_time/scripts/edge_project.xml" "$APP_DIR/"
 cp "$SCRIPT_DIR/../../response_time/scripts/server_project.xml" "$APP_DIR/"
 
-# Create Dockerfile with curl and jq installation
-cat > "$BUILD_DIR/Dockerfile" <<EOF
-FROM compss/compss
-
-# Install curl and jq
-RUN apt-get update && \\
-    apt-get install -y --no-install-recommends curl jq && \\
-    rm -rf /var/lib/apt/lists/*
-
-# Copy application files
-COPY app/ /app/
-WORKDIR /app
-
-# Default command (can be overridden in deploy)
-CMD ["tail", "-f", "/dev/null"]
-EOF
+# Copy Dockerfile to build directory
+cp "$SCRIPT_DIR/Dockerfile" "$BUILD_DIR/"
 
 # Build the Docker image using the build context
 echo "Building Docker image..."
