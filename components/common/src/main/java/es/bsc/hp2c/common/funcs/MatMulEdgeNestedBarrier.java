@@ -13,6 +13,7 @@ import es.bsc.compss.types.annotations.parameter.Direction;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -103,6 +104,7 @@ public class MatMulEdgeNestedBarrier extends Func {
         }
 
         COMPSs.barrier();
+        System.out.println("MATRIX: " + Arrays.deepToString(C));
         printMatrix(C);
         long timestampEnd = Instant.now().getEpochSecond() * 1_000_000_000L
                 + Instant.now().getNano();

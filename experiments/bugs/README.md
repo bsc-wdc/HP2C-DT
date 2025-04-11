@@ -55,10 +55,29 @@ Timestamp difference: 94340000
 [(15665)    API]  -  Object obtained null (editado) 
 ```
 
+---
+
+### Bug 2: Object Obtained Null
+#### Summary
+This bug is similar to the previous one, but it is shown by executing the same MatmulEdgeNestedBarrier func with another 
+branch. It is giving the error in this branch, but now it is a NullPointerException. It seems that the function is not 
+executing the COMPSs barrier, because there is a print of the matrix after it and it returns null.
+
+#### Steps to Reproduce
+1. Clone HP2CDT repository: `git clone https://gitlab.bsc.es/wdc/projects/hp2cdt.git`
+2. Checkout to branch 163-experiments-for-paper: `git checkout 174-bug-list-agents`
+3. Pull edge image: `docker pull hp2c/edge:debug-matmul`
+4. Run the edge: `path/to/repo/experiments/bugs/deploy_edges.sh test_response_time --comm=bsc`
+
+#### Current Behavior
+It executes some tasks and then starts to print an infinite null loop.
+
+#### Expected Behavior
+The edge properly executes 1 call of MatmulEdge and prints the resultant matrix (through `docker logs hp2c/edge`).
 
 ---
 
-### Bug 2: Null Pointer / Concurrent Access
+### Bug 3: Null Pointer / Concurrent Access
 #### Summary
 When trying to execute the tutorial's matmul function with agents, it first returns a NullPointerException, and then a ConcurrentModificationException. This happens particularly when:
 - The edge is offloading tasks to the agent running in the server
@@ -69,8 +88,8 @@ If the matmul is not being offloaded to the server or the matrix is smaller (e.g
 The image is using `compss/compss:3.3`.
 
 #### Steps to Reproduce
-1. Deploy agent 1: `compss_agent_start --hostname=127.0.0.1 --classpath=/path/to/repo/hp2cdt/experiments/response_time_agents/matmul/jar/matmul.jar --log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 --project=/path/to/repo/hp2cdt/experiments/response_time/scripts/edge_project.xml`
-2. Deploy agent 2: `compss_agent_start --hostname=127.0.0.2 --classpath=/path/to/repo/hp2cdt/experiments/response_time_agents/matmul/jar/matmul.jar --log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 --project=/path/to/repo/hp2cdt/experiments/response_time/scripts/server_project.xml`
+1. Deploy agent 1: `compss_agent_start --hostname=127.0.0.1 --classpath=/path/to/repo/hp2cdt/experiments/bugs/matmul/jar/matmul.jar --log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 --project=/path/to/repo/hp2cdt/experiments/response_time/scripts/edge_project.xml`
+2. Deploy agent 2: `compss_agent_start --hostname=127.0.0.2 --classpath=/path/to/repo/hp2cdt/experiments/bugs/matmul/jar/matmul.jar --log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 --project=/path/to/repo/hp2cdt/experiments/response_time/scripts/server_project.xml`
 3. Add resources: `compss_agent_add_resources --agent_node=127.0.0.1 --agent_port=46101 --cpu=4 127.0.0.2 Port=46202`
 4. Call operation: `compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 --cei="matmul.arrays.MatmulServerItf" matmul.arrays.Matmul 8 64`
 
@@ -125,7 +144,7 @@ Caused by: java.lang.NullPointerException
 
 ---
 
-### Bug 3: COMPSs Agent with 1 CPU is Faster Than with 2 or 4 CPUs
+### Bug 4: COMPSs Agent with 1 CPU is Faster Than with 2 or 4 CPUs
 #### Summary
 When comparing execution times of COMPSs agents with different CPU counts:
 - The agent with only 1 CPU outperformed those with 2 and 4 CPUs
@@ -149,12 +168,12 @@ The image is using `compss/compss:3.3`.
 2. Checkout to branch implement-compss-section: `git checkout implement-compss-section`
 
 **Test 4 CPU agent (external version):**
-3. Start agent: `compss_agent_start --hostname=127.0.0.1 --classpath=/path/to/repo/hp2cdt/experiments/response_time_agents/matmul_simple_external/jar/matmul.jar --log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 --project=/path/to/repo/hp2cdt/experiments/response_time/scripts/server_project.xml`
+3. Start agent: `compss_agent_start --hostname=127.0.0.1 --classpath=/path/to/repo/hp2cdt/experiments/bugs/matmul_simple_external/jar/matmul.jar --log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 --project=/path/to/repo/hp2cdt/experiments/response_time/scripts/server_project.xml`
 4. Call: `compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 --cei="matmul.arrays.MatmulServerItf" matmul.arrays.Matmul 4 64` (Result: ~4s)
 
 **Test 1 CPU agent (external version):**
-5. Start agent: `compss_agent_start --hostname=127.0.0.1 --classpath=/path/to/repo/hp2cdt/experiments/response_time_agents/matmul_simple_external/jar/matmul.jar --log_dir=/tmp/Agent1 --rest_port=46301 --comm_port=46302 --project=/path/to/repo/hp2cdt/experiments/response_time_agents/scripts/single_cpu_project.xml`
+5. Start agent: `compss_agent_start --hostname=127.0.0.1 --classpath=/path/to/repo/hp2cdt/experiments/bugs/matmul_simple_external/jar/matmul.jar --log_dir=/tmp/Agent1 --rest_port=46301 --comm_port=46302 --project=/path/to/repo/hp2cdt/experiments/bugs/scripts/single_cpu_project.xml`
 6. Call: `compss_agent_call_operation --master_node=127.0.0.1 --master_port=46301 --cei="matmul.arrays.MatmulEdgeItf" matmul.arrays.Matmul 4 64` (Result: ~1s)
 
 **Test sequential execution(external version)**
-7. Run: `java -cp /path/to/repo/hp2cdt/experiments/response_time_agents/matmul_simple_external/jar/matmul.jar matmul.arrays.Matmul 4 64` (Result ~0.6s)
+7. Run: `java -cp /path/to/repo/hp2cdt/experiments/bugs/matmul_simple_external/jar/matmul.jar matmul.arrays.Matmul 4 64` (Result ~0.6s)
