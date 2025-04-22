@@ -87,12 +87,9 @@
         }
       },
       "trigger": {
-        "type": "onStart",
+        "type": "onRead",
         "parameters": {
-          "trigger-sensor": [
-            "Voltmeter Gen1"
-          ],
-          "interval": 1
+          "trigger-sensor":["Voltmeter Gen1"]
         }
       }
     }
@@ -106,7 +103,7 @@
     },
     "resources": [
       {
-        "ip": "212.128.226.53",
+        "ip": "192.168.0.203",
         "port": "8002",
         "cpu": "4",
         "arch": "amd64"
