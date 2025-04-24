@@ -208,6 +208,7 @@ docker run \
     -e PROJECT_PATH=$remote_project_path \
     -e CUSTOM_IP=$custom_ip_address \
     -e ENABLE_METRICS=$ENABLE_METRICS \
+    -e AGENT_NAME=$ip_address \
     -p $COMM_AGENT_PORT:$COMM_AGENT_PORT \
     -p $REST_AGENT_PORT:$REST_AGENT_PORT \
     ${DOCKER_IMAGE}

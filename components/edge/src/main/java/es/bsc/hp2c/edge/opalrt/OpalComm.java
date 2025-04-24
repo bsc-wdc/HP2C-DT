@@ -191,6 +191,7 @@ public class OpalComm {
                     distributeValues(messageValues, udpSensorsList, Instant.now());
                     System.out.println(); // Add empty line at the end of each measurement
                 } catch (Exception e) {
+                    e.printStackTrace();
                     System.err.println("Error receiving UDP message: " + e.getMessage());
                 }
             }
