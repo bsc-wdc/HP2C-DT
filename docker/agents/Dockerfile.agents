@@ -1,6 +1,6 @@
 ARG COMPSS_VERSION
 
-FROM compss/compss:${COMPSS_VERSION} as framework
+FROM hp2c/compss:tempfixagents as framework
 
 
 ##################

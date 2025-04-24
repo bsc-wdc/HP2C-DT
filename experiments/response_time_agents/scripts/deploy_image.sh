@@ -2,8 +2,8 @@
 set -e  # Stop on error
 
 # Validate arguments
-if [ $# -ne 2 ] || ([ "$1" != "edge" ] && [ "$1" != "server" ] && [ "$1" != "sequential" ]) || ([ "$2" != "simple" ] && [ "$2" != "simple_external" ] && [ "$2" != "matmul" ]); then
-    echo "Usage: $0 <edge|server|sequential> <simple|simple_external|matmul>"
+if [ $# -ne 3 ] || ([ "$1" != "edge" ] && [ "$1" != "server" ] && [ "$1" != "sequential" ]) || ([ "$2" != "simple" ] && [ "$2" != "simple_external" ] && [ "$2" != "matmul" ]) || ([ "$3" != "trunk" ] && [ "$3" != "tempfixagents" ]); then
+    echo "Usage: $0 <edge|server|sequential> <simple|simple_external|matmul> <trunk|tempfixagents>"
     exit 1
 fi
 
@@ -20,7 +20,7 @@ if [ -n "$version" ]; then
     version_suffix="_$version"
 fi
 
-IMAGE_NAME="hp2c/matmul${version_suffix}-image"
+IMAGE_NAME="hp2c/matmul${version_suffix}-image:$3"
 
 # Function to handle cleanup
 cleanup() {

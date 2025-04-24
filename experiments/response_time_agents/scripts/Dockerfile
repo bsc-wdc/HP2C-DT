@@ -1,4 +1,5 @@
-FROM hp2c/compss:tempfixagents
+ARG COMPSs_VERSION
+FROM hp2c/compss:${COMPSs_VERSION}
 
 # Install curl and jq
 RUN apt-get update && \

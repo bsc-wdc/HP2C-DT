@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e  # Stop on error
 
-if [ $# -ne 1 ] || ([ "$1" != "simple" ] && [ "$1" != "simple_external" ] && [ "$1" != "matmul" ]); then
-    echo "Usage: $0 <simple|simple_external|matmul>"
+if [ $# -ne 2 ] || ([ "$1" != "simple" ] && [ "$1" != "simple_external" ] && [ "$1" != "matmul" ]) || ([ "$2" != "trunk" ] && [ "$2" != "tempfixagents" ]); then
+    echo "Usage: $0 <simple|simple_external|matmul> <trunk|tempfixagents>"
     exit 1
 fi
 
@@ -48,9 +48,9 @@ cp "$SCRIPT_DIR/Dockerfile" "$BUILD_DIR/"
 
 # Build the Docker image using the build context
 echo "Building Docker image..."
-docker build -t hp2c/matmul${version_suffix}-image "$BUILD_DIR"
+docker build --build-arg COMPSs_VERSION="$2" -t hp2c/matmul${version_suffix}-image:"$2" "$BUILD_DIR"
 
-echo "Docker image 'hp2c/matmul${version_suffix}-image' created successfully"
+echo "Docker image 'hp2c/matmul${version_suffix}-image:$2' created successfully"
 
 # Remove the temporary build directory
 rm -rf "$BUILD_DIR"
