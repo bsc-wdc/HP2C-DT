@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e  # Stop on error
 
-if [ $# -ne 2 ] || ([ "$1" != "simple" ] && [ "$1" != "simple_external" ] && [ "$1" != "matmul" ]) || ([ "$2" != "trunk" ] && [ "$2" != "tempfixagents" ]); then
-    echo "Usage: $0 <simple|simple_external|matmul> <trunk|tempfixagents>"
+if [ $# -ne 2 ] || ([ "$1" != "simple" ] && [ "$1" != "simple_external" ] && [ "$1" != "matmul" ] && ["$1" != "hp2c"]) || ([ "$2" != "trunk" ] && [ "$2" != "tempfixagents" ]); then
+    echo "Usage: $0 <simple|simple_external|matmul|hp2c> <trunk|tempfixagents>"
     exit 1
 fi
 

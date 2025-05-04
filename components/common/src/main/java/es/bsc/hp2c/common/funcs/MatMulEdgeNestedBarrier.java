@@ -165,14 +165,14 @@ public class MatMulEdgeNestedBarrier extends Func {
 
     public static interface COMPSsItf {
         @Constraints(computingUnits = "1", processorArchitecture = "arm")
-        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulEdgeNested")
+        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier")
         void multiplyAccumulative(
                 @Parameter double[] A,
                 @Parameter double[] B,
                 @Parameter(direction = Direction.INOUT)	double[] C
         );
         @Constraints(computingUnits = "1", processorArchitecture = "arm")
-        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulEdgeNested")
+        @Method(declaringClass = "es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier")
         void calcMatmul(
                 @Parameter long timestampStart,
                 @Parameter double[][][] A,
