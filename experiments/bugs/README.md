@@ -1,6 +1,7 @@
-# Agents Testing Bugs
+In this file, we describe several COMPSs bugs encountered while running tests for the project. For each issue, we 
+provide a brief explanation, steps to reproduce it, and relevant logs.
 
-### Bug 1: COMPSs Agent with 1 CPU is Faster Than with 2 or 4 CPUs
+# Bug 1: COMPSs Agent with 1 CPU is Faster Than with 2 or 4 CPUs
 #### Summary
 When comparing execution times of COMPSs agents with different CPU counts:
 - The agent with only 1 CPU outperformed those with 2 and 4 CPUs
@@ -25,16 +26,30 @@ git clone https://gitlab.bsc.es/wdc/projects/hp2cdt.git
 git checkout implement-compss-section
 ```
 
-**Test 4 CPU agent (external version):**
+In order to compile the java file, the user should execute:
 ```bash
-compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/hp2cdt/experiments/bugs/matmul_simple_external/jar/matmul.jar --log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 --project=${REPO_PATH}/hp2cdt/experiments/response_time/scripts/server_project.xml
-compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 --cei="matmul.arrays.MatmulServerItf" matmul.arrays.Matmul 4 64 #(Result: ~4s)
+${REPO_PATH}/experiments/bugs/create_image.sh simple_external trunk # matmul-version, COMPSs-version 
+```
+
+**Test 4 CPU agent (external version):**
+
+```bash
+compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_simple_external/jar/matmul.jar \
+--log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \ 
+--project=${REPO_PATH}/experiments/response_time/scripts/server_project.xml
+
+compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 --cei="matmul.arrays.MatmulServerItf" \ 
+matmul.arrays.Matmul 4 64 #(Result: ~4s)
 ```
 
 **Test 1 CPU agent (external version):**
 ```bash
-compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/hp2cdt/experiments/bugs/matmul_simple_external/jar/matmul.jar --log_dir=/tmp/Agent1 --rest_port=46301 --comm_port=46302 --project=${REPO_PATH}/hp2cdt/experiments/bugs/scripts/single_cpu_project.xml
-compss_agent_call_operation --master_node=127.0.0.1 --master_port=46301 --cei="matmul.arrays.MatmulEdgeItf" matmul.arrays.Matmul 4 64 #(Result: ~1s)
+compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_simple_external/jar/matmul.jar \ 
+--log_dir=/tmp/Agent1 --rest_port=46301 --comm_port=46302 \ 
+--project=${REPO_PATH}/experiments/bugs/scripts/single_cpu_project.xml
+
+compss_agent_call_operation --master_node=127.0.0.1 --master_port=46301 --cei="matmul.arrays.MatmulEdgeItf" \ 
+matmul.arrays.Matmul 4 64 #(Result: ~1s)
 ```
 
 **Test sequential execution(external version)**
@@ -42,20 +57,34 @@ compss_agent_call_operation --master_node=127.0.0.1 --master_port=46301 --cei="m
 java -cp /path/to/repo/hp2cdt/experiments/bugs/matmul_simple_external/jar/matmul.jar matmul.arrays.Matmul 4 64 #(Result ~0.6s)
 ```
 
-### Bug 2: Null Pointer / Concurrent Access
+# Bug 2: Null Pointer / Concurrent Access
 #### Summary
-When trying to execute the tutorial's matmul function with agents, it first returns a NullPointerException, and then a ConcurrentModificationException. This happens particularly when:
+When trying to execute the tutorial's matmul function with agents, it first returns a NullPointerException, and then a 
+ConcurrentModificationException. This happens particularly when:
 - The edge is offloading tasks to the agent running in the server
 - The matrix is quite large
 
 If the matmul is not being offloaded to the server or the matrix is smaller (e.g., matrix size 4, block size 64), no problem occurs.
 
 #### Steps to Reproduce
+In order to compile the java file, the user should execute:
 ```bash
-compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/hp2cdt/experiments/bugs/matmul/jar/matmul.jar --log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 --project=${REPO_PATH}/hp2cdt/experiments/response_time/scripts/edge_project.xml
-compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/hp2cdt/experiments/bugs/matmul/jar/matmul.jar --log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 --project=${REPO_PATH}/hp2cdt/experiments/response_time/scripts/server_project.xml
+${REPO_PATH}/experiments/bugs/create_image.sh simple trunk # matmul-version, COMPSs-version 
+```
+
+```bash
+compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul/jar/matmul.jar \ 
+--log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \ 
+--project=${REPO_PATH}/experiments/response_time/scripts/edge_project.xml
+
+compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul/jar/matmul.jar \ 
+--log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 \ 
+--project=${REPO_PATH}/experiments/response_time/scripts/server_project.xml
+
 compss_agent_add_resources --agent_node=127.0.0.1 --agent_port=46101 --cpu=4 127.0.0.2 Port=46202
-compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 --cei="matmul.arrays.MatmulServerItf" matmul.arrays.Matmul 8 64
+
+compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 --cei="matmul.arrays.MatmulServerItf" \ 
+matmul.arrays.Matmul 8 64
 ```
 
 #### Current Behavior
@@ -122,7 +151,7 @@ Caused by: java.lang.NullPointerException
 	... 22 more
 ```
 
-### Bugs with hp2c framework:
+# Bugs with hp2c framework
 #### Summary
 The following bugs appear when trying to execute tests with `matmul` functions in the HP2C framework. In these tests, 
 the idea was to:
@@ -135,7 +164,7 @@ To do this, we developed 6 different funcs - 3 for the edge and 3 for the server
 different architecture constraints (arm/amd64)).
 
 The source codes are uploaded to the HP2C repository in the branch `174-bug-list-agents` at 
-`${REPO_PATH}/components/common/src/main/java/es/bsc/hp2c/common/funcs`. These funcs are:
+`${REPO_PATH}/common/src/main/java/es/bsc/hp2c/common/funcs`. These funcs are:
 
 - `Matmul[Edge/Server]Simple`: Executes a `matmul` as shown in the COMPSs tutorial, but declaring only `multiplyAccumulative` as a task.
 - `Matmul[Edge/Server]SimpleBarrier`: Executes the same code but adds a COMPSs barrier after the matrix multiplication.
@@ -148,12 +177,14 @@ The agents must be deployed in the OpenStack machines. To do so, the user must d
 deployed), and run `connect-server` to connect to the server machine, where the server will be executed.
 
 
-
 ##### MatmulEdgeSimple
 ###### Steps to reproduce
 - Broker machine
 ```bash
-jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulEdgeSimple"' ~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
+# Update the json file with the new method name 
+jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulEdgeSimple"' \
+~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
+
 ~/hp2cdt/deployments/deploy_edges.sh test_response_time --comm=bsc_subnet
 ```
 
@@ -190,7 +221,9 @@ The app creates 2 tasks and then gives an infinite null loop.
 ###### Steps to reproduce
 - Broker machine
 ```bash
-jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulEdgeSimpleBarrier"' ~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
+# Update the json file with the new method name
+jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulEdgeSimpleBarrier"' \ 
+~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
 ~/hp2cdt/deployments/deploy_edges.sh test_response_time --comm=bsc_subnet
 ```
 
@@ -227,7 +260,9 @@ The app creates 2 tasks and then gives an infinite null loop.
 ###### Steps to reproduce
 - Broker machine
 ```bash
-jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier"' ~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
+# Update the json file with the new method name
+jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier"' \ 
+~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
 ~/hp2cdt/deployments/deploy_edges.sh test_response_time --comm=bsc_subnet
 ```
 
@@ -263,7 +298,9 @@ java.lang.NullPointerException
 ```
 -Broker machine
 ```bash
-jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerSimple"' ~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
+# Update the json file with the new method name
+jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerSimple"' \ 
+~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
 ~/hp2cdt/deployments/deploy_edges.sh test_response_time --comm=bsc_subnet
 ```
 
@@ -317,7 +354,9 @@ Caused by: java.io.FileNotFoundException: d9v1_1745492230313.IT (No such file or
 ```
 -Broker machine
 ```bash
-jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerSimpleBarrier"' ~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
+# Update the json file with the new method name
+jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerSimpleBarrier"' \ 
+~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
 ~/hp2cdt/deployments/deploy_edges.sh test_response_time --comm=bsc_subnet
 ```
 
@@ -371,7 +410,9 @@ Caused by: java.io.FileNotFoundException: d13v1_1745499645293.IT (No such file o
 ```
 -Broker machine
 ```bash
-jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerNestedBarrier"' ~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
+# Update the json file with the new method name
+jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerNestedBarrier"' \ 
+~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
 ~/hp2cdt/deployments/deploy_edges.sh test_response_time --comm=bsc_subnet
 ```
 
