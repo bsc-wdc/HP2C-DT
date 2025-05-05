@@ -135,13 +135,13 @@ public class MatMulServerSimpleBarrier extends Func {
         System.out.println("");
     }
 
-    public static void multiplyAccumulative(double[] a, double[] b, double[] c) {
+    public static void multiplyAccumulative(double[] A, double[] B, double[] C) {
         System.out.println("MULTIPLY SERVER");
-        int M = (int)Math.sqrt(a.length);
+        int M = (int)Math.sqrt(A.length);
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < M; j++) {
                 for (int k = 0; k < M; k++) {
-                    c[i*M + j] += a[i*M + k] * b[k*M + j];
+                    C[i*M + j] += A[i*M + k] * B[k*M + j];
                 }
             }
         }

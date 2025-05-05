@@ -26,9 +26,12 @@ git clone https://gitlab.bsc.es/wdc/projects/hp2cdt.git
 git checkout implement-compss-section
 ```
 
-In order to compile the java file, the user should execute:
+Compile the java code:
+
 ```bash
-${REPO_PATH}/experiments/bugs/create_image.sh simple_external trunk # matmul-version, COMPSs-version 
+cd "${REPO_PATH}/experiments/bugs/matmul_simple_external"
+
+mvn clean package
 ```
 
 **Test 4 CPU agent (external version):**
@@ -67,9 +70,12 @@ ConcurrentModificationException. This happens particularly when:
 If the matmul is not being offloaded to the server or the matrix is smaller (e.g., matrix size 4, block size 64), no problem occurs.
 
 #### Steps to Reproduce
-In order to compile the java file, the user should execute:
+Compile the java code:
+
 ```bash
-${REPO_PATH}/experiments/bugs/create_image.sh simple trunk # matmul-version, COMPSs-version 
+cd "${REPO_PATH}/experiments/bugs/matmul_simple"
+
+mvn clean package
 ```
 
 ```bash
@@ -151,6 +157,96 @@ Caused by: java.lang.NullPointerException
 	... 22 more
 ```
 
+# Bug 3: Wrong task offloading
+#### Summary
+For some of the tests executed here, we used the architecture constraint to control whether a task should be offloaded 
+or not. The process is as follows:
+
+- Deploy the first agent (with `arm` architecture)
+- Deploy the second agent (with `amd64` architecture)
+- Add the second agent as a resource to the first agent
+- Execute an `arm` task on the first agent
+
+In this setup, the task will always be offloaded to the second agent, which cannot execute it due to the architecture 
+mismatch. As a result, the second agent will report an error (see the *Relevant Logs* section).
+
+#### Steps to reproduce
+Compile the java code:
+
+```bash
+cd "${REPO_PATH}/experiments/bugs/matmul_hp2c"
+
+mvn clean package
+```
+
+Execute the following commands:
+```bash
+# Deploy agent 1
+compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \ 
+--log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \ 
+--project=${REPO_PATH}/experiments/response_time/scripts/edge_project.xml
+
+# Deploy agent 2
+compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \ 
+--log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 \ 
+--project=${REPO_PATH}/experiments/response_time/scripts/server_project.xml
+
+# Allow agent 1 to offload tasks to agent 2
+compss_agent_add_resources --agent_node=127.0.0.1 --agent_port=46101 --cpu=4 127.0.0.2 Port=46202
+
+# Call operation
+compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 \ 
+--cei="matmul.arrays.MatmulEdgeSimpleBarrierItf" matmul.arrays.MatmulSimpleBarrier 4 4
+```
+
+#### Possible fix
+The problem seems to be fixed when the receiving architecture is specified (check the following curl command for adding 
+resources), so it should be enough to add a new architecture flag to the `compss_agent_add_resources` command.
+
+This is the proper way to add the resource specifying the architecture:
+```bash
+curl -s -X PUT http://127.0.0.1:46101/COMPSs/addResources \
+  -H 'content-type: application/xml' \
+  -d '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<newResource>
+  <externalResource>
+    <name>127.0.0.2</name>
+    <description>
+      <processors>
+        <processor>
+          <name>MainProcessor</name>
+          <type>CPU</type>
+          <architecture>amd64</architecture>
+          <computingUnits>4</computingUnits>
+          <internalMemory>-1.0</internalMemory>
+          <propName>[unassigned]</propName>
+          <propValue>[unassigned]</propValue>
+          <speed>-1.0</speed>
+        </processor>
+      </processors>
+      <memorySize>-1</memorySize>
+      <memoryType>[unassigned]</memoryType>
+      <storageSize>-1.0</storageSize>
+      <storageType>[unassigned]</storageType>
+      <operatingSystemDistribution>[unassigned]</operatingSystemDistribution>
+      <operatingSystemType>[unassigned]</operatingSystemType>
+      <operatingSystemVersion>[unassigned]</operatingSystemVersion>
+      <pricePerUnit>-1.0</pricePerUnit>
+      <priceTimeUnit>-1</priceTimeUnit>
+      <value>0.0</value>
+      <wallClockLimit>-1</wallClockLimit>
+    </description>
+    <adaptor>es.bsc.compss.agent.comm.CommAgentAdaptor</adaptor>
+    <resourceConf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ResourcesExternalAdaptorProperties">
+      <Property>
+        <Name>Port</Name>
+        <Value>46202</Value>
+      </Property>
+    </resourceConf>
+  </externalResource>
+</newResource>'
+```
+
 # Bugs with hp2c framework
 #### Summary
 The following bugs appear when trying to execute tests with `matmul` functions in the HP2C framework. In these tests, 
@@ -172,10 +268,84 @@ The source codes are uploaded to the HP2C repository in the branch `174-bug-list
 method is called from another function. This was done to execute the barrier within this external function and avoid 
 blocking the rest of the tasks in the agent.
 
-The agents must be deployed in the OpenStack machines. To do so, the user must do 
+## Local execution
+In this case, the agents will be deployed in the local machine. 
+
+The executions of these methods work for the edge versions (without offloading the tasks to the server agent), but it 
+does not for the external functions. In these cases, it returns a nested exception (check relevant logs section).
+
+### Steps to reproduce
+Compile the java code:
+
+```bash
+cd "${REPO_PATH}/experiments/bugs/matmul_hp2c"
+
+mvn clean package
+```
+
+Then, we should:
+```bash
+# Deploy agent 1
+compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \ 
+--log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \ 
+--project=${REPO_PATH}/experiments/response_time/scripts/edge_project.xml
+
+# Deploy agent 2
+compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \ 
+--log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 \ 
+--project=${REPO_PATH}/experiments/response_time/scripts/server_project.xml
+
+# Allow agent 1 to offload tasks to agent 2
+compss_agent_add_resources --agent_node=127.0.0.1 --agent_port=46101 --cpu=4 127.0.0.2 Port=46202
+
+# Call operation
+compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 \ 
+--cei="matmul.arrays.MatmulServerSimpleBarrierItf" matmul.arrays.MatmulSimpleBarrier 4 4
+```
+
+### Relevant logs
+```bash
+es.bsc.compss.types.execution.exceptions.JobExecutionException: Cannot load value due to nested exception
+	at es.bsc.compss.invokers.Invoker.processParameter(Invoker.java:284)
+	at es.bsc.compss.invokers.Invoker.<init>(Invoker.java:137)
+	at es.bsc.compss.invokers.JavaInvoker.<init>(JavaInvoker.java:64)
+	at es.bsc.compss.invokers.JavaNestedInvoker.<init>(JavaNestedInvoker.java:69)
+	at es.bsc.compss.executor.Executor.selectNativeMethodInvoker(Executor.java:534)
+	at es.bsc.compss.executor.Executor.runInvocation(Executor.java:476)
+	at es.bsc.compss.executor.Executor.redirectStreamsAndRun(Executor.java:450)
+	at es.bsc.compss.executor.Executor.filesWrapperAndRun(Executor.java:389)
+	at es.bsc.compss.executor.Executor.sandBoxWrapperAndRun(Executor.java:360)
+	at es.bsc.compss.executor.Executor.resourcesWrapperAndRun(Executor.java:339)
+	at es.bsc.compss.executor.Executor.totalTimerAndTracingWrapperAndRun(Executor.java:313)
+	at es.bsc.compss.executor.Executor.execute(Executor.java:289)
+	at es.bsc.compss.executor.Executor.processInvocation(Executor.java:255)
+	at es.bsc.compss.types.execution.InvocationExecutionRequest.run(InvocationExecutionRequest.java:60)
+	at es.bsc.compss.executor.Executor.processRequests(Executor.java:225)
+	at es.bsc.compss.executor.Executor.run(Executor.java:177)
+	at es.bsc.compss.execution.ExecutionPlatform$4.run(ExecutionPlatform.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:829)
+Caused by: es.bsc.compss.types.execution.exceptions.UnloadableValueException: Cannot load value due to nested exception
+	at es.bsc.compss.types.COMPSsMaster.loadParam(COMPSsMaster.java:1307)
+	at es.bsc.compss.invokers.Invoker.processParameter(Invoker.java:231)
+	... 17 more
+Caused by: java.io.FileNotFoundException: d34v1_1746449594016.IT (No existe el archivo o el directorio)
+	at java.base/java.io.FileInputStream.open0(Native Method)
+	at java.base/java.io.FileInputStream.open(FileInputStream.java:219)
+	at java.base/java.io.FileInputStream.<init>(FileInputStream.java:157)
+	at java.base/java.io.FileInputStream.<init>(FileInputStream.java:112)
+	at es.bsc.compss.util.serializers.XMLSerializer.deserialize(XMLSerializer.java:80)
+	at es.bsc.compss.util.serializers.Serializer.deserialize(Serializer.java:119)
+	at es.bsc.compss.util.FileOpsManager.deserialize(FileOpsManager.java:466)
+	at es.bsc.compss.util.FileOpsManager.deserializeSync(FileOpsManager.java:411)
+	at es.bsc.compss.types.COMPSsMaster.loadParam(COMPSsMaster.java:1305)
+	... 18 more
+```
+
+
+## Remote execution
+In this case, the agents will be deployed in the OpenStack machines. To do so, the user must do 
 `ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53` to connect to the broker machine (where the edge must be 
 deployed), and run `connect-server` to connect to the server machine, where the server will be executed.
-
 
 ##### MatmulEdgeSimple
 ###### Steps to reproduce
@@ -257,37 +427,7 @@ The app creates 2 tasks and then gives an infinite null loop.
 ```
 
 ##### MatmulEdgeNestedBarrier
-###### Steps to reproduce
-- Broker machine
-```bash
-# Update the json file with the new method name
-jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier"' \ 
-~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
-~/hp2cdt/deployments/deploy_edges.sh test_response_time --comm=bsc_subnet
-```
-
-###### Current behaviour
-The app doesn’t create any tasks, but it starts executing the matrix multiplication. After about a minute, it throws a 
-NullPointerException. It seems to spend that minute trying to create the tasks, and when that fails, it continues 
-execution and attempts to print a null matrix.
-
-###### Relevant logs
-```bash
-java.lang.NullPointerException
-	at es.bsc.compss.loader.total.ArrayAccessWatcher.arrayReadObject(ArrayAccessWatcher.java:77)
-	at jdk.internal.reflect.GeneratedMethodAccessor16.invoke(Unknown Source)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
-	at es.bsc.compss.loader.LoaderUtils.runMethodOnObject(LoaderUtils.java:544)
-	at es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier_compss52069.printMatrix(MatMulEdgeNestedBarrier.java:133)
-	at es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier_compss52069.calcMatmul(MatMulEdgeNestedBarrier.java:108)
-	at es.bsc.hp2c.common.funcs.MatMulEdgeNestedBarrier_compss52069.run(MatMulEdgeNestedBarrier.java:87)
-	at es.bsc.hp2c.common.funcs.Action.run(Action.java:45)
-	at es.bsc.hp2c.common.generic.Voltmeter.onRead(Voltmeter.java:69)
-	at es.bsc.hp2c.edge.opalrt.OpalComm.distributeValues(OpalComm.java:214)
-	at es.bsc.hp2c.edge.opalrt.OpalComm.lambda$startUDPServer$2(OpalComm.java:191)
-	at java.base/java.lang.Thread.run(Thread.java:829)
-```
+This execution works properly
 
 
 ##### MatmulServerSimple

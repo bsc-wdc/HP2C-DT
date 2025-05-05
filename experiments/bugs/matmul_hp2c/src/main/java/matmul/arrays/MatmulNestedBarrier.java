@@ -22,7 +22,7 @@ import java.time.Instant;
 import es.bsc.compss.api.COMPSs;
 
 
-public class Matmul {
+public class MatmulNestedBarrier {
 	private static int MSIZE;
 	private static int BSIZE;
 
@@ -54,9 +54,10 @@ public class Matmul {
 		System.out.println("[LOG] BSIZE parameter value = " + BSIZE);
 		A = initializeMatrix();
 		B = initializeMatrix();
+		C = new double[MSIZE][MSIZE][BSIZE*BSIZE];
 
 		// Compute matrix multiplication C = A x B
-		C = computeMultiplication(A, B, MSIZE, BSIZE);
+		computeMultiplication(A, B, C, MSIZE, BSIZE);
 
 		// Uncomment the following line if you wish to see the result in the stdout
 		printMatrix(C, "C (Result)  ");
@@ -88,18 +89,17 @@ public class Matmul {
 		return block;
 	}
 
-	private static double[][][] computeMultiplication(double[][][] a, double[][][] b, int msize, int bsize) {
+	private static double[][][] computeMultiplication(double[][][] a, double[][][] b, double[][][] c,
+													  int msize, int bsize) {
 		System.out.println("RUNNING MATMUL EDGE");
 		// Allocate result matrix C
 		System.out.println("[LOG] Allocating C matrix space");
-		double[][][] c = new double[msize][msize][bsize*bsize];
 
 		// Compute result
 		System.out.println("[LOG] Computing Result");
 		for (int i = 0; i < msize; i++) {
 			for (int j = 0; j < msize; j++) {
 				for (int k = 0; k < msize; k++) {
-					System.out.println(i + j + k);
 					multiplyAccumulative(a[i][k], b[k][j], c[i][j]);
 				}
 			}
@@ -119,13 +119,13 @@ public class Matmul {
 		return c;
 	}
 
-	public static void multiplyAccumulative(double[] a, double[] b, double[] c) {
-		int M = (int)Math.sqrt(a.length);
+	public static void multiplyAccumulative(double[] A, double[] B, double[] C) {
+		int M = (int)Math.sqrt(A.length);
 		for (int i = 0; i < M; i++) {
 			for (int j = 0; j < M; j++) {
 				for (int k = 0; k < M; k++) {
-					c[i*M + j] += a[i*M + k] * b[k*M + j];
-					System.out.println("MULT " + c[i*M + j]);
+					C[i*M + j] += A[i*M + k] * B[k*M + j];
+					System.out.println("MULT " + C[i*M + j]);
 				}
 			}
 		}

@@ -87,24 +87,23 @@ public class MatMulEdgeNestedBarrier extends Func {
         calcMatmul(Instant.now().getEpochSecond(), A, B, MSIZE, BSIZE);
     }
 
-    public static void calcMatmul(long timestampStart, double[][][] a, double[][][] b, int msize, int bsize) {
+    public static void calcMatmul(long timestampStart, double[][][] A, double[][][] B, int msize, int bsize) {
         System.out.println("RUNNING MATMUL EDGE");
         // Allocate result matrix C
         System.out.println("[LOG] Allocating C matrix space");
-        double[][][] c = new double[msize][msize][bsize*bsize];
+        C = new double[msize][msize][bsize*bsize];
 
         // Compute result
         System.out.println("[LOG] Computing Result");
         for (int i = 0; i < msize; i++) {
             for (int j = 0; j < msize; j++) {
                 for (int k = 0; k < msize; k++) {
-                    multiplyAccumulative(a[i][k], b[k][j], c[i][j]);
+                    multiplyAccumulative(A[i][k], B[k][j], C[i][j]);
                 }
             }
         }
 
         COMPSs.barrier();
-        System.out.println("MATRIX: " + Arrays.deepToString(C));
         printMatrix(C);
         long timestampEnd = Instant.now().getEpochSecond() * 1_000_000_000L
                 + Instant.now().getNano();
@@ -143,12 +142,12 @@ public class MatMulEdgeNestedBarrier extends Func {
         System.out.println("");
     }
 
-    public static void multiplyAccumulative(double[] a, double[] b, double[] c) {
-        int M = (int)Math.sqrt(a.length);
+    public static void multiplyAccumulative(double[] A, double[] B, double[] C) {
+        int M = (int)Math.sqrt(A.length);
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < M; j++) {
                 for (int k = 0; k < M; k++) {
-                    c[i*M + j] += a[i*M + k] * b[k*M + j];
+                    C[i*M + j] += A[i*M + k] * B[k*M + j];
                 }
             }
         }

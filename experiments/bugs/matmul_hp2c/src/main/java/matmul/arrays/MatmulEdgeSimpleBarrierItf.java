@@ -21,23 +21,13 @@ import es.bsc.compss.types.annotations.parameter.Direction;
 import es.bsc.compss.types.annotations.task.Method;
 
 
-public interface MatmulEdgeNestedBarrierItf {
+public interface MatmulEdgeSimpleBarrierItf {
 
 	@Constraints(computingUnits = "1", processorArchitecture = "arm")
-	@Method(declaringClass = "matmul.arrays.Matmul")
+	@Method(declaringClass = "matmul.arrays.MatmulSimpleBarrier")
 	void multiplyAccumulative(
 			@Parameter double[] A,
 			@Parameter double[] B,
 			@Parameter(direction = Direction.INOUT)	double[] C
 	);
-	@Constraints(computingUnits = "1", processorArchitecture = "arm")
-	@Method(declaringClass = "matmul.arrays.Matmul")
-	void calcMatmul(
-			@Parameter long timestampStart,
-			@Parameter double[][][] A,
-			@Parameter double[][][] B,
-			@Parameter int msize,
-			@Parameter int bsize
-	);
-
 }

@@ -24,14 +24,14 @@ import es.bsc.compss.types.annotations.task.Method;
 public interface MatmulEdgeNestedBarrierItf {
 
 	@Constraints(computingUnits = "1", processorArchitecture = "arm")
-	@Method(declaringClass = "matmul.arrays.Matmul")
+	@Method(declaringClass = "matmul.arrays.MatmulNestedBarrier")
 	void multiplyAccumulative(
 			@Parameter double[] A,
 			@Parameter double[] B,
 			@Parameter(direction = Direction.INOUT)	double[] C
 	);
 	@Constraints(computingUnits = "1", processorArchitecture = "arm")
-	@Method(declaringClass = "matmul.arrays.Matmul")
+	@Method(declaringClass = "matmul.arrays.MatmulNestedBarrier")
 	void calcMatmul(
 			@Parameter long timestampStart,
 			@Parameter double[][][] A,
