@@ -23,7 +23,7 @@ The image is using `compss/compss:3.3`.
 #### Steps to Reproduce
 ```bash
 git clone https://gitlab.bsc.es/wdc/projects/hp2cdt.git
-git checkout implement-compss-section
+git checkout 174-bug-list-agents
 ```
 
 Compile the java code:
@@ -106,7 +106,7 @@ following code at `TaskResult.getLocations(AppMonitor.java:299)` where it calls 
 ```java
 boolean done = false;
 while (!done){
-    try {
+    try { 
         createRDfromLD(.....);
         done = true;
     }catch (ConcurrentModificationException e) {
@@ -260,7 +260,7 @@ To do this, we developed 6 different funcs - 3 for the edge and 3 for the server
 different architecture constraints (arm/amd64)).
 
 The source codes are uploaded to the HP2C repository in the branch `174-bug-list-agents` at 
-`${REPO_PATH}/common/src/main/java/es/bsc/hp2c/common/funcs`. These funcs are:
+`${REPO_PATH}/components/common/src/main/java/es/bsc/hp2c/common/funcs`. These funcs are:
 
 - `Matmul[Edge/Server]Simple`: Executes a `matmul` as shown in the COMPSs tutorial, but declaring only `multiplyAccumulative` as a task.
 - `Matmul[Edge/Server]SimpleBarrier`: Executes the same code but adds a COMPSs barrier after the matrix multiplication.
@@ -343,13 +343,14 @@ Caused by: java.io.FileNotFoundException: d34v1_1746449594016.IT (No existe el a
 
 
 ## Remote execution
-In this case, the agents will be deployed in the OpenStack machines. To do so, the user must do 
-`ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53` to connect to the broker machine (where the edge must be 
-deployed), and run `connect-server` to connect to the server machine, where the server will be executed.
 
 ##### MatmulEdgeSimple
 ###### Steps to reproduce
 - Broker machine
+```bash
+ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the broker machine
+```
+
 ```bash
 # Update the json file with the new method name 
 jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulEdgeSimple"' \
@@ -391,6 +392,10 @@ The app creates 2 tasks and then gives an infinite null loop.
 ###### Steps to reproduce
 - Broker machine
 ```bash
+ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the broker machine
+```
+
+```bash
 # Update the json file with the new method name
 jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulEdgeSimpleBarrier"' \ 
 ~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
@@ -427,16 +432,25 @@ The app creates 2 tasks and then gives an infinite null loop.
 ```
 
 ##### MatmulEdgeNestedBarrier
-This execution works properly
+This execution works properly.
 
 
 ##### MatmulServerSimple
 ###### Steps to reproduce
 - Server machine
 ```bash
+ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the broker machine
+connect-server # connect to the server machine
+```
+
+```bash
 ~/hp2cdt/deployments/deploy_server_agent_name.sh test_response_time --comm=bsc_subnet
 ```
 -Broker machine
+```bash
+ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the broker machine
+```
+
 ```bash
 # Update the json file with the new method name
 jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerSimple"' \ 
@@ -490,9 +504,18 @@ Caused by: java.io.FileNotFoundException: d9v1_1745492230313.IT (No such file or
 ###### Steps to reproduce
 - Server machine
 ```bash
+ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the broker machine
+connect-server # connect to the server machine
+```
+
+```bash
 ~/hp2cdt/deployments/deploy_server_agent_name.sh test_response_time --comm=bsc_subnet
 ```
 -Broker machine
+```bash
+ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the broker machine
+```
+
 ```bash
 # Update the json file with the new method name
 jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerSimpleBarrier"' \ 
@@ -546,9 +569,18 @@ Caused by: java.io.FileNotFoundException: d13v1_1745499645293.IT (No such file o
 ###### Steps to reproduce
 - Server machine
 ```bash
+ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the broker machine
+connect-server # connect to the server machine
+```
+
+```bash
 ~/hp2cdt/deployments/deploy_server_agent_name.sh test_response_time --comm=bsc_subnet
 ```
 -Broker machine
+```bash
+ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the broker machine
+```
+
 ```bash
 # Update the json file with the new method name
 jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerNestedBarrier"' \ 
