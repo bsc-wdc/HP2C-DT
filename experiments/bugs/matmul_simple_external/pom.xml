@@ -1,16 +1,23 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<!-- GENERAL INFORMATION -->
+	<groupId>es.bsc.experiments.matmul_simple_external</groupId>
 	<artifactId>matmul</artifactId>
+	<version>0.1</version>
 	<packaging>jar</packaging>
-	<parent>
-                <groupId>es.bsc.compss.tutorial-apps.java</groupId>
-                <artifactId>compss-tutorial-apps-java</artifactId>                                                                                                                      
-                <version>3.3.rc2503</version>
-		<relativePath>..</relativePath>
-	</parent>
+
+	<!-- PROPERTIES -->
+	<properties>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+		<maven-exec-plugin.version>3.1.0</maven-exec-plugin.version>
+		<compss.version>3.3.rc2503</compss.version>
+	</properties>
 
 	<!-- PROJECT INFORMATION -->
 	<name>Matmul</name>
@@ -28,11 +35,21 @@
 		<url>http://www.bsc.es</url>
 	</organization>
 
+	<!-- REPOSITORIES -->
+	<repositories>
+		<repository>
+			<id>compss-repo</id>
+			<name>BSC Workflows and Distributed Computing group</name>
+			<url>https://compss.bsc.es/artifactory/libs-release</url>
+		</repository>
+	</repositories>
+
 	<!-- DEPENDENCIES -->
 	<dependencies>
 		<dependency>
 			<groupId>es.bsc.compss</groupId>
 			<artifactId>compss-api</artifactId>
+			<version>${compss.version}</version>
 		</dependency>
 	</dependencies>
 
@@ -94,13 +111,14 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
+				<version>${maven-exec-plugin.version}</version>
 				<configuration>
 					<executable>runcompss</executable>
 					<workingDirectory>${basedir}/jar/</workingDirectory>
 					<arguments>
 						<argument>-t</argument>
 						<argument>-d</argument>
-						<argument>matmul.objects.Matmul </argument>
+						<argument>matmul.objects.Matmul</argument>
 						<argument>4</argument>
 						<argument>4</argument>
 					</arguments>
@@ -115,53 +133,5 @@
 				</executions>
 			</plugin>
 		</plugins>
-		<pluginManagement>
-			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings 
-					only. It has no influence on the Maven build itself. -->
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											org.apache.maven.plugins
-										</groupId>
-										<artifactId>
-											maven-dependency-plugin
-										</artifactId>
-										<versionRange>
-											[2.1,)
-										</versionRange>
-										<goals>
-											<goal>
-												copy-dependencies
-											</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore></ignore>
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>exec-maven-plugin</artifactId>
-					<version>${maven-exec-plugin.version}</version>
-					<configuration>
-						<executable>runcompss</executable>
-						<workingDirectory>${basedir}/jar/</workingDirectory>
-						<skip>false</skip>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
 	</build>
 </project>
