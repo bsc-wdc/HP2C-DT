@@ -216,6 +216,8 @@ public class DatabaseHandler {
         for (String alarm : alarms) {
             for (String edge : edges) {
                 for (String device : devices) {
+                    if (alarm.isEmpty() || edge.isEmpty() || device.isEmpty()) continue;
+
                     ArrayList<String> triple = new ArrayList<>();
                     triple.add(alarm);
                     triple.add(edge);
