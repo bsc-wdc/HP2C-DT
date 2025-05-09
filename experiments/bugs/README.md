@@ -38,26 +38,26 @@ mvn clean package
 
 ```bash
 compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_simple_external/jar/matmul.jar \
---log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \ 
+--log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \
 --project=${REPO_PATH}/experiments/response_time/scripts/server_project.xml
 
-compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 --cei="matmul.arrays.MatmulServerItf" \ 
+compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 --cei="matmul.arrays.MatmulServerItf" \
 matmul.arrays.Matmul 4 64 #(Result: ~4s)
 ```
 
 **Test 1 CPU agent (external version):**
 ```bash
-compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_simple_external/jar/matmul.jar \ 
---log_dir=/tmp/Agent1 --rest_port=46301 --comm_port=46302 \ 
---project=${REPO_PATH}/experiments/bugs/scripts/single_cpu_project.xml
+compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_simple_external/jar/matmul.jar \
+--log_dir=/tmp/Agent1 --rest_port=46301 --comm_port=46302 \
+--project=${REPO_PATH}/experiments/response_time_agents/scripts/single_cpu_project.xml
 
-compss_agent_call_operation --master_node=127.0.0.1 --master_port=46301 --cei="matmul.arrays.MatmulEdgeItf" \ 
+compss_agent_call_operation --master_node=127.0.0.1 --master_port=46301 --cei="matmul.arrays.MatmulEdgeItf" \
 matmul.arrays.Matmul 4 64 #(Result: ~1s)
 ```
 
 **Test sequential execution(external version)**
 ```bash
-java -cp /path/to/repo/hp2cdt/experiments/bugs/matmul_simple_external/jar/matmul.jar matmul.arrays.Matmul 4 64 #(Result ~0.6s)
+java -cp ${REPO_PATH}/experiments/bugs/matmul_simple_external/jar/matmul.jar matmul.arrays.Matmul 4 64 #(Result ~0.6s)
 ```
 
 # Bug 2: Null Pointer / Concurrent Access
@@ -79,17 +79,17 @@ mvn clean package
 ```
 
 ```bash
-compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul/jar/matmul.jar \ 
---log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \ 
+compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul/jar/matmul.jar \
+--log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \
 --project=${REPO_PATH}/experiments/response_time/scripts/edge_project.xml
 
-compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul/jar/matmul.jar \ 
---log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 \ 
+compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul/jar/matmul.jar \
+--log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 \
 --project=${REPO_PATH}/experiments/response_time/scripts/server_project.xml
 
 compss_agent_add_resources --agent_node=127.0.0.1 --agent_port=46101 --cpu=4 127.0.0.2 Port=46202
 
-compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 --cei="matmul.arrays.MatmulServerItf" \ 
+compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 --cei="matmul.arrays.MatmulServerItf" \
 matmul.arrays.Matmul 8 64
 ```
 
@@ -182,20 +182,20 @@ mvn clean package
 Execute the following commands:
 ```bash
 # Deploy agent 1
-compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \ 
---log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \ 
+compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \
+--log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \
 --project=${REPO_PATH}/experiments/response_time/scripts/edge_project.xml
 
 # Deploy agent 2
-compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \ 
---log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 \ 
+compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \
+--log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 \
 --project=${REPO_PATH}/experiments/response_time/scripts/server_project.xml
 
 # Allow agent 1 to offload tasks to agent 2
 compss_agent_add_resources --agent_node=127.0.0.1 --agent_port=46101 --cpu=4 127.0.0.2 Port=46202
 
 # Call operation
-compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 \ 
+compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 \
 --cei="matmul.arrays.MatmulEdgeSimpleBarrierItf" matmul.arrays.MatmulSimpleBarrier 4 4
 ```
 
@@ -286,20 +286,20 @@ mvn clean package
 Then, we should:
 ```bash
 # Deploy agent 1
-compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \ 
---log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \ 
+compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \
+--log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \
 --project=${REPO_PATH}/experiments/response_time/scripts/edge_project.xml
 
 # Deploy agent 2
-compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \ 
---log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 \ 
+compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul_hp2c/jar/matmul.jar \
+--log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 \
 --project=${REPO_PATH}/experiments/response_time/scripts/server_project.xml
 
 # Allow agent 1 to offload tasks to agent 2
 compss_agent_add_resources --agent_node=127.0.0.1 --agent_port=46101 --cpu=4 127.0.0.2 Port=46202
 
 # Call operation
-compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 \ 
+compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 \
 --cei="matmul.arrays.MatmulServerSimpleBarrierItf" matmul.arrays.MatmulSimpleBarrier 4 4
 ```
 
@@ -453,7 +453,7 @@ ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the b
 
 ```bash
 # Update the json file with the new method name
-jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerSimple"' \ 
+jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerSimple"' \
 ~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
 ~/hp2cdt/deployments/deploy_edges.sh test_response_time --comm=bsc_subnet
 ```
@@ -518,7 +518,7 @@ ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the b
 
 ```bash
 # Update the json file with the new method name
-jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerSimpleBarrier"' \ 
+jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerSimpleBarrier"' \
 ~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
 ~/hp2cdt/deployments/deploy_edges.sh test_response_time --comm=bsc_subnet
 ```
@@ -583,7 +583,7 @@ ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the b
 
 ```bash
 # Update the json file with the new method name
-jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerNestedBarrier"' \ 
+jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulServerNestedBarrier"' \
 ~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
 ~/hp2cdt/deployments/deploy_edges.sh test_response_time --comm=bsc_subnet
 ```
