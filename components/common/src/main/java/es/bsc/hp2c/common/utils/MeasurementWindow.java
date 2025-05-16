@@ -96,6 +96,10 @@ public class MeasurementWindow<T> implements Serializable{
         return (double) (size - 1) / (totalNanos / 1_000_000_000.0);
     }
 
+    public int getStart(){
+        return this.start;
+    }
+
     public int getSize(){
         return this.size;
     }

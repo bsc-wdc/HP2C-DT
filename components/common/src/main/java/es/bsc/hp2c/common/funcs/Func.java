@@ -87,7 +87,7 @@ public abstract class Func implements Runnable {
     }
 
     // Transform function to server format (edgeLabel-[deviceLabel]
-    private static void transformFuncToServerFormat(JSONObject jFunc, String edgeLabel) {
+    static void transformFuncToServerFormat(JSONObject jFunc, String edgeLabel) {
         // Transform parameters section
         JSONObject params = jFunc.getJSONObject("parameters");
         String[] keys = new String[] { "sensors", "actuators" };
@@ -97,6 +97,9 @@ public abstract class Func implements Runnable {
                 JSONObject transformed = new JSONObject();
                 transformed.put(edgeLabel, originalArray);
                 params.put(key, transformed);
+            } else {
+                throw new IllegalArgumentException("Expected " + key + " to be a JSONArray, but found: "
+                        + params.get(key).getClass().getSimpleName());
             }
         }
 
