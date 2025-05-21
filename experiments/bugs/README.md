@@ -79,11 +79,11 @@ mvn clean package
 ```
 
 ```bash
-compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul/jar/matmul.jar \
+compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bugs/matmul_simple/jar/matmul.jar \
 --log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \
 --project=${REPO_PATH}/experiments/response_time/scripts/edge_project.xml
 
-compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul/jar/matmul.jar \
+compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul_simple/jar/matmul.jar \
 --log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 \
 --project=${REPO_PATH}/experiments/response_time/scripts/server_project.xml
 
@@ -245,6 +245,32 @@ curl -s -X PUT http://127.0.0.1:46101/COMPSs/addResources \
     </resourceConf>
   </externalResource>
 </newResource>'
+```
+
+#### Relevant logs
+
+In the second agent:
+
+```
+Initializing Worker 
+[ERRMGR]  -  WARNING: No task could be scheduled to any of the available resources.
+                      This could end up blocking COMPSs. Will check it again in 20 seconds.
+                      Possible causes: 
+                          -Network problems: non-reachable nodes, sshd service not started, etc.
+                          -There isn't any computing resource that fits the defined tasks constraints.
+                      If this happens 2 more times, the runtime will shutdown.
+[ERRMGR]  -  WARNING: No task could be scheduled to any of the available resources.
+                      This could end up blocking COMPSs. Will check it again in 20 seconds.
+                      Possible causes: 
+                          -Network problems: non-reachable nodes, sshd service not started, etc.
+                          -There isn't any computing resource that fits the defined tasks constraints.
+                      If this happens 1 more time, the runtime will shutdown.
+[ERRMGR]  -  ERROR:   Unschedulable tasks detected.
+                      COMPSs has found tasks with constraints that cannot be fulfilled.
+                      Shutting down COMPSs now...
+[ERRMGR]  -  ERROR:   Unschedulable tasks detected.
+                      COMPSs has found tasks with constraints that cannot be fulfilled.
+                      Shutting down COMPSs now...
 ```
 
 # Bugs with hp2c framework
