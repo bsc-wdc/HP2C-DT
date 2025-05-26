@@ -60,14 +60,9 @@ matmul.arrays.Matmul 4 64 #(Result: ~1s)
 java -cp ${REPO_PATH}/experiments/bugs/matmul_simple_external/jar/matmul.jar matmul.arrays.Matmul 4 64 #(Result ~0.6s)
 ```
 
-# Bug 2: Null Pointer / Concurrent Access
+# Bug 2: Duplicate class
 #### Summary
-When trying to execute the tutorial's matmul function with agents, it first returns a NullPointerException, and then a 
-ConcurrentModificationException. This happens particularly when:
-- The edge is offloading tasks to the agent running in the server
-- The matrix is quite large
-
-If the matmul is not being offloaded to the server or the matrix is smaller (e.g., matrix size 4, block size 64), no problem occurs.
+When trying to execute the tutorial's matmul function with agents, it returns a duplicate class definition error.
 
 #### Steps to Reproduce
 Compile the java code:
@@ -83,78 +78,43 @@ compss_agent_start --hostname=127.0.0.1 --classpath=${REPO_PATH}/experiments/bug
 --log_dir=/tmp/Agent1 --rest_port=46101 --comm_port=46102 \
 --project=${REPO_PATH}/experiments/response_time/scripts/edge_project.xml
 
-compss_agent_start --hostname=127.0.0.2 --classpath=${REPO_PATH}/experiments/bugs/matmul_simple/jar/matmul.jar \
---log_dir=/tmp/Agent2 --rest_port=46201 --comm_port=46202 \
---project=${REPO_PATH}/experiments/response_time/scripts/server_project.xml
-
-compss_agent_add_resources --agent_node=127.0.0.1 --agent_port=46101 --cpu=4 127.0.0.2 Port=46202
-
 compss_agent_call_operation --master_node=127.0.0.1 --master_port=46101 --cei="matmul.arrays.MatmulServerItf" \
-matmul.arrays.Matmul 8 64
+matmul.arrays.Matmul 8 10
 ```
 
 #### Current Behavior
-It executes some tasks and then throws a NullPointerException.
+It returns a "duplicate class definition" error.
 
 #### Expected Behavior
-The edge properly executes the call.
-
-#### Workaround
-The previous execution returns the correct matrix multiplication result when using a new COMPSs image, adding the 
-following code at `TaskResult.getLocations(AppMonitor.java:299)` where it calls `createRDLfromLD`:
-
-```java
-boolean done = false;
-while (!done){
-    try { 
-        createRDfromLD(.....);
-        done = true;
-    }catch (ConcurrentModificationException e) {
-    }
-}
-```
+The agents returns "App completed after x seconds".
 
 #### Relevant Logs
 ```bash
-root@02d82e139a7e:/tmp/server/jobs# cat job164_NEW.err 
-[EXECUTOR] executeTask - Error in task execution
-es.bsc.compss.types.execution.exceptions.JobExecutionException: Error executing the instrumented method!
-	at es.bsc.compss.invokers.JavaNestedInvoker.runMethod(JavaNestedInvoker.java:276)
-	at es.bsc.compss.invokers.JavaInvoker.invokeMethod(JavaInvoker.java:104)
-	at es.bsc.compss.invokers.Invoker.invoke(Invoker.java:336)
-	at es.bsc.compss.invokers.Invoker.runInvocation(Invoker.java:292)
-	at es.bsc.compss.executor.Executor.runInvocation(Executor.java:512)
-	at es.bsc.compss.executor.Executor.redirectStreamsAndRun(Executor.java:448)
-	at es.bsc.compss.executor.Executor.filesWrapperAndRun(Executor.java:387)
-	at es.bsc.compss.executor.Executor.sandBoxWrapperAndRun(Executor.java:358)
-	at es.bsc.compss.executor.Executor.resourcesWrapperAndRun(Executor.java:337)
-	at es.bsc.compss.executor.Executor.totalTimerAndTracingWrapperAndRun(Executor.java:311)
-	at es.bsc.compss.executor.Executor.execute(Executor.java:287)
-	at es.bsc.compss.executor.Executor.processInvocation(Executor.java:253)
+Exception in thread "CPUThreadPool executor thread # 3" java.lang.LinkageError: loader 'app' attempted duplicate class definition for matmul.arrays.MatmulImpl_compss22627. (matmul.arrays.MatmulImpl_compss22627 is in unnamed module of loader 'app')
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)
+	at java.base/java.lang.System$2.defineClass(System.java:2148)
+	at java.base/java.lang.invoke.MethodHandles$Lookup.defineClass(MethodHandles.java:962)
+	at javassist.util.proxy.DefineClassHelper.toClass(DefineClassHelper.java:295)
+	at javassist.ClassPool.toClass(ClassPool.java:1158)
+	at javassist.CtClass.toClass(CtClass.java:1325)
+	at es.bsc.compss.loader.total.ITAppModifier.modifyToMemory(ITAppModifier.java:122)
+	at es.bsc.compss.invokers.JavaNestedInvoker.findMethod(JavaNestedInvoker.java:108)
+	at es.bsc.compss.invokers.JavaInvoker.<init>(JavaInvoker.java:86)
+	at es.bsc.compss.invokers.JavaNestedInvoker.<init>(JavaNestedInvoker.java:69)
+	at es.bsc.compss.executor.Executor.selectNativeMethodInvoker(Executor.java:534)
+	at es.bsc.compss.executor.Executor.runInvocation(Executor.java:476)
+	at es.bsc.compss.executor.Executor.redirectStreamsAndRun(Executor.java:450)
+	at es.bsc.compss.executor.Executor.filesWrapperAndRun(Executor.java:389)
+	at es.bsc.compss.executor.Executor.sandBoxWrapperAndRun(Executor.java:360)
+	at es.bsc.compss.executor.Executor.resourcesWrapperAndRun(Executor.java:339)
+	at es.bsc.compss.executor.Executor.totalTimerAndTracingWrapperAndRun(Executor.java:313)
+	at es.bsc.compss.executor.Executor.execute(Executor.java:289)
+	at es.bsc.compss.executor.Executor.processInvocation(Executor.java:255)
 	at es.bsc.compss.types.execution.InvocationExecutionRequest.run(InvocationExecutionRequest.java:60)
-	at es.bsc.compss.executor.Executor.processRequests(Executor.java:223)
-	at es.bsc.compss.executor.Executor.run(Executor.java:175)
+	at es.bsc.compss.executor.Executor.processRequests(Executor.java:225)
+	at es.bsc.compss.executor.Executor.run(Executor.java:177)
 	at es.bsc.compss.execution.ExecutionPlatform$4.run(ExecutionPlatform.java:269)
-	at java.lang.Thread.run(Thread.java:750)
-Caused by: es.bsc.compss.types.execution.exceptions.JobExecutionException: ERROR: Exception executing task (user code)
-	at es.bsc.compss.invokers.JavaInvoker.runMethod(JavaInvoker.java:168)
-	at es.bsc.compss.invokers.JavaNestedInvoker.runMethod(JavaNestedInvoker.java:274)
-	... 16 more
-Caused by: java.lang.reflect.InvocationTargetException
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at es.bsc.compss.invokers.JavaInvoker.runMethod(JavaInvoker.java:152)
-	... 17 more
-Caused by: java.lang.NullPointerException
-	at es.bsc.compss.loader.total.ArrayAccessWatcher.arrayReadDouble(ArrayAccessWatcher.java:106)
-	at sun.reflect.GeneratedMethodAccessor21.invoke(Unknown Source)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at es.bsc.compss.loader.LoaderUtils.runMethodOnObject(LoaderUtils.java:539)
-	at matmul.arrays.MatmulImpl.multiplyAccumulative(MatmulImpl.java:26)
-	... 22 more
+	at java.base/java.lang.Thread.run(Thread.java:829)
 ```
 
 # Bug 3: Wrong task offloading
