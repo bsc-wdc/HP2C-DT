@@ -1,0 +1,17 @@
+{
+  "label": "CalcPower",
+  "lang": "Java",
+  "type": "workflow",
+  "method-name": "es.bsc.hp2c.edge.funcs.CalcPower",
+  "parameters": {
+    "sensors": ["Voltmeter Gen1", "Ammeter Gen1"],
+    "actuators": [],
+    "other": {}
+  },
+  "trigger": {
+    "type": "onFrequency",
+    "parameters": {
+      "frequency": 2000
+    }
+  }
+}

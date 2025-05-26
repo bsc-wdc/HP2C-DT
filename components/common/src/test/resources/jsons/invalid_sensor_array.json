@@ -1,0 +1,14 @@
+{
+  "label": "EmptySensors",
+  "lang": "Java",
+  "parameters": {
+    "sensors": "Not an array",
+    "actuators": ["Actuator1"]
+  },
+  "trigger": {
+    "type": "onRead",
+    "parameters": {
+      "trigger-sensor": ["Sensor1"]
+    }
+  }
+}
