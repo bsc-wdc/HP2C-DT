@@ -18,6 +18,7 @@ usage() {
 
 # Initialization
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source "${SCRIPT_DIR}/utils.sh"
 DEPLOYMENT_PREFIX="hp2c"
 DEPLOYMENT_NAME="testbed"
 COMM_SETUP=""
@@ -140,32 +141,15 @@ custom_ip_address="172.29.128.1"
 # Generate the project XML if compss-project exists in the JSON
 project_path=""
 remote_project_path=""  # Fixed remote path
-resources_template_path="${SCRIPT_DIR}/templates/resources_template.xml"
-project_template_path="${SCRIPT_DIR}/templates/project_template.xml"
+resources_template_path="${SCRIPT_DIR}/templates/xml/resources_template.xml"
+project_template_path="${SCRIPT_DIR}/templates/xml/project_template.xml"
 
 compss_project=$(jq -r '.compss.project' "$path_to_setup")
 if [[ "$compss_project" != "null" ]]; then
     project_path="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/project_server.xml"
     remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
 
-    cpu=$(jq -r '.compss.project.cpu' "$path_to_setup")
-    arch=$(jq -r '.compss.project.arch' "$path_to_setup")
-    memory=$(jq -r '.compss.project.memory' "$path_to_setup")
-    storage=$(jq -r '.compss.project.storage' "$path_to_setup")
-
-    # Build optional lines only if the values exist
-    [[ "$cpu" != "null" ]] && CPU_LINE="<ComputingUnits>$cpu</ComputingUnits>" || CPU_LINE="<ComputingUnits>1</ComputingUnits>"
-    [[ "$arch" != "null" ]] && ARCH_LINE="<Architecture>$arch</Architecture>" || ARCH_LINE=""
-    [[ "$memory" != "null" ]] && MEMORY_LINE="<Memory><Size>$memory</Size></Memory>" || MEMORY_LINE=""
-    [[ "$storage" != "null" ]] && STORAGE_LINE="<Storage><Size>$storage</Size></Storage>" || STORAGE_LINE=""
-
-    # Replace placeholders in the template
-    sed -e "s|{{CPU_LINE}}|$CPU_LINE|" \
-        -e "s|{{ARCH_LINE}}|$ARCH_LINE|" \
-        -e "s|{{MEMORY_LINE}}|$MEMORY_LINE|" \
-        -e "s|{{STORAGE_LINE}}|$STORAGE_LINE|" \
-        "$project_template_path" > "$project_path"
-
+    generate_project_xml "$path_to_setup" "$project_path" "$project_template_path"
     echo "Generated project XML for server at $project_path"
 fi
 

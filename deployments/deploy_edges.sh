@@ -20,6 +20,7 @@ usage() {
 
 # Initialization
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source "${SCRIPT_DIR}/utils.sh"
 DEPLOYMENT_PREFIX="hp2c"
 DEPLOYMENT_NAME="testbed"
 COMM_SETUP=""
@@ -152,8 +153,8 @@ custom_ip_address="172.31.144.1"
 declare -A project_paths
 declare -A remote_project_paths
 remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
-resources_template_path="${SCRIPT_DIR}/templates/resources_template.xml"
-project_template_path="${SCRIPT_DIR}/templates/project_template.xml"
+resources_template_path="${SCRIPT_DIR}/templates/xml/resources_template.xml"
+project_template_path="${SCRIPT_DIR}/templates/xml/project_template.xml"
 
 echo "Using project template:                     $project_template_path"
 if [ ! -f "${project_template_path}" ]; then
@@ -167,28 +168,12 @@ for label in "${!labels_paths[@]}"; do
 
     if [[ "$compss_project" != "null" ]]; then
         project_path="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/project_${label}.xml"
-        remote_project_paths["${label}"]="${remote_project_path}"
+        remote_project_paths["${label}"]="$remote_project_path"
 
-        cpu=$(jq -r '.compss.project.cpu' "${labels_paths[$label]}")
-        arch=$(jq -r '.compss.project.arch' "${labels_paths[$label]}")
-        memory=$(jq -r '.compss.project.memory' "${labels_paths[$label]}")
-        storage=$(jq -r '.compss.project.storage' "${labels_paths[$label]}")
-
-        # Build optional lines only if the values exist
-        [[ "$cpu" != "null" ]] && CPU_LINE="<ComputingUnits>$cpu</ComputingUnits>" || CPU_LINE=""
-        [[ "$arch" != "null" ]] && ARCH_LINE="<Architecture>$arch</Architecture>" || ARCH_LINE=""
-        [[ "$memory" != "null" ]] && MEMORY_LINE="<Memory><Size>$memory</Size></Memory>" || MEMORY_LINE=""
-        [[ "$storage" != "null" ]] && STORAGE_LINE="<Storage><Size>$storage</Size></Storage>" || STORAGE_LINE=""
-
-        # Replace placeholders in the template
-        sed -e "s|{{CPU_LINE}}|$CPU_LINE|" \
-            -e "s|{{ARCH_LINE}}|$ARCH_LINE|" \
-            -e "s|{{MEMORY_LINE}}|$MEMORY_LINE|" \
-            -e "s|{{STORAGE_LINE}}|$STORAGE_LINE|" \
-            "$project_template_path" > "$project_path"
+        generate_project_xml "${labels_paths[$label]}" "$project_path" "$project_template_path"
 
         echo "Generated project XML for $label at $project_path"
-        project_paths["${label}"]="${project_path}"
+        project_paths["${label}"]="$project_path"
     else
         project_paths["${label}"]=""
     fi
