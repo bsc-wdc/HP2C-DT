@@ -1,5 +1,6 @@
 package es.bsc.hp2c.edge.funcs;
 
+import es.bsc.hp2c.HP2CEdge;
 import es.bsc.hp2c.common.generic.Ammeter;
 import es.bsc.hp2c.common.generic.Voltmeter;
 import es.bsc.hp2c.common.types.Actuator;
@@ -10,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import es.bsc.compss.types.annotations.Parameter;
 import es.bsc.compss.types.annotations.Constraints;
@@ -23,6 +26,7 @@ import es.bsc.compss.types.annotations.task.Method;
 public class CalcPower extends Func {
     private Voltmeter<?> voltmeter;
     private Ammeter<?> ammeter;
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
     /**
      * Calcpower method constructor.
@@ -77,20 +81,20 @@ public class CalcPower extends Func {
         Float[] voltage = this.voltmeter.getCurrentValues();
         Float[] current = this.ammeter.getCurrentValues();
         if (!voltmeterIsAvailable || !ammeterIsAvailable){
-            System.err.println("[CalcPower] Warning in function CalcPower: ");
-            if (!voltmeterIsAvailable) System.err.println("Voltmeter is not available");
-            else if (voltage == null) System.err.println("Voltmeter has no value");
-            if (!ammeterIsAvailable) System.err.println("Ammeter is not available");
-            else if (current == null) System.err.println("Ammeter has no value");
+            logger.error("[CalcPower] Warning in function CalcPower: ");
+            if (!voltmeterIsAvailable) logger.error("Voltmeter is not available");
+            else if (voltage == null) logger.error("Voltmeter has no value");
+            if (!ammeterIsAvailable) logger.error("Ammeter is not available");
+            else if (current == null) logger.error("Ammeter has no value");
         }
         if (voltage != null && current != null) {
-            System.out.println("[CalcPower] Calculating power: ");
-            System.out.println("[CalcPower]     Power is: " + voltage[0] * current[0] + " W");
+            logger.info("[CalcPower] Calculating power: ");
+            logger.info("[CalcPower]     Power is: " + voltage[0] * current[0] + " W");
         }
     }
 
     public static int increment(int input) {
-        System.out.println("INCREMENTED INPUT IS NOW " + input);
+        logger.info("INCREMENTED INPUT IS NOW " + input);
         return input + 1;
     }
 

@@ -25,6 +25,8 @@ import es.bsc.hp2c.server.edge.VirtualEdge;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -41,6 +43,7 @@ import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
  * HTTP Server that listens to REST POST requests.
  */
 public class RestListener {
+    private static final Logger logger = LogManager.getLogger("appLogger");
     private static final int REST_PORT = 8080;
     private static Map<String, VirtualEdge> edgeMap;
 
@@ -59,7 +62,7 @@ public class RestListener {
         server.createContext("/getAlarms", new GetAlarmsHandler());
         // Start the server
         server.start();
-        System.out.println("HTTP Server started on port " + REST_PORT);
+        logger.info("HTTP Server started on port " + REST_PORT);
     }
 
 
@@ -84,7 +87,7 @@ public class RestListener {
                 response = e.getMessage();
                 responseCode = 400;
             }
-            System.out.println("[RestListener] Received request to update edges modify attribute: " + response);
+            logger.info("[RestListener] Received request to update edges modify attribute: " + response);
             exchange.sendResponseHeaders(responseCode, response.length());
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
@@ -112,12 +115,12 @@ public class RestListener {
                     jGeoInfo.put(edge.getLabel(), edge.getEdgeGeoInfo());
                 }
             } catch (JSONException e) {
-                System.err.println("Exception handling JSON object: " + e.getMessage());
+                logger.error("Exception handling JSON object: " + e.getMessage());
                 exchange.sendResponseHeaders(500, 0); // Internal Server Error
                 return;
             }
 
-            System.out.println("[RestListener] Sending requested GeoInfo: " + jGeoInfo);
+            logger.info("[RestListener] Sending requested GeoInfo: " + jGeoInfo);
             exchange.sendResponseHeaders(200, response.length() + jGeoInfo.toString().getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
@@ -143,12 +146,12 @@ public class RestListener {
                 //response = "Received request to get edges info. ";
                 jEdgesInfo = RestUtils.getInfoFromEdgeMap();
             } catch (JSONException e) {
-                System.err.println("Exception handling JSON object: " + e.getMessage());
+                logger.error("Exception handling JSON object: " + e.getMessage());
                 exchange.sendResponseHeaders(500, 0); // Internal Server Error
                 return;
             }
 
-            System.out.println("[RestListener] Sending requested EdgesInfo: " + jEdgesInfo);
+            logger.info("[RestListener] Sending requested EdgesInfo: " + jEdgesInfo);
             exchange.sendResponseHeaders(200, response.length() + jEdgesInfo.toString().getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
@@ -164,7 +167,7 @@ public class RestListener {
             Set<ArrayList<String>> alarmsTriples = db.getUniqueAlarmTriples();
             String response = "";
 
-            System.out.println("[RestListener] Sending requested alarms: " + alarmsTriples);
+            logger.info("[RestListener] Sending requested alarms: " + alarmsTriples);
             exchange.sendResponseHeaders(200, response.length() + alarmsTriples.toString().getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());

@@ -29,6 +29,8 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static es.bsc.hp2c.HP2CEdgeContext.*;
 import static es.bsc.hp2c.common.types.Device.formatLabel;
@@ -44,6 +46,7 @@ public class HP2CEdge {
     private static final long HEARTBEAT_RATE = 10000;
     private static Connection connection;
     private static Map<String, Device> devices;
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
     /**
      * Obtain map of devices and load functions.
@@ -51,6 +54,7 @@ public class HP2CEdge {
      * @param args Setup file.
      */
     public static void main(String[] args) throws IOException {
+
         // Get input data
         String setupFile;
         if (args.length == 1) {
@@ -134,7 +138,7 @@ public class HP2CEdge {
             Heartbeat heartbeat = new Heartbeat(jEdgeSetup, edgeLabel, devices);
             timer.scheduleAtFixedRate(heartbeat, 0, HEARTBEAT_RATE);
         } else {
-            System.out.println("Heartbeat could not start. AMQP not available");
+            logger.warn("Heartbeat could not start. AMQP not available");
         }
     }
 
@@ -148,10 +152,10 @@ public class HP2CEdge {
             String EXCHANGE_NAME = getExchangeName();
             channel.exchangeDeclare(EXCHANGE_NAME, "topic");
         } catch (IOException e) {
-            System.err.println("Error setting up RabbitMQ channel and exchange: " + e.getMessage());
+            logger.error("Error setting up RabbitMQ channel and exchange: " + e.getMessage());
             throw new RuntimeException(e);
         }
-        System.out.println("[setUpMessaging] AMQP connection started.");
+        logger.info("[setUpMessaging] AMQP connection started.");
         return true;
     }
 
@@ -169,7 +173,7 @@ public class HP2CEdge {
             this.edgeLabel = edgeLabel;
             this.devices = devices;
             this.routingKey = "edge" + "." + edgeLabel + "." + "heartbeat";
-            System.out.println("[Heartbeat] Instantiating heartbeat scheduler for edge " + edgeLabel);
+            logger.info("[Heartbeat] Instantiating heartbeat scheduler for edge " + edgeLabel);
         }
         @Override
         public void run() {
@@ -203,11 +207,11 @@ public class HP2CEdge {
                     String EXCHANGE_NAME = getExchangeName();
                     channel.basicPublish(EXCHANGE_NAME, routingKey, null, message);
                 } catch (IOException e) {
-                    System.err.println("Exception in " + edgeLabel + " edge heartbeat: " + e.getMessage());
+                    logger.error("Exception in " + edgeLabel + " edge heartbeat: " + e.getMessage());
                 }
-                System.out.println("[Heartbeat] Sent JSON message to routing key " + routingKey);
+                logger.info("[Heartbeat] Sent JSON message to routing key " + routingKey);
             } catch (Exception e) {
-                System.err.println("[Heartbeat] Exception in Heartbeat task: " + e.getMessage());
+                logger.error("[Heartbeat] Exception in Heartbeat task: " + e.getMessage());
             }
         }
     }

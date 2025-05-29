@@ -16,9 +16,12 @@
 package es.bsc.hp2c.server.modules;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.tools.json.JSONUtil;
 import es.bsc.hp2c.common.utils.EdgeMap;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -36,6 +39,7 @@ import static es.bsc.hp2c.common.funcs.Func.loadFunctions;
  * - a TimerTask that periodically checks the state of the edge nodes
  */
 public class EdgeHeartbeat {
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
     private static final String QUEUE_NAME = "heartbeats";
     private static final String routingKey = "edge.*.heartbeat";
@@ -45,6 +49,7 @@ public class EdgeHeartbeat {
     private final Class<?> runtimeHost;
 
     public EdgeHeartbeat(AmqpManager amqp, Map<String, VirtualEdge> edgeMap, Class<?> runtimeHost) throws IOException {
+        System.out.println("edge heartbeat");
         this.channel = amqp.getChannel();
         channel.exchangeDeclare(amqp.getExchangeName(), "topic");
         this.channel.queueDeclare(QUEUE_NAME, true, false, false, null);
@@ -55,6 +60,7 @@ public class EdgeHeartbeat {
 
     /** Start the AMQP listener and checkInactiveEdges threads */
     public void start() throws IOException {
+        System.out.println("STart listenerrrrrrrrr");
         // Start heartbeat listener
         this.startListener();
         // Start periodic checker of inactive edges (TimerTask with half of the heartbeat timeout interval)
@@ -65,14 +71,20 @@ public class EdgeHeartbeat {
 
     /** Deploy the AMQP consumer thread */
     private void startListener() throws IOException {
+        System.out.println("111111111111111111111111");
         Consumer consumer = new DefaultConsumer(channel) {
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+                System.out.println("222222222222222222222222");
                 try {
+                    System.out.println("PRocessing message: ");
+                    JSONObject jEdgeSetup = new JSONObject(new String(body, StandardCharsets.UTF_8));
+                    System.out.println("message: ");
+                    System.out.println(jEdgeSetup);
+                    System.out.println("-----------------------------------------");
                     processHeartbeatMessage(envelope.getRoutingKey(), body);
                 } catch (Exception e) {
-                    System.err.println("Error processing heartbeat message: " + e.getMessage() + ". ");
-                    e.printStackTrace();
+                    logger.error("Error processing heartbeat message: " + e.getMessage() + ". ");
                 }
             }
         };
@@ -91,9 +103,11 @@ public class EdgeHeartbeat {
         String[] routingKeyParts = routingKey.split("\\.");
         String edgeLabel = routingKeyParts[1];
         JSONObject jEdgeSetup = new JSONObject(new String(body, StandardCharsets.UTF_8));
-
+        System.out.println("---------------------------------");
+        System.out.println(jEdgeSetup);
+        System.out.println("---------------------------------");
         // Process the heartbeat message
-        System.out.println("[processHeartbeatMessage] Received heartbeat for edge '" + edgeLabel + "'");
+        logger.debug("[processHeartbeatMessage] Received heartbeat for edge '" + edgeLabel + "'");
         if (edgeMap.containsKey(edgeLabel)) {
             // Set last heartbeat
             long heartbeatTime = jEdgeSetup.getJSONObject("global-properties").getLong("heartbeat");
@@ -110,14 +124,14 @@ public class EdgeHeartbeat {
         } else {
             // First time a heartbeat is received, load devices and store in the VirtualEdge object
             VirtualEdge edge = new VirtualEdge(jEdgeSetup);
-            System.out.println("[processHeartbeatMessage] Loaded edge '" + edgeLabel + "': " + edge);
+            logger.info("[processHeartbeatMessage] Loaded edge '" + edgeLabel + "': " + edge);
             edgeMap.put(edgeLabel, edge);
             EdgeMap edgeDevices = getDevicesMap();
             String pathToSetup = getPathToSetup();
             try {
                 loadFunctions(pathToSetup, edgeDevices, runtimeHost);
             } catch (IOException e) {
-                System.out.println("Error loading functions: " + e);
+                logger.error("Error loading functions: " + e);
             }
         }
     }
@@ -131,14 +145,14 @@ public class EdgeHeartbeat {
             for (VirtualEdge edge : edgeMap.values()) {
                 if (currentTime - edge.getLastHeartbeat() > HEARTBEAT_TIMEOUT) {
                     // Edge not available
-                    System.out.println("[CheckInactiveEdges] Edge '" + edge.getLabel() + "' is inactive.");
+                    logger.debug("[CheckInactiveEdges] Edge '" + edge.getLabel() + "' is inactive.");
                     if (edge.isAvailable()) {
                         edge.setModified(true);
                         edge.setAvailable(false);
                     }
                 } else {
                     // Edge available
-                    System.out.println("[CheckInactiveEdges] Edge '" + edge.getLabel() + "' is active.");
+                    logger.debug("[CheckInactiveEdges] Edge '" + edge.getLabel() + "' is active.");
                     if (!edge.isAvailable()) {
                         edge.setModified(true);
                         edge.setAvailable(true);

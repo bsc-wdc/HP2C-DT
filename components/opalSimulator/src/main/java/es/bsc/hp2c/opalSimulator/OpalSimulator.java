@@ -9,6 +9,9 @@ import java.util.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.opalSimulator.utils.CSVTable;
 import es.bsc.hp2c.opalSimulator.utils.DeviceWrapper;
@@ -18,7 +21,6 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import static es.bsc.hp2c.common.types.Device.formatLabel;
-import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 import static es.bsc.hp2c.common.utils.FileUtils.loadDevices;
 
@@ -32,6 +34,8 @@ public class OpalSimulator {
     private static long timeStep;
     private static ArrayList<File> logFiles = new ArrayList<>();
     private static String simulationName = "";
+    private static final Logger logger = LogManager.getLogger("appLogger");
+
 
 
     /*
@@ -67,7 +71,7 @@ public class OpalSimulator {
 
         if(args.length > 1){
             timeStep = Long.parseLong(args[1]);
-            System.out.println("TimeStep: " + timeStep);
+            logger.info("TimeStep: " + timeStep);
         } else {
             String timeStepEnv = System.getenv("TIME_STEP");
             if (timeStepEnv != null) timeStep = Long.parseLong(timeStepEnv);
@@ -77,7 +81,7 @@ public class OpalSimulator {
         if (args.length > 2){
             simulationName = args[2];
             runSimulation = true;
-            System.out.println("Using simulation name: " + simulationName);
+            logger.info("Using simulation name: " + simulationName);
         } else {
             String simulationNameEnv = System.getenv("SIMULATION_NAME");
             if ((simulationNameEnv) != null && !simulationNameEnv.equals("")){
@@ -98,11 +102,11 @@ public class OpalSimulator {
             if (simulationFile.exists()) csvTable = new CSVTable(simulationPath);
             else throw new FileNotFoundException("Simulation csv not found");
         }
-        System.out.println("Using deployment file: " + deploymentFile);
-        System.out.println("Using timeStep: " + timeStep);
-        System.out.println("Runsimulation: " + runSimulation);
+        logger.info("Using deployment file: " + deploymentFile);
+        logger.info("Using timeStep: " + timeStep);
+        logger.info("Runsimulation: " + runSimulation);
         if (runSimulation){
-            System.out.println("Using simulation name: " + simulationName);
+            logger.info("Using simulation name: " + simulationName);
         }
 
         for (String edgeFile : Objects.requireNonNull(setupDirectory.list())){
@@ -134,7 +138,7 @@ public class OpalSimulator {
     private static void startUDPSensors() {
         for (Edge edge : edges){
             new Thread(() -> {
-                System.out.println("Starting UDP communication in port " + edge.getUdpSensorsPort() + " ip " + SERVER_ADDRESS);
+                logger.info("Starting UDP communication in port " + edge.getUdpSensorsPort() + " ip " + SERVER_ADDRESS);
                 startUDPClient(edge);
             }).start();
         }
@@ -178,7 +182,7 @@ public class OpalSimulator {
                 byte[] buffer = byteBuffer.array();
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, edge.getUdpSensorsPort());
                 udpSocket.send(packet);
-                System.out.println("Sent UDP packet.");
+                logger.debug("Sent UDP packet.");
 
                 Thread.sleep(timeStep);
                 t += 1;
@@ -218,7 +222,7 @@ public class OpalSimulator {
     private static void startTCPSensors() {
         for (Edge edge : edges){
             new Thread(() -> {
-                System.out.println("Starting TCP communication in port " + edge.getTcpSensorsPort() + " ip " + SERVER_ADDRESS);
+                logger.info("Starting TCP communication in port " + edge.getTcpSensorsPort() + " ip " + SERVER_ADDRESS);
                 startTCPClient(edge);
             }).start();
         }
@@ -287,17 +291,17 @@ public class OpalSimulator {
                     }
 
                     byteBuffer.putInt(tcpIndexes);
-                    System.out.println("Length of the message: " + tcpIndexes);
+                    logger.debug("Length of the message: " + tcpIndexes);
                     for (float value : values) {
                         byteBuffer.putFloat(value);
-                        System.out.println("Prepared TCP value: " + value);
+                        logger.debug("Prepared TCP value: " + value);
                     }
                     byteBuffer.putChar('\n');
 
                     outputStream = new DataOutputStream(tcpSocket.getOutputStream());
                     byte[] buffer = byteBuffer.array();
                     outputStream.write(buffer);
-                    System.out.println("Sent TCP packet.\n");
+                    logger.debug("Sent TCP packet.\n");
 
                     Thread.sleep(timeStep);
                     t += 1;
@@ -334,21 +338,21 @@ public class OpalSimulator {
                         server = new ServerSocket();
                         server.setReuseAddress(true);
                         server.bind(new InetSocketAddress("0.0.0.0", port));
-                        System.out.println("Server running in port " + port + ". Waiting for client requests...");
+                        logger.info("Server running in port " + port + ". Waiting for client requests...");
                         while (true) {
                             Socket clientSocket = server.accept();
                             runClient += 1;
-                            System.out.println("Accepted connection from: " + clientSocket.getInetAddress().getHostAddress());
+                            logger.info("Accepted connection from: " + clientSocket.getInetAddress().getHostAddress());
                             handleActuateClient(clientSocket, edge);
                         }
                     } catch (IOException e) {
-                        System.err.println("Error in server thread: " + e.getMessage());
+                        logger.error("Error in server thread: " + e.getMessage());
                         try {
                             if (server != null && !server.isClosed()) {
                                 server.close();
                             }
                         } catch (IOException e1) {
-                            System.err.println("Error closing server socket: " + e1.getMessage());
+                            logger.error("Error closing server socket: " + e1.getMessage());
                         }
                         try {
                             Thread.sleep(2000);
@@ -359,9 +363,9 @@ public class OpalSimulator {
                 }
             }).start();
         }
-        System.out.println("");
-        System.out.println("Waiting for " + edges.size() + " edges to be connected...");
-        System.out.println("");
+        logger.info("");
+        logger.info("Waiting for " + edges.size() + " edges to be connected...");
+        logger.info("");
 
         while (runClient < edges.size()) {
             try {
@@ -426,8 +430,8 @@ public class OpalSimulator {
                 break;
             }
             if (newValue) {
-                System.out.println("    Message is: " + message + " for edge " + edge.getLabel());
-                System.out.println("Message Received from " + clientSocket.getInetAddress().getHostAddress());
+                logger.debug("    Message is: " + message + " for edge " + edge.getLabel());
+                logger.debug("Message Received from " + clientSocket.getInetAddress().getHostAddress());
 
                 if (runSimulation) {
                     writeLog(edge, message);
@@ -484,7 +488,7 @@ public class OpalSimulator {
             File logFile = new File("logs/" + fileName);
             try {
                 if (logFile.createNewFile()) {
-                    System.out.println("LogFile: " + logFile.getName());
+                    logger.info("LogFile: " + logFile.getName());
 
                     StringBuilder line = new StringBuilder();
                     line.append("Time").append(",");
@@ -506,11 +510,10 @@ public class OpalSimulator {
                     }
                     logFiles.add(logFile);
                 } else {
-                    System.out.println("LogFile already exists.");
+                    logger.warn("LogFile already exists.");
                 }
             } catch (IOException e) {
-                System.out.println("An error occurred while creating the logFile.");
-                e.printStackTrace();
+                logger.error("An error occurred while creating the logFile.");
             }
         }
 
@@ -542,7 +545,7 @@ public class OpalSimulator {
                 Device device = devices.get(label);
                 deviceWrapper.setDevice(device);
             } else {
-                System.out.println("Device not found with label: " + label);
+                logger.warn("Device not found with label: " + label);
             }
         }
 

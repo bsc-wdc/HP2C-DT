@@ -42,13 +42,19 @@ FROM compss/python_agents:${COMPSS_VERSION}
 COPY --from=builder /app/target/edge*.jar /app/edge.jar
 
 # Set classpath
-ENV CLASSPATH="${CLASSPATH}:/app/edge.jar"
+ENV CLASSPATH="${CLASSPATH}:/app/edge.jar:"
 
 # Copy scripts
 COPY ./edge/scripts /scripts
 
 # Copy Python requirements
 COPY ./udsServer/ /app/udsServer
+
+# Copy the log4j cfg file
+COPY ./common/src/main/resources/log4j2.xml /app/log4j2.xml
+
+# Set classpath
+ENV CLASSPATH="${CLASSPATH}:/app/log4j2.xml"
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r /app/udsServer/requirements.txt

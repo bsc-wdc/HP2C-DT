@@ -36,6 +36,8 @@ trap 'on_exit' EXIT
 
 tmpfile=$(mktemp ${PWD}/agents-XXXXXX.yml)
 
+cp ../../components/common/src/main/resources/log4j2.xml ./log4j2.xml
+
 echo "
 services:
   agents_manager:
@@ -64,3 +66,5 @@ services:
     image: compss/python_agents:${COMPSS_VERSION}
 " > ${tmpfile}
 docker compose -f "${tmpfile}" build
+
+rm ./log4j2.xml

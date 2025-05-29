@@ -62,6 +62,9 @@ COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/resources/resources_
 COPY --from=framework /opt/COMPSs//Runtime/configuration/agents/all.json /opt/COMPSs//Runtime/configuration/agents/all.json
 COPY --from=framework /opt/COMPSs/Runtime/configuration/log/ /opt/COMPSs/Runtime/configuration/log/
 
+# Overwrite local log4j cfg over COMPSs cfg
+COPY ./log4j2.xml /opt/COMPSs/Runtime/configuration/log/COMPSsMaster-log4j.debug
+
 ENV PATH="${PATH}:/opt/COMPSs/Runtime/scripts/user/" AGENT_NAME=localhost REST_AGENT_PORT=46101 COMM_AGENT_PORT=46102 DEBUG=debug
 
 CMD ["sh", "-c", "/opt/COMPSs/Runtime/scripts/user/compss_agent_start --hostname=${AGENT_NAME} --rest_port=${REST_AGENT_PORT} --comm_port=${COMM_AGENT_PORT}"]

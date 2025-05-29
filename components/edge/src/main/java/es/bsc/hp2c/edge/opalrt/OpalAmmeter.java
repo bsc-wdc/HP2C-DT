@@ -15,11 +15,14 @@
  */
 package es.bsc.hp2c.edge.opalrt;
 
+import es.bsc.hp2c.HP2CEdge;
 import es.bsc.hp2c.common.generic.Ammeter;
 import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.time.Instant;
 
@@ -29,6 +32,7 @@ import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
  * Ammeter simulated on an Opal-RT.
  */
 public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]> {
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
     private int[] indexes;
 
@@ -68,7 +72,7 @@ public class OpalAmmeter extends Ammeter<Float[]> implements OpalSensor<Float[]>
     public void sensed(Float[] values, Instant timestamp) {
         super.setValues(sensedValues(values), timestamp);
         for (Float value : values) {
-            System.out.println("[Sensed] Device " + getLabel() + " sensed " + value + " A");
+            logger.debug("[Sensed] Device " + getLabel() + " sensed " + value + " A");
         }
     }
 

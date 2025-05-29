@@ -18,6 +18,8 @@ package es.bsc.hp2c.edge.local;
 
 import es.bsc.hp2c.common.generic.MsgAlert;
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
@@ -25,6 +27,7 @@ import java.io.IOException;
  *
  */
 public class Console extends MsgAlert {
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
     public Console(String label, float[] position, JSONObject properties) {
         super(label, position);
@@ -32,7 +35,7 @@ public class Console extends MsgAlert {
 
     @Override
     public void actuate(String message) {
-        System.out.println(message);
+        logger.error(message);
     }
 
     @Override

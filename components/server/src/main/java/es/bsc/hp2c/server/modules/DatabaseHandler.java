@@ -23,6 +23,8 @@ import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +36,7 @@ import static es.bsc.hp2c.HP2CServerContext.isVerbose;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 public class DatabaseHandler {
+    private static final Logger logger = LogManager.getLogger("appLogger");
     private final InfluxDB influxDB;
 
     /**
@@ -49,12 +52,12 @@ public class DatabaseHandler {
         int port = (int) connectionMap.get("port");
         // Create object to handle the communication with InfluxDB.
         String databaseURL = "http://" + ip + ":" + port;
-        System.out.println("Connecting to InfluxDB at host " + databaseURL + "...");
+        logger.info("Connecting to InfluxDB at host " + databaseURL + "...");
         String[] auth = getAuth();
         String username = auth[0];
         String password = auth[1];
         influxDB = InfluxDBFactory.connect(databaseURL, username, password);
-        System.out.println("InfluxDB Connection successful");
+        logger.info("InfluxDB Connection successful");
     }
 
     public void start() {
@@ -100,7 +103,7 @@ public class DatabaseHandler {
         for (int i = 0; i < values.length; i++) {
             String tagName = deviceName + "Sensor" + i;
             if (isVerbose()) {
-                System.out.println("[DatabaseHandler] Writing DB with '" + edgeLabel + "." +
+                logger.debug("[DatabaseHandler] Writing DB with '" + edgeLabel + "." +
                         deviceName + "':'" + values[i] + "'");
             }
             influxDB.write(Point.measurement(edgeLabel)
@@ -143,7 +146,7 @@ public class DatabaseHandler {
                 .addField("info", safeInfo);
 
         if (isVerbose()) {
-            System.out.println("[DatabaseHandler] Writing alarm DB with alarm label: " + alarmName +
+            logger.debug("[DatabaseHandler] Writing alarm DB with alarm label: " + alarmName +
                     ", edge label: " + safeEdgeLabel + ", device label: " + safeDeviceName + ", status: " + alarmStatus);
         }
 
@@ -187,7 +190,7 @@ public class DatabaseHandler {
         QueryResult queryResult = influxDB.query(new Query(tagQuery, databaseName));
 
         if (queryResult.hasError() || queryResult.getResults() == null) {
-            System.err.println("Error retrieving tag values: " + queryResult.getError());
+            logger.error("Error retrieving tag values: " + queryResult.getError());
             return uniqueTriples;
         }
 

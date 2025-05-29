@@ -32,8 +32,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.Timer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import static es.bsc.hp2c.HP2CServerContext.isInMap;
 
 public class AmqpManager {
     private final DatabaseHandler db;
@@ -41,6 +42,7 @@ public class AmqpManager {
     private final Map<String, VirtualEdge> edgeMap;
     private static final String EXCHANGE_NAME = "measurements";
     private static MetricsHandler metrics = null;
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
     /**
      * Initialize AMQP Channel.
@@ -66,7 +68,7 @@ public class AmqpManager {
         // Try connecting to a RabbitMQ server until success
         Connection connection = CommUtils.AmqpConnectAndRetry(setupIp, port);
         channel = connection.createChannel();
-        System.out.println("RabbitMQ Connection successful");
+        logger.info("RabbitMQ Connection successful");
     }
 
     /**
@@ -81,7 +83,7 @@ public class AmqpManager {
         channel.exchangeDeclare(EXCHANGE_NAME, "topic");
         String queueName = channel.queueDeclare().getQueue();
         channel.queueBind(queueName, EXCHANGE_NAME, routingKey);
-        System.out.println("[AmqpManager] Awaiting requests");
+        logger.info("[AmqpManager] Awaiting requests");
 
         metrics = HP2CServerContext.getMetrics();
         Timer timer = new Timer();
@@ -101,7 +103,7 @@ public class AmqpManager {
                 String edgeLabel = getEdgeLabel(senderRoutingKey);
                 String deviceName = getDeviceName(senderRoutingKey);
                 if (!HP2CServerContext.isInMap(edgeLabel, deviceName, edgeMap)) {
-                    System.err.println("Edge " + edgeLabel + ", Device " + deviceName
+                    logger.error("Edge " + edgeLabel + ", Device " + deviceName
                             + ": message received but device not listed as " + edgeLabel + " digital twin devices.");
                     return;
                 }
@@ -117,7 +119,7 @@ public class AmqpManager {
                     db.write(m.getValue(), m.getTimestamp(), edgeLabel, deviceName);
                 }
             } catch (Exception e) {
-                System.err.println("[AmqpManager] Error sensing incoming message for routing key " + senderRoutingKey
+                logger.error("[AmqpManager] Error sensing incoming message for routing key " + senderRoutingKey
                         + ": " + e.getMessage());
             }
         };
@@ -132,8 +134,8 @@ public class AmqpManager {
         String baseTopic = "edge";
         String intermediateTopic = "actuators";
         String routingKey = baseTopic + "." + edgeLabel + "." + intermediateTopic + "." + actuatorLabel;
-        System.out.println("VirtualComm.virtualActuate: Sending actuation to " + edgeLabel + "." + actuatorLabel);
-        System.out.println("VirtualComm.virtualActuate: Using routingKey " + routingKey);
+        logger.info("VirtualComm.virtualActuate: Sending actuation to " + edgeLabel + "." + actuatorLabel);
+        logger.info("VirtualComm.virtualActuate: Using routingKey " + routingKey);
         // Publish message
         channel.basicPublish(EXCHANGE_NAME, routingKey, null, message);
     }

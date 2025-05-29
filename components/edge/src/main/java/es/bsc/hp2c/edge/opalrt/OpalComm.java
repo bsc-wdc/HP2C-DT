@@ -1,10 +1,13 @@
 package es.bsc.hp2c.edge.opalrt;
 
+import es.bsc.hp2c.HP2CEdge;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Sensor;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.net.*;
@@ -37,6 +40,7 @@ public class OpalComm {
     private static boolean loadedDevices = false;
     private static boolean connectedOnce = false;
     private static HashMap<OpalActuator<?>, Float[]> missedValues = new HashMap<>();
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
 
     //=======================================
@@ -65,7 +69,7 @@ public class OpalComm {
                 startUDPServer();
                 startTCPServer();
             } catch (Device.DeviceInstantiationException e) {
-                System.err.println(e.getMessage());
+                logger.error(e.getMessage());
             }
         });
         initSetup.start();
@@ -130,7 +134,7 @@ public class OpalComm {
                 setActuateSocket(ipObject, portActuate);
             }).start();
         } else{
-            System.out.println("In order to enable actuations, 'actuators' must be declared within 'opal-tcp' section");
+            logger.error("In order to enable actuations, 'actuators' must be declared within 'opal-tcp' section");
         }
 
         JSONObject jUdpSensors = jUDP.getJSONObject("sensors");
@@ -167,13 +171,13 @@ public class OpalComm {
                 }
                 udpSocket = new DatagramSocket(udpPORT, serverAddress);
             } catch (SocketException e) {
-                System.err.println("Error initializing UDP Sensors socket at IP " + udpIP +" and port " + udpPORT);
+                logger.error("Error initializing UDP Sensors socket at IP " + udpIP +" and port " + udpPORT);
                 throw new RuntimeException(e);
             } catch (UnknownHostException e) {
-                System.err.println("Unable to resolve " + udpIP + " for the specified host.");
+                logger.error("Unable to resolve " + udpIP + " for the specified host.");
                 throw new RuntimeException(e);
             }
-            System.out.println("\nUDP Sensors socket running on port: " + udpPORT + "\n");
+            logger.info("\nUDP Sensors socket running on port: " + udpPORT + "\n");
 
             while (true) {
                 // Print time each iteration
@@ -189,10 +193,9 @@ public class OpalComm {
                         messageValues[i] = byteBuffer.getFloat();
                     }
                     distributeValues(messageValues, udpSensorsList, Instant.now());
-                    System.out.println(); // Add empty line at the end of each measurement
+                    logger.debug(""); // Add empty line at the end of each measurement
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    System.err.println("Error receiving UDP message: " + e.getMessage());
+                    logger.error("Error receiving UDP message: " + e.getMessage());
                 }
             }
         });
@@ -235,13 +238,13 @@ public class OpalComm {
                     serverAddress = InetAddress.getByName(tcpIP);
                     tcpSocket = new ServerSocket(tcpPORT,0, serverAddress);
                     tcpSocket.setReuseAddress(true); //clean tcpSocket ip and port when socket is closed
-                    System.out.println("\nTCP Server running on port: " + tcpPORT + "\n");
+                    logger.info("\nTCP Server running on port: " + tcpPORT + "\n");
                     clientSocket = tcpSocket.accept();
                     //when a connection is established, set every TCP sensor as available
                     setAvailableSensors(tcpSensorsList, true);
                     processTCPConnection(clientSocket);
                 } catch (IOException e) {
-                    System.err.println("Error starting TCP server: " + e.getMessage());
+                    logger.error("Error starting TCP server: " + e.getMessage());
                     throw new RuntimeException(e);
                 }
                 try {
@@ -250,7 +253,9 @@ public class OpalComm {
                         //when a connection fails, set every TCP sensor as not available
                         setAvailableSensors(tcpSensorsList, false);
                     }
-                } catch (IOException ex) { System.err.println("Error closing TCP Sensors socket: " + ex.getMessage()); }
+                } catch (IOException ex) {
+                    logger.error("Error closing TCP Sensors socket: " + ex.getMessage());
+                }
             }
         });
         TCPSensorsThread.setName("TCPSensorsThread");
@@ -286,10 +291,10 @@ public class OpalComm {
                     messageValues[i] = byteBuffer.getFloat();
                 }
                 distributeValues(messageValues, tcpSensorsList, Instant.now());
-                System.out.println(); // Add empty line at the end of each measurement
+                logger.debug(""); // Add empty line at the end of each measurement
             }
         } catch (IOException e){
-            System.err.println("Error reading messages though TCP: " + e.getMessage());
+            logger.error("Error reading messages though TCP: " + e.getMessage());
         }
     }
 
@@ -332,7 +337,7 @@ public class OpalComm {
             if (firstChar == '$') {
                 String env = ip.substring(1);
                 ip = System.getenv(env);
-                if (ip == null) { System.err.println("Environment variable " + env + " was not found"); continue; }
+                if (ip == null) { logger.error("Environment variable " + env + " was not found"); continue; }
             }
             try {
                 actuationSocket.connect(new InetSocketAddress(ip, port), 1000);
@@ -340,13 +345,13 @@ public class OpalComm {
                 setAvailableActuators(actuatorsList, true);
                 actuationIP = ip;
                 actuationPORT = port;
-                System.out.println("Connected to server " + ip + " through port " + port);
+                logger.info("Connected to server " + ip + " through port " + port);
                 connectedOnce = true;
                 //send empty message every 2 seconds to test the connection
                 new Timer().scheduleAtFixedRate(new connectionTester(), 0, 5000);
                 break;
             } catch (IOException e) {
-                System.err.println("Failed to connect to actuation ip " + ip + " through port " + port + ": " +
+                logger.error("Failed to connect to actuation ip " + ip + " through port " + port + ": " +
                         e.getMessage());
             }
         }
@@ -375,7 +380,7 @@ public class OpalComm {
                 missedValues = new HashMap<>();
             }
         } catch (IOException e) {
-            System.err.println("Failed to connect to actuation ip " + actuationIP + " through port " + actuationPORT + ": " +
+            logger.error("Failed to connect to actuation ip " + actuationIP + " through port " + actuationPORT + ": " +
                     e.getMessage());
         }
     }
@@ -403,14 +408,14 @@ public class OpalComm {
             DataOutputStream outputStream = new DataOutputStream(actuationSocket.getOutputStream());
             byte[] buffer = byteBuffer.array();
             outputStream.write(buffer);
-            System.out.println("Packet sent with pairs value/index: ");
+            logger.info("Actuation sent with pairs value/index: ");
             for (int i = 0; i < values.length; ++i){
-                System.out.print(values[i]);
-                System.out.print("/" + indexesLocal[i]);
-                System.out.println("");
+                logger.info(values[i]);
+                logger.info("/" + indexesLocal[i]);
+                logger.info("");
             }
         } catch (IOException e){
-            System.err.println("Socket exception: " + e.getMessage());
+            logger.error("Socket exception: " + e.getMessage());
             // if the actuation misses, close the socket
             synchronized (actuationSocket){
                 try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }
@@ -431,11 +436,11 @@ public class OpalComm {
                     valuesToUpdate = values;
                 }
                 missedValues.put(actuator, valuesToUpdate);
-                System.out.println("MissedValues updated:");
+                logger.info("MissedValues updated:");
                 for (OpalActuator<?> ac : missedValues.keySet()){
-                    System.out.println("    Actuator " + ((Device) ac).getLabel() + ":");
+                    logger.info("    Actuator " + ((Device) ac).getLabel() + ":");
                     for (Float value : missedValues.get(ac)){
-                        System.out.println("        " + value);
+                        logger.info("        " + value);
                     }
                 }
             }
@@ -499,7 +504,7 @@ public class OpalComm {
                 synchronized (actuationSocket){
                     try { actuationSocket.close(); } catch (IOException ex) { throw new RuntimeException(ex); }
                 }
-                System.err.println("Actuation socket is closed: " + e.getMessage());
+                logger.error("Actuation socket is closed: " + e.getMessage());
                 retryConnectionActuation();  //retry connection
             }
         }
@@ -607,7 +612,7 @@ public class OpalComm {
         LocalTime currentTime = LocalTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
         String formattedTime = currentTime.format(formatter);
-        System.out.println("Current time: " + formattedTime);
+        logger.debug("Current time: " + formattedTime);
     }
 
 
