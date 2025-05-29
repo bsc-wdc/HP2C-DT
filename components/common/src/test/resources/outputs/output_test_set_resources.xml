@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<newResource>
+    <externalResource>
+        <name>192.168.0.203</name>
+        <description>
+            <processors>
+                <processor>
+                    <name>MainProcessor</name>
+                    <type>CPU</type>
+                    <architecture>amd64</architecture>
+                    <computingUnits>4</computingUnits>
+                    <internalMemory>-1.0</internalMemory>
+                    <propName>[unassigned]</propName>
+                    <propValue>[unassigned]</propValue>
+                    <speed>-1.0</speed>
+                </processor>
+            </processors>
+            <memorySize>-1</memorySize>
+            <memoryType>[unassigned]</memoryType>
+            <storageSize>-1.0</storageSize>
+            <storageType>[unassigned]</storageType>
+            <operatingSystemDistribution>[unassigned]</operatingSystemDistribution>
+            <operatingSystemType>[unassigned]</operatingSystemType>
+            <operatingSystemVersion>[unassigned]</operatingSystemVersion>
+            <pricePerUnit>-1.0</pricePerUnit>
+            <priceTimeUnit>-1</priceTimeUnit>
+            <value>0.0</value>
+            <wallClockLimit>-1</wallClockLimit>
+        </description>
+        <adaptor>es.bsc.compss.agent.comm.CommAgentAdaptor</adaptor>
+        <resourceConf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ResourcesExternalAdaptorProperties">
+            <Property>
+                <Name>Port</Name>
+                <Value>8002</Value>
+            </Property>
+        </resourceConf>
+    </externalResource>
+</newResource>

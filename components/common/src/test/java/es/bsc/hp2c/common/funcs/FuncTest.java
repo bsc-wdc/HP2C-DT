@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TransformUtilsTest {
 
     private JSONObject loadJSON(String filename) throws IOException {
-        String resourcePath = "jsons/" + filename;
+        String resourcePath = "inputs/" + filename;
         InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath);
         if (is == null) {
             throw new FileNotFoundException("Resource not found: " + resourcePath);

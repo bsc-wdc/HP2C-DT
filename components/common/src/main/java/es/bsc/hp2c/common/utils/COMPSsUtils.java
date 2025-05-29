@@ -12,6 +12,24 @@ import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 public class COMPSsUtils {
 
+    public static String generateResourcesXML(String template, JSONObject jResource) {
+        String ip = jResource.optString("ip");
+        if (ip.isEmpty()) throw new IllegalArgumentException("IP must be declared for the resource");
+
+        String port = jResource.optString("port");
+        if (port.isEmpty()) throw new IllegalArgumentException("Port must be declared for the resource " + ip);
+
+        String cpu = jResource.optString("cpu", "1");
+        String arc = jResource.optString("arch", "[unassigned]");
+
+        // Replace placeholders in the template
+        return template
+                .replace("{{IP}}", ip)
+                .replace("{{ARCH}}", arc)
+                .replace("{{CPU}}", cpu)
+                .replace("{{PORT}}", port);
+    }
+
     public static void setResources(String setupFile) throws IOException {
         File dockerEnvFile = new File("/.dockerenv");
         if (!dockerEnvFile.isFile()) {
@@ -35,21 +53,7 @@ public class COMPSsUtils {
 
         for (Object jo : jResources) {
             JSONObject jResource = (JSONObject) jo;
-            String ip = jResource.optString("ip");
-            if (ip.isEmpty()) throw new IllegalArgumentException("IP must be declared for the resource");
-
-            String port = jResource.optString("port");
-            if (port.isEmpty()) throw new IllegalArgumentException("Port must be declared for the resource " + ip);
-
-            String cpu = jResource.optString("cpu", "1");
-            String arc = jResource.optString("arch", "[unassigned]");
-
-            // Replace placeholders in the template
-            String xmlData = xmlTemplate
-                    .replace("{{IP}}", ip)
-                    .replace("{{ARCH}}", arc)
-                    .replace("{{CPU}}", cpu)
-                    .replace("{{PORT}}", port);
+            String xmlData = generateResourcesXML(xmlTemplate, jResource);
 
             String restPort = System.getenv("REST_AGENT_PORT");
             String command = "curl -s -X PUT http://127.0.0.1:" + restPort + "/COMPSs/addResources "
