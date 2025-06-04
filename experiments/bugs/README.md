@@ -329,6 +329,14 @@ Caused by: java.io.FileNotFoundException: d34v1_1746449594016.IT (No existe el a
 
 
 ## Remote execution
+For the following tests, a data generator is required. In this case, we will use the OpalSimulator. Open a new terminal,
+connect to the broker machine, and deploy the simulator. The OpalSimulator can remain running throughout all the tests and does not need to be stopped between them.
+
+```bash
+ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the broker machine
+
+~/hp2cdt/deployments/deploy_opal_simulator.sh test_response_time
+```
 
 ##### MatmulEdgeSimple
 ###### Steps to reproduce
