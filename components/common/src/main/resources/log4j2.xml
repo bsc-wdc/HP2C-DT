@@ -33,6 +33,7 @@
     <!-- appLogger: DEFAULT = DEBUG -->
     <Logger name="appLogger" additivity="false" level="debug">
         <AppenderRef ref="AppLog"/>
+        <AppenderRef ref="Console"/>
     </Logger>
 
     <!-- RUNTIME ROOT -->
