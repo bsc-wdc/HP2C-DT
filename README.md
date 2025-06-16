@@ -460,22 +460,34 @@ This option is meant for testing purposes, and allows to create and deploy broke
 
 
 ## User Interface
-This web application, which can be accessed through {user_interface_ip}:{user_interface_port} in a browser, provides a monitor for the deployment. The main view has two panels:
+This web application, which can be accessed through {user_interface_ip}:{user_interface_port} in a browser, provides a 
+monitor for the deployment. The main view has two panels:
 ### View Map
-Shows the edges' representation and their connections, with a black dot if the edge is running correctly, a yellow dot if the edge has some unavailable devices, and a red dot if the entire edge is unavailable. If an edge is clicked, the interface will provide a detailed view of the edge.
+Shows the edges' representation and their connections, with a black dot if the edge is running correctly, a yellow dot 
+if the edge has some unavailable devices, and a red dot if the entire edge is unavailable. If an edge is clicked, the 
+interface will provide a detailed view of the edge.
 
 ![ui-view-map](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/UI-View-Map.png)
 ### View List
-Shows every device in every edge as a list. If the user wants to see the real-time state of a device (Grafana panels), it can be accessed by clicking on it or on the "View detail" button. If the device is an actuator, there will be another button labeled "View detail & actuate". If any component is not available, there will be a red dot next to its name.
+Shows every device in every edge as a list. If the user wants to see the real-time state of a device (Grafana panels), 
+it can be accessed by clicking on it or on the "View detail" button. If the device is an actuator, there will be another 
+button labeled "View detail & actuate". If any component is not available, there will be a red dot next to its name.
 
 ![ui-view-list](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/UI-View-List.png)
 
+### HPC executions from UI
+The user interface is a web application primarily used for monitoring devices in the grid and controlling some of them,
+providing a clear interface between the user and the digital twin. Additionally, the app includes features such as HPC 
+executions, which simplify the execution of custom workflows directly from the interface. Here you can find the README:
+
+- [HPC Executions with UI](components/userInterface/README.md)
 
 ## IoT communications
 The application uses the RabbitMQ Java client for edge devices and a RabbitMQ Docker image for the AMQP broker.
 
 ### AMQP broker
-The docker container of the broker is based on the RabbitMQ image maintained by the docker community. We add additional setups to the configuration files in `/etc/rabbitmq/conf.d/` according to the [RabbitMQ documentation](https://www.rabbitmq.com/configure.html#config-confd-directory).
+The docker container of the broker is based on the RabbitMQ image maintained by the docker community. We add additional 
+setups to the configuration files in `/etc/rabbitmq/conf.d/` according to the [RabbitMQ documentation](https://www.rabbitmq.com/configure.html#config-confd-directory).
 
 To deploy this image, either use:
 ```bash
