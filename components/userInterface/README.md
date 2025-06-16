@@ -22,29 +22,26 @@ Note: Some machines may require a VPN connection.
 Once the machine is created, you can delete it (`Delete` button) or modify the username and FQDN via the `Details` button.
 
 ## HPC Execution
-To execute workflows in a machine, you should connect to the machine using the `HPC Machines` option or, if you are 
-already connected, through the `Tools` button. If there is no connection established, you will be redirected to the 
-`HPC Machines` view. Otherwise, you will see the executions menu, with no executions stored and no tools created.
+
+To execute workflows on a machine, you should connect to it using the `HPC Machines` option, or, if you are already connected, via the `Tools` button. If no connection is established, you will be redirected to the `HPC Machines` view. Otherwise, you will see the executions menu, initially empty with no executions stored and no tools created.
 
 ![tools_empty](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/tools_empty.png)
 
-In order to create new tools, you should click the `New tool` button. First you will have to specify the tool name and
-the `Use args` checkbox, choosing whether the application arguments will be passed in a yaml file (passing the path to the 
-yaml), or deployed after the entrypoint. Then you will be able to configure attributes from 5 different fields:
- - Application: these arguments will be passed to the application in the formats previously explained.
- - Setup: include the GitHub repos needed (they will be cloned in the remote machine), and whether an installation is required (and its conditions), and then some key arguments for the execution setup.
- - Slurm: slurm arguments (number of nodes, qos, execution time in minutes, and project name).
- - COMPSs: COMPSs arguments.
- - Environment: define environment variables.
+To create a new tool, click the `New Tool` button. First, specify the tool name and whether to enable the `Use args` checkbox. This determines whether the application arguments will be passed via a YAML file (by providing its path) or deployed directly after the entrypoint.
 
-Once a Tool is created it is possible to download it in a yaml format, so that it can be loaded by other user by clicking `Upload Tool` (see the previous picture).
+You will then be able to configure parameters across five different sections:
 
-When the Tool is ready to be executed, you can launch it in the HPC machine by clicking the green button at the bottom of
-the tab. Then you will see this view:
+- **Application**: Arguments passed to the application, according to the chosen format.
+- **Setup**: Specify the GitHub repositories to clone on the remote machine, define whether an installation is required (and its conditions), and set key arguments for the execution setup.
+- **Slurm**: Slurm-specific parameters, such as number of nodes, QoS, execution time in minutes, and project name.
+- **COMPSs**: COMPSs configuration parameters.
+- **Environment**: Define environment variables.
+
+Once a tool is created, it can be downloaded in YAML format and later loaded by another user using the `Upload Tool` button (see the image above).
+
+When the tool is ready, you can launch it on the HPC machine by clicking the green button at the bottom of the tab. You will then see the following view:
 
 ![tools](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/tools.png)
 
-In this picture you can see an example of a running execution and a completed one. An execution can also be in the 
-timeout and failed sections, and for every different status you can check the logs by clicking the blue button. This 
-will display a view where the user could download each file. There is also the option to stop and delete (red button), 
-or only stop (yellow button) an execution.  
+In this image, you can see an example of a running execution and a completed one. Executions may also appear in the timeout or failed sections. For each status, you can view the logs by clicking the blue button. This will open a view where you can download each log file. Additionally, you have options to stop and delete an execution (red button), or just stop it (yellow button).
+
