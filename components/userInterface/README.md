@@ -37,7 +37,7 @@ You will then be able to configure parameters across five different sections:
 - **COMPSs**: COMPSs configuration parameters.
 - **Environment**: Define environment variables.
 
-Once a tool is created, it can be downloaded in YAML format and later loaded by another user using the `Upload Tool` button (see the image above).
+Once a tool is created, it can be downloaded in YAML format and later loaded by another user using the `Upload Tool` button (see the image above). In this project, in `hp2cdt/components/userInterface/templates/tools`, you will find a `Wordount.yaml` template. This tool can be loaded with `Upload tool` and be tested as a first example of a tool configuration.
 
 When the tool is ready, you can launch it on the HPC machine by clicking the green button at the bottom of the tab. You will then see the following view:
 
