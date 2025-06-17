@@ -71,17 +71,11 @@ public class EdgeHeartbeat {
 
     /** Deploy the AMQP consumer thread */
     private void startListener() throws IOException {
-        System.out.println("111111111111111111111111");
         Consumer consumer = new DefaultConsumer(channel) {
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
-                System.out.println("222222222222222222222222");
                 try {
-                    System.out.println("PRocessing message: ");
                     JSONObject jEdgeSetup = new JSONObject(new String(body, StandardCharsets.UTF_8));
-                    System.out.println("message: ");
-                    System.out.println(jEdgeSetup);
-                    System.out.println("-----------------------------------------");
                     processHeartbeatMessage(envelope.getRoutingKey(), body);
                 } catch (Exception e) {
                     logger.error("Error processing heartbeat message: " + e.getMessage() + ". ");
@@ -103,9 +97,6 @@ public class EdgeHeartbeat {
         String[] routingKeyParts = routingKey.split("\\.");
         String edgeLabel = routingKeyParts[1];
         JSONObject jEdgeSetup = new JSONObject(new String(body, StandardCharsets.UTF_8));
-        System.out.println("---------------------------------");
-        System.out.println(jEdgeSetup);
-        System.out.println("---------------------------------");
         // Process the heartbeat message
         logger.debug("[processHeartbeatMessage] Received heartbeat for edge '" + edgeLabel + "'");
         if (edgeMap.containsKey(edgeLabel)) {
