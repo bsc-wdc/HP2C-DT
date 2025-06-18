@@ -383,7 +383,7 @@ ssh -i ${PATH_TO_KEY}/hp2cdt-ncloud.pem ubuntu@212.128.226.53 # connect to the b
 
 ```bash
 # Update the json file with the new method name
-jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulEdgeSimpleBarrier"' \ 
+jq '(.funcs[] | select(.label == "MatMul")."method-name") |= "es.bsc.hp2c.common.funcs.MatMulEdgeSimpleBarrier"' \
 ~/hp2cdt/deployments/test_response_time/setup/edge1.json > tmp.json && mv tmp.json ~/hp2cdt/deployments/test_response_time/setup/edge1.json
 ~/hp2cdt/deployments/deploy_edges.sh test_response_time --comm=bsc_subnet
 ```
