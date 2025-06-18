@@ -203,15 +203,9 @@ A function is a method that can read from one or more sensors and actuate over o
 4. `parameters`: the user must define lists of `sensors`, `actuators`, and additional parameters called `others` that are needed by the function.
 5. `trigger`: the event that triggers the execution of the function. 
 
-When a Python function is instantiated (if `lang` is *Python*), a Python server is initialized and communication is 
-established via UNIX domain sockets. Therefore, the `method-name` will always be `es.bsc.hp2c.common.utils.PythonFunc`. 
-The user may specify it explicitly, but if not provided, this default value will be used. This is because we use a 
-unified structure for Python functions that allows us to store the socket and other relevant attributes. For each 
-different method, a new UDS (Unix Domain Socket) will be created to communicate with the Python server.
+When a Python function is instantiated (if `lang` is *Python*), a Python server is initialized and communication is established via UNIX domain sockets. Therefore, the `method-name` will always be `es.bsc.hp2c.common.utils.PythonFunc`. The user may specify it explicitly, but if not provided, this default value will be used. This is because we use a unified structure for Python functions that allows us to store the socket and other relevant attributes. For each different method, a new UDS (Unix Domain Socket) will be created to communicate with the Python server.
 
-As a result, for these functions, the user must specify within the `other` section the `module_name`, `method_name`, 
-and, if applicable, `other_func_parameters`. The following code is an example of a Python function (it is also a 
-`VoltLimitation` like the previous example for Java functions):
+As a result, for these functions, the user must specify within the `other` section the `module_name`, `method_name`, and, if applicable, `other_func_parameters`. The following code is an example of a Python function (it is also a `VoltLimitation` like the previous example for Java functions):
 
 ```json
 {
