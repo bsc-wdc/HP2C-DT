@@ -16,11 +16,14 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Connects to an existing UNIX socket as a client to make periodic calls of a Python function and handles its output
  */
 public class UDSClient {
+    private static final Logger logger = LogManager.getLogger("appLogger");
     private final String moduleName;
     private final String methodName;
     private AFUNIXSocket socket;
@@ -168,9 +171,9 @@ public class UDSClient {
             if (writer != null) writer.close();
             if (reader != null) reader.close();
             if (socket != null) socket.close();
-            System.out.println("[UDSClient] " + moduleName + ": Socket connection closed.");
+            logger.info("[UDSClient] " + moduleName + ": Socket connection closed.");
         } catch (Exception e) {
-            System.err.println("[UDSClient] " + moduleName + ": Error closing the socket: " + e.getMessage());
+            logger.error("[UDSClient] " + moduleName + ": Error closing the socket: " + e.getMessage());
         }
     }
 }
