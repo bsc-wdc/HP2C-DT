@@ -18,13 +18,12 @@ package es.bsc.hp2c.server.modules;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.DeliverCallback;
-import es.bsc.hp2c.HP2CServer;
+import es.bsc.hp2c.HP2CServerContext;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
 import es.bsc.hp2c.common.utils.CommUtils;
 import es.bsc.hp2c.common.utils.Measurement;
 import es.bsc.hp2c.common.utils.MeasurementWindow;
-import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.edge.VirtualEdge;
 
@@ -32,12 +31,18 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.Timer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 public class AmqpManager {
     private final DatabaseHandler db;
     private static Channel channel = null;
     private final Map<String, VirtualEdge> edgeMap;
     private static final String EXCHANGE_NAME = "measurements";
+    private static MetricsHandler metrics = null;
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
     /**
      * Initialize AMQP Channel.
@@ -63,7 +68,7 @@ public class AmqpManager {
         // Try connecting to a RabbitMQ server until success
         Connection connection = CommUtils.AmqpConnectAndRetry(setupIp, port);
         channel = connection.createChannel();
-        System.out.println("RabbitMQ Connection successful");
+        logger.info("RabbitMQ Connection successful");
     }
 
     /**
@@ -78,24 +83,34 @@ public class AmqpManager {
         channel.exchangeDeclare(EXCHANGE_NAME, "topic");
         String queueName = channel.queueDeclare().getQueue();
         channel.queueBind(queueName, EXCHANGE_NAME, routingKey);
-        System.out.println("[AmqpManager] Awaiting requests");
+        logger.info("[AmqpManager] Awaiting requests");
+
+        metrics = HP2CServerContext.getMetrics();
+        Timer timer = new Timer();
+        if (metrics != null) {
+            timer.scheduleAtFixedRate(metrics, 10000, 30000);
+        }
 
         DeliverCallback callback = (consumerTag, delivery) -> {
             String senderRoutingKey = delivery.getEnvelope().getRoutingKey();
             try {
                 // Parse message. For instance: routingKey = "edge.edge1.sensors.voltmeter1"
                 byte[] message = delivery.getBody();
+                if (metrics != null) {
+                    metrics.recordMessage(message.length);
+                }
                 // Check existence of pair edge-device
                 String edgeLabel = getEdgeLabel(senderRoutingKey);
                 String deviceName = getDeviceName(senderRoutingKey);
-                if (!HP2CServer.isInMap(edgeLabel, deviceName, edgeMap)) {
-                    System.err.println("Edge " + edgeLabel + ", Device " + deviceName
+                if (!HP2CServerContext.isInMap(edgeLabel, deviceName, edgeMap)) {
+                    logger.error("Edge " + edgeLabel + ", Device " + deviceName
                             + ": message received but device not listed as " + edgeLabel + " digital twin devices.");
                     return;
                 }
 
                 Sensor<?, ?> sensor = (Sensor<?, ?>) edgeMap.get(edgeLabel).getDevice(deviceName);
-                // Decode the MeasurementWindow, setValues in the sensors, and get the new MeasurementWindow<Float[]>
+                // Decode the MeasurementWindow, setValues in the sensors, and get the new
+                // MeasurementWindow<Float[]>
                 MeasurementWindow<Float[]> window = sensor.sensed(message);
                 sensor.onRead();
 
@@ -104,11 +119,12 @@ public class AmqpManager {
                     db.write(m.getValue(), m.getTimestamp(), edgeLabel, deviceName);
                 }
             } catch (Exception e) {
-                System.err.println("[AmqpManager] Error sensing incoming message for routing key " + senderRoutingKey
+                logger.error("[AmqpManager] Error sensing incoming message for routing key " + senderRoutingKey
                         + ": " + e.getMessage());
             }
         };
-        channel.basicConsume(queueName, true, callback, consumerTag -> { });
+        channel.basicConsume(queueName, true, callback, consumerTag -> {
+        });
     }
 
     public void virtualActuate(VirtualActuator actuator, String edgeLabel, byte[] message)
@@ -118,20 +134,20 @@ public class AmqpManager {
         String baseTopic = "edge";
         String intermediateTopic = "actuators";
         String routingKey = baseTopic + "." + edgeLabel + "." + intermediateTopic + "." + actuatorLabel;
-        System.out.println("VirtualComm.virtualActuate: Sending actuation to " + edgeLabel + "." + actuatorLabel);
-        System.out.println("VirtualComm.virtualActuate: Using routingKey " + routingKey);
+        logger.info("VirtualComm.virtualActuate: Sending actuation to " + edgeLabel + "." + actuatorLabel);
+        logger.info("VirtualComm.virtualActuate: Using routingKey " + routingKey);
         // Publish message
         channel.basicPublish(EXCHANGE_NAME, routingKey, null, message);
     }
 
     /** Parse device name from the routing key in deliverer's message. */
-    private String getEdgeLabel(String routingKey){
+    private String getEdgeLabel(String routingKey) {
         String[] routingKeyParts = routingKey.split("\\.");
         return routingKeyParts[1];
     }
 
     /** Parse device name from the routing key in deliverer's message. */
-    private String getDeviceName(String routingKey){
+    private String getDeviceName(String routingKey) {
         String[] routingKeyParts = routingKey.split("\\.");
         return routingKeyParts[3];
     }

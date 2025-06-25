@@ -2,10 +2,9 @@ package es.bsc.hp2c.edge.funcs;
 
 import com.rabbitmq.client.AMQP;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import es.bsc.hp2c.HP2CEdge;
+
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.funcs.Func;
@@ -15,12 +14,13 @@ import com.rabbitmq.client.Channel;
 import es.bsc.hp2c.common.utils.CommUtils;
 import es.bsc.hp2c.common.utils.MeasurementWindow;
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
-
-import static es.bsc.hp2c.HP2CEdge.getEdgeLabel;
+import es.bsc.hp2c.HP2CEdgeContext;
 
 /**
  * Publish current measurement to the corresponding AMQP topic if the requirements are satisfied.
@@ -34,6 +34,7 @@ public class AmqpPublish extends Func {
     private final String routingKey;
     private final Method aggregate;
     private JSONObject aggArgs;
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
     /**
      * Method constructor.
@@ -80,9 +81,9 @@ public class AmqpPublish extends Func {
         String sensorLabel = ((Device) sensor).getLabel();
 
         // Initialize AMQP communication
-        String edgeLabel = getEdgeLabel();
-        channel = HP2CEdge.getChannel();
-        EXCHANGE_NAME = HP2CEdge.getExchangeName();
+        String edgeLabel = HP2CEdgeContext.getEdgeLabel();
+        channel = HP2CEdgeContext.getChannel();
+        EXCHANGE_NAME = HP2CEdgeContext.getExchangeName();
         String intermediateTopic = "sensors";
         String baseTopic = "edge";
         routingKey = baseTopic + "." + edgeLabel+ "." + intermediateTopic + "." + sensorLabel;
@@ -93,7 +94,7 @@ public class AmqpPublish extends Func {
         try {
             // Create a new MeasurementWindow using the appropriate aggregate function
             if (sensor.getWindow() == null) {
-                System.err.println("Sensor window is null");
+                logger.error("Sensor window is null");
                 return;
             }
             MeasurementWindow<?> aggregateWindow =
@@ -101,11 +102,11 @@ public class AmqpPublish extends Func {
 
             // Handle malformed aggregate window
             if (aggregateWindow == null) {
-                System.out.println("[AMQPPublish] Aggregate " + aggregate.getName() + " retrieved a null window. " +
+                logger.warn("[AMQPPublish] Aggregate " + aggregate.getName() + " retrieved a null window. " +
                         "Skipping AMQP publication...");
                 return;
             }
-            System.out.println("[AMQPPublish] Sending values for sensor "
+            logger.debug("[AMQPPublish] Sending values for sensor "
                     + ((Device) sensor).getLabel() + ": " + aggregateWindow);
 
             // Prepare body message
@@ -117,7 +118,7 @@ public class AmqpPublish extends Func {
             // Deliver message
             channel.basicPublish(EXCHANGE_NAME, routingKey, props, message);
         } catch (IOException e) {
-            System.err.println("IOException during AMQP publishing");
+            logger.error("IOException during AMQP publishing");
             throw new RuntimeException(e);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);

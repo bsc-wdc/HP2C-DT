@@ -160,9 +160,10 @@ These AMQP options can be defined for each sensor by editing the `deployments/de
 }
 ```
 
+
 ## Functions
 
-To perform any action or evaluation within the system, we can declare **functions**. A function is a Java method (`method-name`) that receives specific parameters (sensors and/or actuators) along with additional user-defined parameters (in the `other` section).
+To perform any action or evaluation within the system, we can declare **functions**. A function is a Java or Python method (`method-name`) that receives specific parameters (sensors and/or actuators) along with additional user-defined parameters (in the `other` section).
 
 We can also define how or when the function is triggered, allowing the following options:
 
@@ -176,6 +177,7 @@ We can also define how or when the function is triggered, allowing the following
 "funcs": [
     {
         "label": "VoltLimitation",
+        "type": "workflow", #optional
         "lang": "Java",
         "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
         "parameters": {
@@ -200,6 +202,78 @@ A function is a method that can read from one or more sensors and actuate over o
 3. `method-name`: the path to the method's implementation (e.g., es.bsc.hp2c.<SUBPACKAGE>.<CLASS>).
 4. `parameters`: the user must define lists of `sensors`, `actuators`, and additional parameters called `others` that are needed by the function.
 5. `trigger`: the event that triggers the execution of the function. 
+
+When a Python function is instantiated (if `lang` is *Python*), a Python server is initialized and communication is established via UNIX domain sockets. Therefore, the `method-name` will always be `es.bsc.hp2c.common.utils.PythonFunc`. The user may specify it explicitly, but if not provided, this default value will be used. This is because we use a unified structure for Python functions that allows us to store the socket and other relevant attributes. For each different method, a new UDS (Unix Domain Socket) will be created to communicate with the Python server.
+
+As a result, for these functions, the user must specify in the `parameters` sectionan array of `sensors` and `actuators` (as in the java funcs) and, within the `other` section, the `module_name`, `method_name`, and, if applicable, `other_func_parameters`. The following code is an example of a Python function (it is also a `VoltLimitation` like the previous example for Java functions):
+
+```json
+{
+  "label": "VoltLimitation",
+  "lang": "Python",
+  "parameters": {
+    "sensors": ["Voltmeter Gen1"],
+    "actuators": ["Three-Phase Switch Gen1"],
+    "other": {
+      "module_name": "volt_limitation",
+      "method_name": "main",
+      "other_func_parameters": {
+        "threshold": 100
+      }
+    }
+  },
+  "trigger": {
+    "type": "onRead",
+    "parameters": {
+      "trigger-sensor": ["Voltmeter Gen1"],
+      "interval": 1
+    }
+  }
+}
+```
+
+Functions can be executed either as an instantaneous function or as a COMPSs workflow, designed for non-instantaneous, 
+larger tasks. In this case, the computational work will be distributed among the available COMPSs agents (explained below). 
+To use this COMPSs workflow functionality, the user must specify the `type` field as `workflow`.
+
+### COMPSs Workflows
+As every edge device and the server are COMPSs agents, we implemented an optional section, `compss`, allowing the user to
+declare both the COMPSs architecture and external resources (other agents to which the declaring agent can offload computational work).
+This section applies to both edge and server setups. You can check examples of this section in `deployments/test_response_time/setup/edge1.json`.
+
+This is defined by two subsections:
+
+- `project`: Defines the agent architecture. Every field is optional.
+  - `cpu`: Number of computing units (Default: 1)
+  - `arch`: Agent architecture (Default: unassigned)
+  - `memory`: Available memory of the agent
+  - `storage`: Available storage of the agent
+
+- `resources`: List of external agents where computational work can be offloaded.
+  - `ip`: Destination IP (Mandatory)
+  - `port`: COMM port of the destination agent (Mandatory)
+  - `cpu`: Number of CPUs on the remote agent (Default: 1)
+  - `arch`: Architecture of the remote agent (Default: unassigned)
+
+
+```json
+"compss": {
+    "project":{
+      "cpu": "1",
+      "arch": "arm",
+      "memory": "2",
+      "storage": "10"
+    },
+    "resources": [
+      {
+        "ip": "212.128.226.53",
+        "port": "8002",
+        "cpu": "4",
+        "arch": "amd64"
+      }
+    ]
+  }
+```
 
 ## Server
 Another key component in our architecture is the Server, which is responsible for receiving data from the edges, storing it in the InfluxDB database, executing functions, and providing data to the User Interface, among other tasks.
@@ -415,22 +489,34 @@ This option is meant for testing purposes, and allows to create and deploy broke
 
 
 ## User Interface
-This web application, which can be accessed through {user_interface_ip}:{user_interface_port} in a browser, provides a monitor for the deployment. The main view has two panels:
+This web application, which can be accessed through {user_interface_ip}:{user_interface_port} in a browser, provides a 
+monitor for the deployment. The main view has two panels:
 ### View Map
-Shows the edges' representation and their connections, with a black dot if the edge is running correctly, a yellow dot if the edge has some unavailable devices, and a red dot if the entire edge is unavailable. If an edge is clicked, the interface will provide a detailed view of the edge.
+Shows the edges' representation and their connections, with a black dot if the edge is running correctly, a yellow dot 
+if the edge has some unavailable devices, and a red dot if the entire edge is unavailable. If an edge is clicked, the 
+interface will provide a detailed view of the edge.
 
 ![ui-view-map](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/UI-View-Map.png)
 ### View List
-Shows every device in every edge as a list. If the user wants to see the real-time state of a device (Grafana panels), it can be accessed by clicking on it or on the "View detail" button. If the device is an actuator, there will be another button labeled "View detail & actuate". If any component is not available, there will be a red dot next to its name.
+Shows every device in every edge as a list. If the user wants to see the real-time state of a device (Grafana panels), 
+it can be accessed by clicking on it or on the "View detail" button. If the device is an actuator, there will be another 
+button labeled "View detail & actuate". If any component is not available, there will be a red dot next to its name.
 
 ![ui-view-list](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/UI-View-List.png)
 
+### HPC executions from UI
+The user interface is a web application primarily used for monitoring devices in the grid and controlling some of them,
+providing a clear interface between the user and the digital twin. Additionally, the app includes features such as HPC 
+executions, which simplify the execution of custom workflows directly from the interface. Here you can find the README:
+
+- [HPC Executions with UI](components/userInterface/README.md)
 
 ## IoT communications
 The application uses the RabbitMQ Java client for edge devices and a RabbitMQ Docker image for the AMQP broker.
 
 ### AMQP broker
-The docker container of the broker is based on the RabbitMQ image maintained by the docker community. We add additional setups to the configuration files in `/etc/rabbitmq/conf.d/` according to the [RabbitMQ documentation](https://www.rabbitmq.com/configure.html#config-confd-directory).
+The docker container of the broker is based on the RabbitMQ image maintained by the docker community. We add additional 
+setups to the configuration files in `/etc/rabbitmq/conf.d/` according to the [RabbitMQ documentation](https://www.rabbitmq.com/configure.html#config-confd-directory).
 
 To deploy this image, either use:
 ```bash

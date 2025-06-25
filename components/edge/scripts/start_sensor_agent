@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-/opt/COMPSs/Runtime/scripts/user/compss_agent_start --hostname=${AGENT_NAME} --rest_port=${REST_AGENT_PORT} --comm_port=${COMM_AGENT_PORT} &
+/opt/COMPSs/Runtime/scripts/user/compss_agent_start -d --hostname=${AGENT_NAME} --rest_port=${REST_AGENT_PORT} --comm_port=${COMM_AGENT_PORT} --project=${PROJECT_PATH} &
 AGENT_PID=$!
 
 sleep 10
@@ -10,11 +10,12 @@ curl -s -XPUT http://127.0.0.1:${REST_AGENT_PORT}/COMPSs/startApplication -H "co
 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <startApplication>
     <lang>JAVA</lang>
-    
+    <ceiClass>es.bsc.hp2c.HP2CEdgeItf</ceiClass>
+
     <className>es.bsc.hp2c.HP2CEdge</className>
     <hasResult>false</hasResult>
     <methodName>main</methodName>
-    
+
     <parameters>
       <params paramId="0">
         <direction>IN</direction>
@@ -35,5 +36,6 @@ curl -s -XPUT http://127.0.0.1:${REST_AGENT_PORT}/COMPSs/startApplication -H "co
       </params>
     </parameters>
   </startApplication>'
+
 
 wait ${AGENT_PID}

@@ -5,11 +5,12 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
  * Utility class for commonly used methods related to communications
  */
 public final class CommUtils {
+    private static final Logger logger = LogManager.getLogger("appLogger");
     private CommUtils(){}
 
     public static Number[] divideArray(Number[] array, double divisor) {
@@ -130,7 +132,7 @@ public final class CommUtils {
     }
 
     public static Connection AmqpConnectAndRetry(String ip, int port) {
-        System.out.println("Connecting to RabbitMQ broker at address " + ip + ":" + port + "...");
+        logger.info("Connecting to RabbitMQ broker at address " + ip + ":" + port + "...");
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(ip);
         factory.setPort(port);
@@ -140,14 +142,14 @@ public final class CommUtils {
         final int[] retryFlag = {1};
 
         Thread monitorThread = new Thread(() -> {
-            System.out.println("");
+            logger.info("");
             while (true) {
                 if (retryFlag[0] == 1) {
-                    System.err.println("Error initializing RabbitMQ Connection to address "
+                    logger.error("Error initializing RabbitMQ Connection to address "
                             + ip + ":" + port + ". Retrying...");
                 }
                 if (retryFlag[0] == 0) {
-                    System.out.println("Connected to RabbitMQ broker at address " + ip + ":" + port + "...");
+                    logger.info("Connected to RabbitMQ broker at address " + ip + ":" + port + "...");
                     return;
                 }
                 try {

@@ -338,6 +338,8 @@ def ui_exec(deployment_name, edges_info, datasource_uid):
             type = info["type"]
             aggregate = info.get("aggregate", "")
             units = info.get("units", "")
+            if not info["isSensitive"]:
+                continue
             devices.append((device, n_indexes, type, aggregate, units))
         edges[edge] = devices
     generate_dashboard_json(deployment_name, edges, datasource_uid)

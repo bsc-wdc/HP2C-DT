@@ -12,17 +12,23 @@ usage() {
                     bsc
                     bsc_subnet
                     (default: None)" 1>&2
+    echo " --metrics, -m: Use the metrics logger (default: false)"
     exit 1
 }
 
 # Initialization
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source "${SCRIPT_DIR}/utils.sh"
 DEPLOYMENT_PREFIX="hp2c"
 DEPLOYMENT_NAME="testbed"
 COMM_SETUP=""
 
 # Parse command line arguments
 pos=1
+ENABLE_METRICS=0
+REST_AGENT_PORT=8001
+COMM_AGENT_PORT=8002
+
 for arg in "$@"; do
     case $arg in
         -h)
@@ -36,6 +42,9 @@ for arg in "$@"; do
             ;;
         --comm=*)
             COMM_SETUP="${arg#*=}"
+            ;;
+        --metrics|-m)
+            ENABLE_METRICS=1
             ;;
         *)
             if [ $pos -eq 1 ]; then
@@ -51,15 +60,14 @@ done
 
 DOCKER_IMAGE="${DEPLOYMENT_PREFIX}/server:latest"
 
-
 # Initialize configuration files and directories
-setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Edge configuration files
+setup_folder=$(realpath "${SCRIPT_DIR}/${DEPLOYMENT_NAME}/setup") # Server configuration files
 config_json="${SCRIPT_DIR}/../config.json"  # Authentication configuration
 
 # Deployment communications configuration (IP addresses and ports)
 if [ -z "$COMM_SETUP" ]; then
     # If no communication setup is provided, use the one in the corresponding deployment directory
-    deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"  
+    deployment_json="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/deployment_setup.json"
 else
     # If a communication setup is provided, override the deployment configuration and use the one in the defaults directory
     deployment_json="${SCRIPT_DIR}/defaults/deployment_setup_${COMM_SETUP}.json"
@@ -77,9 +85,7 @@ fi
 
 echo "Using JSON for deployment communications:   $deployment_json"
 echo "Using setup folder:                         $setup_folder"
-echo "Using defaults JSON for default edge funcs: $defaults_json"
 echo "Using nominal voltages file: $nominal_voltages_file"
-
 
 # Verify the provided files and directories exist
 if [ ! -f "${SCRIPT_DIR}/../config.json" ]; then
@@ -93,10 +99,29 @@ if [ ! -f "${deployment_json}" ];then
 fi
 
 if [ ! -d "${setup_folder}" ];then
-  echo"Error: Setup directory not found in ${setup_folder}."
+  echo "Error: Setup directory not found in ${setup_folder}."
   exit 1
 fi
 
+path_to_setup=""
+json_files=("$setup_folder"/*.json)
+for json_file in "${json_files[@]}"; do
+    if [[ -f "$json_file" ]]; then
+        global_properties=$(jq -r '.["global-properties"]' "$json_file" 2>/dev/null)
+        if [[ "$global_properties" != "null" ]]; then
+            type=$(jq -r '.["global-properties"].type' "$json_file" 2>/dev/null)
+            if [[ "$type" == "server" ]]; then
+                path_to_setup="$json_file"
+                echo "Selected setup file: $path_to_setup"
+            fi
+        fi
+    fi
+done
+
+if [[ -z "$path_to_setup" ]]; then
+  echo "No valid server JSON file found in directory: $setup_file" >&2
+  exit 1
+fi
 
 # Get the IPv4 address from wlp or eth interfaces
 ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'wlp[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
@@ -107,13 +132,30 @@ fi
 if [ -z "$ip_address" ]; then
     ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'enxcc[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
 fi
+if [ -z "$ip_address" ]; then
+    ip_address=$(ip addr show | grep -E 'inet\s' | grep -E 'ens[0-9]+' | awk '{print $2}' | cut -d '/' -f 1 | head -n 1)
+fi
 
 custom_ip_address="172.29.128.1"
+
+# Generate the project XML if compss-project exists in the JSON
+project_path=""
+remote_project_path=""  # Fixed remote path
+resources_template_path="${SCRIPT_DIR}/templates/xml/resources_template.xml"
+project_template_path="${SCRIPT_DIR}/templates/xml/project_template.xml"
+
+compss_project=$(jq -r '.compss.project' "$path_to_setup")
+if [[ "$compss_project" != "null" ]]; then
+    project_path="${SCRIPT_DIR}/${DEPLOYMENT_NAME}/project_server.xml"
+    remote_project_path="/opt/COMPSs/Runtime/configuration/xml/projects/project.xml"
+
+    generate_project_xml "$path_to_setup" "$project_path" "$project_template_path"
+    echo "Generated project XML for server at $project_path"
+fi
 
 echo "Local IPv4 Address: $ip_address"
 echo "Custom IP Address: $custom_ip_address"
 echo
-
 
 # Auxiliar functions
 on_exit(){
@@ -125,9 +167,9 @@ on_exit(){
 trap 'on_exit' EXIT
 
 wait_containers(){
+    docker logs -f ${DEPLOYMENT_PREFIX}_server
     docker wait ${DEPLOYMENT_PREFIX}_server
 }
-
 
 ####################
 # SCRIPT MAIN CODE #
@@ -137,13 +179,21 @@ echo "Deploying container for SERVER with REST API listening on port 8080..."
 docker run \
     -d -it --rm \
     --name ${DEPLOYMENT_PREFIX}_server \
-    -v ${setup_folder}:/data/server/ \
+    -v ${path_to_setup}:/data/setup.json \
     -v ${deployment_json}:/data/deployment_setup.json \
     -v ${nominal_voltages_file}:/data/nominal_voltages.json \
     -v ${config_json}:/run/secrets/config.json \
+    -v ${project_path}:${remote_project_path} \
+    -v ${resources_template_path}:/data/resources_template.xml \
     -p 8080:8080 \
     -e LOCAL_IP=$ip_address \
+    -e REST_AGENT_PORT=$REST_AGENT_PORT \
+    -e COMM_AGENT_PORT=$COMM_AGENT_PORT \
+    -e PROJECT_PATH=$remote_project_path \
     -e CUSTOM_IP=$custom_ip_address \
+    -e ENABLE_METRICS=$ENABLE_METRICS \
+    -p $COMM_AGENT_PORT:$COMM_AGENT_PORT \
+    -p $REST_AGENT_PORT:$REST_AGENT_PORT \
     ${DOCKER_IMAGE}
 
 echo "Testbed properly deployed"

@@ -119,7 +119,7 @@
             "trigger": {
                 "type": "onFrequency",
                 "parameters": {
-                    "frequency": 10
+                    "frequency": 10000
                 }
             }
         }

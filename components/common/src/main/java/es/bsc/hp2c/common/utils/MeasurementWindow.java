@@ -22,7 +22,7 @@ public class MeasurementWindow<T> implements Serializable{
     }
 
 
-    public void addMeasurement(Instant timestamp, T value) {
+    public synchronized void addMeasurement(Instant timestamp, T value) {
         int nextIndex = (start + size) % window.length; // Insert new element
         window[nextIndex] = new Measurement<T>(timestamp, value);
 
@@ -33,16 +33,28 @@ public class MeasurementWindow<T> implements Serializable{
         }
     }
 
-    public Measurement<T>[] getMeasurementsNewerToOlder() {
+    public synchronized Measurement<T>[] getMeasurementsNewerToOlder() {
         Measurement<T>[] result = new Measurement[size];
-        for (int i = 0; i < size; i++) {
-            int index = (start + size - 1 - i) % window.length; // Traverse backwards
-            result[i] = window[index];
+        try {
+            for (int i = 0; i < size; i++) {
+                int index = (start + size - 1 - i) % window.length;
+                if (index < 0 || index >= window.length) {
+                    System.err.println("DEBUG: Invalid index access: " + index +
+                            " (start=" + start + ", size=" + size +
+                            ", window.length=" + window.length + ")");
+                }
+                result[i] = window[index];
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.err.println("ERROR: ArrayIndexOutOfBoundsException in getMeasurementsNewerToOlder()");
+            System.err.println("DEBUG: start=" + start + ", size=" + size + ", window.length=" + window.length);
+            e.printStackTrace();
         }
         return result;
     }
 
-    public Measurement<T>[] getMeasurementsOlderToNewer() {
+
+    public synchronized Measurement<T>[] getMeasurementsOlderToNewer() {
         Measurement<T>[] result = new Measurement[size];
         for (int i = 0; i < size; i++) {
             int index = (start + i) % window.length; // Traverse forwards
@@ -51,12 +63,12 @@ public class MeasurementWindow<T> implements Serializable{
         return result;
     }
 
-    public Measurement<T> getLastMeasurement(){
+    public synchronized Measurement<T> getLastMeasurement(){
         if (size == 0){ return null; }
         return window[(start + size - 1) % window.length];
     }
 
-    public Measurement<T> getFirstMeasurement() {
+    public synchronized Measurement<T> getFirstMeasurement() {
         if (size == 0) {
             return null;
         }
@@ -82,6 +94,10 @@ public class MeasurementWindow<T> implements Serializable{
             return 0.0; // Avoid division by zero
         }
         return (double) (size - 1) / (totalNanos / 1_000_000_000.0);
+    }
+
+    public int getStart(){
+        return this.start;
     }
 
     public int getSize(){
@@ -118,7 +134,7 @@ public class MeasurementWindow<T> implements Serializable{
         }
     }
 
-    public static MeasurementWindow decode(byte[] data) {
+    public synchronized static MeasurementWindow decode(byte[] data) {
         try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
              ObjectInputStream ois = new ObjectInputStream(bais)) {
             return (MeasurementWindow) ois.readObject();
@@ -127,7 +143,7 @@ public class MeasurementWindow<T> implements Serializable{
         }
     }
 
-    public ArrayList<JSONObject> getMeasurementsArray() {
+    public synchronized ArrayList<JSONObject> getMeasurementsArray() {
         ArrayList<JSONObject> measurementsList = new ArrayList<>();
 
         for (int i = 0; i < size; i++) {

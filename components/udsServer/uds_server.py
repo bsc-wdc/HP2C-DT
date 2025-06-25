@@ -25,9 +25,9 @@ def import_function(module_name, method_name):
 
 
 def main(socket_path, func_module, buffer_size=5000):
-    print("Instantiating socket", socket_path)
-    print("func_module:", func_module)
-    print("buffer_size:", buffer_size)
+    print("[uds_server] Instantiating socket", socket_path)
+    print("[uds_server] func_module:", func_module)
+    print("[uds_server] buffer_size:", buffer_size)
     buffer_size = int(buffer_size)
 
     # Preload function for fast response
@@ -47,24 +47,24 @@ def main(socket_path, func_module, buffer_size=5000):
     try:
         with client_socket:
             while True:
-                print("Reading incoming data...")
+                print("[uds_server] Reading incoming data...")
                 data = client_socket.recv(buffer_size)
                 if not data:
-                    print("Client disconnected")
+                    print("[uds_server] Client disconnected")
                     break
                 # Parse parameters from received JSON
                 module_name, method_name, func_params = \
                     parse_json_parameters(data)
+
                 # Call function
                 response = call_func(func_handler, module_name, method_name,
                                      func_params)
                 if response:
-                    print("RESPONSE: ", response)
                     client_socket.sendall((response + "\n").encode("utf-8"))
     except KeyboardInterrupt:
-        print("Shutting down Unix Socket...")
+        print("[uds_server] Shutting down Unix Socket...")
     except:
-        print("Something failed calling the function. "
+        print("[uds_server] Something failed calling the function. "
               "Make sure the passed key-value parameters are correct.")
         traceback.print_exc()
     finally:
@@ -97,7 +97,7 @@ def call_func(f, module_name, method_name, func_params):
         Returns `None` if the function does not produce a result or an error
         occurs.
     """
-    print(f"Received method: {method_name}, for module {module_name}, with "
+    print(f"[uds_server] Received method: {method_name}, for module {module_name}, with "
           f"funcParams: {func_params}")
 
     # Make sure the call corresponds to the preloaded function
@@ -110,7 +110,7 @@ def call_func(f, module_name, method_name, func_params):
 
     # Call function
     if func_params:
-        print(f"Running {module_name}.{method_name}")
+        print(f"[uds_server] Running {module_name}.{method_name}")
         if f:
             # Compute function
             result, actuations = f(**func_params)
@@ -118,9 +118,9 @@ def call_func(f, module_name, method_name, func_params):
             result_json = json.dumps({"result": result, "actuations":actuations})
             return result_json
         else:
-            print(f"Warning: Method {method_name} not found in module.")
+            print(f"[uds_server] Warning: Method {method_name} not found in module.")
     else:
-        print("Warning: No funcParams provided.")
+        print("[uds_server] Warning: No funcParams provided.")
 
 
 def parse_json_parameters(data):
@@ -150,16 +150,13 @@ def parse_json_parameters(data):
         method_name = json_data.get("method_name", DEFAULT_METHOD_NAME)
         func_params = json_data['parameters']
 
-        print("method_name:", method_name)
-        print("module_name:", module_name)
-        print("funcs_params:", json.dumps(func_params, indent=4))
     except json.JSONDecodeError or KeyError:
         raise ValueError("Received data is not a valid JSON")
     return module_name, method_name, func_params
 
 
 if __name__ == "__main__":
-    print("Received arguments: ", sys.argv)
+    print("[uds_server] Received arguments: ", sys.argv)
     if len(sys.argv) < 3 or len(sys.argv) > 4:
         raise ValueError("Wrong number of arguments: need to pass"
                          " <socket_path> <func_module>")

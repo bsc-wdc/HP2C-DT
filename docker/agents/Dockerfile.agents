@@ -1,6 +1,6 @@
 ARG COMPSS_VERSION
 
-FROM compss/compss:${COMPSS_VERSION} as framework
+FROM hp2c/compss:tempfixagents as framework
 
 
 ##################
@@ -31,7 +31,11 @@ WORKDIR /opt/COMPSs/Runtime/scripts/user
 FROM openjdk:11-jdk-slim as java_agent
 
 RUN apt-get update && \
-    apt-get install -y curl bash jq && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        bash \
+        tar \
+        jq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -47,7 +51,7 @@ COPY --from=framework /opt/COMPSs/Runtime/adaptors/RESTagent /opt/COMPSs/Runtime
 COPY --from=framework /opt/COMPSs/Runtime/adaptors/local /opt/COMPSs/Runtime/adaptors/local
 
 # Agents scripts
-COPY --from=framework /opt/COMPSs/Runtime/scripts/user/compss_agent_start /opt/COMPSs/Runtime/scripts/user/compss_agent_start
+COPY --from=framework /opt/COMPSs/Runtime/scripts/user /opt/COMPSs/Runtime/scripts/user
 COPY --from=framework /opt/COMPSs/Runtime/scripts/system /opt/COMPSs/Runtime/scripts/system 
 
 # Configuration file
@@ -56,6 +60,10 @@ COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/resources/examples/l
 COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/projects/project_schema.xsd /opt/COMPSs/Runtime/configuration/xml/projects/project_schema.xsd
 COPY --from=framework /opt/COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd /opt/COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd
 COPY --from=framework /opt/COMPSs//Runtime/configuration/agents/all.json /opt/COMPSs//Runtime/configuration/agents/all.json
+COPY --from=framework /opt/COMPSs/Runtime/configuration/log/ /opt/COMPSs/Runtime/configuration/log/
+
+# Overwrite local log4j cfg over COMPSs cfg
+COPY ./log4j2.xml /opt/COMPSs/Runtime/configuration/log/COMPSsMaster-log4j.debug
 
 ENV PATH="${PATH}:/opt/COMPSs/Runtime/scripts/user/" AGENT_NAME=localhost REST_AGENT_PORT=46101 COMM_AGENT_PORT=46102 DEBUG=debug
 

@@ -1,0 +1,13 @@
+{
+  "label": "FaultyFunc",
+  "parameters": {
+    "sensors": ["Sensor1"],
+    "actuators": ["Actuator1"]
+  },
+  "trigger": {
+    "type": "onRead",
+    "parameters": {
+      "trigger-sensor": "Not an array"
+    }
+  }
+}

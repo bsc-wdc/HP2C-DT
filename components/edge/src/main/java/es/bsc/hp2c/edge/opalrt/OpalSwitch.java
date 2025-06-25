@@ -16,16 +16,18 @@
 
 package es.bsc.hp2c.edge.opalrt;
 
+import es.bsc.hp2c.HP2CEdge;
 import es.bsc.hp2c.common.generic.Switch;
 import es.bsc.hp2c.edge.opalrt.OpalComm.OpalSensor;
 import es.bsc.hp2c.edge.opalrt.OpalComm.OpalActuator;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Arrays;
 
 import static es.bsc.hp2c.common.utils.CommUtils.BytesToFloatArray;
 import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
@@ -34,6 +36,7 @@ import static es.bsc.hp2c.common.utils.CommUtils.printableArray;
  * Represent a switch implemented accessible within a local OpalRT.
  */
 public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.State[]>, OpalActuator<Switch.State[]> {
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
     private int[] indexes;
 
@@ -68,7 +71,7 @@ public class OpalSwitch extends Switch<Float[]> implements OpalSensor<Switch.Sta
     @Override
     public void sensed(Float[] values, Instant timestamp) {
         setValues(sensedValues(values), timestamp);
-        System.out.println("[Sensed] " + getLabel() + " states are: " + printableArray(this.states));
+        logger.debug("[Sensed] " + getLabel() + " states are: " + printableArray(this.states));
     }
 
     @Override

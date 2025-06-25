@@ -7,9 +7,16 @@ import es.bsc.hp2c.common.funcs.Func;
 import es.bsc.hp2c.common.types.Sensor;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.json.JSONObject;
+
+import es.bsc.compss.types.annotations.Parameter;
+import es.bsc.compss.types.annotations.Constraints;
+import es.bsc.compss.types.annotations.parameter.Direction;
+import es.bsc.compss.types.annotations.parameter.Type;
+import es.bsc.compss.types.annotations.task.Method;
 
 /**
  * The method calculates the power and prints it through standard output.
@@ -29,25 +36,28 @@ public class CalcPower extends Func {
             throws IllegalArgumentException {
 
         super(sensors, actuators, others);
-
         Sensor<?, ?> sensor1 = null;
         Sensor<?, ?> sensor2 = null;
 
         try {
-            ArrayList<Sensor<?, ?>> sensorsList = sensors.values().iterator().next();
+            Iterator<ArrayList<Sensor<?, ?>>> iterator = sensors.values().iterator();
+            ArrayList<Sensor<?, ?>> sensorsList = iterator.next();
             sensor1 = sensorsList.get(0);
             if (sensorsList.size() == 2) {
                 sensor2 = sensorsList.get(1);
             } else if (sensors.size() == 2) {
-                sensor2 = sensors.values().iterator().next().get(0);
+                sensor2 = iterator.next().get(0);
             }
         }
+
         catch (Exception e){
             throw new IllegalArgumentException("Sensors must be exactly two: one voltmeter and one ammeter");
         }
 
         if (!(sensor1 instanceof Voltmeter && sensor2 instanceof Ammeter)
                 && !(sensor2 instanceof Voltmeter && sensor1 instanceof Ammeter)) {
+            System.out.println(sensor1);
+            System.out.println(sensor2);
             throw new IllegalArgumentException("Sensors must be one voltmeter and one ammeter");
         }
 
@@ -60,9 +70,12 @@ public class CalcPower extends Func {
         }
     }
 
-
     @Override
     public void run() {
+        int counter = 0;
+        for (int i = 0; i < 10; i++) {
+            counter = increment(counter);
+        }
         boolean voltmeterIsAvailable = voltmeter.getSensorAvailability();
         boolean ammeterIsAvailable = ammeter.getSensorAvailability();
         Float[] voltage = this.voltmeter.getCurrentValues();
@@ -79,4 +92,19 @@ public class CalcPower extends Func {
             System.out.println("[CalcPower]     Power is: " + voltage[0] * current[0] + " W");
         }
     }
+
+    public static int increment(int input) {
+        System.out.println("INCREMENTED INPUT IS NOW " + input);
+        return input + 1;
+    }
+
+    public static interface COMPSsItf {
+        @Constraints(computingUnits = "1")
+        @Method(declaringClass = "es.bsc.hp2c.server.funcs.CalcPower")
+        int increment(
+                @Parameter(type = Type.INT, direction = Direction.IN) int input
+        );
+    }
+
 }
+

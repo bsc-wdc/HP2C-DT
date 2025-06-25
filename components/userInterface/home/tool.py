@@ -111,7 +111,7 @@ def tool_to_yaml(tool_name):
 def yaml_to_tool(yaml_content):
     tool_data = yaml.safe_load(yaml_content)
     tool_name = tool_data['tool_name']
-    use_args = tool_data['use_args']
+    use_args = tool_data.get('use_args', False)
 
     if Tool.objects.filter(name=tool_name).exists():
         raise ValueError(f"A tool with name '{tool_name}' already exists.")

@@ -7,6 +7,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,6 +21,7 @@ import java.util.TreeMap;
 import static es.bsc.hp2c.common.types.Device.formatLabel;
 
 public final class FileUtils {
+    private static final Logger logger = LogManager.getLogger("appLogger");
     private FileUtils(){}
 
     /**
@@ -50,7 +53,7 @@ public final class FileUtils {
         try {
             object = getJsonObject(setupFile);
         } catch (IOException e) {
-            System.err.println("Error loading file " + setupFile + ": " + e.getMessage());
+            logger.error("Error loading file " + setupFile + ": " + e.getMessage());
             throw new RuntimeException(e);
         }
         JSONObject jGlobProp = object.getJSONObject("global-properties");
@@ -103,9 +106,9 @@ public final class FileUtils {
                 }
                 devices.put(d.getLabel(), d);
             } catch (ClassNotFoundException | JSONException e) {
-                System.err.println("Error loading device " + jDevice + ": " + e.getMessage() + ". Ignoring it. ");
+                logger.error("Error loading device " + jDevice + ": " + e.getMessage() + ". Ignoring it. ");
             } catch (DeviceInstantiationException e){
-                System.err.println("Error loading device. " + e.getMessage());
+                logger.error("Error loading device. " + e.getMessage());
             }
         }
         return devices;
@@ -132,7 +135,7 @@ public final class FileUtils {
         } else {
             windowSize = 1;
         }
-        System.out.println(label + " window size: " + windowSize);
+        logger.info(label + " window size: " + windowSize);
         return windowSize;
     }
 

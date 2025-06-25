@@ -18,6 +18,7 @@ package es.bsc.hp2c.common.generic;
 import java.io.IOException;
 import java.time.Instant;
 
+import es.bsc.hp2c.common.funcs.Action;
 import es.bsc.hp2c.common.types.Actuator;
 import es.bsc.hp2c.common.types.Device;
 import es.bsc.hp2c.common.types.Sensor;
@@ -85,7 +86,7 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
      * @param action runnable implementing the action
      */
     @Override
-    public void addOnReadFunction(Runnable action, int interval, String label, boolean onRead) {
+    public void addOnReadFunction(Action action, int interval, String label, boolean onRead) {
         this.onReadFunctions.addFunc(new OnReadFunction<Float[]>(action, interval, label, onRead));
     }
 
@@ -97,11 +98,11 @@ public abstract class Generator<R> extends Device implements Sensor<R, Float[]>,
         for (OnReadFunction orf : this.onReadFunctions.getOnReadFuncs()) {
             if (orf.isOnChange()) {
                 if (orf.changed(this.getCurrentValues())){ //changed() will update its last value if needed
-                    orf.getRunnable().run();
+                    orf.getAction().run();
                 }
             } else {
                 if (orf.getCounter() == orf.getInterval()) {
-                    orf.getRunnable().run();
+                    orf.getAction().run();
                     orf.resetCounter();
                 } else {
                     orf.incrementCounter();

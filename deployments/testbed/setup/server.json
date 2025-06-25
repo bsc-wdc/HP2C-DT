@@ -32,6 +32,7 @@
     {
       "label": "CalcPower",
       "lang": "Java",
+      "type": "workflow",
       "method-name": "es.bsc.hp2c.server.funcs.CalcPower",
       "parameters": {
         "sensors": {
@@ -44,7 +45,7 @@
       "trigger": {
         "type": "onFrequency",
         "parameters": {
-          "frequency": 10
+          "frequency": 10000
         }
       }
     },
@@ -62,7 +63,7 @@
       "trigger": {
         "type": "onFrequency",
         "parameters": {
-          "frequency": 10
+          "frequency": 10000
         }
       }
     },
@@ -80,7 +81,7 @@
       "trigger": {
         "type": "onFrequency",
         "parameters": {
-          "frequency": 10
+          "frequency": 10000
         }
       }
     }

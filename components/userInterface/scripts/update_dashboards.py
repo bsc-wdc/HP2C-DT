@@ -199,13 +199,16 @@ def update_dashboards():
     folder_uid = create_folder(URLs, GRAFANA_API_KEY)
 
     alerts_list = get_alerts_list(server_url, server_port)
-    if alerts_list is not None:
+    if alerts_list and alerts_list != [['']] and all(
+            any(item.strip() for item in alert) for alert in alerts_list):
         alert_rules = [
             create_alert_rule_json(alarm, edge, device, datasource_uid,
                                    folder_uid)
             for alarm, edge, device in alerts_list
         ]
         post_alert_rules(alert_rules, URLs, grafana_api_keys)
+    else:
+        print("No alerts received")
 
     ########################### CREATE JSON DASHBOARD ####################################
     print("Creating or updating dashboard...")

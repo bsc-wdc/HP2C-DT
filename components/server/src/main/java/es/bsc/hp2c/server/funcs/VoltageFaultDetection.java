@@ -13,8 +13,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static es.bsc.hp2c.HP2CServer.*;
-import static es.bsc.hp2c.server.modules.AlarmHandler.*;
+import static es.bsc.hp2c.HP2CServerContext.*;
 import static es.bsc.hp2c.common.utils.FileUtils.getJsonObject;
 
 public class VoltageFaultDetection extends Func {
@@ -28,8 +27,6 @@ public class VoltageFaultDetection extends Func {
         super(sensors, actuators, others);
         try {
             alarms = getAlarms();
-            String cwd = Paths.get("").toAbsolutePath().toString();
-            System.out.println("Current path: " + cwd);
 
             String path = "";
             File file = new File("/data/nominal_voltages.json");

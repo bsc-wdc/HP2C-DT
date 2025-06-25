@@ -6,10 +6,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class CSVTable {
     private List<String> edgeNames;
     private List<String> deviceNames;
     private List<List<Float>> data;
+    private static final Logger logger = LogManager.getLogger("appLogger");
+
 
     public CSVTable(String csvFilePath) {
         edgeNames = new ArrayList<>();
@@ -69,11 +74,11 @@ public class CSVTable {
     public void printTable() {
         // Print edge names, device names, and data
         for (int i = 0; i < edgeNames.size(); i++) {
-            System.out.print(edgeNames.get(i) + "\t" + deviceNames.get(i) + "\t");
+            logger.info(edgeNames.get(i) + "\t" + deviceNames.get(i) + "\t");
             for (int j = 0; j < data.get(i).size(); j++) {
-                System.out.print(data.get(i).get(j) + "\t");
+                logger.info(data.get(i).get(j) + "\t");
             }
-            System.out.println();
+            logger.info("");
         }
     }
 }

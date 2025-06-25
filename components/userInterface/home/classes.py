@@ -36,11 +36,7 @@ class updateExecutions(threading.Thread):
         wrong_tries = 0
         status = False
         while time.time() < timeout_start + self.timeout:
-            bool_exception = False
-            try:
-                bool_exception = update_table(self.request)
-            except Exception as e:
-                print("Error updating the table of executions: ", e)
+            bool_exception = update_table(self.request)
             if not bool_exception:
                 wrong_tries += 1
                 if wrong_tries == 3:

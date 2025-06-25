@@ -15,8 +15,7 @@
  */
 package es.bsc.hp2c.server.modules;
 
-import es.bsc.hp2c.HP2CServer.ActuatorValidity;
-import es.bsc.hp2c.common.types.Device;
+import es.bsc.hp2c.HP2CServerContext.ActuatorValidity;
 import es.bsc.hp2c.server.device.VirtualComm;
 import es.bsc.hp2c.server.device.VirtualComm.VirtualActuator;
 import es.bsc.hp2c.server.edge.VirtualEdge;
@@ -24,11 +23,14 @@ import es.bsc.hp2c.server.edge.VirtualEdge;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Scanner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import static es.bsc.hp2c.HP2CServer.checkActuator;
-import static es.bsc.hp2c.HP2CServer.setVerbose;
+import static es.bsc.hp2c.HP2CServerContext.checkActuator;
+import static es.bsc.hp2c.HP2CServerContext.setVerbose;
 
 public class CLI implements Runnable {
+    private static final Logger logger = LogManager.getLogger("appLogger");
     private boolean isRunning = false;
     private final Map<String, VirtualEdge> edgeMap;
 
@@ -38,14 +40,14 @@ public class CLI implements Runnable {
 
     public void start() {
         if (!isRunning) {
-            System.out.println("CLI started.");
+            logger.info("CLI started.");
             isRunning = true;
             // Create and start a new thread for user input
             Thread UIThread = new Thread(this);
             UIThread.setName("CLI-thread");
             UIThread.start();
         } else {
-            System.err.println("CLI is already running.");
+            logger.error("CLI is already running.");
         }
     }
 
@@ -55,13 +57,13 @@ public class CLI implements Runnable {
         Scanner scanner = new Scanner(System.in);
         while (isRunning) {
             // Prompt for user input
-            System.out.println("Enter a command: ");
+            logger.info("Enter a command: ");
             String userInput = scanner.nextLine();
             // Process the user input
             try {
                 processInput(userInput);
             } catch (IllegalArgumentException | IOException e) {
-                System.err.println("CLI error: " + e.getMessage());
+                logger.error("CLI error: " + e.getMessage());
             }
         }
         // Close the Scanner
@@ -71,9 +73,9 @@ public class CLI implements Runnable {
     public void stop() {
         if (isRunning) {
             isRunning = false;
-            System.out.println("CLI stopping...");
+            logger.info("CLI stopping...");
         } else {
-            System.out.println("CLI is not running.");
+            logger.info("CLI is not running.");
         }
     }
 
@@ -106,7 +108,7 @@ public class CLI implements Runnable {
      */
     private void actuateAction(String[] tokens) throws IOException {
         // Parse input prompt
-        System.out.println("Launching actuation...");
+        logger.info("Launching actuation...");
         if (tokens.length < 4) {
             throw new IllegalArgumentException(
                     "'actuate' needs at least 3 input arguments: edge, actuator and value");

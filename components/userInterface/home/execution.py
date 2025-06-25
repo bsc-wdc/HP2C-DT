@@ -240,36 +240,39 @@ def update_table(request):
     executions = Execution.objects.all().filter(author=request.user, machine=request.session['machine_chosen']).filter(
         Q(status="PENDING") | Q(status="RUNNING") | Q(status="INITIALIZING"))
     for executionE in executions:
-        if executionE.jobID != 0:
-            stdin, stdout, stderr = ssh.exec_command(
-                "sacct -j " + str(executionE.jobID) + " --format=jobId,user,nnodes,elapsed,state,submit,start,end | sed -n 3,3p")
-            stdout = stdout.readlines()
+        try:
+            if executionE.jobID != 0:
+                stdin, stdout, stderr = ssh.exec_command(
+                    "sacct -j " + str(executionE.jobID) + " --format=jobId,user,nnodes,elapsed,state,submit,start,end | sed -n 3,3p")
+                stdout = stdout.readlines()
 
-            values = str(stdout).split()
-            Execution.objects.filter(jobID=executionE.jobID).update(time=values[3])
+                values = str(stdout).split()
+                Execution.objects.filter(jobID=executionE.jobID).update(time=values[3])
 
-            submit_date = values[5]
-            if submit_date != "Unknown":
-                submit_date = datetime.strptime(submit_date, date_format)
-                Execution.objects.filter(jobID=executionE.jobID).update(
-                    submit=submit_date)
+                submit_date = values[5]
+                if submit_date != "Unknown":
+                    submit_date = datetime.strptime(submit_date, date_format)
+                    Execution.objects.filter(jobID=executionE.jobID).update(
+                        submit=submit_date)
 
-            start_date = values[6]
-            if start_date != "Unknown":
-                start_date = datetime.strptime(start_date, date_format)
-                Execution.objects.filter(jobID=executionE.jobID).update(
-                    start=start_date)
+                start_date = values[6]
+                if start_date != "Unknown":
+                    start_date = datetime.strptime(start_date, date_format)
+                    Execution.objects.filter(jobID=executionE.jobID).update(
+                        start=start_date)
 
-            end_date = values[7]
-            if end_date != "Unknown":
-                end_date = datetime.strptime(end_date, date_format)
-                Execution.objects.filter(jobID=executionE.jobID).update(
-                    end=end_date)
+                end_date = values[7]
+                if end_date != "Unknown":
+                    end_date = datetime.strptime(end_date, date_format)
+                    Execution.objects.filter(jobID=executionE.jobID).update(
+                        end=end_date)
 
-            if str(values[4]) != executionE.status:
-                Execution.objects.filter(jobID=executionE.jobID).update(
-                    status=values[4], time=values[3],
-                    nodes=int(values[2]))
+                if str(values[4]) != executionE.status:
+                    Execution.objects.filter(jobID=executionE.jobID).update(
+                        status=values[4], time=values[3],
+                        nodes=int(values[2]))
+        except Exception as e:
+            print("Error updating the table of executions: ", e)
 
     return True
 

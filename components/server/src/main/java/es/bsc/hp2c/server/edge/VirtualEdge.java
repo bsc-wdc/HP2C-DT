@@ -120,6 +120,7 @@ public class VirtualEdge {
         this.x = newEdge.getX();
         this.y = newEdge.getY();
         this.connections = newEdge.getConnections();
+        this.isAvailable = newEdge.isAvailable();
     }
 
     public boolean equals(VirtualEdge oldEdge){
@@ -199,6 +200,7 @@ public class VirtualEdge {
                     throw new IllegalArgumentException("Unsupported 'units' type for device type: " + device.getType());
                 }
             }
+            jDevice.put("isSensitive", device.isSensitive());
             jDevice.put("isActionable", isActionable);
             jDevicesInfo.put(deviceLabel, jDevice);
         }

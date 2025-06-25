@@ -22,6 +22,8 @@ import es.bsc.hp2c.edge.opalrt.OpalComm.OpalActuator;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -33,6 +35,7 @@ import static es.bsc.hp2c.common.utils.CommUtils.isNumeric;
  * Represent a switch implemented accessible within a local OpalRT.
  */
 public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Float[]>, OpalActuator<Float[]> {
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
     private int[] indexes;
 
@@ -68,8 +71,8 @@ public class OpalGenerator extends Generator<Float[]> implements OpalSensor<Floa
     @Override
     public void sensed(Float[] values, Instant timestamp) {
         super.setValues(sensedValues(values), timestamp);
-        System.out.println("[Sensed] Device " + getLabel() + " voltage set point is " + this.voltageSetpoint[0] + " V");
-        System.out.println("[Sensed] Device " + getLabel() + " power set point is " + this.powerSetpoint[0] + " W");
+        logger.debug("[Sensed] Device " + getLabel() + " voltage set point is " + this.voltageSetpoint[0] + " V");
+        logger.debug("[Sensed] Device " + getLabel() + " power set point is " + this.powerSetpoint[0] + " W");
     }
 
     @Override

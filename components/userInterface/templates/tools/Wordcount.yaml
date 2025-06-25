@@ -1,0 +1,117 @@
+fields:
+- default_value: /home/bsc/bsc019019/install_dir/tutorial_apps/python/wordcount/data
+  name: pathDataset
+  placeholder: None
+  preset_value: None
+  section: application
+  type: text
+- default_value: None
+  name: Data Dir
+  placeholder: None
+  preset_value: None
+  section: setup
+  type: text
+- default_value: install_dir
+  name: Install Dir
+  placeholder: None
+  preset_value: None
+  section: setup
+  type: text
+- default_value: tutorial_apps/python/wordcount/src/wordcount.py
+  name: Entry Point
+  placeholder: None
+  preset_value: None
+  section: setup
+  type: text
+- default_value: working_dir
+  name: Working Dir
+  placeholder: None
+  preset_value: None
+  section: setup
+  type: text
+- default_value: test_wordcount1
+  name: Simulation Name
+  placeholder: None
+  preset_value: None
+  section: setup
+  type: text
+- default_value: '1'
+  name: Number of Nodes
+  placeholder: None
+  preset_value: None
+  section: slurm
+  type: text
+- default_value: '10'
+  name: Time Limit
+  placeholder: None
+  preset_value: None
+  section: slurm
+  type: text
+- default_value: gp_debug
+  name: QOS
+  placeholder: None
+  preset_value: None
+  section: slurm
+  type: text
+- default_value: bsc19
+  name: Project Name
+  placeholder: None
+  preset_value: None
+  section: slurm
+  type: text
+- default_value: None
+  name: Agents
+  placeholder: None
+  preset_value: None
+  section: COMPSs
+  type: boolean
+- default_value: None
+  name: Checkpointing
+  placeholder: None
+  preset_value: None
+  section: COMPSs
+  type: boolean
+- default_value: None
+  name: Autorestart
+  placeholder: None
+  preset_value: None
+  section: COMPSs
+  type: boolean
+- default_value: None
+  name: Graph
+  placeholder: None
+  preset_value: None
+  section: COMPSs
+  type: boolean
+- default_value: None
+  name: Trace
+  placeholder: None
+  preset_value: None
+  section: COMPSs
+  type: boolean
+- default_value: None
+  name: Debug
+  placeholder: None
+  preset_value: None
+  section: COMPSs
+  type: boolean
+- default_value: None
+  name: COMPUTING_UNITS
+  placeholder: None
+  preset_value: None
+  section: environment
+  type: text
+- default_value: /home/bsc/bsc019019/install_dir/tutorial_apps/python/wordcount/src/:$PYTHONPATH
+  name: PYTHONPATH
+  placeholder: None
+  preset_value: None
+  section: environment
+  type: text
+modules_list:
+- hdf5
+- python/3.12.1
+- COMPSs/3.3
+repos: '[{"url": "https://github.com/bsc-wdc/tutorial_apps", "branch": "stable", "install":
+  false, "install_dir": "", "editable": false, "requirements": false, "target": false}]'
+tool_name: Wordcount
+use_args: true

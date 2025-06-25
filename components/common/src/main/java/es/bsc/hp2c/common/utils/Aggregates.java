@@ -5,10 +5,13 @@ import org.json.JSONObject;
 import java.util.Arrays;
 import java.time.Instant;
 import java.time.Duration;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static es.bsc.hp2c.common.utils.CommUtils.divideArray;
 
 public class Aggregates {
+    private static final Logger logger = LogManager.getLogger("appLogger");
 
     public static MeasurementWindow<Number[]> sum(MeasurementWindow<?> window, JSONObject jArgs) {
         MeasurementWindow<Number[]> resultWindow = new MeasurementWindow<>(1);
@@ -80,7 +83,7 @@ public class Aggregates {
             frequency = 50.0; // Assumed frequency
         }
 
-        System.out.println("[phasor] Using phasor frequency " + frequency);
+        logger.info("[phasor] Using phasor frequency " + frequency);
 
         Instant aggregateTime = window.getLastMeasurement().getTimestamp();
         MeasurementWindow<Number[]> resultWindow = new MeasurementWindow<>(1);
@@ -112,12 +115,12 @@ public class Aggregates {
         double samplingRate = window.getSamplingRate();
         double timeSpan = (double) window.getTotalTimeSpan().toMillis() / 1000;  // seconds
         if (samplingRate < (2 * f)) {
-            System.out.printf("[phasor] WARNING: Sampling rate %.2f Hz does not comply with the minimum Nyquist " +
-                    "criterion sampling rate of 2 * f = %.2f\n", samplingRate, (2 * f));
+            logger.warn("[phasor] WARNING: Sampling rate " + samplingRate + " Hz does not comply with the minimum " +
+                    "Nyquist criterion sampling rate of 2 * f = " + (2 * f) + "\n");
         }
         if ((timeSpan + (1 / f) * 0.1) < (1 / f)) {
-            System.out.printf("[phasor] WARNING: window too small (spanning %.0f ms) does not cover a complete " +
-                    "sampling period T = %.0f ms\n", timeSpan * 1000, 1000 / f);
+            logger.warn("[phasor] WARNING: window too small (spanning " + timeSpan * 1000 + " ms) does not cover a complete " +
+                    "sampling period T = " + 1000 / f + " ms\n");
         }
 
         // Init

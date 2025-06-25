@@ -2,7 +2,7 @@
 export INITIAL_EXECUTION="1"
 
 usage() {
-    echo "Usage: $0 [-h] [--deployment_name=<name>] [--deployment_prefix=<prefix>]" 1>&2
+    echo "Usage: $0 [-h] [--deployment_name=<name>] [--comm=<local|bsc|bsc_subnet>]" 1>&2
     echo "Options:" 1>&2
     echo "  -h: Show usage instructions" 1>&2
     echo "  --deployment_name=<name>: The name of the deployment (default: testbed)" 1>&2

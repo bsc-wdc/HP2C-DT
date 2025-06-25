@@ -13,12 +13,16 @@ import es.bsc.hp2c.common.python.UDSClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import static java.lang.Thread.sleep;
 
 /**
  * General wrapper to call Python functions through a thread running the Python session and Unix Sockets
  */
 public class PythonFunc extends Func {
+    private static final Logger logger = LogManager.getLogger("appLogger");
     private final UDSClient socket;
     private final PythonHandler pythonHandler;
     private final Map<String, ArrayList<Sensor<?, ?>>> sensors;
@@ -57,7 +61,7 @@ public class PythonFunc extends Func {
 
     @Override
     public void run() {
-        System.out.println("[PythonFunc] Calling Python function " + moduleName);
+        logger.info("[PythonFunc] Calling Python function " + moduleName);
         JSONObject jResponse = socket.call(sensors, actuators, otherFuncParams);
         if (jResponse.get("actuations") != null){
             JSONObject actuations = jResponse.getJSONObject("actuations");
@@ -70,14 +74,14 @@ public class PythonFunc extends Func {
                         try {
                             actuator.actuate(getStringArray(values));
                         } catch (IOException e) {
-                            System.err.print("[PythonFunc] Error actuating over actuator " +
+                            logger.error("[PythonFunc] Error actuating over actuator " +
                                     ((Device) actuator).getLabel() + " in func " + moduleName + ": " + e);
                         }
                     }
                 }
             }
         }
-        System.out.println("[PythonFunc] " + moduleName + " results: \n" + jResponse.toString(4));
+        logger.info("[PythonFunc] " + moduleName + " results: \n" + jResponse.toString(4));
     }
 
     public Actuator<?> getActuator(String edgeName, String deviceName){
@@ -108,7 +112,7 @@ public class PythonFunc extends Func {
 
     public static int getBufferSize(Map<String, ArrayList<Sensor<?, ?>>> sensors,
                                     Map<String, ArrayList<Actuator<?>>> actuators, JSONObject jParams){
-        int bufferSize = jParams.toString().length();
+        int bufferSize = jParams.toString().length() + 50;
 
         // Sensors
         for (String edgeName:sensors.keySet()){

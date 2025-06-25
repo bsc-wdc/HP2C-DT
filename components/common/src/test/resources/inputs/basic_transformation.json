@@ -1,0 +1,16 @@
+{
+  "label": "VoltLimitation",
+  "lang": "Python",
+  "parameters": {
+    "sensors": ["Voltmeter Gen1"],
+    "actuators": ["Three-Phase Switch Gen1"],
+    "other": {}
+  },
+  "trigger": {
+    "type": "onRead",
+    "parameters": {
+      "trigger-sensor": ["Voltmeter Gen1"],
+      "interval": 1
+    }
+  }
+}

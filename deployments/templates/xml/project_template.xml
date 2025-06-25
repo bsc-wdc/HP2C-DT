@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project>
+    <MasterNode>
+        <Processor Name="MainProcessor">
+            {{CPU_LINE}}
+            {{ARCH_LINE}}
+        </Processor>
+        {{MEMORY_LINE}}
+        {{STORAGE_LINE}}
+    </MasterNode>
+</Project>

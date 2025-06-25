@@ -1,0 +1,15 @@
+{
+  "global-properties": {
+    "type": "server",
+    "alarm-off-delay": "10000ms"
+  },
+  "funcs":[],
+  "compss": {
+    "project": {
+      "cpu": "4",
+      "arch": "amd64",
+      "memory": "8",
+      "storage": "30"
+    }
+  }
+}

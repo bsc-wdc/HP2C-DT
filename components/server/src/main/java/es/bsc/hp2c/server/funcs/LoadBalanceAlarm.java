@@ -10,7 +10,7 @@ import org.json.JSONObject;
 
 import java.util.*;
 
-import static es.bsc.hp2c.HP2CServer.*;
+import static es.bsc.hp2c.HP2CServerContext.*;
 
 public class LoadBalanceAlarm extends Func {
     private float imbalance_range;

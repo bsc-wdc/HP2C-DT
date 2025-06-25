@@ -1,0 +1,83 @@
+ARG COMPSS_VERSION
+
+FROM compss/compss:${COMPSS_VERSION} as framework
+
+
+##################
+# MANAGER 
+##################
+FROM alpine:3.18.0 as agents_manager
+
+RUN apk add --no-cache bash curl jq
+
+# Agents scripts
+COPY --from=framework /opt/COMPSs/Runtime/scripts/user/compss_agent_call_operation /opt/COMPSs/Runtime/scripts/user/call_operation
+COPY --from=framework /opt/COMPSs/Runtime/scripts/user/compss_agent_add_resources /opt/COMPSs/Runtime/scripts/user/remove_resources
+COPY --from=framework /opt/COMPSs/Runtime/scripts/user/compss_agent_add_resources /opt/COMPSs/Runtime/scripts/user/add_resources
+COPY --from=framework /opt/COMPSs/Runtime/scripts/system /opt/COMPSs/Runtime/scripts/system 
+
+COPY commands/get_resources /opt/COMPSs/Runtime/scripts/user/get_resources
+COPY commands/test_agent /opt/COMPSs/Runtime/scripts/user/test_agent
+
+
+ENV PATH="${PATH}:/opt/COMPSs/Runtime/scripts/user/"
+
+WORKDIR /opt/COMPSs/Runtime/scripts/user
+
+
+##################
+# JAVA + Setup
+##################
+FROM openjdk:11-jdk-slim as java_agent
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        bash \
+        tar \
+        jq && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Use --from=framework to import from the official COMPSs image, otherwise remove for development purposes
+COPY COMPSs/Runtime/compss-agent-impl.jar /opt/COMPSs/Runtime/compss-agent-impl.jar
+COPY COMPSs/Runtime/compss-engine.jar /opt/COMPSs/Runtime/compss-engine.jar
+COPY COMPSs/Runtime/scheduler /opt/COMPSs/Runtime/scheduler
+COPY COMPSs/Runtime/checkpointer/compss-checkpointer-base.jar /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-base.jar 
+COPY COMPSs/Runtime/checkpointer/compss-checkpointer-no-checkpoint.jar /opt/COMPSs/Runtime/checkpointer/compss-checkpointer-no-checkpoint.jar 
+RUN mkdir -p /opt/COMPSs/Runtime/connectors /opt/COMPSs/Runtime/
+
+COPY COMPSs/Runtime/adaptors/CommAgent /opt/COMPSs/Runtime/adaptors/CommAgent
+COPY COMPSs/Runtime/adaptors/RESTagent /opt/COMPSs/Runtime/adaptors/RESTagent
+COPY COMPSs/Runtime/adaptors/local /opt/COMPSs/Runtime/adaptors/local
+
+# Agents scripts
+COPY COMPSs/Runtime/scripts/user /opt/COMPSs/Runtime/scripts/user
+COPY COMPSs/Runtime/scripts/system /opt/COMPSs/Runtime/scripts/system 
+
+# Configuration file
+COPY COMPSs/Runtime/configuration/xml/projects/examples/local/project.xml /opt/COMPSs/Runtime/configuration/xml/projects/examples/local/project.xml 
+COPY COMPSs/Runtime/configuration/xml/resources/examples/local/resources.xml /opt/COMPSs/Runtime/configuration/xml/resources/examples/local/resources.xml
+COPY COMPSs/Runtime/configuration/xml/projects/project_schema.xsd /opt/COMPSs/Runtime/configuration/xml/projects/project_schema.xsd
+COPY COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd /opt/COMPSs/Runtime/configuration/xml/resources/resources_schema.xsd
+COPY COMPSs//Runtime/configuration/agents/all.json /opt/COMPSs//Runtime/configuration/agents/all.json
+COPY COMPSs/Runtime/configuration/log/ /opt/COMPSs/Runtime/configuration/log/
+
+# Overwrite local log4j cfg over COMPSs cfg
+COPY ./log4j2.xml /opt/COMPSs/Runtime/configuration/log/COMPSsMaster-log4j.debug
+
+ENV PATH="${PATH}:/opt/COMPSs/Runtime/scripts/user/" AGENT_NAME=localhost REST_AGENT_PORT=46101 COMM_AGENT_PORT=46102 DEBUG=debug
+
+CMD ["sh", "-c", "/opt/COMPSs/Runtime/scripts/user/compss_agent_start --hostname=${AGENT_NAME} --rest_port=${REST_AGENT_PORT} --comm_port=${COMM_AGENT_PORT}"]
+
+##################
+# PYTHON
+##################
+FROM java_agent as python_agent
+
+RUN # Install python/pip
+ENV PYTHONUNBUFFERED=1
+RUN apt-get update && apt-get install -y python3 python3-pip --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/* && \
+    ln -sf python3 /usr/bin/python && \
+    pip3 install --no-cache-dir --upgrade pip setuptools

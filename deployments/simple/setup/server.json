@@ -5,46 +5,34 @@
   },
   "funcs":[
     {
-      "label": "VoltLimitation",
+      "label": "MatMul",
+      "type": "workflow",
       "lang": "Java",
-      "method-name": "es.bsc.hp2c.server.funcs.VoltLimitation",
+      "method-name": "es.bsc.hp2c.common.funcs.MatMulServer",
       "parameters": {
         "sensors": {
-          "edge1": ["Voltmeter Gen1"]
+          "edge1": [
+            "Voltmeter Gen1"
+          ]
         },
         "actuators": {
-          "edge1": ["Three-Phase Switch Gen1"]
+          "edge1": [
+            "msgAlert1"
+          ]
         },
         "other": {
-          "threshold": 200
+          "n": 5
         }
       },
       "trigger": {
         "type": "onRead",
         "parameters": {
           "trigger-sensor": {
-            "edge1": ["Voltmeter Gen1"]
+            "edge1": [
+              "Voltmeter Gen1"
+            ]
           },
-          "interval": 2
-        }
-      }
-    },
-    {
-      "label": "CalcPower",
-      "lang": "Java",
-      "method-name": "es.bsc.hp2c.server.funcs.CalcPower",
-      "parameters": {
-        "sensors": {
-          "edge1": ["Ammeter Gen1"],
-          "edge2": ["Voltmeter Gen1"]
-        },
-        "actuators": [],
-        "other": {}
-      },
-      "trigger": {
-        "type": "onFrequency",
-        "parameters": {
-          "frequency": 10
+          "interval": 1
         }
       }
     },
@@ -62,53 +50,7 @@
       "trigger": {
         "type": "onFrequency",
         "parameters": {
-          "frequency": 10
-        }
-      }
-    },
-    {
-      "label": "VoltageFaultDectection",
-      "lang": "Java",
-      "method-name": "es.bsc.hp2c.server.funcs.VoltageFaultDetection",
-      "parameters": {
-        "sensors": {},
-        "actuators": [],
-        "other": {
-          "threshold": 0.2
-        }
-      },
-      "trigger": {
-        "type": "onFrequency",
-        "parameters": {
-          "frequency": 10
-        }
-      }
-    },
-    {
-      "label": "Fibonacci",
-      "lang": "Python",
-      "parameters": {
-        "sensors": {
-          "edge1": ["Voltmeter Gen1"]
-        },
-        "actuators": {
-          "edge1": ["Three-Phase Switch Gen1"]
-        },
-        "other": {
-          "module_name": "fibonacci",
-          "method_name": "main",
-          "other_func_parameters": {
-            "n": 4
-          }
-        }
-      },
-      "trigger": {
-        "type": "onRead",
-        "parameters": {
-          "trigger-sensor": {
-            "edge1": ["Voltmeter Gen1"]
-          },
-          "interval": 1
+          "frequency": 10000
         }
       }
     }

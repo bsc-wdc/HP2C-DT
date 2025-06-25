@@ -44,7 +44,6 @@ public abstract class Device {
         if (driver == null) {
             throw new JSONException("Malformed JSON. No driver indicated");
         }
-        System.out.println("looking for class " + driver);
         Class<?> c;
         try{
             c = Class.forName(driver);
