@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.*;
 
-import static es.bsc.hp2c.common.funcs.Func.transformFuncToServerFormat;
+import static es.bsc.hp2c.common.funcs.FuncUtils.transformFuncToServerFormat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TransformUtilsTest {

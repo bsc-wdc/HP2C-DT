@@ -44,6 +44,7 @@ def main(socket_path, func_module, buffer_size=5000):
 
     # Start loop to accept requests
     client_socket, _ = server_socket.accept()
+    buffer = ""
     try:
         with client_socket:
             while True:
@@ -52,15 +53,22 @@ def main(socket_path, func_module, buffer_size=5000):
                 if not data:
                     print("[uds_server] Client disconnected")
                     break
-                # Parse parameters from received JSON
-                module_name, method_name, func_params = \
-                    parse_json_parameters(data)
+                data_str = data.decode("utf-8")
+                buffer += data_str
 
-                # Call function
-                response = call_func(func_handler, module_name, method_name,
-                                     func_params)
-                if response:
-                    client_socket.sendall((response + "\n").encode("utf-8"))
+                if "\n" in data_str:
+                    old_buffer = buffer.split("\n", 1)
+                    message = old_buffer[0]
+                    buffer = old_buffer[1]
+
+                    # Parse parameters from received JSON
+                    module_name, method_name, func_params = parse_json_parameters(message, buffer_size)
+
+                    # Call function
+                    response = call_func(func_handler, module_name, method_name, func_params)
+                    if response:
+                        client_socket.sendall((response + "\n").encode("utf-8"))
+
     except KeyboardInterrupt:
         print("[uds_server] Shutting down Unix Socket...")
     except:
@@ -123,7 +131,7 @@ def call_func(f, module_name, method_name, func_params):
         print("[uds_server] Warning: No funcParams provided.")
 
 
-def parse_json_parameters(data):
+def parse_json_parameters(message, buffer_size):
     """
     Expects an encoded json and returns the module name, method name, and a
     JSON object with the parameters to be passed to the function with the
@@ -141,8 +149,7 @@ def parse_json_parameters(data):
         }
     """
     try:
-        # Decode the data and parse the JSON
-        message = data.decode('utf-8')
+        # Parse the JSON
         json_data = json.loads(message)
 
         # Extract function name and parameters
@@ -150,8 +157,8 @@ def parse_json_parameters(data):
         method_name = json_data.get("method_name", DEFAULT_METHOD_NAME)
         func_params = json_data['parameters']
 
-    except json.JSONDecodeError or KeyError:
-        raise ValueError("Received data is not a valid JSON")
+    except json.JSONDecodeError or KeyError as e:
+        raise ValueError(f"Received data is not a valid JSON: {e}")
     return module_name, method_name, func_params
 
 

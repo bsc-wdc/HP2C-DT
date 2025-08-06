@@ -75,6 +75,7 @@ public class UDSClient {
 
             // Send the JSON message to the socket
             writer.write(jsonMessage.toString());
+            writer.write("\n");
             // writer.newLine();  // Optional newline if server expects one
             writer.flush();
 
@@ -123,6 +124,7 @@ public class UDSClient {
      */
     public static JSONObject composeJSON(String moduleName, String methodName, Map<String, ArrayList<Sensor<?, ?>>> sensors,
                                          Map<String, ArrayList<Actuator<?>>> actuators, JSONObject otherFuncParams) {
+
         JSONObject jPyParams = new JSONObject();
         jPyParams.put("module_name", moduleName);
         jPyParams.put("method_name", methodName);
