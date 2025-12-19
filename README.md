@@ -9,7 +9,7 @@ To achieve such ambitious renewable generation objectives, the [Plan España Dig
 This project embraces the digital and ecological transition to develop a High-Precision High-Performance Computer-enabled Digital Twin (HP2C-DT) for modern power system applications. The HP2C-DT project aims to develop an innovative network Digital Twin (DT) concept, able to represent with a high degree of fidelity modern power systems in a wide variety of applications, such as transmission, distribution, generation, railway and industrial networks. The main project goal is to maximize their resilience and real-time performance during the high-demanding and challenging energy transition, achieving 100% renewable power networks.
 
 
-![concept](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/concept.png)
+![concept](docs/figures/concept.png)
 
 
 ## Additional Documentation
@@ -420,7 +420,7 @@ Once the alarm statuses are stored in the database, we define alert rules in Gra
 
 Additionally, these rules are displayed in a dedicated panel within the User Interface, as shown below:
 
-![alerts-grafana](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/alerts-grafana.png)
+![alerts-grafana](docs/figures/alerts-grafana.png)
 
 ## Deployment
 Under the `deployments` directory, we provide several deployment bash scripts and two different deployment configuration examples: `testbed`, a simple one with two edges, and `9-buses` (with nine). Each deployment has a setup (previously explained) and a `deployment_setup.json`, which includes the IP and port of every service (refer to the given examples).
@@ -496,13 +496,13 @@ Shows the edges' representation and their connections, with a black dot if the e
 if the edge has some unavailable devices, and a red dot if the entire edge is unavailable. If an edge is clicked, the 
 interface will provide a detailed view of the edge.
 
-![ui-view-map](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/UI-View-Map.png)
+![ui-view-map](docs/figures/UI-View-Map.png)
 ### View List
 Shows every device in every edge as a list. If the user wants to see the real-time state of a device (Grafana panels), 
 it can be accessed by clicking on it or on the "View detail" button. If the device is an actuator, there will be another 
 button labeled "View detail & actuate". If any component is not available, there will be a red dot next to its name.
 
-![ui-view-list](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/UI-View-List.png)
+![ui-view-list](docs/figures/UI-View-List.png)
 
 ### HPC executions from UI
 The user interface is a web application primarily used for monitoring devices in the grid and controlling some of them,
@@ -561,7 +561,7 @@ curl -X POST   -H "Content-Type: application/json"   -d '{"values":["0.5","0.75"
 
 Wrong or malformed commands are gracefully handled and the REST API responds with the right usage.
 
-![actuation](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/actuation.png)
+![actuation](docs/figures/actuation.png)
 
 ## Database Organization
 
@@ -609,7 +609,7 @@ This database contains time series data from IoT devices. Each device is represe
 ## Hypersim
 Hypersim is a real-time simulation platform for power system applications. This tool will perform as our "real" devices, generating realistic values for them in a given setup. To connect Hypersim with our edges, we developed an architecture using a bridge application implemented in Python that will act as a broker, connecting Hypersim with the corresponding edge nodes in our architecture.
 
-![hypersim-edge_comms](https://gitlab.bsc.es/wdc/projects/hp2cdt/-/raw/main/docs/figures/Hypersim-edge_comms.png)
+![hypersim-edge_comms](docs/figures/Hypersim-edge_Comms.png)
 
 At the bottom of this figure, we show the Hypersim representation of an electric grid. This grid, composed of devices, will be divided into edges based on different criteria like locality, frequent interaction, or computational logic. In this case, the grid shown is divided into seven edges. Each of them will send information to the corresponding edge in the bridge via UDP (for UDP Sensors) or via the Hypersim API (for TCP Sensors). Hypersim will receive actuations also through the API.
 
