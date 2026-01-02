@@ -1,0 +1,22 @@
+# CITATION.cff
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated journal article."
+title: "HP2C-DT: High-Precision High-Performance Computer-enabled Digital Twin"
+authors:
+  - family-names: Iraola
+    given-names: E.
+  - family-names: García-Lorenzo
+    given-names: M.
+  - family-names: Lordan-Gomis
+    given-names: F.
+  - family-names: Rossi
+    given-names: F.
+  - family-names: Prieto-Araujo
+    given-names: E.
+  - family-names: Badia
+    given-names: R. M.
+journal: "Future Generation Computer Systems"
+year: 2025
+pages: "108333"
+doi: "10.1016/j.future.2025.108333"
+url: "https://www.sciencedirect.com/science/article/pii/S0167739X25006272"
