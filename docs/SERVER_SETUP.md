@@ -1,5 +1,5 @@
 
-# Generic startup
+# Remote server and infrastructure setup
 Manual modifications of `deployment_setup.json` for every startup in case of dynamic IPs in AWS. Done only once in OpenStack.
 ```sh
 cd hp2cdt
@@ -24,8 +24,7 @@ sudo influxd
 X.X.X.X:3000/connections/datasources  # in browser
 ```
 
-# General
-#### Config file
+## Authentication config file
 **`config.json`**, located in the root, is needed in Server and UI for authentication tasks (access to DB and Grafana API key):
 ```json
 {
@@ -40,11 +39,11 @@ X.X.X.X:3000/connections/datasources  # in browser
 ```
 
 - DB: our normal password
-- Grafana API key: custom for each machine, in `Settings > Service accounts`
+- Grafana API key: custom for each machine. Check `Settings > Service accounts` in the Grafana user interface.
 
-# Database
+## Database
 
-#### Install InfluxDB
+### Install InfluxDB
 ```bash
 # Get compiled binary from InfluxDB old releases in Github
 wget https://dl.influxdata.com/influxdb/releases/influxdb_1.8.5_amd64.deb
@@ -54,7 +53,7 @@ sudo dpkg -i influxdb_1.8.5_amd64.deb
 sudo systemctl enable influxdb.service
 ```
 
-**DEPRECATED**: (because of needing to downgrade from `v1.8.10` to `v1.8.5` since the newer version failed at restarting at system reboots, i.e. `systemctl enable influxdb` did not work)
+The following commands are **DEPRECATED** because of needing to downgrade from `v1.8.10` to `v1.8.5` since the newer version failed at restarting at system reboots, i.e. `systemctl enable influxdb` did not work:
 ```sh
 # influxdata-archive_compat.key GPG Fingerprint: 9D539D90D3328DC7D6C8D3B9D8FF8E1F7DF8B07E
 wget -q https://repos.influxdata.com/influxdata-archive_compat.key
@@ -77,9 +76,9 @@ Trying to modify the systemd file: `/etc/systemd/system/influxd.service` (NOTE: 
 - Removing `Type=Forking`
 - Increasing timeout to 150 s. (`TimeoutStartSec=120` under `[Service]`)
 
-None work. It is better to downgrade to `v1.8.5` or `v1.8.7`.
+In any case, it is recommended to downgrade to `v1.8.5` or `v1.8.7` instead.
 
-#### Set up authentication
+### Set up authentication
 **TL;DR**
 ```bash
 # Clone dir
@@ -98,7 +97,7 @@ To test that the user/password pair was created correctly, log into the influx s
 influx -username server -password XXXXXXX
 ```
 
-**(Detailed description)**
+**Detailed description**
 To change the default username and password in InfluxDB, you can follow these steps:
 1. **Access the Configuration File**: Locate the configuration file for InfluxDB. The location of this file can vary depending on your installation method and operating system. Common locations include `/etc/influxdb/influxdb.conf` for Linux installations.
 2. **Edit the Configuration File**: Open the configuration file using a text editor. Look for the `[http]` section in the file. Within this section, you should find parameters related to authentication, such as `auth-enabled`.
@@ -113,8 +112,8 @@ To change the default username and password in InfluxDB, you can follow these st
    sudo systemctl restart influxdb
    ```
 
-# Grafana server
-#### Install
+## Grafana server
+### Install
 ```bash
 # Install Grafana
 sudo apt-get install -y apt-transport-https software-properties-common wget
@@ -146,7 +145,7 @@ sudo systemctl status grafana-server
 sudo systemctl enable grafana-server.service
 ```
 
-#### Allow embeded panels
+### Allow embedded panels
 Modify file `/etc/grafana/grafana.ini` to allow embedding:
 ```
 # File grafana.ini
@@ -158,16 +157,19 @@ And restart the grafana service if needed:
 sudo systemctl restart grafana-server
 ```
 
-#### Configure data source (not needed anymore)
+### Configure data source (not needed anymore)
 Should not be needed anymore, is handled automatically by the user interface.
 
 `Connections > Add new connection` : Search InfluxDB
 
-#### User/password
+### User/password
 - User: admin
 - Password: generic password
 
-# EC2 setup for docker-based images
+## EC2 setup for docker-based images
+
+Follow the instructions below to set up AWS EC2 virtual machines for HP2C-DT use.
+
 ```bash
 # Add Docker's official GPG key:
 sudo apt-get update
@@ -215,7 +217,7 @@ echo '{
 docker pull hp2c/broker
 docker pull hp2c/server
 ```
-# Brokers (clustering)
+## Brokers (clustering)
 Requirements
 - The containers in AWS cannot use `--network host` (command gets stuck). Therefore we need to publish all ports one by one when running `docker run`.
 - We need to write the `etc/hosts` file for all broker localhosts (not needed to modify the internal container `hosts` file of containers). The hostname added, associated with the corresponding IP, needs to be the same as de RabbitMQ file, currently in `20-main.conf` such as
@@ -223,8 +225,8 @@ Requirements
 cluster_formation.classic_config.nodes.1 = rabbit@hp2c_broker_server
 ```
 
-# Security group
-We need to modify the security group associated with instances to admit connections through specific ports (by default, only ports 443, 22 and 80 are configured):
+## Security group
+We need to modify the security group associated with instances to admit connections through specific ports (by default, only ports 443, 22 and 80 are allowed):
 - `Port 5672/8005`: main port for RabbitMQ broker connections.
 - `Port 15672/8015`: RabbitMQ management interface (allows connecting to the broker monitor)
 - `Port 8080`: Server REST API

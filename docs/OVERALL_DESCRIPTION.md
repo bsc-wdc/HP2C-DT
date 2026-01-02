@@ -401,7 +401,7 @@ Once the alarm status is stored in the database, we define alert rules in Grafan
 
 Additionally, these rules are displayed in a dedicated panel within the User Interface, as shown next:
 
-![alerts-grafana](docs/figures/alerts-grafana.png)
+![alerts-grafana](/docs/figures/alerts-grafana.png)
 
 
 ## User Interface
@@ -409,11 +409,11 @@ This web application, which can be accessed through {user_interface_ip}:{user_in
 ### View Map
 Shows the edge nodes' representation and their connections, with a black dot if the edge node is available, a yellow dot if the edge has some unavailable devices, and a red dot if the entire edge is unavailable. If an edge is clicked, the interface provides a detailed view of the edge.
 
-![ui-view-map](docs/figures/UI-View-Map.png)
+![ui-view-map](/docs/figures/UI-View-Map.png)
 ### View List
 Shows every device in every edge as a list. If the user wants to check the real-time state of a device (Grafana panels), the device state can be accessed by clicking on it or on the "View detail" button. If the device is an actuator, there will be another button labeled "View detail & actuate". If any component is not available, a red dot appears next to its name.
 
-![ui-view-list](docs/figures/UI-View-List.png)
+![ui-view-list](/docs/figures/UI-View-List.png)
 
 ### HPC executions from UI
 The user interface is a web application primarily used for monitoring devices in the grid and controlling some of them, providing a clear interface between the user and the digital twin. Additionally, the app includes features such as HPC executions, which simplify the execution of custom workflows directly from the interface. Further documentation can be found [here](components/userInterface/README.md).
@@ -468,7 +468,7 @@ curl -X POST   -H "Content-Type: application/json"   -d '{"values":["0.5","0.75"
 
 Wrong or malformed commands are gracefully handled and the REST API responds with the right usage.
 
-![actuation](docs/figures/actuation.png)
+![actuation](/docs/figures/actuation.png)
 
 ## Database
 
@@ -516,7 +516,7 @@ This database contains time series data from IoT devices. Each device is represe
 ## Hypersim
 Hypersim is a real-time simulation platform for power system applications. This tool acts as our "real" devices, generating realistic values for them in a given setup. To connect Hypersim with our edge nodes, we developed an architecture using a bridge application implemented in Python that acts as a broker, connecting Hypersim with the corresponding edge nodes in our architecture.
 
-![hypersim-edge_comms](docs/figures/Hypersim-edge_Comms.png)
+![hypersim-edge_comms](/docs/figures/Hypersim-edge_Comms.png)
 
 At the bottom of this figure, we show the Hypersim representation of an electric grid. This grid, composed of devices, is divided into edge nodes based on different criteria such as locality, frequent interaction, or computational logic. In this case, the grid shown is divided into seven edge nodes. Each of them sends information to the corresponding edge in the bridge via UDP (for UDP sensors) or via the Hypersim API (for TCP sensors). Hypersim also receives actuations through the API.
 

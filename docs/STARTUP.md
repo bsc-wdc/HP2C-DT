@@ -1,5 +1,7 @@
 # Start up guide
 
+The following instructions assume a Linux-based distribution. The setup was tested on an Ubuntu 22.04 LTS environment.
+
 ## 1. First steps
 
 ### 1.1 Download main repository
@@ -126,7 +128,7 @@ The default credentials to the Grafana dashboard are `user: admin; password: adm
 ## 4. Docker
 ### 4.1 Installation
 
-Install Docker on Ubuntu (check https://docs.docker.com/engine/install/ubuntu/ for updated instructions):
+Install Docker for Ubuntu (check https://docs.docker.com/engine/install/ubuntu/ for updated instructions):
 
 ```bash
 # Add Docker's official GPG key:
@@ -163,7 +165,7 @@ docker run hello-world
 
 ## 5. Set up private credentials
 
-Create the **`config.json`** file, located in the root. It is needed in Server and UI for authentication tasks (access to DB and Grafana API key):
+Create the **`config.json`** file in the root of the repository. It is needed in Server and UI for authentication tasks (access to DB and Grafana API key):
 
 ```json
 {
@@ -205,7 +207,7 @@ cd deployments
 ./deploy_opal_simulator.sh &
 ```
 
-To run the user interface, load a python environment that complies with the requirements in `components/userInterface/requirements.txt` and run:
+To run the user interface, load a python environment that complies with the requirements in `path/to/hp2cdt/components/userInterface/requirements.txt` and run:
 
 ```bash
 cd components/userInterface/scripts
