@@ -1,36 +1,16 @@
-
-
-# HP2C-DT
-
-Spain has set very ambitious energetic goals to achieve a fully sustainable, decarbonized and resilient energy system, as detailed in the [Plan Nacional Integrado de Energía y Clima (PNIEC) 2021-2030](https://www.miteco.gob.es/images/es/pnieccompleto_tcm30-508410.pdf). By 2030, 74% of power generation should come from renewable energy sources and the country must achieve emission neutrality by 2050, moving towards a 100% renewable energy electricity system.
-
-To achieve such ambitious renewable generation objectives, the [Plan España Digital (PED) 2025](https://www.lamoncloa.gob.es/presidente/actividades/Documents/2020/230720-Espa%C3%B1aDigital_2025.pdf) discusses a key fact, which is the blended evolution of both the energy and digital transition. PED-2025 discusses how digitalization can contribute to achieve a more resilient and clean economy, as a key step to secure the PNIEC defined objectives on reducing greenhouse gases effect by increasing renewable energy generation and energy efficiency increase.
-
-This project embraces the digital and ecological transition to develop a High-Precision High-Performance Computer-enabled Digital Twin (HP2C-DT) for modern power system applications. The HP2C-DT project aims to develop an innovative network Digital Twin (DT) concept, able to represent with a high degree of fidelity modern power systems in a wide variety of applications, such as transmission, distribution, generation, railway and industrial networks. The main project goal is to maximize their resilience and real-time performance during the high-demanding and challenging energy transition, achieving 100% renewable power networks.
-
-
-![concept](docs/figures/concept.png)
-
-
-## Additional Documentation
-
-- [Start up guide](docs/STARTUP.md)
-- [OpenStack Configuration Guide](docs/SERVER_SETUP.md)
-- [OpenStack Communications Instructions](docs/SERVER_COMM.md)
-
-
+# HP2C-DT core components
 ## Edge nodes
-In our application, we use edge nodes responsible for collecting, processing, and transmitting data between various components of the electric grid. To distribute the computational load of the operations carried out by these edge nodes, we utilize them as COMPSs agents. Within these nodes, you can find various devices, including voltmeters, ammeters, and switches, among others. These devices will enable us to create small smart subgrids. Depending on the nature of the device and its desired utility, these devices can function as sensors, actuators, or both.
+In our application, edge nodes collect, process, and transmit data between the different components of the electric grid. To distribute computational load, these nodes operate as COMPSs agents. Each edge node hosts multiple devices, such as voltmeters, ammeters, and switches, which together enable the creation of smart subgrids. Depending on their role, devices may function as sensors, actuators, or both.
 
 ### Setup and communications
-To configure an edge node, we use JSON files (refer to the `deployments` directory for examples). In this section, we will explain how to create them. An edge setup file will consist of three sections, as described below:
+To configure an edge node, we use JSON files (refer to the `deployments` directory for examples). In this section, we explain how to create them. An edge setup file consists of three sections, as described next:
 
 #### Global Properties
 
 ```json
 "global-properties":{
     "label": "edge1",
-    "type": "edge" # json type (edge/server)
+    "type": "edge",
     "comms":{
         "opal-tcp": {
             "protocol": "tcp",
@@ -52,16 +32,17 @@ To configure an edge node, we use JSON files (refer to the `deployments` directo
         },
         "connections": ["edge2"]
     },
-    "window-size": 5, #optional
+    "window-size": 5
 }
 ```
 
-This section contains the global properties of the edge node, such as 
+This section contains the global properties of the edge node, such as:
 
 - `label`, the name of the edge.
-- `comms`, where the user can define communication methods that can be later used by each device separatelly. Each method has a name (the key of the JSON object) and, within the object, a `protocol` (currently we only have `udp` and `tcp`), and how `sensors` and `actuators` will be handled. For each one, specify an IP or IPs (it can also be a list of IPs), and the port. These ports must be unique for every node.
+- `type`, the node type (edge/server).
+- `comms`, where the user can define communication methods that can be later used by each device separately. Each method has a name (the key of the JSON object) and, within the object, a `protocol` (currently, only `udp` and `tcp` are supported), and `sensors` and `actuators` fields. For each one, specify an IP or IPs (it can also be a list of IPs), and the port. These ports must be unique for every node.
 - `geo-data`, which includes the `position` (`x` and `y` coordinates) and `connections` (a list of edge labels).
-- `window-size`, which allows us to specify the size of the windows for all devices (this can be overridden for individual devices, as explained below). These windows help reduce communication load by enabling devices to store multiple values locally. Aggregates (described later) can then be performed on the stored data. 
+- `window-size` (optional), which allows us to specify the size of the windows for all devices (this can be overridden for individual devices). These windows help reduce communication load by enabling devices to store multiple values locally. Aggregates (described later) can then be performed on the stored data. 
 
 
 #### Devices
@@ -79,11 +60,11 @@ This section contains the global properties of the edge node, such as
         "properties": {
             "comm-type": "opal-tcp",
             "indexes": [0,1,2],
-            "window-size": 5,  #optional
-            "amqp-trigger": "onRead", #optional
-            "amqp-interval": 5 #optional
-            "amqp-agg-args": { #optional
-                "phasor-freq": 40 #optional
+            "window-size": 5,
+            "amqp-trigger": "onRead",
+            "amqp-interval": 5,
+            "amqp-agg-args": {  
+                "phasor-freq": 40
             }   
         }
     },
@@ -91,25 +72,25 @@ This section contains the global properties of the edge node, such as
 ]
 ```
 
-The `devices` section will contain each device within the edge. Each device has the following attributes:
+The `devices` section contains a representation of each device within the edge. Each device has the following attributes:
 1. `label`: the name of the device, which must be unique within this edge.
 2. `driver`: the path to the device's implementation.
 3. `driver-dt`: the path to the device's digital twin implementation.
 4. `position`: the XY position of the specific device.
-5. `properties`: We have two properties:
+5. `properties`: The following properties are supported:
    - `comm-type`, where the user can refer to the methods declared in the `comms` section in `global-properties`.
-   - `indexes`, which serves as a device identifier for those simulated by OpalRT. Indices represent the order in which measurements are sent in a packet from OpalRT. Voltmeters, ammeters, generators, wattmeters, and varmeters can have one or three indexes. Three-phase voltmeters and three-phase ammeters should have three indexes, while switches can have one or three, depending on their number of phases. These indexes must be unique, as they define the correspondent position in the socket received.
-   - `window-size`, optional argument where the user can specify the size of the sensor window. It can also be declared in the "global-properties" section and, if neither is provided, it will be 1.
+   - `indexes`, which serves as a device identifier for those simulated by OpalRT. Indices represent the order in which measurements are sent in a packet from OpalRT. Voltmeters, ammeters, generators, wattmeters, and varmeters can have one or three indexes. Three-phase voltmeters and three-phase ammeters should have three indexes, while switches can have one or three, depending on their number of phases. These indexes must be unique, as they define the corresponding position in the received socket.
+   - `window-size`, optional argument where the user can specify the size of the sensor window. It can also be declared in the "global-properties" section and, if neither is provided, it is set to 1.
    - `amqp-trigger`, optional argument to specify which type of amqp publish is desired for this concrete device. Options are:
-     - **"onRead"**: sends message for each read or set of reads by using `amqp-interval`: [int]
-     - **"onFrequency"**: sends messages periodically every n seconds by using `amqp-frequency`: [int]
+     - **"onRead"**: sends one message per read or set of reads (depending on the value defined under `amqp-interval: [int]`)
+     - **"onFrequency"**: sends messages periodically every n seconds by using `amqp-frequency: [int]`
      - **"onChange"**: Executed whenever the values of the sensors defined in `trigger.parameters` change.
    - `amqp-aggregate`, `amqp-agg-args` optional arguments to specify the type of pre-processing to perform on the sensor window, and its arguments (they can vary depending on the aggregate). Options include:
        - **"sum"**: Sums up the values in the window. Only valid for `Number[]` sensors.
        - **"avg"**: Returns the average of all values in the window. Only valid for `Number[]` sensors.
        - **"last"**: Returns the most recent value in the window.
        - **"all"**: Returns all values in the window, ordered from oldest to newest.
-       - **"phasor"**: Returns phasor (magnitude and phase) of the sensor given (only for Ammeter and Voltmeter). Frequency can be specified including the entry "phasor-freq" and a double within the "amqp-agg-args" JSONObject.
+       - **"phasor"**: Returns the phasor (magnitude and phase) of the sensor given (only for Ammeter and Voltmeter). Frequency can be specified including the entry "phasor-freq" and a double within the "amqp-agg-args" JSONObject.
 
 These AMQP options can be defined for each sensor by editing the `deployments/defaults/setup/edge_setup.json` file. This file specifies the functions to be performed for each device. Commonly defined functions include:
 - **`AMQPConsume`**: A method used by actuators to receive actuations from the server.
@@ -126,18 +107,18 @@ These AMQP options can be defined for each sensor by editing the `deployments/de
                 "actuators": [],
                 "other": {
                     "aggregate": {
-                        "type": "phasor" #specify aggregate method
-                        "args": { #specify aggregate args (parsed by the aggregate method)
+                        "type": "phasor"  # specify aggregate method
+                        "args": {  # specify aggregate args (parsed by the aggregate method)
                             "phasor-freq": 60.0 
                         }   
                     }
                 } 
             },
             "trigger": {
-                "type": "onRead",  # onFrequency also possible
+                "type": "onRead",  # onFrequency is also available
                 "parameters": {
                     "trigger-sensor": "",
-                    "interval": 3  # if onFrequency, declare "frequency": [int]
+                    "interval": 3  # if onFrequency, must declare "frequency": [int]
                 }
         
             }
@@ -167,7 +148,7 @@ To perform any action or evaluation within the system, we can declare **function
 
 We can also define how or when the function is triggered, allowing the following options:
 
-- **`onRead`**: Executed every time the sensor defined in `parameters` is read.
+- **`onRead`**: Executed every time the sensor defined under `trigger.parameters` is read.
 - **`onChange`**: Executed whenever the values of the sensors defined in `trigger.parameters` change.
 - **`onFrequency`**: Triggered every _n_ seconds, where _n_ is specified in `parameters.frequency` (see JSON example in the [`Server`](#server) section).
 - **`onStart`**: Runs the function when the DT is initialized.
@@ -177,7 +158,7 @@ We can also define how or when the function is triggered, allowing the following
 "funcs": [
     {
         "label": "VoltLimitation",
-        "type": "workflow", #optional
+        "type": "workflow",
         "lang": "Java",
         "method-name": "es.bsc.hp2c.edge.funcs.VoltLimitation",
         "parameters": {
@@ -198,14 +179,18 @@ We can also define how or when the function is triggered, allowing the following
 
 A function is a method that can read from one or more sensors and actuate over one or more actuators. Within the `funcs` section, the user must specify the following:
 1. `label`: a unique name for the function.
-2. `lang`: the language in which it was implemented (Java or Python).
-3. `method-name`: the path to the method's implementation (e.g., es.bsc.hp2c.<SUBPACKAGE>.<CLASS>).
-4. `parameters`: the user must define lists of `sensors`, `actuators`, and additional parameters called `others` that are needed by the function.
-5. `trigger`: the event that triggers the execution of the function. 
+2. `type` (optional): functions can be executed either as synchronous runs or as COMPSs workflows in the case of asynchronous, larger workloads. In the latter case, the computational load is distributed among the available COMPSs agents, and the field `type` must be specified as `workflow`.
+3. `lang`: the language in which it was implemented (Java or Python).
+4. `method-name`: the path to the method's implementation (e.g., es.bsc.hp2c.<SUBPACKAGE>.<CLASS>).
+5. `parameters`: the user must define lists of `sensors`, `actuators`, and additional parameters called `other` that are needed by the function.
+6. `trigger`: the event that triggers the execution of the function. 
 
-When a Python function is instantiated (if `lang` is *Python*), a Python server is initialized and communication is established via UNIX domain sockets. Therefore, the `method-name` will always be `es.bsc.hp2c.common.utils.PythonFunc`. The user may specify it explicitly, but if not provided, this default value will be used. This is because we use a unified structure for Python functions that allows us to store the socket and other relevant attributes. For each different method, a new UDS (Unix Domain Socket) will be created to communicate with the Python server.
+When a Python function is instantiated (if `lang` is *Python*), a Python server is initialized and communication is established via UNIX domain sockets. Therefore, the `method-name` is set to `es.bsc.hp2c.common.utils.PythonFunc`. The user may specify it explicitly, but if not provided, this default value will be used. This is because we use a unified structure for Python functions that allows us to store the socket and other relevant attributes. For each different method, a new UDS (Unix Domain Socket) is created to communicate with the Python server.
 
-As a result, for these functions, the user must specify in the `parameters` sectionan array of `sensors` and `actuators` (as in the java funcs) and, within the `other` section, the `module_name`, `method_name`, and, if applicable, `other_func_parameters`. The following code is an example of a Python function (it is also a `VoltLimitation` like the previous example for Java functions):
+As a result, Python functions require a slightly different configuration. In the `parameters` section, the user must still define the `sensors` and `actuators` arrays, in the same way as for Java functions. In addition, the `other` section must specify the Python entry point by providing the `module_name` and `method_name`, along with optional `other_func_parameters` if needed.
+
+The following example shows a Python implementation of the `VoltLimitation` function, equivalent in behavior to the Java example shown above.
+
 
 ```json
 {
@@ -232,16 +217,12 @@ As a result, for these functions, the user must specify in the `parameters` sect
 }
 ```
 
-Functions can be executed either as an instantaneous function or as a COMPSs workflow, designed for non-instantaneous, 
-larger tasks. In this case, the computational work will be distributed among the available COMPSs agents (explained below). 
-To use this COMPSs workflow functionality, the user must specify the `type` field as `workflow`.
-
 ### COMPSs Workflows
 As every edge device and the server are COMPSs agents, we implemented an optional section, `compss`, allowing the user to
 declare both the COMPSs architecture and external resources (other agents to which the declaring agent can offload computational work).
 This section applies to both edge and server setups. You can check examples of this section in `deployments/test_response_time/setup/edge1.json`.
 
-This is defined by two subsections:
+This is defined by two fields:
 
 - `project`: Defines the agent architecture. Every field is optional.
   - `cpu`: Number of computing units (Default: 1)
@@ -276,7 +257,7 @@ This is defined by two subsections:
 ```
 
 ## Server
-Another key component in our architecture is the Server, which is responsible for receiving data from the edges, storing it in the InfluxDB database, executing functions, and providing data to the User Interface, among other tasks.
+Another key component in our architecture is the Server, which is responsible for receiving data from the edge nodes, storing it in the InfluxDB database, executing functions, and providing data to the User Interface, among other tasks.
 
 To deploy the server, the user must provide a JSON file specifying:
 
@@ -288,11 +269,11 @@ To deploy the server, the user must provide a JSON file specifying:
 {
   "global-properties": {
     "type": "server",
-    "alarm-off-delay": "10000ms" # optional. Specify the time plus the unit (ms, s, m, h)
+    "alarm-off-delay": "10000ms"
   },
   "funcs":[
     {
-      "label": "VoltageFaultDectection",
+      "label": "VoltageFaultDetection",
       "lang": "Python",
       "method-name": "es.bsc.hp2c.server.funcs.VoltageFaultDetection",
       "parameters": {
@@ -324,7 +305,7 @@ In order to get some information from the server and send orders, there is a RES
   {"edge1":{"show":true,"position":{"x":2.1153889,"y":41.389915},"connections":["edge2"]},
   "edge2":{"show":true,"position":{"x":-5.9826,"y":37.3886},"connections":["edge1"]}}
   ```   
-- **getEdgesInfo**: returns information about the whole system (edges, devices and their attributes):
+- **getEdgesInfo**: returns information about the whole system (edge nodes, devices and their attributes):
   ```bash
   curl -X GET http://0.0.0.0:8080/getEdgesInfo
      {
@@ -355,7 +336,7 @@ In order to get some information from the server and send orders, there is a RES
       }
   ```
 
-- **getAlarms**: returns the triples alarm-edge-device declared.
+- **getAlarms**: returns the declared alarm-edge-device triples.
   ```bash
   curl -X GET http://0.0.0.0:8080/getAlarms
     [[VoltageFaultDetection, edge2, VoltmeterGen1], 
@@ -365,20 +346,20 @@ In order to get some information from the server and send orders, there is a RES
 
 
 ## Alarms
-Alarms are another functionality of our Digital Twin. They are useful for monitoring the system’s state and receiving notifications when unexpected events occur.
+Alarms are another feature of the Digital Twin framework. They are useful for monitoring the system’s state and receiving notifications when unexpected events occur.
 
 To enable this, we implemented a writeAlarm method, which can be called from a function (see the previous section [`Functions`](#functions)) whenever an alarm needs to be triggered.
 
 ### Alarms on the Server
 The server generates a JSON file in the project root (alarms.json) that summarizes the status of all declared alarms.
 
-In this JSON file, each alarm entry includes a location section listing the edge-device pairs, along with the date and time of the alarm and, if specified, an informational message. If no edge or device is declared, the date and time will be stored directly within the alarm entry rather than in the location subsection.
+In this JSON file, each alarm entry includes a location section listing the edge-device pairs, along with the date and time of the alarm and, if specified, an informational message. If no edge or device is declared, the date and time is stored directly within the alarm entry rather than in the location subsection.
 
 Here is an example of a JSON file:
 
 ```json
 {
-    "VoltageFaultDetection": { # local alarm
+    "VoltageFaultDetection": {  # local alarm
         "alarm": true,
         "location": {
             "edge1": {
@@ -395,7 +376,7 @@ Here is an example of a JSON file:
             }
         }
     },
-    "LoadBalanceAlarm": { # global alarm
+    "LoadBalanceAlarm": {  # global alarm
         "alarm": true,
         "time": "2025-02-03T14:52:40.686Z",
         "info": "Load imbalance detected: max=620.3006 (edge2-ThreePhaseAmmeterGen1) min=146.368 (edge1-AmmeterGen1)"
@@ -416,100 +397,26 @@ Additionally, alarms are stored in InfluxDB, allowing us to define alert rules i
 If both the edge and device are set to "global," the alarm is assumed to be related to the entire system rather than a specific device.
 
 ### Alarms on the User Interface
-Once the alarm statuses are stored in the database, we define alert rules in Grafana to visualize them. We create a new rule for each unique alarm-edge-device combination to ensure all potential issues are monitored.
+Once the alarm status is stored in the database, we define alert rules in Grafana to visualize them. We create a new rule for each unique alarm-edge-device combination to ensure all potential issues are monitored.
 
-Additionally, these rules are displayed in a dedicated panel within the User Interface, as shown below:
+Additionally, these rules are displayed in a dedicated panel within the User Interface, as shown next:
 
 ![alerts-grafana](docs/figures/alerts-grafana.png)
 
-## Deployment
-Under the `deployments` directory, we provide several deployment bash scripts and two different deployment configuration examples: `testbed`, a simple one with two edges, and `9-buses` (with nine). Each deployment has a setup (previously explained) and a `deployment_setup.json`, which includes the IP and port of every service (refer to the given examples).
-
-The final file involved in the deployment is the `config.json`. It must be manually created by the user and located at the root of the repository:
-
-```
-.
-├── apps/
-├── components/
-├── deployments/
-├── docker/
-├── docs/
-└── config.json
-```
-
-`config.json` should contain the username and password for the database, as well as the API key for Grafana, as follows:
-
-```json
-{
-  "database": {
-    "username": "XXXX",
-    "password": "XXXX"
-  },
-  "grafana": {
-    "api_key": "XXXX"
-  }
-}
-```
-
-The Grafana API key can be either a single key (as shown in the previous example) or multiple keys (specified as a list) if the user wants to configure more than one setup:
-```json
-{
-  "database": {
-    "username": "XXXX",
-    "password": "XXXX"
-  },
-  "grafana": {
-    "api_key": ["XXXX", "XXXX"]
-  }
-}
-```
-
-In order to run the whole DT architecture, we have the edges, a server, a user interface, a database, and a broker (in charge of queuing and routing the messages).
-
-We made a random data generator for testing the application called "Opal Simulator". Every deployment script mentioned in this section has its own usage with several argument options that can be invoked using the "-h" flag.
-
-To deploy the edges, the user must create its image (`docker/edge/create_images.sh`) and then either execute all of them separately with `docker run` (using the next script as an example) or all together on the same machine:
-```bash
-./deployments/deploy_edges.sh
-```
-### Local execution
-This option is meant for testing purposes, and allows to create and deploy broker, server, user interface and opal simulator all together by using docker compose:
-```bash
-./deployments/deploy_all.sh
-```
-### Distributed execution
-1. Create images using the script `docker/create_images.sh`.
-2. Run the created images:
-```bash
-./deployments/deploy_broker.sh
-./deployments/deploy_user_interface.sh
-./deployments/deploy_server.sh
-[./deployments/deploy_opal_simulator.sh]
-```
-
 
 ## User Interface
-This web application, which can be accessed through {user_interface_ip}:{user_interface_port} in a browser, provides a 
-monitor for the deployment. The main view has two panels:
+This web application, which can be accessed through {user_interface_ip}:{user_interface_port} in a browser, provides a monitoring interface for the deployment. The main view has two panels:
 ### View Map
-Shows the edges' representation and their connections, with a black dot if the edge is running correctly, a yellow dot 
-if the edge has some unavailable devices, and a red dot if the entire edge is unavailable. If an edge is clicked, the 
-interface will provide a detailed view of the edge.
+Shows the edge nodes' representation and their connections, with a black dot if the edge node is available, a yellow dot if the edge has some unavailable devices, and a red dot if the entire edge is unavailable. If an edge is clicked, the interface provides a detailed view of the edge.
 
 ![ui-view-map](docs/figures/UI-View-Map.png)
 ### View List
-Shows every device in every edge as a list. If the user wants to see the real-time state of a device (Grafana panels), 
-it can be accessed by clicking on it or on the "View detail" button. If the device is an actuator, there will be another 
-button labeled "View detail & actuate". If any component is not available, there will be a red dot next to its name.
+Shows every device in every edge as a list. If the user wants to check the real-time state of a device (Grafana panels), the device state can be accessed by clicking on it or on the "View detail" button. If the device is an actuator, there will be another button labeled "View detail & actuate". If any component is not available, a red dot appears next to its name.
 
 ![ui-view-list](docs/figures/UI-View-List.png)
 
 ### HPC executions from UI
-The user interface is a web application primarily used for monitoring devices in the grid and controlling some of them,
-providing a clear interface between the user and the digital twin. Additionally, the app includes features such as HPC 
-executions, which simplify the execution of custom workflows directly from the interface. Here you can find the README:
-
-- [HPC Executions with UI](components/userInterface/README.md)
+The user interface is a web application primarily used for monitoring devices in the grid and controlling some of them, providing a clear interface between the user and the digital twin. Additionally, the app includes features such as HPC executions, which simplify the execution of custom workflows directly from the interface. Further documentation can be found [here](components/userInterface/README.md).
 
 ## IoT communications
 The application uses the RabbitMQ Java client for edge devices and a RabbitMQ Docker image for the AMQP broker.
@@ -563,7 +470,7 @@ Wrong or malformed commands are gracefully handled and the REST API responds wit
 
 ![actuation](docs/figures/actuation.png)
 
-## Database Organization
+## Database
 
 In the InfluxDB database, `hp2cdt`, each IoT device, labeled as `edge1`, `edge2`, etc., contributes to a *measurement* (a time series in InfluxDB nomenclature) each. To distinguish between devices, a *tag* called `device` is used, and "SensorX" is added to specify each sub-device, even if the sensor has only one sub-sensor. The actual measurements are stored in a float-type *field* named `value`. This setup simplifies the handling and interpretation of data from various IoT sources.
 
@@ -607,13 +514,13 @@ This database contains time series data from IoT devices. Each device is represe
 
 
 ## Hypersim
-Hypersim is a real-time simulation platform for power system applications. This tool will perform as our "real" devices, generating realistic values for them in a given setup. To connect Hypersim with our edges, we developed an architecture using a bridge application implemented in Python that will act as a broker, connecting Hypersim with the corresponding edge nodes in our architecture.
+Hypersim is a real-time simulation platform for power system applications. This tool acts as our "real" devices, generating realistic values for them in a given setup. To connect Hypersim with our edge nodes, we developed an architecture using a bridge application implemented in Python that acts as a broker, connecting Hypersim with the corresponding edge nodes in our architecture.
 
 ![hypersim-edge_comms](docs/figures/Hypersim-edge_Comms.png)
 
-At the bottom of this figure, we show the Hypersim representation of an electric grid. This grid, composed of devices, will be divided into edges based on different criteria like locality, frequent interaction, or computational logic. In this case, the grid shown is divided into seven edges. Each of them will send information to the corresponding edge in the bridge via UDP (for UDP Sensors) or via the Hypersim API (for TCP Sensors). Hypersim will receive actuations also through the API.
+At the bottom of this figure, we show the Hypersim representation of an electric grid. This grid, composed of devices, is divided into edge nodes based on different criteria such as locality, frequent interaction, or computational logic. In this case, the grid shown is divided into seven edge nodes. Each of them sends information to the corresponding edge in the bridge via UDP (for UDP sensors) or via the Hypersim API (for TCP sensors). Hypersim also receives actuations through the API.
 
-The bridge application, responsible for communicating Hypersim with our edge nodes, will have several Edge objects storing the ports and sockets for every interaction. When each of them receives a message coming from Hypersim (UDP sensors), it will redirect it to the UDP-Sensors-port of the corresponding edge and, in the opposite direction (TCP Actuators), it will redirect it to the API. Regarding the TCP Sensors, the Bridge will demand the value from Hypersim (with a certain frequency) and send it to the TCP-Sensors-port of the appropriate edge. The distribution of sensors among protocols typically follows the next convention:
+The bridge application, responsible for communicating Hypersim with the edge nodes, has several Edge objects that store the ports and sockets for every interaction. When one of them receives a message from Hypersim (UDP sensors), it redirects it to the UDP sensors port of the corresponding edge and, in the opposite direction (TCP actuators), redirects it to the API. For TCP sensors, the bridge requests values from Hypersim at a given frequency and sends them to the TCP sensors port of the appropriate edge. The distribution of sensors among protocols typically follows the next convention:
 
 - UDP communications: 
   - high-frequency sensors, such as voltmeters and ammeters
@@ -621,11 +528,75 @@ The bridge application, responsible for communicating Hypersim with our edge nod
   - lower-frequency sensors, e.g., power-meters
   - actuators: switches and generators
 
-Regarding port numeration, we use the following pattern (with `{nn}` being the edge number expressed with two digits):
+Regarding port numbering, we use the following pattern (with `{nn}` being the edge number expressed with two digits):
 
 - Edge node (Java) to Bridge (Python).
   - `1{nn}02` for UDP Sensors ports.
   - `2{nn}02` for TCP Sensors.
   - `3{nn}02` for TCP Actuators.
-- Bridge (Python) to Hypersim. Since the TCP communication with Hypersim will be performed via API, we only have to decide which port is used for UDP. 
+- Bridge (Python) to Hypersim. Since the TCP communication with Hypersim is performed via API, we only have to decide which port is used for UDP. 
   - `1{nn}04` (The number of the UDP between Edge node and Bridge, `1{nn}02`, plus 2).
+
+
+## Deployment
+Under the `deployments` directory, we provide several deployment bash scripts and deployment configuration examples. Among them are `testbed`, a simple one with two edge nodes, and `9-buses` with nine nodes. Each deployment has a set of edge node setup files and an overall `deployment_setup.json`, which includes the IP and port of every service (refer to the given examples).
+
+The final file involved in the deployment is the `config.json`. It must be manually created by the user and located at the root of the repository:
+
+```
+.
+├── apps/
+├── components/
+├── deployments/
+├── docker/
+├── docs/
+└── config.json
+```
+
+`config.json` should contain the username and password for the database, as well as the API key for Grafana, as follows:
+
+```json
+{
+  "database": {
+    "username": "XXXX",
+    "password": "XXXX"
+  },
+  "grafana": {
+    "api_key": "XXXX"
+  }
+}
+```
+
+The Grafana API key can be either a single key (as shown in the previous example) or multiple keys (specified as a list) if the user wants to configure more than one setup:
+```json
+{
+  "database": {
+    "username": "XXXX",
+    "password": "XXXX"
+  },
+  "grafana": {
+    "api_key": ["XXXX", "XXXX"]
+  }
+}
+```
+
+In order to run the whole DT architecture, we have the edge nodes, a server, a user interface, a database, and a broker (in charge of queuing and routing the messages). We also provide a random data generator for testing the application called "Opal Simulator". Every deployment script mentioned in this section has its own usage with several argument options that can be invoked using the "-h" flag.
+
+To deploy the edge nodes, the user must create the Docker images (`docker/edge/create_images.sh`) and then either execute all of them separately with `docker run` (using the next script as an example) or all together on the same machine:
+```bash
+./deployments/deploy_edges.sh
+```
+### Local execution
+This option is meant for testing purposes, and allows us to create and deploy broker, server, user interface and opal simulator all together by using docker compose:
+```bash
+./deployments/deploy_all.sh
+```
+### Distributed execution
+1. Create images using the script `docker/create_images.sh`.
+2. Run the created images:
+```bash
+./deployments/deploy_broker.sh
+./deployments/deploy_user_interface.sh
+./deployments/deploy_server.sh
+[./deployments/deploy_opal_simulator.sh]
+```
